@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+  <name>Recurrink Model Loader</name>
+  <id>io.recurringart.loader</id>
+  <dependency type="executable" location="extensions">loader.py</dependency>
+  <label>Opening a recurrink file (*.rink)</label>
+  <input>
+    <extension>.rink</extension>
+    <mimetype>application/json</mimetype>
+    <filetypename>Recurrink (*.rink)</filetypename>
+  </input>
+  <script>
+    <command location="inx" interpreter="python">loader.py</command>
+  </script>
+</inkscape-extension>
