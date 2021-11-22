@@ -323,6 +323,9 @@ def main():
   return (model, all_models, list_only)
 
 if __name__ == '__main__':
+  ''' TODO add support for friendly name
+    ./configure -m tumbao 
+  '''
   (model, all_models, list_only) = main()
   pp = pprint.PrettyPrinter(indent=1)
   if (model or all_models):
