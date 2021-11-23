@@ -26,6 +26,7 @@ class EditCells():
     message = None
     elem = svg.selection.first() # assume that first in ElementList is <g />
     searchId = elem.get('id')
+    #shapes = svg.getElementById(searchId)
     shapes = draw.get_elems_by_id(svg, searchId)[0]
 
     if self.requested['shape'] == 'triangle' and self.requested['shape_size'] == 'large':
@@ -136,7 +137,7 @@ class Recurrink(inkex.EffectExtension):
     elif self.options.model: 
       # generate the initial model from config
       mm = MakeModel(self.options.model, layout)
-      group, strokeWidth = mm.build(svg)
+      group, strokeWidth = mm.build(layer)
       layout.render(draw, group, strokeWidth)
       # mark the SVG as a recurrence for subsequent reads
       self.svg.root.set('recurrence', self.version) # TODO use id (digest) from conf

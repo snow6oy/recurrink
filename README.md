@@ -28,7 +28,9 @@ A recurrence is the final outcome. A digital pattern in SVG format.
 ## Use cases and process
 ### UC1 Get to know recurrink by example
 
-SVG model -> Inkscape -> SVG recurrence
+| Input | Tool | Output |
+| ---   | ---  | --- |
+|SVG model | Inkscape | SVG recurrence|
 
 ### UC2 Update shapes in a model
 
@@ -38,27 +40,41 @@ SVG model -> Inkscape -> SVG recurrence
 
 ### UC3 Create a new model from existing config
 
-RINK config -> Inkscape + input -> SVG model
+| Input | Tool | Output |
+| ---   | ---  | --- |
+|RINK config | Inkscape + input | SVG model|
 
 ### UC4 Create a RINK config from existing sources
 
-CSV + JSON -> configure.py -> RINK config
+| Input | Tool | Output |
+| ---   | ---  | --- |
+|CSV + JSON | configure.py | RINK config|
 
 ### UC5 Create a new configuration using CLI
+Although there are no hard inputs you can clone existing sources to use as a starting point.
 
-Text editor -> CSV + JSON
+| Tool | Output |
+| ---  | --- |
+|Text editor | CSV + JSON|
 
 ### UC6 Automate new models from existing config
-(same outcome as UC6 but with CLI)
+This has the same outcome as UC6 but uses a CLI.
 
-RINK config -> CLI + input -> SVG model
+| Input | Tool | Output |
+| ---   | ---  | --- |
+|RINK config | CLI + input | SVG model|
 
 ### UC8 Automated building of SVG recurrences
-(same outcome as UC2 but with CLI. Not common use-case but useful for testing)
+This has the same outcome as UC2 but using a CLI. Useful for testing during software development.
 
-SVG model -> CLI + effect -> SVG recurrence
+| Input | Tool | Output |
+| ---   | ---  | --- |
+|SVG model | CLI + effect | SVG recurrence|
 
-### UC9 Choose model by using a complexity index
-complexity == rows x cols x uniqCells
+### UC9 Choose model by using a complexity score
+A complexity score is calculated using the formula `rows x cols x uniqCells`.
+The scores range from 8 (2 x 2 x 2 simplest) to 3,744 (12 x 12 x 26 most complex done so far).
 
-RINK config -> configure.py -> model metadata
+| Input | Tool | Output |
+| ---   | ---  | --- |
+|RINK config | configure.py | model metadata|
