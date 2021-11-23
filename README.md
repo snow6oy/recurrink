@@ -23,7 +23,7 @@ A recurrence is the final outcome. A digital pattern in SVG format.
 - Inkscape
 - recurrink\_input.py
 - recurrink\_effect.py
-- CLI
+- recurrink\_cli.py
 
 ## Use cases and process
 ### UC1 Get to know recurrink by example
@@ -48,7 +48,7 @@ A recurrence is the final outcome. A digital pattern in SVG format.
 
 | Input | Tool | Output |
 | ---   | ---  | --- |
-|CSV + JSON | configure.py | RINK config|
+|CSV + JSON | recurrink\_cli | RINK config|
 
 ### UC5 Create a new configuration using CLI
 Although there are no hard inputs you can clone existing sources to use as a starting point.
@@ -58,7 +58,7 @@ Although there are no hard inputs you can clone existing sources to use as a sta
 |Text editor | CSV + JSON|
 
 ### UC6 Automate new models from existing config
-This has the same outcome as UC6 but uses a CLI.
+This is another way to do UC3 but at the command-line instead of the Inkscape UI.
 
 | Input | Tool | Output |
 | ---   | ---  | --- |
@@ -73,8 +73,8 @@ This has the same outcome as UC2 but using a CLI. Useful for testing during soft
 
 ### UC9 Choose model by using a complexity score
 A complexity score is calculated using the formula `rows x cols x uniqCells`.
-The scores range from 8 (2 x 2 x 2 simplest) to 3,744 (12 x 12 x 26 most complex done so far).
+The scores range from 8 (2 x 2 x 2 simplest) to 3,744 (12 x 12 x 26 is the most complex done so far).
 
 | Input | Tool | Output |
 | ---   | ---  | --- |
-|RINK config | configure.py | model metadata|
+|RINK config | recurrink\_cli | model metadata|
