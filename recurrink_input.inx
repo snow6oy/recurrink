@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
   <name>Recurrink Model Loader</name>
-  <id>io.recurringart.loader</id>
-  <dependency type="executable" location="extensions">loader.py</dependency>
+  <id>io.recurringart.input</id>
+  <dependency type="executable" location="extensions">recurrink_input.py</dependency>
   <label>Opening a recurrink file (*.rink)</label>
   <input>
     <extension>.rink</extension>
@@ -10,6 +10,6 @@
     <filetypename>Recurrink (*.rink)</filetypename>
   </input>
   <script>
-    <command location="inx" interpreter="python">loader.py</command>
+    <command location="inx" interpreter="python">recurrink_input.py</command>
   </script>
 </inkscape-extension>

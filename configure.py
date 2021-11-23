@@ -154,20 +154,20 @@ class Builder:
     return digest
 
 class Layout:
+  ''' expand cells provided by Draw across a canvas
   '''
-  logic to layout cells provided by Draw based on inputs from Control
-  '''
-  def __init__(self, baseUnit):
+  def __init__(self, size, width, height):
     ''' 
        original calculation was 60px per cell to fill 1920 x 1080 px in total
        since inkscape our unit is millimeter 
        page size became 210 x 297 mm (A4 portrait)
+       width=1122.5197, height=793.70081
     '''
-    self.sizeUu  = baseUnit[0] # svg.unittouu(48)  
-    self.maxCols = 15  # num of columns 
-    self.maxRows = 22  # num of row  
-    self.xOffset = baseUnit[1] # svg.unittouu(60)  (210 - (15 * 12)) / 2 = 15mm
-    self.yOffset = baseUnit[2] # svg.unittouu(64)  (297 - (22 * 12)) / 2 = 16mm
+    self.sizeUu  = size # 48px
+    self.maxCols = 22  # num of columns in a4 landscape
+    self.maxRows = 15  # num of rows  
+    self.xOffset = (width -  (self.maxCols * size)) / 2 # 33.25985000000003
+    self.yOffset = (height - (self.maxRows * size)) / 2 # 36.85040500000002
 
   def set_scale(self, factor):
     ''' 
@@ -186,11 +186,12 @@ class Layout:
     self.yOffset = int(height_a4 - (self.maxRows * self.sizeUu)) / num_of_margins
     return (self.sizeUu, self.xOffset, self.yOffset)
 
-  def add(self, model):
-    ''' load database of all models '''
-    json_file = './recurrink.json'
-    with open(json_file) as f:
-      db = json.load(f)
+  def add(self, model, db=None):
+    ''' load database of all models or use given db'''
+    if db is None:
+      json_file = './recurrink.json'
+      with open(json_file) as f:
+        db = json.load(f)
 
     if model in db:
       self.get = db[model]
