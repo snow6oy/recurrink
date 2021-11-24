@@ -19,11 +19,13 @@ A recurrence is the final outcome. A digital pattern in SVG format.
 - SVG recurrence
 
 ### Tools
-- Text editor
-- Inkscape
+The following tools are used for the IO processes shown below. 
+- Inkex
 - recurrink\_input.py
 - recurrink\_effect.py
 - recurrink\_cli.py
+- Text editor
+These may be run in either a UI (e.g. Inkscape) or CLI context, or both.
 
 ## Use cases and process
 ### UC1 Get to know recurrink by example
