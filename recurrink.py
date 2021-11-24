@@ -109,23 +109,22 @@ class Recurrink(inkex.EffectExtension):
     ok = True if 'recurrence' in root.attrib and root.attrib['recurrence'] == self.version else False
     return ok
 
+  '''
   def base_unit(self, svg):
-    '''
       set the base user units. all subsequent dimensions are relative to them
-    '''
     size = svg.unittouu(48)  # cell dimension
     x = svg.unittouu(60)     # margin width
     y = svg.unittouu(64)     # margin height
     return (size, x, y)
+  '''
 
   def effect(self):  # effect because generate is a subset
     ''' check if svg is a recurrence and then apply inputs
     '''
     self.version = 'v1'
     layer = self.svg.get_current_layer()
-    layout = Layout(self.base_unit(layer))
-    base_unit = layout.set_scale(float(self.options.scale)) # adjust base units according to input
-    draw = Draw(base_unit)
+    layout = Layout(factor=float(self.options.scale)) # adjust base units according to input
+    draw = Draw([layout.size, layout.width, layout.height])
 
     if self.svg.selection and self.is_recurrence():
       e = EditCells(self.options)

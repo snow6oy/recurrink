@@ -63,9 +63,9 @@ class Input(inkex.InputExtension):
     ''' inkscape passes us a json file as a stream
         self.options.input_file e.g. /home/gavin/recurrink/arpeggio.rink
     '''
-    size = 48 # cell dimension 
-    width = 1122.5197  # px
-    height = 793.70081
+    #size = 48 # cell dimension 
+    #width = 1122.5197  # px
+    #height = 793.70081
     fn = re.findall(r"([^\/]*)\.", self.options.input_file)
     doc = None
 
@@ -74,15 +74,14 @@ class Input(inkex.InputExtension):
     else:
       s = stream.read() # slurp the stream 
       data = json.loads(s) # create a json object
+      # TODO check if scale has to be float() and pass it in once defined in INX
+      #scale = 1.0 if 'scale' not in self.options else self.options.scale
+      layout = Layout()
+      draw = Draw([layout.size, layout.width, layout.height])
       # prepare A4 document but with pixels for units
-      doc = self.get_template(width=width, height=height, unit='px')
+      doc = self.get_template(width=layout.width, height=layout.height, unit='px')
       svg = doc.getroot()
       svg.namedview.set('inkscape:document-units', 'px')
-      layout = Layout(size, width, height) 
-      # TODO check if scale has to be float()
-      # adjust base units according to input
-      base_unit = [size, width, height] if 'scale' not in self.options else layout.set_scale(self.options.scale)
-      draw = Draw(base_unit)
       # generate the model from config
       m = Model(fn[0], layout) # filename without ext 
       group, strokeWidth = m.make(data, svg)

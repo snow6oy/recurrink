@@ -156,35 +156,24 @@ class Builder:
 class Layout:
   ''' expand cells provided by Draw across a canvas
   '''
-  def __init__(self, size, width, height):
+  def __init__(self, factor=1.0):
     ''' 
-       original calculation was 60px per cell to fill 1920 x 1080 px in total
-       since inkscape our unit is millimeter 
-       page size became 210 x 297 mm (A4 portrait)
-       width=1122.5197, height=793.70081
-    '''
-    self.sizeUu  = size # 48px
-    self.maxCols = 22  # num of columns in a4 landscape
-    self.maxRows = 15  # num of rows  
-    self.xOffset = (width -  (self.maxCols * size)) / 2 # 33.25985000000003
-    self.yOffset = (height - (self.maxRows * size)) / 2 # 36.85040500000002
+    original calculation was page size 210 x 297 mm (A4 portrait)
+    since unit are not millimeters this table is inaccurate
 
-  def set_scale(self, factor):
-    ''' 
     factor    size   col  row   x os   y os
       0.5     24.0     7   11   21.0   16.5  twice as big
       1.0     12.0    15   22   15.0   16.5  do nothing
       2.0      6.0    30   44   15.0   16.5  half size
     '''
-    width_a4 = 210
-    height_a4 = 297
-    num_of_margins = 2
-    self.sizeUu  = float(self.sizeUu / factor)  
-    self.maxCols = int(self.maxCols * factor)
-    self.maxRows = int(self.maxRows * factor)  # num of row  
-    self.xOffset = int(width_a4 - (self.maxCols * self.sizeUu)) / num_of_margins
-    self.yOffset = int(height_a4 - (self.maxRows * self.sizeUu)) / num_of_margins
-    return (self.sizeUu, self.xOffset, self.yOffset)
+    self.width   = 1122.5197  # px
+    self.height  = 793.70081
+    self.size    = (48 / factor)  
+    self.maxCols = int(22 * factor)
+    self.maxRows = int(15 * factor)  # num of row  
+    numOfMargins = 2
+    self.xOffset = (self.width  - (self.maxCols * self.size)) / numOfMargins # 33.25985000000003
+    self.yOffset = (self.height - (self.maxRows * self.size)) / numOfMargins # 36.85040500000002
 
   def add(self, model, db=None):
     ''' load database of all models or use given db'''
@@ -254,9 +243,9 @@ class Layout:
     '''
     for paintOrder in range(2):
       for y in range(self.maxRows):
-        ySizeMm = self.yOffset + (y * self.sizeUu)
+        ySizeMm = self.yOffset + (y * self.size)
         for x in range(self.maxCols):
-          xSizeMm = self.xOffset + (x * self.sizeUu)
+          xSizeMm = self.xOffset + (x * self.size)
           cell = self.get_cell_by_position(x, y)
           data = self.get_cell(cell)
           if not data:
