@@ -6,8 +6,6 @@ from inkex import Group, Circle, Rectangle, Polygon, TextElement
 
 import pprint, math
 
-# from model import Model from database import Database
-
 class Draw:
   '''
   use viewer to do the maths to render a cell
@@ -18,6 +16,169 @@ class Draw:
     self.x_offset = baseUnit[1] # x offset
     self.y_offset = baseUnit[2] # y offset
 
+  def backgrounds(self, cell, x, y):
+    '''
+    the first cell painted onto the grid is a filled rectangle
+    see Builder for a list of the available colours
+    '''
+    w = str(self.sizeUu)
+    h = str(self.sizeUu)
+    bg = Rectangle(x=str(x), y=str(y), width=w, height=h)
+    return bg
+
+  def shape(self, cell, X, Y, a):
+    '''
+    create a shape from a cell for adding to a group
+    '''
+    if a['shape'] == 'circle':
+      s = self.set_circle(cell, X, Y, a)
+    elif a['shape'] == 'line':
+      s = self.set_line(cell, X, Y, a)
+    elif a['shape'] == 'square':
+      s = self.set_square(cell, X, Y, a)
+    elif a['shape'] == 'triangle':
+      s = self.set_triangle(cell, X, Y, a)
+    else:
+      s = self.set_text(a['shape'], X, Y)
+
+    return s
+
+  def set_circle(self, cell, X, Y, a):
+    halfw = a['stroke_width'] / 2
+    fullw = a['stroke_width']
+
+    if a['shape_size'] == 'large': 
+      size = self.sizeUu / 2
+      # pythagoras was a pythonista :)
+      sum_two_sides = (size**2 + size**2)
+      r = math.sqrt(sum_two_sides) - halfw
+    elif a['shape_size'] == 'medium':
+      r = (self.sizeUu / 2 - halfw) # normal size
+    else:
+      raise ValueError(f"Cannot set circle <{cell}> to {a['shape_size']} size")
+
+    x = str(X + self.sizeUu / 2)
+    y = str(Y + self.sizeUu / 2)
+    circle = Circle(cx=x, cy=y, r=str(r))
+    #circle.label = cell
+    return circle
+
+  def set_line(self, cell, X, Y, a):
+    fullw = a['stroke_width']
+    halfw = a['stroke_width'] / 2
+    '''
+    lines can be orientated along a north-south axis or east-west axis
+    but the user can choose any of the four cardinal directions
+    here we silently collapse the non-sensical directions
+    '''
+    a['shape_facing'] = 'north' if a['shape_facing'] == 'south' else a['shape_facing']
+    a['shape_facing'] = 'east' if a['shape_facing'] == 'west' else a['shape_facing']
+
+    if a['shape_size'] == 'large' and a['shape_facing'] == 'north':
+      x      = str(X + self.sizeUu / 3 + halfw)
+      y      = str(Y - self.sizeUu / 3 + halfw)
+      width  = str(self.sizeUu / 3 - fullw)
+      height = str((self.sizeUu / 3 * 2 + self.sizeUu) - fullw)
+    elif a['shape_size'] == 'large' and a['shape_facing'] == 'east':
+      x      = str(X - self.sizeUu / 3 + halfw)
+      y      = str(Y + self.sizeUu / 3 + halfw)
+      width  = str((self.sizeUu / 3 * 2 + self.sizeUu) - fullw)
+      height = str(self.sizeUu / 3 - fullw)
+    elif a['shape_size'] == 'medium' and a['shape_facing'] == 'north':
+      x      = str(X + self.sizeUu / 3 + halfw)
+      y      = str(Y + halfw)
+      width  = str(self.sizeUu / 3 - fullw)
+      height = str(self.sizeUu - fullw)
+    elif a['shape_size'] == 'medium' and a['shape_facing'] == 'east':
+      x      = str(X + halfw)
+      y      = str(Y + self.sizeUu / 3 + halfw)
+      width  = str(self.sizeUu - fullw)
+      height = str(self.sizeUu / 3 - fullw)
+    else:
+      raise ValueError(f"Cannot set {cell} to {a['shape_size']}")
+
+    rect = Rectangle(x=x, y=y, width=width, height=height)
+    #rect.label = cell
+    return rect
+
+  def set_square(self, cell, xSizeMm, ySizeMm, a):
+    fullw = a['stroke_width']
+    halfw = a['stroke_width'] / 2
+      
+    if a['shape_size'] == 'medium':
+      x      = str(xSizeMm + halfw)
+      y      = str(ySizeMm + halfw)
+      width  = str(self.sizeUu - fullw)
+      height = str(self.sizeUu - fullw)
+    elif a['shape_size'] == 'large':
+      third  = self.sizeUu / 3
+      x      = str(xSizeMm - third / 2 + halfw)
+      y      = str(ySizeMm - third / 2 + halfw)
+      width  = str(self.sizeUu + third - fullw)
+      height = str(self.sizeUu + third - fullw)
+    else:
+      raise ValueError("Cannot set rectangle {}".format(cell))
+
+    rect = Rectangle(x=x, y=y, width=width, height=height)
+    #rect.label = cell
+    return rect
+
+  def set_triangle(self, cell, X, Y, a):
+
+    fullw = a['stroke_width']
+    # stroke width is halved for repositioning
+    halfw = a['stroke_width'] / 2
+    #X = int(x)   integers for addition. points[] is made a string collection last
+    #Y = int(y)
+
+    #raise ValueError(f"X {type(X)} fw {type(fullw)} mm {type(self.sizeUu)}")
+    if a['shape_facing'] == 'west': 
+      points = [
+        X + fullw, Y + self.sizeUu / 2, 
+        X + self.sizeUu - halfw, Y + fullw, 
+        X + self.sizeUu - halfw, Y + self.sizeUu - fullw,
+        X + fullw, Y + self.sizeUu / 2
+      ]
+    elif a['shape_facing'] == 'east': 
+      points = [
+        X + halfw, Y + fullw, 
+        X + self.sizeUu - fullw, Y + self.sizeUu / 2,
+        X + halfw, Y + self.sizeUu - fullw,
+        X + halfw, Y + fullw
+      ]
+    elif a['shape_facing'] == 'north': 
+      points = [
+        X + fullw, Y + self.sizeUu - halfw,
+        X + self.sizeUu / 2, Y + fullw,
+        X + self.sizeUu - fullw, Y + self.sizeUu - halfw,
+        X + fullw, Y + self.sizeUu - halfw
+      ]
+    elif a['shape_facing'] == 'south':
+      points = [
+        X + halfw, Y + halfw, 
+        X + self.sizeUu / 2, Y + self.sizeUu - fullw, 
+        X + self.sizeUu - halfw, Y + halfw,
+        X + halfw, Y + halfw
+      ]
+    else:
+      raise ValueError("Cannot face triangle {}".format(a['shape_facing']))
+    
+    polyg = Polygon(points=",".join(map(str, points)))
+    #polyg.label = cell
+    return polyg
+  
+  def set_text(self, shape, X, Y):
+    '''
+    when the shape is unknown print as text in the cell
+    '''
+    x = str(X + 3)
+    y = str(Y + 40)
+    textElement = TextElement(x=x, y=y)
+    textElement.text = shape
+    # self.debug(textElement)
+    return textElement
+
+  """
   def set_foreground(self, shapes, requested):
     ''' replace shape based on user input '''
     for elem in shapes:
@@ -95,165 +256,4 @@ class Draw:
     if thisFill != givenFill:  # background needs to change
       shape.set('style', f"fill:{givenFill}")
     return shape
-
-  def backgrounds(self, cell, x, y):
-    '''
-    the first cell painted onto the grid is a filled rectangle
-    see Builder for a list of the available colours
-    '''
-    w = str(self.sizeUu)
-    h = str(self.sizeUu)
-    bg = Rectangle(x=str(x), y=str(y), width=w, height=h)
-    return bg
-
-  def shape(self, cell, X, Y, a):
-    '''
-    create a shape from a cell for adding to a group
-    '''
-    if a['shape'] == 'circle':
-      s = self.set_circle(cell, X, Y, a)
-    elif a['shape'] == 'line':
-      s = self.set_line(cell, X, Y, a)
-    elif a['shape'] == 'square':
-      s = self.set_square(cell, X, Y, a)
-    elif a['shape'] == 'triangle':
-      s = self.set_triangle(cell, X, Y, a)
-    else:
-      s = self.set_text(a['shape'], X, Y)
-
-    return s
-
-  def set_circle(self, cell, X, Y, a):
-    halfw = a['stroke_width'] / 2
-    fullw = a['stroke_width']
-
-    if a['shape_size'] == 'large': 
-      size = self.sizeUu / 2
-      # pythagoras was a pythonista :)
-      sum_two_sides = (size**2 + size**2)
-      r = math.sqrt(sum_two_sides) - halfw
-    elif a['shape_size'] == 'medium':
-      r = (self.sizeUu / 2 - halfw) # normal size
-    else:
-      raise ValueError(f"Cannot set circle <{cell}> to {a['shape_size']} size")
-
-    x = str(X + self.sizeUu / 2)
-    y = str(Y + self.sizeUu / 2)
-    circle = Circle(cx=x, cy=y, r=str(r))
-    circle.label = cell
-    return circle
-
-  def set_line(self, cell, X, Y, a):
-    fullw = a['stroke_width']
-    halfw = a['stroke_width'] / 2
-    '''
-    lines can be orientated along a north-south axis or east-west axis
-    but the user can choose any of the four cardinal directions
-    here we silently collapse the non-sensical directions
-    '''
-    a['shape_facing'] = 'north' if a['shape_facing'] == 'south' else a['shape_facing']
-    a['shape_facing'] = 'east' if a['shape_facing'] == 'west' else a['shape_facing']
-
-    if a['shape_size'] == 'large' and a['shape_facing'] == 'north':
-      x      = str(X + self.sizeUu / 3 + halfw)
-      y      = str(Y - self.sizeUu / 3 + halfw)
-      width  = str(self.sizeUu / 3 - fullw)
-      height = str((self.sizeUu / 3 * 2 + self.sizeUu) - fullw)
-    elif a['shape_size'] == 'large' and a['shape_facing'] == 'east':
-      x      = str(X - self.sizeUu / 3 + halfw)
-      y      = str(Y + self.sizeUu / 3 + halfw)
-      width  = str((self.sizeUu / 3 * 2 + self.sizeUu) - fullw)
-      height = str(self.sizeUu / 3 - fullw)
-    elif a['shape_size'] == 'medium' and a['shape_facing'] == 'north':
-      x      = str(X + self.sizeUu / 3 + halfw)
-      y      = str(Y + halfw)
-      width  = str(self.sizeUu / 3 - fullw)
-      height = str(self.sizeUu - fullw)
-    elif a['shape_size'] == 'medium' and a['shape_facing'] == 'east':
-      x      = str(X + halfw)
-      y      = str(Y + self.sizeUu / 3 + halfw)
-      width  = str(self.sizeUu - fullw)
-      height = str(self.sizeUu / 3 - fullw)
-    else:
-      raise ValueError(f"Cannot set {cell} to {a['shape_size']}")
-
-    rect = Rectangle(x=x, y=y, width=width, height=height)
-    rect.label = cell
-    return rect
-
-  def set_square(self, cell, xSizeMm, ySizeMm, a):
-    fullw = a['stroke_width']
-    halfw = a['stroke_width'] / 2
-      
-    if a['shape_size'] == 'medium':
-      x      = str(xSizeMm + halfw)
-      y      = str(ySizeMm + halfw)
-      width  = str(self.sizeUu - fullw)
-      height = str(self.sizeUu - fullw)
-    elif a['shape_size'] == 'large':
-      third  = self.sizeUu / 3
-      x      = str(xSizeMm - third / 2 + halfw)
-      y      = str(ySizeMm - third / 2 + halfw)
-      width  = str(self.sizeUu + third - fullw)
-      height = str(self.sizeUu + third - fullw)
-    else:
-      raise ValueError("Cannot set rectangle {}".format(cell))
-
-    rect = Rectangle(x=x, y=y, width=width, height=height)
-    rect.label = cell
-    return rect
-
-  def set_triangle(self, cell, X, Y, a):
-
-    fullw = a['stroke_width']
-    # stroke width is halved for repositioning
-    halfw = a['stroke_width'] / 2
-    #X = int(x)   integers for addition. points[] is made a string collection last
-    #Y = int(y)
-
-    #raise ValueError(f"X {type(X)} fw {type(fullw)} mm {type(self.sizeUu)}")
-    if a['shape_facing'] == 'west': 
-      points = [
-        X + fullw, Y + self.sizeUu / 2, 
-        X + self.sizeUu - halfw, Y + fullw, 
-        X + self.sizeUu - halfw, Y + self.sizeUu - fullw,
-        X + fullw, Y + self.sizeUu / 2
-      ]
-    elif a['shape_facing'] == 'east': 
-      points = [
-        X + halfw, Y + fullw, 
-        X + self.sizeUu - fullw, Y + self.sizeUu / 2,
-        X + halfw, Y + self.sizeUu - fullw,
-        X + halfw, Y + fullw
-      ]
-    elif a['shape_facing'] == 'north': 
-      points = [
-        X + fullw, Y + self.sizeUu - halfw,
-        X + self.sizeUu / 2, Y + fullw,
-        X + self.sizeUu - fullw, Y + self.sizeUu - halfw,
-        X + fullw, Y + self.sizeUu - halfw
-      ]
-    elif a['shape_facing'] == 'south':
-      points = [
-        X + halfw, Y + halfw, 
-        X + self.sizeUu / 2, Y + self.sizeUu - fullw, 
-        X + self.sizeUu - halfw, Y + halfw,
-        X + halfw, Y + halfw
-      ]
-    else:
-      raise ValueError("Cannot face triangle {}".format(a['shape_facing']))
-    
-    polyg = Polygon(points=",".join(map(str, points)))
-    polyg.label = cell
-    return polyg
-  
-  def set_text(self, shape, X, Y):
-    '''
-    when the shape is unknown print as text in the cell
-    '''
-    x = str(X + 3)
-    y = str(Y + 40)
-    textElement = TextElement(x=x, y=y)
-    textElement.text = shape
-    # self.debug(textElement)
-    return textElement
+  """
