@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
+'''
+export PYTHONPATH=/Applications/Inkscape.app/Contents/Resources/share/inkscape/extensions/
+this finds inkex.py but then fails due to missing lxml module
+lxml is in Inkscape's Python but how to set that context?
+'''
+
+import inkex
 import unittest
 
 class TestLayoutMethods(unittest.TestCase):
 
   def setUp(self):
-    import inkex
     from draw import Draw
     from configure import Builder, Layout
     model = '03-02d-soleares'
