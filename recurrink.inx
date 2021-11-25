@@ -3,17 +3,8 @@
   <name>Recurrink</name>
   <id>io.recurringart</id>
   <param name="tab" type="notebook">
-    <page name="open_model" gui-text="Open model">
-      <label appearance="header">Open model</label>
-      <param name="model" type="optiongroup" appearance="combo" gui-text="Models">
-        <option value="03-02d-soleares">03-02d-soleares</option>
-        <option value="06-06f-tumbao">06-06f-tumbao</option>
-        <option value="12-06d-waltz">12-06d-waltz</option>
-        <option value="06-06d-aprilinparis">06-06d-aprilinparis</option>
-      </param>
-      <param name="scale" type="float" precision="1" min="0.5" max="2" gui-text="Scale in or out">1.0</param>
-    </page>
     <page name="edit_cells" gui-text="Edit cells">
+
       <label appearance="header">Edit cells</label>
 
       <param name="shape" type="optiongroup" appearance="combo" gui-text="Shape">

@@ -58,7 +58,11 @@ class Model():
 class Input(inkex.InputExtension):
   ''' create a model SVG from a config file
   '''
-  # TODO add scale and portrait as input options
+
+  # TODO add portrait as input options
+  def add_arguments(self, pars):
+    pars.add_argument("--scale",  default=1.0, help="Scale in or out (0.5 - 2.0)")
+
   def load(self, stream):
     ''' inkscape passes us a json file as a stream
         self.options.input_file e.g. /home/gavin/recurrink/arpeggio.rink

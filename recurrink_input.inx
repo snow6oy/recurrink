@@ -4,6 +4,7 @@
   <id>io.recurringart.input</id>
   <dependency type="executable" location="extensions">recurrink_input.py</dependency>
   <label>Opening a recurrink file (*.rink)</label>
+  <param name="scale" type="float" precision="1" min="0.5" max="2" gui-text="Scale in or out">1.0</param>
   <input>
     <extension>.rink</extension>
     <mimetype>application/json</mimetype>
