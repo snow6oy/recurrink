@@ -237,15 +237,24 @@ class Layout:
           break
     return cell
 
+  def blocknum_to_uu(self, xBlocknum, yBlocknum):
+    ''' convert a position in the grid to pixels 
+    '''
+    xUu = self.xOffset + (xBlocknum * self.size)
+    yUu = self.yOffset + (yBlocknum * self.size)
+    return xUu, yUu
+
   def render(self, draw, group, strokeWidth):
     '''
     draw out a model by repeating blocks across the canvas
     '''
+    # TODO the algorithm should follow JSON 
     for paintOrder in range(2):
       for y in range(self.maxRows):
-        ySizeMm = self.yOffset + (y * self.size)
+        #ySizeMm = self.yOffset + (y * self.size)
         for x in range(self.maxCols):
-          xSizeMm = self.xOffset + (x * self.size)
+          #xSizeMm = self.xOffset + (x * self.size)
+          (xSizeMm, ySizeMm) = self.blocknum_to_uu(x, y)
           cell = self.get_cell_by_position(x, y)
           data = self.get_cell(cell)
           if not data:

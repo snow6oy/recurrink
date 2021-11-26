@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 # coding=utf-8
 import inkex
-from inkex import Circle, Group
 from draw import Draw
 from configure import Layout
 
-#from inkex import Group, Circle, Rectangle, Polygon, TextElement
-#import pprint, math
+class Cells():
 
-class EditCells():
-
-  def __init__(self, options, baseUnit):
-
+  def __init__(self, options):
+    ''' rebuild selected cells according to user input 
+    '''
     self.requested = {
       'shape': options.shape,
       'shape_size': options.size,
@@ -20,102 +17,62 @@ class EditCells():
       'stroke_width': int(options.width)
     }
     self.bg = options.bg
-    ''' units must be in sync with Layout.sizeUu '''
-    self.sizeUu  = baseUnit[0] # size
-    self.x_offset = baseUnit[1] # x offset
-    self.y_offset = baseUnit[2] # y offset
-    self.draw = Draw(baseUnit)
+    layout = Layout()  #  TODO how to remember factor=float(self.options.scale)) from input ??? 
+    self.draw = Draw([layout.size, layout.width, layout.height])
+    self.layout = layout
 
   def update(self, svg, layer):
-    ''' all the elems according to cell
-        for example fg-a-0-0 .. fg-a-360-360 '''
+    ''' all the elems according to cell id
+        for example f1-0-0 .. f1-360-360 '''
     message = None
     shapes = svg.selection.first() # assume that first in ElementList is <g />
-    searchId = shapes.get('id')
-    #shapes = svg.getElementById(searchId)
-    #shapes = self.get_elems_by_id(svg, searchId)[0]
+    thisId = shapes.get('id')
 
     if self.requested['shape'] == 'triangle' and self.requested['shape_size'] == 'large':
       message = 'Large triangles are not possible, ignoring this request.'
     elif shapes is not None:
       # update the background style, but only if we're given a new value
-      self.set_background(searchId, self.bg, svg) 
-      message = self.set_foreground(shapes, self.requested)
-      #raise Warning(a)
+      self.set_background(thisId, self.bg, svg) 
+      self.set_foreground(shapes, self.requested)
       shapes.style['stroke-width'] = svg.unittouu(self.requested['stroke_width'])
       # add the top elems last
       if self.requested['top']:
-        self.sort_groups(searchId, svg, layer) # TODO why two SVGs
+        group = svg.getElementById(thisId)
+        groupLast = group
+        svg.remove(group)
+        svg.add(groupLast)
     else:
-      message = f"group id={searchId} not found"
+      message = f"group id={thisId} not found"
     return message
 
-  def set_background(self, searchId, givenFill, svg):
+  def set_background(self, thisId, givenFill, svg):
     ''' force the selection to a background cell
         because clickers can hit either
     '''
-    cell = searchId[0]
-    bgId = f"{cell}0"
-    bgElem = svg.getElementById(bgId)
+    cell = thisId[0]
+    bgElem = svg.getElementById(f"{cell}0")
     # TODO check that #FFF #ffffff etc are consistent
     if bgElem.style['fill'] != givenFill:  # background needs to change
       bgElem.set('style', f"fill:{givenFill}")
-
 
   def set_foreground(self, shapes, requested):
     ''' replace shape based on user input '''
     message = ""
     for elem in shapes:
       idItems = elem.get_id().split('-')
-      x = elem.attrib['x']  # id = c1
-      y = elem.attrib['y']  # id = c1
       if len(idItems) == 3:
-        (gid, _, _) = idItems 
-        # calculate mm sizes based on blocknums
-        #ySizeMm = self.y_offset + (int(y) * self.sizeUu)
-        #xSizeMm = self.x_offset + (int(x) * self.sizeUu)
+        (gid, xBlocknum, yBlocknum) = idItems 
+        # calculate coordinates based on blocknums
+        (x, y) = self.layout.blocknum_to_uu(int(xBlocknum), int(yBlocknum))
       else:
         raise ValueError(f"Unexpected format id={idItems}")
       message += f"id {gid[0]} {x} {y}\n"
-      #newShape = Circle(cx=x, cy=y, r="24")
       newShape = self.draw.shape(gid[0], float(x), float(y), requested)
       elem.replace_with(newShape)
       # set id after replacement to avoid collisions
       elem.set_id(f"{gid}-{x}-{y}")
     #return message
     return None
-
-  def sort_groups(self, searchId, svg, layer):
-    ''' remove the top elems and then add them at the bottom '''
-    msg = None
-    topGroup = None
-    groups = self.get_fg_groups(svg)
-    if not groups:
-      raise ValueError(f"search id {searchId} not matching")
-    addList = [] # handy for debug
-    for g in groups:
-      addList.append(g.get_id()) # remember the name and position before zapping
-      if searchId[0] == g.get_id()[0]:  # user can click either c1 or c0
-        topGroup = g
-        addList.append('+') # mark with a + to remember the name and position before zapping
-        g.delete()
-    if topGroup is not None:
-      layer.add(topGroup)
-    else:
-      raise ValueError(f"search id {searchId} not matching" + "\n".join(addList))
-    return None
-
-  def get_fg_groups(self, svg):
-    ''' get a list of top-level groups
-        for example fg-a .. fg-x
-    '''
-    groups = []
-    ns = {"": 'http://www.w3.org/2000/svg'}
-    for g in svg.find('g', ns):
-      paintOrder = int(g.attrib['id'][1])  # id = c1
-      if paintOrder == 1:    # background has paintOrder 0
-        groups.append(g)
-    return groups
 
 class Recurrink(inkex.EffectExtension):
   ''' draw recurring patterns using inkscape '''
@@ -132,18 +89,9 @@ class Recurrink(inkex.EffectExtension):
     ''' check if svg is a recurrence and then apply inputs
     '''
     self.version = 'v1'
-    layer = self.svg.get_current_layer()
-    # adjust base units according to input
-    layout = Layout()  #  TODO how to remember factor=float(self.options.scale)) from input ??? 
-
-    if self.svg.selection: #  and self.is_recurrence():
-      # elem = self.svg.selection.first() # assume that first in ElementList is <g />
-      # message = elem.get('id')
-      # for e in elem:
-      #  message += e.get('id')
-      #shapes = svg.getElementById(searchId)
-      e = EditCells(self.options, [layout.size, layout.width, layout.height])
-      message = e.update(self.svg, layer)
+    if self.svg.selection:
+      c = Cells(self.options)
+      message = c.update(self.svg)
       if message:
         self.msg(message)
     else:
