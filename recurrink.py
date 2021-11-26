@@ -40,9 +40,8 @@ class EditCells():
     elif shapes is not None:
       # update the background style, but only if we're given a new value
       self.set_background(searchId, self.bg, svg) 
-      a = self.set_foreground(shapes, self.requested)
-      raise Warning(a)
-      #elem.style['stroke-width'] = svg.unittouu(self.requested['stroke_width'])
+      message = self.set_foreground(shapes, self.requested)
+      #raise Warning(a)
       shapes.style['stroke-width'] = svg.unittouu(self.requested['stroke_width'])
       # add the top elems last
       if self.requested['top']:
@@ -51,9 +50,21 @@ class EditCells():
       message = f"group id={searchId} not found"
     return message
 
+  def set_background(self, searchId, givenFill, svg):
+    ''' force the selection to a background cell
+        because clickers can hit either
+    '''
+    cell = searchId[0]
+    bgId = f"{cell}0"
+    bgElem = svg.getElementById(bgId)
+    # TODO check that #FFF #ffffff etc are consistent
+    if bgElem.style['fill'] != givenFill:  # background needs to change
+      bgElem.set('style', f"fill:{givenFill}")
+
+
   def set_foreground(self, shapes, requested):
     ''' replace shape based on user input '''
-    a = ""
+    message = ""
     for elem in shapes:
       idItems = elem.get_id().split('-')
       x = elem.attrib['x']  # id = c1
@@ -65,13 +76,14 @@ class EditCells():
         #xSizeMm = self.x_offset + (int(x) * self.sizeUu)
       else:
         raise ValueError(f"Unexpected format id={idItems}")
-      a += f"id {gid[0]} {x} {y}\n"
-      newShape = Circle(cx=x, cy=y, r="24")
-      #newShape = self.draw.shape(gid[0], float(x), float(y), requested)
+      message += f"id {gid[0]} {x} {y}\n"
+      #newShape = Circle(cx=x, cy=y, r="24")
+      newShape = self.draw.shape(gid[0], float(x), float(y), requested)
       elem.replace_with(newShape)
       # set id after replacement to avoid collisions
       elem.set_id(f"{gid}-{x}-{y}")
-    return a
+    #return message
+    return None
 
   def sort_groups(self, searchId, svg, layer):
     ''' remove the top elems and then add them at the bottom '''
@@ -93,22 +105,6 @@ class EditCells():
       raise ValueError(f"search id {searchId} not matching" + "\n".join(addList))
     return None
 
-  # TODO read the docs and try to simplify
-  # https://inkscape-extensions-guide.readthedocs.io/en/latest/inkex-modules.html#inkex.svg.SvgDocumentElement.getElementById
-  '''
-  def get_elems_by_id(self, svg, searchId):
-    elem = None 
-    style = None
-    ns = {"": 'http://www.w3.org/2000/svg'}
-    for g in svg.find('g', ns):
-      if g.attrib['id'] == searchId:  # e.g. fg-a
-        elem = g
-        if 'style' in g.attrib:
-          style = g.attrib['style']
-        break
-    return (elem, style)
-  '''
-
   def get_fg_groups(self, svg):
     ''' get a list of top-level groups
         for example fg-a .. fg-x
@@ -120,17 +116,6 @@ class EditCells():
       if paintOrder == 1:    # background has paintOrder 0
         groups.append(g)
     return groups
-
-  def set_background(self, searchId, givenFill, svg):
-    ''' force the selection to a background cell
-        because clickers can hit either
-    '''
-    cell = searchId[0]
-    bgId = f"{cell}0"
-    bgElem = svg.getElementById(bgId)
-    # TODO check that #FFF #ffffff etc are consistent
-    if bgElem.style['fill'] != givenFill:  # background needs to change
-      bgElem.set('style', f"fill:{givenFill}")
 
 class Recurrink(inkex.EffectExtension):
   ''' draw recurring patterns using inkscape '''
@@ -166,4 +151,3 @@ class Recurrink(inkex.EffectExtension):
 
 if __name__ == '__main__':
   Recurrink().run()
-
