@@ -1,0 +1,100 @@
+{
+  "a": {
+    "shape": "triangle",
+    "shape_facing":"west",
+    "fill": "#000",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "b": {
+    "shape": "line",
+    "shape_facing":"east",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 1,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "c": {
+    "shape": "triangle",
+    "shape_facing":"east",
+    "fill": "#000",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "d": {
+    "shape": "triangle",
+    "shape_facing":"west",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 1,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "e": {
+    "shape": "circle",
+    "fill": "#000",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "f": {
+    "shape": "triangle",
+    "shape_facing":"east",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 1,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "g": {
+    "shape": "line",
+    "shape_facing":"east",
+    "shape_size":"large",
+    "fill": "#000",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "h": {
+    "shape": "line",
+    "shape_facing":"north",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 1,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "j": {
+    "shape": "circle",
+    "fill": "#000",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  }
+}

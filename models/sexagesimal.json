@@ -1,0 +1,59 @@
+{
+  "a": {
+    "shape": "line",
+    "shape_facing":"north",
+    "bg": "#ccc",
+    "fill": "#000",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 1,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "b": {
+    "shape": "circle",
+    "bg": "#ccc",
+    "fill": "#000",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 1,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "c": {
+    "shape": "line",
+    "shape_facing":"north",
+    "bg": "#000",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 1,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "d": {
+    "shape": "circle",
+    "bg": "#000",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 1,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "e": {
+    "shape": "square",
+    "bg": "#ccc",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#000",
+    "stroke_width": 6,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "a": {
+    "shape": "square",
+    "bg": "#ccc",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#fff",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "h": {
+    "shape": "square",
+    "bg": "#fff",
+    "fill": "#000",
+    "fill_opacity": 0.5,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "i": {
+    "shape": "triangle",
+    "shape_facing":"east",
+    "bg": "#000",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#fff",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "j": {
+    "shape": "triangle",
+    "shape_facing":"west",
+    "bg": "#000",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#fff",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "k": {
+    "shape": "tnf",
+    "shape_facing":"north",
+    "bg": "#000",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#fff",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "l": {
+    "shape": "triangle",
+    "shape_facing":"south",
+    "bg": "#000",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#fff",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "b": {
+    "shape": "line",
+    "shape_facing":"north",
+    "shape_size":"large",
+    "bg": "#000",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#fff",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "c": {
+    "shape": "line",
+    "shape_facing":"east",
+    "shape_size":"large",
+    "bg": "#000",
+    "fill": "#fff",
+    "fill_opacity": 1.0,
+    "stroke": "#fff",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "d": {
+    "shape": "circle",
+    "bg": "#ccc",
+    "shape_size":"large",
+    "fill": "#fff",
+    "fill_opacity": 0.5,
+    "stroke": "#000",
+    "stroke_width": 2,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0
+  },
+  "e": {
+    "shape": "circle",
+    "shape_size":"large",
+    "bg": "#ccc",
+    "fill": "#000",
+    "fill_opacity": 0.5,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "f": {
+    "shape": "line",
+    "shape_facing":"north",
+    "shape_size":"large",
+    "bg": "#fff",
+    "fill": "#000",
+    "fill_opacity": 0.5,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  },
+  "g": {
+    "shape": "line",
+    "shape_facing":"east",
+    "shape_size":"large",
+    "bg": "#fff",
+    "fill": "#000",
+    "fill_opacity": 0.5,
+    "stroke": "#000",
+    "stroke_width": 0,
+    "stroke_dasharray": 0,
+    "stroke_opacity": 1.0,
+    "top": true
+  }
+}

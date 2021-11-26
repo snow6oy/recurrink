@@ -1,0 +1,147 @@
+{
+  "id": "c5ab148a094c783593f963d414ae88d9",
+  "size": [
+    6,
+    2
+  ],
+  "cells": {
+    "a": {
+      "shape": "triangle",
+      "shape_size": "medium",
+      "shape_facing": "south",
+      "fill": "#fff",
+      "bg": "#000",
+      "fill_opacity": 1.0,
+      "stroke": "#ccc",
+      "stroke_width": 1,
+      "stroke_dasharray": 1,
+      "stroke_opacity": 1.0,
+      "top": true,
+      "positions": [
+        [
+          0,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    "b": {
+      "shape": "triangle",
+      "shape_size": "medium",
+      "shape_facing": "north",
+      "fill": "#fff",
+      "bg": "#000",
+      "fill_opacity": 1.0,
+      "stroke": "#ccc",
+      "stroke_width": 1,
+      "stroke_dasharray": 1,
+      "stroke_opacity": 1.0,
+      "top": true,
+      "positions": [
+        [
+          1,
+          0
+        ],
+        [
+          4,
+          0
+        ]
+      ]
+    },
+    "c": {
+      "shape": "triangle",
+      "shape_size": "medium",
+      "shape_facing": "east",
+      "fill": "#fff",
+      "bg": "#000",
+      "fill_opacity": 1.0,
+      "stroke": "#ccc",
+      "stroke_width": 1,
+      "stroke_dasharray": 1,
+      "stroke_opacity": 1.0,
+      "top": true,
+      "positions": [
+        [
+          2,
+          0
+        ]
+      ]
+    },
+    "d": {
+      "shape": "triangle",
+      "shape_size": "medium",
+      "shape_facing": "west",
+      "fill": "#fff",
+      "bg": "#000",
+      "fill_opacity": 1.0,
+      "stroke": "#ccc",
+      "stroke_width": 1,
+      "stroke_dasharray": 1,
+      "stroke_opacity": 1.0,
+      "top": true,
+      "positions": [
+        [
+          5,
+          0
+        ]
+      ]
+    },
+    "e": {
+      "shape": "square",
+      "shape_size": "medium",
+      "shape_facing": "north",
+      "fill": "#000",
+      "bg": "#ccc",
+      "fill_opacity": 1.0,
+      "stroke": "#fff",
+      "stroke_width": 8,
+      "stroke_dasharray": 0,
+      "stroke_opacity": 1.0,
+      "top": true,
+      "positions": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          4,
+          1
+        ]
+      ]
+    },
+    "f": {
+      "shape": "square",
+      "shape_size": "medium",
+      "shape_facing": "north",
+      "fill": "#fff",
+      "bg": "#ccc",
+      "fill_opacity": 1.0,
+      "stroke": "#000",
+      "stroke_width": 8,
+      "stroke_dasharray": 0,
+      "stroke_opacity": 1.0,
+      "top": true,
+      "positions": [
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    }
+  }
+}
