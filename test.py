@@ -8,24 +8,24 @@ lxml is in Inkscape's Python but how to set that context?
 
 import inkex
 import unittest
+from configure import Builder, Layout
+from draw import Draw
 
 class TestLayoutMethods(unittest.TestCase):
 
   def setUp(self):
-    from draw import Draw
-    from configure import Builder, Layout
-    model = '03-02d-soleares'
+    model = 'soleares'
     svg = inkex.load_svg("/home/gavin/Dropbox/geek/SVG/recurrences/soleares.svg").getroot()
-    baseUnit = (svg.unittouu(48), svg.unittouu(60), svg.unittouu(64))
-    l = Layout(baseUnit)
+    l = Layout()
     l.add(model)
-    self.l = l
-    d = Draw(baseUnit)
+    d = Draw([l.size, l.width, l.height])
     self.d = d
+    self.l = l
     self.b = Builder()
   
   def test_scale(self):
-    self.assertEqual(self.l.set_scale(0.5), (25.4, 16.0, 8.5))
+    l5 = Layout(factor=0.5)
+    self.assertEqual((l5.size, l5.width, l5.height), (96.0, 1122.5197, 793.70081))
 
   def test_cell_a(self):
     self.assertFalse(self.l.get_cell('a')['top'])
@@ -48,19 +48,20 @@ class TestLayoutMethods(unittest.TestCase):
     self.assertEqual(rs, ['a','b','a','c','d','c'])
 
   def test_sizeUu(self):
-    self.assertEqual(self.d.sizeUu, 12.7)
+    self.assertEqual(self.d.sizeUu, 48.0)
 
   def test_triangle(self):
     s = self.d.shape('a', 0, 0, self.l.get_cell('a'))
     self.assertTrue(type(s))
 
   def test_case_0(self):
-    model = '03-02d-soleares'
+    model = 'soleares'
     self.assertEqual(self.b.load_model(model)[0], ['a', 'b', 'a'])
 
   def test_case_1(self):
     with self.assertRaises(KeyError):
       self.b.make('fakemodel')  # expect ValueError
-
+  '''
+  '''
 if __name__ == '__main__':
   unittest.main()

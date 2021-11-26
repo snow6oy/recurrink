@@ -20,21 +20,26 @@ class Builder:
     }
     self.models = self.load_models()
 
+  def write_rink_file(self, model, data):
+    fn = f"models/{model}.rink"
+    with open(fn, "w") as outfile:
+      json.dump(data, outfile, indent=2)
+
   def make(self, model=None):
     ''' unpack the model(s) into a json database 
     '''
     if model and model in self.models: # for dry run
       # print(f"model {model} ok")
-      fn = f"./{model}.json"
       data = {}
       data[model] = {
         'id': self.models[model]['id'],
         'size': self.models[model]['size'],
         'cells': self.get_cells(model)
       }
+      self.write_rink_file(model, data)
+
     elif not model and len(self.models):
       # print(f"all models ok")
-      fn = "./recurrink.json"
       data = {}
       for m in self.models:
         data[m] = {
@@ -42,11 +47,10 @@ class Builder:
           'size': self.models[m]['size'],
           'cells': self.get_cells(m)
         }
+        self.write_rink_file(m, data[m])
+
     else:
       raise KeyError(f"no such model: {model}")
-
-    with open(fn, "w") as outfile:
-      json.dump(data, outfile, indent=2)
 
     return None
 
@@ -98,6 +102,8 @@ class Builder:
       elif ext == 'json':
         json_file = f"./models/{m}.json"
         models[m]['json'] = self.load_view(json_file)
+      elif ext == 'rink':
+        pass # leave for inkscape
       else:
         raise ValueError(f"Unknown config {ext}")
 
@@ -141,10 +147,10 @@ class Builder:
       '#ccc':'gray'
     '''
   def get_model_list(self):
-    html = str()
+    modelList = str()
     for m in self.models:
-      html += f"        <option value=\"{m}\">{m}</option>\n"
-    return html
+      modelList += f"{m}\n"
+    return modelList
 
   def get_digest(self, model, row):
     secret = b'model'
@@ -176,16 +182,16 @@ class Layout:
     self.yOffset = (self.height - (self.maxRows * self.size)) / numOfMargins # 36.85040500000002
 
   def add(self, model, db=None):
-    ''' load database of all models or use given db'''
+    ''' load database of named model or use given db'''
     if db is None:
-      json_file = './recurrink.json'
+      json_file = f"models/{model}.rink"
       with open(json_file) as f:
         db = json.load(f)
 
     if model in db:
       self.get = db[model]
     else:
-      raise ValueError("unknown model {model}")
+      raise ValueError(f"unknown model {model}")
     return self.get
 
   def get_cell(self, cell):
@@ -289,7 +295,7 @@ def usage():
   message = '''
 -m MODEL        name of model to build
 -a              build all models
--l	        model list in web format
+-l	        model list
 '''
   print(message)
 
