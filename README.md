@@ -80,3 +80,12 @@ The scores range from 8 (2 x 2 x 2 simplest) to 3,744 (12 x 12 x 26 is the most 
 | Input | Tool | Output |
 | ---   | ---  | --- |
 |RINK config | recurrink\_cli | model metadata|
+
+## Refactor
+26/11
+     328 configure.py
+     259 draw.py
+     153 recurrink.py
+      97 recurrink_input.py
+      66 test.py
+     903 total
