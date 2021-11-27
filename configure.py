@@ -31,7 +31,7 @@ class Builder:
     if model and model in self.models: # for dry run
       # print(f"model {model} ok")
       data = {}
-      data[model] = {
+      data = {
         'id': self.models[model]['id'],
         'size': self.models[model]['size'],
         'cells': self.get_cells(model)
@@ -187,11 +187,10 @@ class Layout:
       json_file = f"models/{model}.rink"
       with open(json_file) as f:
         db = json.load(f)
-
-    if model in db:
-      self.get = db[model]
-    else:
-      raise ValueError(f"unknown model {model}")
+    elif db:
+      self.get = db
+    else: 
+      raise ValueError(f"cannot find model {model}. db len is {len(db)}")
     return self.get
 
   def get_cell(self, cell):
