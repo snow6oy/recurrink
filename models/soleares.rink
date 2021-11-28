@@ -13,7 +13,7 @@
       "bg": "#ccc",
       "fill_opacity": 1.0,
       "stroke": "#000",
-      "stroke_width": 8,
+      "stroke_width": 1,
       "stroke_dasharray": 0,
       "stroke_opacity": 1.0,
       "top": false,

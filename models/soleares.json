@@ -1,7 +1,7 @@
 {
   "a": {
     "shape": "square",
-    "stroke_width": 8
+    "stroke_width": 1
   },
   "b": {
     "shape": "circle",

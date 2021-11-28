@@ -1,17 +1,58 @@
 # recurrink
-Inkscape extension to create recurring patterns
+An inkscape extension to create recurring patterns
 
 ## Introduction to Recurrink
 Blocks, Cells and Models make a recurrence.
-A recurrence is the final outcome. A digital pattern in SVG format.
 
-## Inputs and Outputs and Tools
+![block cell model](doc/classBlockModel.svg)
+
+- A model is a template made from repeating blocks
+- A block is a collection of cells, marked by the red box above
+- A cell is the smallest unit as shown in blue
+
+A recurrence is the final outcome. A model styled to create a digital pattern in SVG format.
+
+## Inputs, Outputs and Tools
 
 ### Inputs
-- CSV block
-- JSON styles
-- RINK config (JSON) 
-- SVG model 
+The following file types are used to produce a recurrence.
+
+1. SVG model  
+
+
+#### CSV
+The positon for each cell in the block is defined in the CSV file. See [soleares.csv](models/soleares.csv)
+```
+a b a
+c d c
+```
+#### JSON 
+Each model has shape and style defined using JSON. For example [soleares.json](models/soleares.json).
+```
+{
+  "a": {
+    "shape": "square",
+    "stroke_width": 1
+  },
+  "b": {
+    "shape": "circle",
+    "stroke_width": 0
+  },
+  "c": {
+    "shape": "line",
+    "stroke_width": 0
+  },
+  "d": {
+    "shape": "triangle",
+    "stroke_width": 0
+  }
+}
+```
+#### RINK
+The recurrink configuration file (JSON) combines information from both the first and second files. It is a build file used to simplify creation of the SVG model.
+
+#### SVG model
+The model created from the RINK config lays out the design in neutral colours. The SVG files must be manually saved with an SVG file extension. Once that is done, then we can get creative.
 
 ### Outputs
 - RINK config (JSON) 
@@ -19,12 +60,13 @@ A recurrence is the final outcome. A digital pattern in SVG format.
 - SVG recurrence
 
 ### Tools
-The following tools are used for the IO processes shown below. 
-- Inkex
-- recurrink\_input.py
-- recurrink\_effect.py
-- recurrink\_cli.py
+The following tools may be used, depending on which of the use-case shown below apply.
+
+- input.py
+- effect.py
+- configure.py
 - Text editor
+
 These may be run in either a UI (e.g. Inkscape) or CLI context, or both.
 
 ## Use cases and process
