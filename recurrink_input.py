@@ -6,6 +6,7 @@ import inkex
 from configure import Layout
 from draw import Draw
 from inkex import Group
+#from inkex.utils import addNS
 
 #from inkex.base import SvgOutputMixin
 #from inkex.elements import TextElement
@@ -65,12 +66,9 @@ class Input(inkex.InputExtension):
 
   def load(self, stream):
     ''' inkscape passes us a json file as a stream
-        self.options.input_file e.g. /home/gavin/recurrink/arpeggio.rink
+        self.options.input_file e.g. recurrink/models/arpeggio.rink
     '''
-    #size = 48 # cell dimension 
-    #width = 1122.5197  # px
-    #height = 793.70081
-    fn = re.findall(r"([^\/]*)\.", self.options.input_file)
+    fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
     doc = None
 
     if fn is None:
@@ -79,19 +77,26 @@ class Input(inkex.InputExtension):
       s = stream.read() # slurp the stream 
       data = json.loads(s) # create a json object
       # TODO check if scale has to be float() and pass it in once defined in INX
-      #scale = 1.0 if 'scale' not in self.options else self.options.scale
-      layout = Layout()
+      scale = 1.0 if 'scale' not in self.options else self.options.scale
+      layout = Layout(factor=float(scale))
       draw = Draw([layout.size, layout.width, layout.height])
       # prepare A4 document but with pixels for units
       doc = self.get_template(width=layout.width, height=layout.height, unit='px')
-      svg = doc.getroot()
-      svg.namedview.set('inkscape:document-units', 'px')
-      # generate the model from config
-      m = Model(fn[0], layout) # filename without ext 
+      svg = self.add_metadata(doc, data['id'], scale)
+      m = Model(fn[0], layout) 
       group, strokeWidth = m.make(data, svg)
-      layout.render(draw, group, strokeWidth)
+      layout.render(draw, group, strokeWidth) # generate the model from the rink file
 
     return doc
+
+  def add_metadata(self, doc, rinkId, factor):
+    ''' namspeces work when they feel like it so we avoid them like the plague
+    '''
+    svg = doc.getroot()
+    svg.namedview.set('inkscape:document-units', 'px')
+    svg.set('recurrink-id', rinkId)
+    svg.set('recurrink-factor', factor)
+    return svg
 
 if __name__ == '__main__':
   Input().run()
