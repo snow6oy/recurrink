@@ -2,7 +2,7 @@
 <inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
   <name>Recurrink Model Loader</name>
   <id>io.recurringart.input</id>
-  <dependency type="executable" location="extensions">recurrink_input.py</dependency>
+  <dependency type="executable" location="extensions">input.py</dependency>
   <label>Opening a recurrink file (*.rink)</label>
   <param name="scale" type="float" precision="1" min="0.5" max="2" gui-text="Scale in or out">1.0</param>
   <input>
@@ -11,6 +11,6 @@
     <filetypename>Recurrink (*.rink)</filetypename>
   </input>
   <script>
-    <command location="inx" interpreter="python">recurrink_input.py</command>
+    <command location="inx" interpreter="python">input.py</command>
   </script>
 </inkscape-extension>

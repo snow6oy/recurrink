@@ -6,7 +6,7 @@ from configure import Layout
 
 class Cells():
 
-  def __init__(self, options):
+  def __init__(self, options, factor=None):
     ''' rebuild selected cells according to user input 
     '''
     self.requested = {
@@ -17,11 +17,11 @@ class Cells():
       'stroke_width': int(options.width)
     }
     self.bg = options.bg
-    layout = Layout()  #  TODO how to remember factor=float(self.options.scale)) from input ??? 
+    layout = Layout(factor=float(factor))  #  TODO how to remember factor=float(self.options.scale)) from input ??? 
     self.draw = Draw([layout.size, layout.width, layout.height])
     self.layout = layout
 
-  def update(self, svg, layer):
+  def update(self, svg):
     ''' all the elems according to cell id
         for example f1-0-0 .. f1-360-360 '''
     message = None
@@ -88,14 +88,17 @@ class Recurrink(inkex.EffectExtension):
   def effect(self):  # effect because generate is a subset
     ''' check if svg is a recurrence and then apply inputs
     '''
-    self.version = 'v1'
-    if self.svg.selection:
-      c = Cells(self.options)
+    rinkId = self.svg.get('recurrink-id')
+    factor = self.svg.get('recurrink-factor')
+    if not rinkId:
+      inkex.errormsg("This extension only knows about SVGs created from a .rink file")
+    elif self.svg.selection:
+      c = Cells(self.options, factor)
       message = c.update(self.svg)
       if message:
-        self.msg(message)
+        inkex.errormsg(message)
     else:
-      self.msg("After opening up a model you have to select a cell for editing")
+      inkex.errormsg("After opening up a model you have to select a cell for editing")
 
 if __name__ == '__main__':
   Recurrink().run()
