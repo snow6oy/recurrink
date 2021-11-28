@@ -146,7 +146,7 @@
       ]
     },
     "k": {
-      "shape": "tnf",
+      "shape": "triangle",
       "shape_size": "medium",
       "shape_facing": "north",
       "fill": "#fff",

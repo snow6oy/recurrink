@@ -42,7 +42,7 @@
     "stroke_opacity": 1.0
   },
   "k": {
-    "shape": "tnf",
+    "shape": "triangle",
     "shape_facing":"north",
     "bg": "#000",
     "fill": "#fff",
