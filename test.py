@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
-'''
-export PYTHONPATH=/Applications/Inkscape.app/Contents/Resources/share/inkscape/extensions/
-this finds inkex.py but then fails due to missing lxml module
-lxml is in Inkscape's Python but how to set that context?
-'''
 
+import os
 import inkex
 import unittest
 from configure import Builder, Layout
 from draw import Draw
 
+BASEDIR="/Users/gajohnson/me/recurrink"
+# "/home/gavin/recurrink"
+
 class TestLayoutMethods(unittest.TestCase):
 
   def setUp(self):
+    os.chdir(BASEDIR)  # working dir 
     model = 'soleares'
-    svg = inkex.load_svg("/home/gavin/Dropbox/geek/SVG/recurrences/soleares.svg").getroot()
+    svg = inkex.load_svg("samples/soleares.svg").getroot()
     l = Layout()
     l.add(model)
     d = Draw([l.size, l.width, l.height])
@@ -26,7 +26,6 @@ class TestLayoutMethods(unittest.TestCase):
   def test_scale(self):
     l5 = Layout(factor=0.5)
     self.assertEqual((l5.size, l5.width, l5.height), (96.0, 1122.5197, 793.70081))
-
   def test_cell_a(self):
     self.assertFalse(self.l.get_cell('a')['top'])
 
@@ -62,6 +61,7 @@ class TestLayoutMethods(unittest.TestCase):
     with self.assertRaises(KeyError):
       self.b.make('fakemodel')  # expect ValueError
   '''
+    the end
   '''
 if __name__ == '__main__':
   unittest.main()

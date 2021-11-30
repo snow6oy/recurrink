@@ -1,3 +1,5 @@
 # local stuff
 doc/*
 *.swp
+
+__pycache__/*

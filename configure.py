@@ -187,6 +187,7 @@ class Layout:
       json_file = f"models/{model}.rink"
       with open(json_file) as f:
         db = json.load(f)
+      self.get = db
     elif db:
       self.get = db
     else: 

@@ -4,11 +4,10 @@ import inkex
 from draw import Draw
 from configure import Layout
 
-class Cells():
-
+class Cells(Layout):
+  ''' replace cells according to user input
+  '''
   def __init__(self, options, factor=None):
-    ''' rebuild selected cells according to user input 
-    '''
     self.requested = {
       'shape': options.shape,
       'shape_size': options.size,
@@ -16,23 +15,21 @@ class Cells():
       'top': options.top,
       'stroke_width': int(options.width)
     }
-    self.bg = options.bg
-    layout = Layout(factor=float(factor))  #  TODO how to remember factor=float(self.options.scale)) from input ??? 
-    self.draw = Draw([layout.size, layout.width, layout.height])
-    self.layout = layout
+    self.bg = options.bg 
+    super().__init__(factor=float(factor))
+    self.draw = Draw([self.size, self.width, self.height])
 
   def update(self, svg):
     ''' all the elems according to cell id
         for example f1-0-0 .. f1-360-360 '''
     message = None
     shapes = svg.selection.first() # assume that first in ElementList is <g />
-    thisId = shapes.get('id')
 
     if self.requested['shape'] == 'triangle' and self.requested['shape_size'] == 'large':
       message = 'Large triangles are not possible, ignoring this request.'
     elif shapes is not None:
       # update the background style, but only if we're given a new value
-      self.set_background(thisId, self.bg, svg) 
+      self.set_background(shapes, self.bg, svg) 
       self.set_foreground(shapes, self.requested)
       shapes.style['stroke-width'] = svg.unittouu(self.requested['stroke_width'])
       # add the top elems last
@@ -42,14 +39,14 @@ class Cells():
         svg.remove(group)
         svg.add(groupLast)
     else:
-      message = f"group id={thisId} not found"
+      message = "not found"
     return message
 
-  def set_background(self, thisId, givenFill, svg):
+  def set_background(self, shapes, givenFill, svg):
     ''' force the selection to a background cell
         because clickers can hit either
     '''
-    cell = thisId[0]
+    cell = shapes.get('id')[0]
     bgElem = svg.getElementById(f"{cell}0")
     # TODO check that #FFF #ffffff etc are consistent
     if bgElem.style['fill'] != givenFill:  # background needs to change
@@ -63,7 +60,7 @@ class Cells():
       if len(idItems) == 3:
         (gid, xBlocknum, yBlocknum) = idItems 
         # calculate coordinates based on blocknums
-        (x, y) = self.layout.blocknum_to_uu(int(xBlocknum), int(yBlocknum))
+        (x, y) = self.blocknum_to_uu(int(xBlocknum), int(yBlocknum))
       else:
         raise ValueError(f"Unexpected format id={idItems}")
       message += f"id {gid[0]} {x} {y}\n"
@@ -93,6 +90,7 @@ class Recurrink(inkex.EffectExtension):
     if not rinkId:
       inkex.errormsg("This extension only knows about SVGs created from a .rink file")
     elif self.svg.selection:
+      # c = Cells(self.options, factor)
       c = Cells(self.options, factor)
       message = c.update(self.svg)
       if message:
