@@ -2,32 +2,34 @@
 An inkscape extension to create recurring patterns
 
 ## Introduction to Recurrink
-Blocks, Cells and Models make a recurrence.
+Blocks, Cells and Models make a recurrink.
 
-![block cell model](doc/classBlockModel.svg)
+![block cell model](./tutorial/classBlockModel.svg)
 
 - A model is a template made from repeating blocks
 - A block is a collection of cells, marked by the red box above
 - A cell is the smallest unit as shown in blue
 
-A recurrence is the final outcome. A model styled to create a digital pattern in SVG format.
+A recurrink is the final outcome. A model styled to create a digital pattern in SVG format.
+
+![soleares](./tutorial/soleares.svg)
+
+_source file [soleares.svg](./samples/soleares.svg)_
 
 ## Inputs, Outputs and Tools
 
 ### Inputs
-The following file types are used to produce a recurrence.
+The following file types are used to produce a recurrink.
 
-1. SVG model  
-
-
-#### CSV
-The positon for each cell in the block is defined in the CSV file. See [soleares.csv](models/soleares.csv)
+#### block CSV
+The positon for each cell in the block is defined in the CSV file. 
 ```
 a b a
 c d c
 ```
-#### JSON 
-Each model has shape and style defined using JSON. For example [soleares.json](models/soleares.json).
+_source file [soleares.csv](models/soleares.csv)_
+#### cell JSON 
+Each cell also has a shape and style defined using JSON. 
 ```
 {
   "a": {
@@ -48,26 +50,31 @@ Each model has shape and style defined using JSON. For example [soleares.json](m
   }
 }
 ```
-#### RINK
-The recurrink configuration file (JSON) combines information from both the first and second files. It is a build file used to simplify creation of the SVG model.
+_source file [soleares.json](models/soleares.json)_.
+#### rink JSON
+The recurrink configuration file (JSON) combines information from both the first and second files. It is a build file used to simplify creation of the model SVG.
 
 #### SVG model
-The model created from the RINK config lays out the design in neutral colours. The SVG files must be manually saved with an SVG file extension. Once that is done, then we can get creative.
+The model created from the RINK config lays out the design in neutral colours. Once opened, a RINK file must be manually saved using the `.svg` file extension. Once that is done, then we can get creative :gift:.
 
 ### Outputs
-- RINK config (JSON) 
-- SVG model 
-- SVG recurrence
+From these inputs the following output files can be generated
+- rink JSON 
+- model SVG
+- recurrink SVG
 
 ### Tools
-The following tools may be used, depending on which of the use-case shown below apply.
+The processing is mostly done using these tools.
 
-- input.py
-- effect.py
-- configure.py
-- Text editor
+- Inkscape
+- Recurrink Input
+- Recurrink Effect
+- Recurrink CLI
 
-These may be run in either a UI (e.g. Inkscape) or CLI context, or both.
+A text editor is needed to create the `block.csv` and `cells.json` files. 
+
+![life cycle](./tutorial/lifeCycle.svg)
+
 
 ## Use cases and process
 ### UC1 Get to know recurrink by example
@@ -122,12 +129,3 @@ The scores range from 8 (2 x 2 x 2 simplest) to 3,744 (12 x 12 x 26 is the most 
 | Input | Tool | Output |
 | ---   | ---  | --- |
 |RINK config | recurrink\_cli | model metadata|
-
-## Refactor
-26/11
-     328 configure.py
-     259 draw.py
-     153 recurrink.py
-      97 recurrink_input.py
-      66 test.py
-     903 total
