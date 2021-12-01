@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="180.20999mm"
-   height="125.77168mm"
-   viewBox="0 0 180.21 125.77167"
+   width="170.32103mm"
+   height="101.92587mm"
+   viewBox="0 0 170.32104 101.92586"
    version="1.1"
    id="svg11592"
    inkscape:version="1.1.1 (c3084ef, 2021-09-22)"
@@ -21,12 +21,12 @@
      borderopacity="1.0"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
+     inkscape:pagecheckerboard="true"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="1.4059997"
-     inkscape:cx="31.650078"
-     inkscape:cy="251.42253"
+     inkscape:zoom="0.99419192"
+     inkscape:cx="336.95707"
+     inkscape:cy="153.39091"
      inkscape:window-width="1506"
      inkscape:window-height="969"
      inkscape:window-x="142"
@@ -159,7 +159,14 @@
      id="layer5"
      inkscape:label="Tutorial"
      style="display:inline"
-     sodipodi:insensitive="true">
+     transform="translate(-12.109644,-25.682225)">
+    <rect
+       style="fill:#ffffff;stroke:#b3b3b3;stroke-width:0.264583;stroke-dasharray:0.529167, 0.529167"
+       id="rect3016"
+       width="170.05644"
+       height="101.66129"
+       x="12.241936"
+       y="25.814516" />
     <rect
        style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0.264583;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect33681"

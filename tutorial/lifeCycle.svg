@@ -114,12 +114,12 @@
      borderopacity="1.0"
      inkscape:pageshadow="2"
      inkscape:pageopacity="1"
-     inkscape:pagecheckerboard="0"
+     inkscape:pagecheckerboard="true"
      showgrid="false"
      inkscape:snap-global="false"
-     inkscape:zoom="1.8872649"
-     inkscape:cx="194.46131"
-     inkscape:cy="177.77049"
+     inkscape:zoom="1.3344978"
+     inkscape:cx="194.0805"
+     inkscape:cy="177.96957"
      inkscape:window-width="1792"
      inkscape:window-height="995"
      inkscape:window-x="0"
@@ -136,6 +136,13 @@
        originx="141.21454"
        originy="56.346305" />
   </sodipodi:namedview>
+  <rect
+     style="fill:#fff6d5;stroke:#b3b3b3;stroke-dasharray:2, 2"
+     id="rect1204"
+     width="547.77161"
+     height="323.71729"
+     x="-2.9973822"
+     y="-5.9947643" />
   <path
      style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
      d="M 62.940279,214.21729 82.044192,150.81234"
@@ -260,7 +267,7 @@
      transform="translate(243.00214,117.93822)"><tspan
        x="182.83984"
        y="60.195702"
-       id="tspan947">recurrink SVG</tspan></text>
+       id="tspan1361">recurrink SVG</tspan></text>
   <text
      xml:space="preserve"
      id="text3141"
@@ -268,7 +275,7 @@
      transform="translate(45.228918,-9.1614391)"><tspan
        x="44.210938"
        y="100.66055"
-       id="tspan949">model SVG</tspan></text>
+       id="tspan1363">model SVG</tspan></text>
   <text
      xml:space="preserve"
      id="text3799"
@@ -276,7 +283,7 @@
      transform="translate(-41.14942,69.487897)"><tspan
        x="64.818359"
        y="158.73476"
-       id="tspan951">rink JSON</tspan></text>
+       id="tspan1365">rink JSON</tspan></text>
   <text
      xml:space="preserve"
      id="text4399"
@@ -284,7 +291,7 @@
      transform="translate(124.93799,163.51336)"><tspan
        x="209.44141"
        y="128.38711"
-       id="tspan953">block CSV</tspan></text>
+       id="tspan1367">block CSV</tspan></text>
   <text
      xml:space="preserve"
      id="text5145"
@@ -292,7 +299,7 @@
      transform="translate(138.59507,69.726836)"><tspan
        x="192.20703"
        y="178.96719"
-       id="tspan955">cells JSON</tspan></text>
+       id="tspan1369">cells JSON</tspan></text>
   <text
      xml:space="preserve"
      id="text6111"
@@ -300,7 +307,7 @@
      transform="translate(92.59507,21.726836)"><tspan
        x="113.90039"
        y="26.587519"
-       id="tspan957">Inkscape</tspan></text>
+       id="tspan1371">Inkscape</tspan></text>
   <text
      xml:space="preserve"
      style="font-size:16px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';white-space:pre"
