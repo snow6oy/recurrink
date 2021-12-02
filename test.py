@@ -4,8 +4,8 @@
 import os
 import inkex
 import unittest
-from configure import Builder, Layout
-from draw import Draw
+from configure import Builder
+from layout import Layout
 
 BASEDIR="/Users/gajohnson/me/recurrink"
 # "/home/gavin/recurrink"
@@ -18,14 +18,13 @@ class TestLayoutMethods(unittest.TestCase):
     svg = inkex.load_svg("samples/soleares.svg").getroot()
     l = Layout()
     l.add(model)
-    d = Draw([l.size, l.width, l.height])
-    self.d = d
     self.l = l
     self.b = Builder()
   
   def test_scale(self):
     l5 = Layout(factor=0.5)
     self.assertEqual((l5.size, l5.width, l5.height), (96.0, 1122.5197, 793.70081))
+
   def test_cell_a(self):
     self.assertFalse(self.l.get_cell('a')['top'])
 
@@ -47,10 +46,10 @@ class TestLayoutMethods(unittest.TestCase):
     self.assertEqual(rs, ['a','b','a','c','d','c'])
 
   def test_sizeUu(self):
-    self.assertEqual(self.d.sizeUu, 48.0)
+    self.assertEqual(self.l.sizeUu, 48.0)
 
   def test_triangle(self):
-    s = self.d.shape('a', 0, 0, self.l.get_cell('a'))
+    s = self.l.shape('a', 0, 0, self.l.get_cell('a'))
     self.assertTrue(type(s))
 
   def test_case_0(self):

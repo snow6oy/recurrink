@@ -3,9 +3,8 @@
 import re
 import json
 import inkex
-from configure import Layout
-from draw import Draw
 from inkex import Group
+from recurrink import Layout
 
 class Model(Layout):
 
@@ -55,7 +54,6 @@ class Model(Layout):
 class Input(inkex.InputExtension):
   ''' create a model SVG from a config file
   '''
-
   # TODO add portrait as input options
   def add_arguments(self, pars):
     pars.add_argument("--scale",  default=1.0, help="Scale in or out (0.5 - 2.0)")
@@ -72,15 +70,13 @@ class Input(inkex.InputExtension):
     else:
       s = stream.read() # slurp the stream 
       data = json.loads(s) # create a json object
-      # TODO check if scale has to be float() and pass it in once defined in INX
       scale = 1.0 if 'scale' not in self.options else self.options.scale
       m = Model(fn[0], factor=float(scale))
-      draw = Draw([m.size, m.width, m.height])
       # prepare A4 document but with pixels for units
       doc = self.get_template(width=m.width, height=m.height, unit='px')
       svg = self.add_metadata(doc, data['id'], scale)
       group, strokeWidth = m.make(data, svg)
-      m.render(draw, group, strokeWidth) # generate the model from the rink file
+      m.render(group, strokeWidth) # generate the model from the rink file
 
     return doc
 

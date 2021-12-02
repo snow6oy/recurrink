@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf-8
 import inkex
-from draw import Draw
-from configure import Layout
+from recurrink import Layout
 
 class Cells(Layout):
   ''' replace cells according to user input
@@ -17,7 +16,6 @@ class Cells(Layout):
     }
     self.bg = options.bg 
     super().__init__(factor=float(factor))
-    self.draw = Draw([self.size, self.width, self.height])
 
   def update(self, svg):
     ''' all the elems according to cell id
@@ -64,15 +62,16 @@ class Cells(Layout):
       else:
         raise ValueError(f"Unexpected format id={idItems}")
       message += f"id {gid[0]} {x} {y}\n"
-      newShape = self.draw.shape(gid[0], float(x), float(y), requested)
+      newShape = self.shape(gid[0], float(x), float(y), requested)
       elem.replace_with(newShape)
       # set id after replacement to avoid collisions
       elem.set_id(f"{gid}-{x}-{y}")
     #return message
     return None
 
-class Recurrink(inkex.EffectExtension):
-  ''' draw recurring patterns using inkscape '''
+class Effect(inkex.EffectExtension):
+  ''' update cells imported as rink JSON
+  '''
   def add_arguments(self, pars):
     pars.add_argument("--tab",    type=str, dest="tab")
     pars.add_argument("--shape",  default='square', help="Replace one shape with another")
@@ -99,4 +98,4 @@ class Recurrink(inkex.EffectExtension):
       inkex.errormsg("After opening up a model you have to select a cell for editing")
 
 if __name__ == '__main__':
-  Recurrink().run()
+  Effect().run()
