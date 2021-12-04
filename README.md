@@ -25,7 +25,7 @@ _source file [soleares.svg](./samples/soleares.svg)_
 
 - Now you need to add the code from this repository in a New Folder called `recurrink`. Use either of the following methods.
 1. Pulldown the `Code` menu above and choose `Download ZIP` and save there OR
-1. Open a command line, navigate there and clone the repo
+1. Open a command line, navigate there and clone the repo by typing:
 ```
 git clone git@github.com-snow6oy:snow6oy/recurrink.git
 ```
@@ -37,12 +37,15 @@ recurrink
 ├── effect.py
 ├── input.inx
 ├── input.py
-├── models/
 ├── recurrink.py
-├── samples/
 ├── test.py
+├── models/
+├── samples/
 └── tutorial/
 ```
+#### Further help
+- [Install Inkscape](https://inkscape.org/release/inkscape-1.1.1/) most recent version 1.1.1
+- [Read about Inkscape Extensions](https://inkscape.org/gallery/=extension/) and visit the gallery.
 
 ## Inputs, Outputs and Tools
 
@@ -83,23 +86,16 @@ _source file [soleares.json](models/soleares.json)_.
 The recurrink program uses a JSON configuration file named `MODEL_NAME.rink`. This file combines information from both the CSV and JSON file. It is a build file used to simplify creation of the model SVG.
 
 #### SVG model
-The model created from the RINK config lays out the design in neutral colours. Once opened, a RINK file must be manually saved using the `.svg` file extension. Once that is done, then we can get creative :gift:.
+The model created from the RINK config lays out the design in neutral colours. Once opened, a RINK file must be manually saved using the `.svg` file extension. Once that is done, then we can get creative :art:.
 
-### Outputs
-From these inputs the following output files can be generated
-- rink JSON is an intermediate format used to generate a model
-- model SVG is a template that outlines the design
-- recurrink SVG is what you show your friends!
+### Outputs and Tools
+From these inputs there are three output files that can be generated. The processing is mostly done using the following:
 
-### Tools
-The processing is mostly done using these tools.
+- _Recurrink CLI_ is used to make (or update) RINK files
+- _Recurrink Input_ script converts a RINK file into a model SVG
+- Inkscape and the _Recurrink Effect_ script generate the recurrink SVG, i.e. what you show your friends!
 
-- Recurrink CLI
-- Recurrink Input
-- Inkscape
-- Recurrink Effect
-
-A text editor is needed to create the `block.csv` and `cells.json` files. The following diagram shows the life-cycle.
+Additionally a text editor is needed to create the `block.csv` and `cells.json` files. The following diagram shows the whole life-cycle.
 
 ![life cycle](./tutorial/lifeCycle.svg)
 
@@ -112,11 +108,12 @@ In the next section we break down the steps according to the use-case.
 | ---   | ---  | --- |
 |SVG model | Inkscape | SVG recurrence|
 
-1. Using Inscape `File > Open`
+1. Using Inkscape `File > Open`
 1. Navigate to the Extensions folder (see Installation)
-1. Open `recurrink / samples` and make a selection
-1. Use `Save As` to create `My Recurrink.svg` in your folder of choice
-1. Add Fills and Strokes according to inspiration.
+1. Open `recurrink / samples` and a select a model - you should see a grey A4 sized pattern
+1. Use `Save As` and put `MyFirstRecurrink.svg` :framed_picture: in your folder of choice 
+1. Now add colour using Inkscape tools such as `Fill and Stroke`.
+
 
 ### UC2 Update shapes in a model
 
@@ -124,11 +121,22 @@ In the next section we break down the steps according to the use-case.
 | ---   | ---  | --- |
 | SVG model | Inkscape + effect | SVG recurrence|
 
+Follow the steps in UC1 but after step #5 do this
+
+6. Using Inkscape `Extensions > Arrange > Recurrink...` - you should see a dialog window appear.
+7. Select a cell for editing
+8. Using the dialog, edit the cells. For example change a shape from Square to Circle.
+9. Hit `Apply`
+
 ### UC3 Create a new model from existing config
 
 | Input | Tool | Output |
 | ---   | ---  | --- |
 |RINK config | Inkscape + input | SVG model|
+
+Follow the steps in UC1 but instead of step #3 do this.
+
+3. Open `recurrink / models` and a select a RINK file - you should see a grey A4 sized pattern
 
 ### UC4 Create a RINK config from existing sources
 
@@ -136,12 +144,31 @@ In the next section we break down the steps according to the use-case.
 | ---   | ---  | --- |
 |CSV + JSON | recurrink\_cli | RINK config|
 
+This use-case is mainly for when you screw-up and overwrite a RINK file as an SVG :stuck_out_tongue:
+```
+> ./recurrink.py -m MODEL
+```
+This command will re-create from CSV and JSON sources.
+
 ### UC5 Create a new configuration using CLI
-Although there are no hard inputs you can clone existing sources to use as a starting point.
 
 | Tool | Output |
 | ---  | --- |
 |Text editor | CSV + JSON|
+
+For this use-case we need to use a Text Editor and the command line. Probably easiest to start out by cloning one of the simpler models, e.g. soleares. 
+
+1. Open your `newModel.csv` and layout the cells using `[a-z]` to position each cell.
+1. Open your `newModel.json` and for each cell in the model create at least a shape definition.
+1. To compile these sources run the above command and then ..
+
+```
+> ./recurrink.py -l
+```
+This just to check that `newModel` appears in the list :+1:
+
+## The next three use-cases are still in development!
+please be patient :blush:
 
 ### UC6 Automate new models from existing config
 This is another way to do UC3 but at the command-line instead of the Inkscape UI.
