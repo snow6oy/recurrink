@@ -99,10 +99,12 @@ Additionally a text editor is needed to create the `block.csv` and `cells.json` 
 
 ![life cycle](./tutorial/lifeCycle.svg)
 
-In the next section we break down the steps according to the use-case.
+Now you have the background, here are some step-by-step instructions to making your first recurrink.
 
 ## Use cases and process
 ### UC1 Get to know recurrink by example
+
+*If in doubt start here!*
 
 | Input | Tool | Output |
 | ---   | ---  | --- |
@@ -152,7 +154,6 @@ This command will re-create from CSV and JSON sources.
 
 ### UC5 Create a new configuration using CLI
 
-*If in doubt start here!*
 
 | Tool | Output |
 | ---  | --- |
