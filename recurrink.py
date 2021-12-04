@@ -5,7 +5,7 @@
 
 import inkex
 from inkex import Group, Circle, Rectangle, Polygon, TextElement
-import getopt, sys, csv, os, pprint, hmac, json, math
+import getopt, sys, csv, os, hmac, json, math
 
 class Draw:
   ''' use viewer to do the maths to render a cell
@@ -484,7 +484,6 @@ if __name__ == '__main__':
   ''' recurrink cli
   '''
   (model, all_models, list_only) = main()
-  pp = pprint.PrettyPrinter(indent=1)
   if (model or all_models):
     b = Builder()
     b.make(model)
