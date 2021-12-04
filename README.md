@@ -152,6 +152,8 @@ This command will re-create from CSV and JSON sources.
 
 ### UC5 Create a new configuration using CLI
 
+*If in doubt start here!*
+
 | Tool | Output |
 | ---  | --- |
 |Text editor | CSV + JSON|
