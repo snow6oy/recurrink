@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
-#!/usr/bin/env python3
-
 import inkex
 from inkex import Group, Circle, Rectangle, Polygon, TextElement
 import getopt, sys, csv, os, hmac, json, math
@@ -430,10 +428,25 @@ class Builder:
       '#fff':'white',
       '#ccc':'gray'
     '''
-  def get_model_list(self):
+  def _get_model_list(self):
     modelList = str()
     for m in self.models:
       modelList += f"{m}\n"
+    return modelList
+
+  def get_model_list(self):
+    modelList = str()
+    ranked = dict()
+    for m in self.models:
+      numCells = len(self.models[m]['json'].keys())
+      blockWidth = self.models[m]['size'][0]
+      blockHeight = self.models[m]['size'][1]
+      rank = (numCells * blockWidth * blockHeight)
+      ranked[m] = rank
+    # sort according to rank
+    sortRank = {k: v for k, v in sorted(ranked.items(), key=lambda item: item[1])}
+    for m in sortRank:
+      modelList += f"{sortRank[m]:{4}} {m}\n"
     return modelList
 
   def get_digest(self, model, row):
@@ -448,7 +461,7 @@ def usage():
   message = '''
 -m MODEL        name of model to build
 -a              build all models
--l	        model list
+-l	        list models, simplest first
 '''
   print(message)
 

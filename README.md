@@ -171,12 +171,21 @@ For this use-case we need to use a Text Editor and the command line. Probably ea
 ```
 > ./recurrink.py -l
 ```
-This just to check that `newModel` appears in the list :+1:
+This check that `newModel` appears in the list and satisfies the next use-case :+1:
 
-## The next three use-cases are still in development!
+### UC6 Choose model by using a complexity score
+
+| Input | Tool | Output |
+| ---   | ---  | --- |
+|RINK config | recurrink\_cli | model metadata|
+
+A complexity score is calculated using the formula `rows x cols x uniqCells`.
+The scores range from 8 (2 x 2 x 2 simplest) to 6,048 (the most complex done so far). The listing from use-case 5 displays the scores.
+
+## The next two use-cases are still in development!
 please be patient :blush:
 
-### UC6 Automate new models from existing config
+### UC7 Automate new models from existing config
 This is another way to do UC3 but at the command-line instead of the Inkscape UI.
 
 | Input | Tool | Output |
@@ -190,10 +199,3 @@ This has the same outcome as UC2 but using a CLI. Useful for testing during soft
 | ---   | ---  | --- |
 |SVG model | CLI + effect | SVG recurrence|
 
-### UC9 Choose model by using a complexity score
-A complexity score is calculated using the formula `rows x cols x uniqCells`.
-The scores range from 8 (2 x 2 x 2 simplest) to 3,744 (12 x 12 x 26 is the most complex done so far).
-
-| Input | Tool | Output |
-| ---   | ---  | --- |
-|RINK config | recurrink\_cli | model metadata|
