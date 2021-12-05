@@ -32,7 +32,8 @@ class Cells(Layout):
       shapes.style['stroke-width'] = svg.unittouu(self.requested['stroke_width'])
       # add the top elems last
       if self.requested['top']:
-        group = svg.getElementById(thisId)
+        cell = shapes.get('id')[0]
+        group = svg.getElementById(f"{cell}1")
         groupLast = group
         svg.remove(group)
         svg.add(groupLast)
