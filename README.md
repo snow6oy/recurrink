@@ -19,16 +19,14 @@ _source file [soleares.svg](./samples/soleares.svg)_
 
 ## Installation
 
-- Open Inscape Preferences and check your extensions folder. For example
+- Open Inscape Preferences and check your extensions folder. For example on my mac it shows:
 
 ![preferences](./tutorial/preferences.svg)
 
-- Now you need to add the code from this repository in a New Folder called `recurrink`. Use either of the following methods.
-1. Pulldown the `Code` menu above and choose `Download ZIP` and save there OR
-1. Open a command line, navigate there and clone the repo by typing:
-```
-git clone git@github.com-snow6oy:snow6oy/recurrink.git
-```
+- Now you need to add the code from this repository in a New Folder called `recurrink`. The most straight forward method is to 
+1. Pulldown the `Code` menu above and choose `Download ZIP` and save locally
+1. Then navigate to the extensions folder and unpack the zip archive.
+
 You should end up with a structure that looks something like this.
 ```
 recurrink
@@ -43,9 +41,14 @@ recurrink
 ├── samples/
 └── tutorial/
 ```
+Inkscape will detect the new extension after the next restart. You can check from Inkscape by selecting `Extensions > Arrange > Recurrink..`. This dialogue should pop-up.
+
+![dialogue](./tutorial/dialogue.svg)
+
 #### Further help
-- [Install Inkscape](https://inkscape.org/release/inkscape-1.1.1/) most recent version 1.1.1
+- [Install Inkscape](https://inkscape.org/release/inkscape-1.1.1/) version 1.1.1 as used by this extension.
 - [Read about Inkscape Extensions](https://inkscape.org/gallery/=extension/) and visit the gallery.
+- [Post on the Inkscape Extension Forum](https://inkscape.org/forums/extensions/)
 
 ## Inputs, Outputs and Tools
 
