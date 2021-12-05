@@ -22,12 +22,16 @@ class Cells(Layout):
         for example f1-0-0 .. f1-360-360 '''
     message = None
     shapes = svg.selection.first() # assume that first in ElementList is <g />
+    (gid, paintOrder) = list(shapes.get('id')) # 0 = bg, 1 = fg
+    inkex.errormsg(f"gid {gid} po {paintOrder}")
+    if paintOrder == '0': # the selection is a background cell !!
+      shapes = svg.getElementById(f"{gid}1")
 
     if self.requested['shape'] == 'triangle' and self.requested['shape_size'] == 'large':
       message = 'Large triangles are not possible, ignoring this request.'
     elif shapes is not None:
       # update the background style, but only if we're given a new value
-      self.set_background(shapes, self.bg, svg) 
+      self.set_background(gid, self.bg, svg) 
       self.set_foreground(shapes, self.requested)
       shapes.style['stroke-width'] = svg.unittouu(self.requested['stroke_width'])
       # add the top elems last
@@ -41,12 +45,8 @@ class Cells(Layout):
       message = "not found"
     return message
 
-  def set_background(self, shapes, givenFill, svg):
-    ''' force the selection to a background cell
-        because clickers can hit either
-    '''
-    cell = shapes.get('id')[0]
-    bgElem = svg.getElementById(f"{cell}0")
+  def set_background(self, gid, givenFill, svg):
+    bgElem = svg.getElementById(f"{gid}0")
     # TODO check that #FFF #ffffff etc are consistent
     if bgElem.style['fill'] != givenFill:  # background needs to change
       bgElem.set('style', f"fill:{givenFill}")
@@ -60,14 +60,15 @@ class Cells(Layout):
         (gid, xBlocknum, yBlocknum) = idItems 
         # calculate coordinates based on blocknums
         (x, y) = self.blocknum_to_uu(int(xBlocknum), int(yBlocknum))
+        fgid = f"{gid[0]}1"  # force to be a foreground ID
       else:
         raise ValueError(f"Unexpected format id={idItems}")
-      message += f"id {gid[0]} {x} {y}\n"
-      newShape = self.shape(gid[0], float(x), float(y), requested)
+      message += f"fgid {fgid} gid {gid}\n"
+      newShape = self.shape(fgid, float(x), float(y), requested)
       elem.replace_with(newShape)
       # set id after replacement to avoid collisions
-      elem.set_id(f"{gid}-{x}-{y}")
-    #return message
+      elem.set_id(f"{fgid}-{x}-{y}")
+    inkex.errormsg(message)
     return None
 
 class Effect(inkex.EffectExtension):
