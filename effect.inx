@@ -44,7 +44,7 @@
 Stylistic changes can be done using Inkscape tools such as Fill and Stroke.</label>
     </page>
   </param>
-  <dependency type="executable" location="extensions">effect.py</dependency>
+  <dependency type="executable" location="extensions">recurrink/effect.py</dependency>
   <effect needs-live-preview="false">
     <object-type>all</object-type>
     <effects-menu>
@@ -52,6 +52,6 @@ Stylistic changes can be done using Inkscape tools such as Fill and Stroke.</lab
     </effects-menu>
   </effect>
   <script>
-    <command location="inx" interpreter="python">effect.py</command>
+    <command location="inx" interpreter="python">recurrink/effect.py</command>
   </script>
 </inkscape-extension>

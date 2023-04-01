@@ -1,5 +1,7 @@
 # local stuff
 doc/*
 *.swp
+.DS_Store
+*.svg
 
 __pycache__/*
