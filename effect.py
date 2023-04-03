@@ -19,12 +19,18 @@ class Cells(Layout):
 
   def update(self, svg):
     ''' all the elems according to cell id
+        input id is 'f1' where f is cell name and 1 is foreground
         for example f1-0-0 .. f1-360-360 '''
     message = None
     shapes = svg.selection.first() # assume that first in ElementList is <g />
-    (gid, paintOrder) = list(shapes.get('id')) # 0 = bg, 1 = fg
-    inkex.errormsg(f"gid {gid} po {paintOrder}")
-    if paintOrder == '0': # the selection is a background cell !!
+    shapes_by_id = list(shapes.get('id')) 
+    if len(shapes_by_id) == 2:
+      (gid, paintOrder) = shapes_by_id
+      # inkex.errormsg(f"gid {gid} po {paintOrder}")
+    else:
+      return f"unexpected length {shapes_by_id} id format is a1"
+
+    if paintOrder == '0': # the selection is a background cell we will assume it was a mis-click
       shapes = svg.getElementById(f"{gid}1")
 
     if self.requested['shape'] == 'triangle' and self.requested['shape_size'] == 'large':
@@ -46,9 +52,12 @@ class Cells(Layout):
     return message
 
   def set_background(self, gid, givenFill, svg):
+    ''' background will be changed when it is different from what is given
+        unless we are not given anything 
+    '''
     bgElem = svg.getElementById(f"{gid}0")
     # TODO check that #FFF #ffffff etc are consistent
-    if bgElem.style['fill'] != givenFill:  # background needs to change
+    if givenFill and bgElem.style['fill'] != givenFill:  
       bgElem.set('style', f"fill:{givenFill}")
 
   def set_foreground(self, shapes, requested):
@@ -63,7 +72,7 @@ class Cells(Layout):
         fgid = f"{gid[0]}1"  # force to be a foreground ID
       else:
         raise ValueError(f"Unexpected format id={idItems}")
-      message += f"fgid {fgid} gid {gid}\n"
+      #message += f"fgid {fgid} gid {gid}\n"
       newShape = self.shape(fgid, float(x), float(y), requested)
       elem.replace_with(newShape)
       # set id after replacement to avoid collisions

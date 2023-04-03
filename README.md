@@ -104,6 +104,23 @@ Additionally a text editor is needed to create the `block.csv` and `cells.json` 
 
 Now you have the background, here are some step-by-step instructions to making your first recurrink.
 
+### Recurrink CLI
+Example build of models/\*.rink
+```
+ ./recurrink.py
+
+-m MODEL        name of model to build
+-a              build all models
+-l              list models, simplest first
+```
+
+### Recurrink Input
+Convert a RINK file to SVG
+```
+./input.py models/soleares.rink >soleares.svg
+```
+
+
 ## Use cases and process
 ### UC1 Get to know recurrink by example
 
