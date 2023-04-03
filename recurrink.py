@@ -402,6 +402,15 @@ class Builder:
       data = list(reader)
     return data
 
+  def list_cells(self, model):
+    ''' send mondrian the robot a list of uniq cells``
+    '''
+    seen = dict()
+    for row in self.load_model(model):
+      for cell in row:
+        seen[cell] = seen[cell] + 1 if cell in seen else 0
+    return ' '.join(seen.keys())
+
   def load_view(self, json_file):
     #print("load view  " + json_file)
     with open(json_file) as f:
@@ -459,8 +468,9 @@ class Builder:
 ###############################################################################
 def usage():
   message = '''
--m MODEL        name of model to build
--a              build all models
+-m MODEL        generate a rink file for named model
+-c MODEL        list cells in named model
+-a              build all rink files
 -l	        list models, simplest first
 '''
   print(message)
@@ -470,7 +480,7 @@ def main():
   get inputs from command line
   '''
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "hm:al", ["help", "model="])
+    opts, args = getopt.getopt(sys.argv[1:], "hm:c:al", ["help", "model="])
   except getopt.GetoptError as err:
     print(err)  # will print something like "option -a not recognized"
     usage()
@@ -478,6 +488,7 @@ def main():
   model = None
   all_models = False
   list_only = False
+  list_cells = False
   for o, a in opts:
     if o == "-a":
       all_models = True
@@ -488,16 +499,22 @@ def main():
       sys.exit()
     elif o in ("-m", "--model"):
       model = a
+    elif o in ("-c", "--model"):
+      list_cells = True
+      model = a
     else:
       assert False, "unhandled option"
     # ...
-  return (model, all_models, list_only)
+  return (model, all_models, list_only, list_cells)
 
 if __name__ == '__main__':
   ''' recurrink cli
   '''
-  (model, all_models, list_only) = main()
-  if (model or all_models):
+  (model, all_models, list_only, list_cells) = main()
+  if (list_cells):
+    b = Builder()
+    print(b.list_cells(model))
+  elif (model or all_models):
     b = Builder()
     b.make(model)
   elif (list_only):
