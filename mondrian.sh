@@ -1,16 +1,21 @@
 #!/bin/bash
 
 # use randmoness to generate a recurrink
-# occasionally sneak in a curated recurrink
-# post on social media and measure popularity
+# then later ..
+# post on social media and measure popularity (occasionally sneak in a curated recurrink?)
 # use ranking to improve RANDOM
 
 model=$1
-cell=$2
-
-if [[ $# -lt 2 ]]
+if [ ! -f "./${model}.svg" ]
 then
-  echo "usage $0 model cell"
+  echo "File not found!"
+  exit 1
+fi
+
+cells=$(./recurrink.py -c ${model})
+if [ -z "$cells" ]
+then
+  echo "cannot find cells for ${model}"
   exit 1
 fi
 
@@ -21,7 +26,7 @@ fi
 #  --scale SCALE    Scale in or out (0.5 - 2.0)  factor [0.5, 1.0, 2.0]
 #  z.rink
 
-# TOD these are supposed to be updated interactively :(
+# TODO these are supposed to be updated interactively :(
 # 'fill': '#fff',
 # 'fill_opacity':1.0,
 # 'stroke':'#000',
@@ -74,37 +79,29 @@ background_colour() {
 }
 
 # update cell attributes
+for cell in ${cells}
+do
+  # default 'stroke_width': 0
+  get_random_index 10
+  width=$?
 
-# default 'stroke_width': 0
-get_random_index 10
-width=$?
+  # pretend to pass arg in order to fool the syntax highlighter
+  shapes 1
+  shape_facing 1
+  shape_size  1
+  top_boolean 1
+  background_colour 1
 
-# pretend to pass arg in order to fool the syntax highlighter
-shapes 1
-shape_facing 1
-shape_size  1
-top_boolean 1
-background_colour 1
-
-# update cells
-
-echo "
-./effect.py
-  --id ${cell}1
-  --output ${model}.svg
-  --shape ${shape}
-  --width ${width}
-  --facing ${facing}
-  --size ${size} 
-  --bg ${bg} 
-  --top ${top} soleares.svg"
-
+  # update cells
+  echo "${cell} ${model}"
+  echo "${cell}1,${model}.svg,${shape},${width},${facing},${size},${bg},${top}" >>mondrian.log
 ./effect.py \
-  --id ${cell}1 \
-  --output a.svg \
-  --shape ${shape} \
-  --width ${width} \
-  --facing ${facing} \
-  --size ${size} \
-  --bg ${bg} \
-  --top ${top} soleares.svg
+   --id ${cell}1 \
+   --output ${model}.svg \
+   --shape ${shape} \
+   --width ${width} \
+   --facing ${facing} \
+   --size ${size} \
+   --bg ${bg} \
+   --top ${top} ${model}.svg
+done
