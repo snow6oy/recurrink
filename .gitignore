@@ -2,6 +2,6 @@
 doc/*
 *.swp
 .DS_Store
-*.svg
+SVG/*.svg
 
 __pycache__/*

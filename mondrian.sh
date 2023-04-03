@@ -6,7 +6,7 @@
 # use ranking to improve RANDOM
 
 model=$1
-if [ ! -f "./${model}.svg" ]
+if [ ! -f "SVG/${model}.svg" ]
 then
   echo "File not found!"
   exit 1
@@ -22,7 +22,7 @@ fi
 # create SVG 
 
 # ./input.py 
-# --output z.svg
+# --output SVG/z.svg
 #  --scale SCALE    Scale in or out (0.5 - 2.0)  factor [0.5, 1.0, 2.0]
 #  z.rink
 
@@ -94,14 +94,14 @@ do
 
   # update cells
   echo "${cell} ${model}"
-  echo "${cell}1,${model}.svg,${shape},${width},${facing},${size},${bg},${top}" >>mondrian.log
+  echo "${cell},${model},${shape},${width},${facing},${size},${bg},${top}" >>mondrian.log
 ./effect.py \
    --id ${cell}1 \
-   --output ${model}.svg \
+   --output SVG/${model}.svg \
    --shape ${shape} \
    --width ${width} \
    --facing ${facing} \
    --size ${size} \
    --bg ${bg} \
-   --top ${top} ${model}.svg
+   --top ${top} SVG/${model}.svg
 done
