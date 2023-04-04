@@ -3,5 +3,5 @@ doc/*
 *.swp
 .DS_Store
 SVG/*.svg
-
+Archive/*
 __pycache__/*
