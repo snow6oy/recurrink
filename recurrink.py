@@ -465,13 +465,22 @@ class Builder:
     digest = digest_maker.hexdigest()
     return digest
 
+  def update_digest(self, model, row):
+    ''' get digest has the same value for each model instance
+        update digest is useful for making new instances of models
+    '''
+    digest = self.get_digest(model, row)
+    self.models[model]['id'] = digest
+    return digest
+
 ###############################################################################
 def usage():
   message = '''
--m MODEL        generate a rink file for named model
--c MODEL        list cells in named model
--a              build all rink files
--l	        list models, simplest first
+-l	         list models, simplest first
+-m MODEL         generate a rink file for named model
+-m MODEL -d DATA get a digest
+-c MODEL         list cells in named model
+-a               build all rink files
 '''
   print(message)
 
@@ -480,7 +489,7 @@ def main():
   get inputs from command line
   '''
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "hm:c:al", ["help", "model="])
+    opts, args = getopt.getopt(sys.argv[1:], "hm:c:d:al", ["help", "model="])
   except getopt.GetoptError as err:
     print(err)  # will print something like "option -a not recognized"
     usage()
@@ -489,6 +498,7 @@ def main():
   all_models = False
   list_only = False
   list_cells = False
+  digest = None
   for o, a in opts:
     if o == "-a":
       all_models = True
@@ -502,18 +512,24 @@ def main():
     elif o in ("-c", "--model"):
       list_cells = True
       model = a
+    elif o in ("-d", "--data"):
+      digest = a
     else:
       assert False, "unhandled option"
-    # ...
-  return (model, all_models, list_only, list_cells)
+  return (model, all_models, list_only, list_cells, digest)
 
 if __name__ == '__main__':
   ''' recurrink cli
   '''
-  (model, all_models, list_only, list_cells) = main()
+  (model, all_models, list_only, list_cells, digest) = main()
   if (list_cells):
     b = Builder()
     print(b.list_cells(model))
+  elif (model and digest):
+    b = Builder()
+    row = digest.split(',')
+    b.update_digest(model, row)
+    print(b.models[model]['id'])
   elif (model or all_models):
     b = Builder()
     b.make(model)
