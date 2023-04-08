@@ -1,0 +1,42 @@
+{
+  "x": {
+    "shape": "line",
+    "width": 6,
+    "facing": "north",
+    "size": "medium",
+    "bg": "limegreen",
+    "top": true
+  },
+  "b": {
+    "shape": "circle",
+    "width": 6,
+    "facing": "west",
+    "size": "medium",
+    "bg": "black",
+    "top": true
+  },
+  "o": {
+    "shape": "circle",
+    "width": 3,
+    "facing": "north",
+    "size": "medium",
+    "bg": "white",
+    "top": true
+  },
+  "a": {
+    "shape": "square",
+    "width": 3,
+    "facing": "east",
+    "size": "large",
+    "bg": "crimson",
+    "top": true
+  },
+  "e": {
+    "shape": "line",
+    "width": 2,
+    "facing": "south",
+    "size": "medium",
+    "bg": "white",
+    "top": true
+  }
+}

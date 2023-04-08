@@ -1,0 +1,50 @@
+{
+  "a": {
+    "shape": "line",
+    "width": 6,
+    "facing": "east",
+    "size": "large",
+    "bg": "orange",
+    "top": true
+  },
+  "b": {
+    "shape": "square",
+    "width": 3,
+    "facing": "east",
+    "size": "medium",
+    "bg": "indigo",
+    "top": true
+  },
+  "c": {
+    "shape": "square",
+    "width": 1,
+    "facing": "north",
+    "size": "medium",
+    "bg": "black",
+    "top": true
+  },
+  "d": {
+    "shape": "circle",
+    "width": 7,
+    "facing": "west",
+    "size": "medium",
+    "bg": "indigo",
+    "top": true
+  },
+  "e": {
+    "shape": "line",
+    "width": 5,
+    "facing": "east",
+    "size": "large",
+    "bg": "indigo",
+    "top": true
+  },
+  "f": {
+    "shape": "triangle",
+    "width": 6,
+    "facing": "east",
+    "size": "medium",
+    "bg": "limegreen",
+    "top": true
+  }
+}

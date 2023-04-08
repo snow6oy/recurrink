@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
-import inkex
-from inkex import Group, Circle, Rectangle, Polygon, TextElement
+#import inkex
+#from inkex import Group, Circle, Rectangle, Polygon, TextElement
 import getopt, sys, csv, os, hmac, json, math
 
 class Draw:
@@ -403,7 +403,8 @@ class Builder:
     return data
 
   def list_cells(self, model):
-    ''' send mondrian the robot a list of uniq cells``
+    ''' send mondrian the robot a list of uniq cells 
+        also see: Layout uniq_cells
     '''
     seen = dict()
     for row in self.load_model(model):
@@ -450,7 +451,7 @@ class Builder:
       numCells = len(self.models[m]['json'].keys())
       blockWidth = self.models[m]['size'][0]
       blockHeight = self.models[m]['size'][1]
-      rank = (numCells * blockWidth * blockHeight)
+      rank = (numCells + blockWidth + blockHeight)
       ranked[m] = rank
     # sort according to rank
     sortRank = {k: v for k, v in sorted(ranked.items(), key=lambda item: item[1])}

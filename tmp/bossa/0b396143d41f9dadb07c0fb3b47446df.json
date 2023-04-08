@@ -1,0 +1,194 @@
+{
+  "a": {
+    "shape": "circle",
+    "width": 8,
+    "facing": "west",
+    "size": "large",
+    "bg": "yellowgreen",
+    "top": true
+  },
+  "b": {
+    "shape": "triangle",
+    "width": 7,
+    "facing": "west",
+    "size": "medium",
+    "bg": "mediumvioletred",
+    "top": true
+  },
+  "c": {
+    "shape": "circle",
+    "width": 4,
+    "facing": "west",
+    "size": "large",
+    "bg": "orange",
+    "top": true
+  },
+  "d": {
+    "shape": "square",
+    "width": 6,
+    "facing": "south",
+    "size": "large",
+    "bg": "gray",
+    "top": true
+  },
+  "e": {
+    "shape": "line",
+    "width": 2,
+    "facing": "west",
+    "size": "large",
+    "bg": "indianred",
+    "top": true
+  },
+  "f": {
+    "shape": "line",
+    "width": 2,
+    "facing": "west",
+    "size": "medium",
+    "bg": "black",
+    "top": true
+  },
+  "g": {
+    "shape": "line",
+    "width": 5,
+    "facing": "west",
+    "size": "medium",
+    "bg": "yellowgreen",
+    "top": true
+  },
+  "h": {
+    "shape": "square",
+    "width": 0,
+    "facing": "south",
+    "size": "medium",
+    "bg": "indigo",
+    "top": true
+  },
+  "i": {
+    "shape": "circle",
+    "width": 8,
+    "facing": "east",
+    "size": "medium",
+    "bg": "gray",
+    "top": true
+  },
+  "j": {
+    "shape": "circle",
+    "width": 4,
+    "facing": "east",
+    "size": "large",
+    "bg": "white",
+    "top": true
+  },
+  "k": {
+    "shape": "line",
+    "width": 5,
+    "facing": "north",
+    "size": "medium",
+    "bg": "orange",
+    "top": true
+  },
+  "l": {
+    "shape": "square",
+    "width": 9,
+    "facing": "north",
+    "size": "large",
+    "bg": "limegreen",
+    "top": true
+  },
+  "m": {
+    "shape": "circle",
+    "width": 8,
+    "facing": "east",
+    "size": "large",
+    "bg": "white",
+    "top": true
+  },
+  "n": {
+    "shape": "square",
+    "width": 8,
+    "facing": "east",
+    "size": "large",
+    "bg": "yellowgreen",
+    "top": true
+  },
+  "o": {
+    "shape": "square",
+    "width": 7,
+    "facing": "west",
+    "size": "large",
+    "bg": "indianred",
+    "top": true
+  },
+  "p": {
+    "shape": "circle",
+    "width": 1,
+    "facing": "east",
+    "size": "medium",
+    "bg": "white",
+    "top": true
+  },
+  "q": {
+    "shape": "line",
+    "width": 3,
+    "facing": "north",
+    "size": "medium",
+    "bg": "white",
+    "top": true
+  },
+  "r": {
+    "shape": "circle",
+    "width": 4,
+    "facing": "east",
+    "size": "large",
+    "bg": "gray",
+    "top": true
+  },
+  "s": {
+    "shape": "square",
+    "width": 0,
+    "facing": "west",
+    "size": "large",
+    "bg": "black",
+    "top": true
+  },
+  "t": {
+    "shape": "line",
+    "width": 0,
+    "facing": "west",
+    "size": "large",
+    "bg": "indigo",
+    "top": true
+  },
+  "u": {
+    "shape": "triangle",
+    "width": 8,
+    "facing": "west",
+    "size": "medium",
+    "bg": "yellowgreen",
+    "top": true
+  },
+  "v": {
+    "shape": "circle",
+    "width": 6,
+    "facing": "south",
+    "size": "large",
+    "bg": "crimson",
+    "top": true
+  },
+  "w": {
+    "shape": "square",
+    "width": 6,
+    "facing": "east",
+    "size": "medium",
+    "bg": "orange",
+    "top": true
+  },
+  "x": {
+    "shape": "line",
+    "width": 5,
+    "facing": "east",
+    "size": "medium",
+    "bg": "limegreen",
+    "top": true
+  }
+}

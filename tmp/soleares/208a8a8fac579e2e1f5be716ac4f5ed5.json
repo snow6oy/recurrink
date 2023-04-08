@@ -1,0 +1,26 @@
+{
+  "a": {
+    "shape": "triangle",
+    "width": 3,
+    "facing": "west",
+    "size": "medium",
+    "bg": "yellowgreen",
+    "top": true
+  },
+  "b": {
+    "shape": "circle",
+    "width": 8,
+    "facing": "west",
+    "size": "large",
+    "bg": "orange",
+    "top": true
+  },
+  "c": {
+    "shape": "line",
+    "width": 6,
+    "facing": "south",
+    "size": "medium",
+    "bg": "gray",
+    "top": true
+  }
+}
