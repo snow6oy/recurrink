@@ -1,3 +1,8 @@
+# TOOO
+but most of it is done
+
+- next task is to rewrite SH to consume mondrian.py
+
 The current file structure 
 
 '''
@@ -46,7 +51,7 @@ but numeric names clash!
 
 so insead the task is to make ./recurrink.py -l output the above
 
-## integrate mondrian.sh with recurrink, input and effect python
+## integrate mondrian.sh with python scripts: recurrink, input and effect
 
 - mondrian randomly selects model and obtains a cell list
 ./recurrink.py -m soleares --cells  
@@ -62,9 +67,3 @@ so insead the task is to make ./recurrink.py -l output the above
 # recurrink reads CSV and creates digest then writes JSON and returns
 < a6cf936f6da2b1706f792da
 - mondrian moves SVG and deletes tmp CSV
-
-
-
-
-
-
