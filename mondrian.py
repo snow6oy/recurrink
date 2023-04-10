@@ -4,20 +4,27 @@
 # by read json to calc uniq vals and rename file
 # update JSON creation to work from mondrian.sh inputs
 
+import sys
 import csv
 import json
 import random
+import getopt
 from recurrink import Builder
-
 
 class Mondrian(Builder):
   ''' extend builder to support mondrian 
   '''
+  def __init__(self):
+    self.header = [ 'id','output','shape','width','facing','size','bg','top' ]
+    super().__init__()
+
   def write_tmp_csvfile(self, model):
+    cells = self.list_cells(model)
     with open(f"/tmp/{model}.csv", 'w') as f:
       wr = csv.writer(f, quoting=csv.QUOTE_ALL)
-      [wr.writerow(m.random_cellvalues(model, cell)) for cell in self.list_cells(model)]
-    return self.list_cells(model)
+      wr.writerow(self.header)
+      [wr.writerow(m.random_cellvalues(model, cell)) for cell in cells]
+    return ' '.join(cells)
 
   def get_cellvalues(self, model, cell):
     data = m.read_tmp_csvfile(model)
@@ -66,13 +73,17 @@ class Mondrian(Builder):
     return [cell,model,shape,width,facing,size,bg,top]
 
   def convert_row2cell(self, data):
-    header = [ 'id','output','shape','width','facing','size','bg','top' ]
+    ''' sample input 
+   [[ 'a','soleares','triangle','3','west','medium','yellowgreen','False' ],
+    [ 'b','soleares','circle','8','west','large','orange','True' ],
+    [ 'c','soleares','line','6','south','medium','gray','True' ]] '''
+
     source = dict()
     to_hash = str()
     for d in data:
       #z = zip(header, data[i])
       to_hash += ''.join(d)
-      z = zip(header, d)
+      z = zip(self.header, d)
       row = dict(z)
       cell = row['id']
       model = row['output']
@@ -105,19 +116,47 @@ class Mondrian(Builder):
       model = data[i][1]
       counter += 1
 
-if __name__ == '__main__':
-  ''' three use cases 
-    1. create tmp csv file containing a collection of random cell values
-    2. lookup values by cell
-    3. convert tmp csv into json as permenant record '''
-  m = Mondrian()
-  data = [
-    [ 'a','soleares','triangle','3','west','medium','yellowgreen','False' ],
-    [ 'b','soleares','circle','8','west','large','orange','True' ],
-    [ 'c','soleares','line','6','south','medium','gray','True' ]
-  ]
-  print(m.write_tmp_csvfile('soleares'))    # return cell vals a b c d
-  print(m.get_cellvalues('soleares', 'b'))  # csv row for cell x
-  data = m.read_tmp_csvfile('soleares')
-  print(m.create_new_instance(data))        # write json and return digest
+def usage():
+  message = '''
+-m MODEL --output CSV|JSON|RINK
+-m MODEL --cell CELL
+'''
+  print(message)
 
+def inputs():
+  ''' get inputs from command line
+  '''
+  try:
+    (opts, args) = getopt.getopt(sys.argv[1:], "m:o:c:", ["model=", "output=", "cell=", "save"])
+  except getopt.GetoptError as err:
+    print(err)  # will print something like "option -a not recognized"
+    usage()
+    sys.exit(2)
+  model = None
+  cell = None
+  output = None
+  for opt, arg in opts:
+    if opt in ("-o", "--output") and arg in ('RINK', 'CSV', 'JSON'):
+      output = arg
+    elif opt in ("-c", "--cell"):
+      cell = arg
+    elif opt in ("-m", "--model"):
+      model = arg
+    elif opt in ("-h", "--help"):
+      usage()
+      sys.exit()
+    else:
+      assert False, "unhandled option"
+  return (model, output, cell)
+
+if __name__ == '__main__':
+  m = Mondrian()
+  (model, output, cell) = inputs()
+
+  if output == 'CSV':                         # create tmp csv file containing a collection of random cell values
+    print(m.write_tmp_csvfile(model))         # return cell vals a b c d
+  elif cell:                                  # lookup values by cell return as comma-separated string '1,square,north'
+    print(m.get_cellvalues(model, cell)) 
+  elif output == 'JSON':                      # convert tmp csv into json as permenant record 
+    csvdata = m.read_tmp_csvfile(model)
+    print(m.create_new_instance(csvdata))     # write json and return digest
