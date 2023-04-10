@@ -410,7 +410,7 @@ class Builder:
     for row in self.load_model(model):
       for cell in row:
         seen[cell] = seen[cell] + 1 if cell in seen else 0
-    return ' '.join(seen.keys())
+    return seen.keys()
 
   def load_view(self, json_file):
     #print("load view  " + json_file)
