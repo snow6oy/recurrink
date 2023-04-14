@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
+import os
+import sys
+import csv
+import json
+import hmac
+import math
+import random
+import getopt
 #import inkex
 #from inkex import Group, Circle, Rectangle, Polygon, TextElement
-import getopt, sys, csv, os, hmac, json, math
+from recurrink import Builder
 
 class Draw:
-  ''' use viewer to do the maths to render a cell
+  ''' does the maths to render a cell
   '''
   def __init__(self, baseUnit):
     ''' units must be in sync with Layout.sizeUu 
@@ -285,7 +293,8 @@ class Layout(Draw):
     return None
 
 class Builder:
-
+  ''' read and write data to file
+  '''
   def __init__(self):
     self.attributes = {
       'shape':'square',
@@ -306,10 +315,13 @@ class Builder:
     fn = f"models/{model}.rink"
     with open(fn, "w") as outfile:
       json.dump(data, outfile, indent=2)
+    return fn
 
   def make(self, model=None):
     ''' unpack the model(s) into a json database 
+        note: all models is supported but not used
     '''
+    outfile = None
     if model and model in self.models: # for dry run
       # print(f"model {model} ok")
       data = {}
@@ -318,7 +330,7 @@ class Builder:
         'size': self.models[model]['size'],
         'cells': self.get_cells(model)
       }
-      self.write_rink_file(model, data)
+      outfile = self.write_rink_file(model, data)
 
     elif not model and len(self.models):
       # print(f"all models ok")
@@ -334,7 +346,7 @@ class Builder:
     else:
       raise KeyError(f"no such model: {model}")
 
-    return None
+    return outfile
 
   def get_positions(self, model):
     ''' 
@@ -474,68 +486,173 @@ class Builder:
     self.models[model]['id'] = digest
     return digest
 
+class Mondrian(Builder):
+  ''' extend builder to support Mondrian The Robot
+  '''
+  def __init__(self):
+    self.header = [ 'id','output','shape','width','facing','size','bg','top' ]
+    super().__init__()
+
+  def write_tmp_csvfile(self, model):
+    cells = self.list_cells(model)
+    with open(f"/tmp/{model}.csv", 'w') as f:
+      wr = csv.writer(f, quoting=csv.QUOTE_ALL)
+      wr.writerow(self.header)
+      [wr.writerow(m.random_cellvalues(model, cell)) for cell in cells]
+    return ' '.join(cells)
+
+  def get_cellvalues(self, model, cell):
+    data = m.read_tmp_csvfile(model)
+    valstr = None
+    for d in data:
+      if (cell == d[0]):
+        valstr = ' '.join(d)
+        break
+    return valstr
+
+  def create_new_instance(self, cell_data):
+    ''' convert a 2d array of cell data into a hash and json file
+    '''
+    (model, to_hash, source) = self.convert_row2cell(cell_data)
+    self.update_digest(model, to_hash)
+    self.write_json_file(model, self.models[model]['id'], source)
+    return self.models[model]['id']
+
+  ######################### p r i v a t e #############################
+  def write_json_file(self, model, fn, data):
+    f = f"pub/{model}/{fn}.json"
+    with open(f, "w") as outfile:
+      json.dump(data, outfile, indent=2)
+
+  def read_tmp_csvfile(self, model):
+    with open(f"/tmp/{model}.csv") as f:
+      reader = csv.reader(f)
+      next(reader, None)
+      data = list(reader)
+    return data
+
+  def random_cellvalues(self, model, cell):
+    ''' TODO these attributes were supposed to be updated interactively 
+        to expose them for randomisation, first need to update effect.py
+      'fill': '#fff',
+      'fill_opacity':1.0,
+      'stroke':'#000',
+      'stroke_dasharray': 0,
+      'stroke_opacity':1.0, '''
+
+    # default 'shape':'square',
+    shape = random.choice(["circle", "line", "square", "triangle"])
+    facing = random.choice(["north", "south", "east", "west"])
+    # default 'shape_size':'medium',
+    sizes = ["medium", "large"]
+    if shape == "triangle":
+      size = "medium"
+    else:
+      size = random.choice(sizes)
+    top = str(random.choice([True, False]))
+    bg = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
+    width = str(random.choice(range(10)))
+
+    return [cell,model,shape,width,facing,size,bg,top]
+
+  def convert_row2cell(self, data):
+    ''' sample input 
+   [[ 'a','soleares','triangle','3','west','medium','yellowgreen','False' ],
+    [ 'b','soleares','circle','8','west','large','orange','True' ],
+    [ 'c','soleares','line','6','south','medium','gray','True' ]] '''
+
+    source = dict()
+    to_hash = str()
+    for d in data:
+      #z = zip(header, data[i])
+      to_hash += ''.join(d)
+      z = zip(self.header, d)
+      row = dict(z)
+      cell = row['id']
+      model = row['output']
+      source.update({cell: { 
+        'shape': row['shape'],
+        'width': int(row['width']),
+        'facing':row['facing'],
+        'size': row['size'],
+        'bg': row['bg'],
+        'top': bool(row['top'])
+      }})
+    return (model, to_hash, source)
+
+  def create_from_log(self, csvfile):
+    ''' this function is already obsolete
+        but it might be useful to troubleshoot /tmp/model.csv 
+    '''
+    data = self.read_tmp_csvfile('./mondrian.log')
+    model = None
+    counter = 0
+
+    for i, d in enumerate(data):
+      if model and model != data[i][1]:
+        start = i - counter
+        (model, to_hash, source) = self.convert_row2cell(data[start:i])
+        print(model, to_hash)
+        self.update_digest(model, to_hash)
+        self.write_json_file(model, self.models[model]['id'], source)
+        counter = 0
+      model = data[i][1]
+      counter += 1
+
+
 ###############################################################################
 def usage():
   message = '''
--l	         list models, simplest first
--m MODEL         generate a rink file for named model
--m MODEL -d DATA get a digest
--c MODEL         list cells in named model
--a               build all rink files
+-m MODEL --output CSV|JSON|RINK
+-m MODEL --cell CELL
+-l list models, simplest first
 '''
   print(message)
 
-def main():
-  '''
-  get inputs from command line
+def inputs():
+  ''' get inputs from command line
   '''
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "hm:c:d:al", ["help", "model="])
+    (opts, args) = getopt.getopt(sys.argv[1:], "m:o:c:l", ["model=", "output=", "cell=", "list"])
   except getopt.GetoptError as err:
     print(err)  # will print something like "option -a not recognized"
     usage()
     sys.exit(2)
   model = None
-  all_models = False
-  list_only = False
-  list_cells = False
-  digest = None
-  for o, a in opts:
-    if o == "-a":
-      all_models = True
-    elif o in "-l":
-      list_only = True
-    elif o in ("-h", "--help"):
+  cell = None
+  output = None
+  ls = False
+  for opt, arg in opts:
+    if opt in ("-o", "--output") and arg in ('RINK', 'CSV', 'JSON'):
+      output = arg
+    elif opt in ("-c", "--cell"):
+      cell = arg
+    elif opt in ("-m", "--model"):
+      model = arg
+    elif opt in ("-h", "--help"):
       usage()
       sys.exit()
-    elif o in ("-m", "--model"):
-      model = a
-    elif o in ("-c", "--model"):
-      list_cells = True
-      model = a
-    elif o in ("-d", "--data"):
-      digest = a
+    elif opt in ("-l", "--list"):
+      ls = True
     else:
       assert False, "unhandled option"
-  return (model, all_models, list_only, list_cells, digest)
+  return (model, output, cell, ls)
 
 if __name__ == '__main__':
-  ''' recurrink cli
-  '''
-  (model, all_models, list_only, list_cells, digest) = main()
-  if (list_cells):
-    b = Builder()
-    print(b.list_cells(model))
-  elif (model and digest):
-    b = Builder()
-    row = digest.split(',')
-    b.update_digest(model, row)
-    print(b.models[model]['id'])
-  elif (model or all_models):
-    b = Builder()
-    b.make(model)
-  elif (list_only):
-    b = Builder()
+  b = Builder()
+  m = Mondrian()
+  (model, output, cell, ls) = inputs()
+  ''''''''''''''''''''''''''''''''''''''''''''
+  if output == 'CSV':                         # create tmp csv file containing a collection of random cell values
+    print(m.write_tmp_csvfile(model))         # return cell vals a b c d
+  elif cell:                                  # lookup values by cell return as comma-separated string '1,square,north'
+    print(m.get_cellvalues(model, cell)) 
+  elif output == 'JSON':                      # convert tmp csv into json as permenant record 
+    csvdata = m.read_tmp_csvfile(model)
+    print(m.create_new_instance(csvdata))     # write json and return digest
+  elif output == 'RINK':                      # combine CSV and JSON as RINK for inkscape to convert to SVG
+    print(b.make(model))
+  elif (ls):
     print(b.get_model_list())
   else:
     usage()

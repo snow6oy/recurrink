@@ -13,8 +13,7 @@ then
   exit 1
 fi
 
-# cells=$(./recurrink.py -c ${model})
-cells=$(./mondrian.py -m ${model} --output CSV)
+cells=$(./recurrink.py -c ${model})
 if [ -z "${cells}" ]
 then
   echo "cannot find cells for ${model}"
@@ -26,7 +25,7 @@ echo "updating $model"
 for cell in ${cells}
 do
   echo -n "$cell" 
-  attrs=$(./mondrian.py -m ${model} --cell ${cell})
+  attrs=$(./recurrink.py -m ${model} --cell ${cell})
   a=($attrs)  # convert to array with the magic of IFS separator
   shape=${a[2]} # elems 0,1 are cell and model names
   width=${a[3]}
@@ -48,6 +47,6 @@ do
 done
 
 echo ""
-digest=$(./mondrian.py -m ${model} --output JSON)
+digest=$(./recurrink.py -m ${model} --output JSON)
 #./bin/mv "/tmp/${model}.svg" "pub/${model}/${digest}.svg"
 echo "$0 drew new recurrink ${digest}.svg"
