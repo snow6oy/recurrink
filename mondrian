@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# use randmoness to automatically generate a recurrink
+
+model_path=$(ls -1 models/*.rink| sort -R| tail -1)
+model=${model_path%.*}  # retain the part before the colon
+model=${model##*/}  # retain the part after the last slash
+
+# do a RINK test
+if [ ! -f ${model_path} ]
+then
+  echo "File '$model_path' not found! Run recurrink.py -a" # or input.py ?
+  exit 1
+fi
+
+# cells=$(./recurrink.py -c ${model})
+cells=$(./mondrian.py -m ${model} --output CSV)
+if [ -z "${cells}" ]
+then
+  echo "cannot find cells for ${model}"
+  exit 1
+fi
+
+# update cell attributes
+echo "updating $model"
+for cell in ${cells}
+do
+  echo -n "$cell" 
+  attrs=$(./mondrian.py -m ${model} --cell ${cell})
+  a=($attrs)  # convert to array with the magic of IFS separator
+  shape=${a[2]} # elems 0,1 are cell and model names
+  width=${a[3]}
+  facing=${a[4]}
+  size=${a[5]}
+  bgcol=${a[6]}
+  top=${a[7]}
+  # update cells
+  echo "${cell},${model},${shape},${width},${facing},${size},${bgcol},${top}" >>pub.log
+#./effect.py \
+#   --id ${cell}1 \
+#   --output /tmp/${model}.svg \
+#   --shape ${shape} \
+#   --width ${width} \
+#   --facing ${facing} \
+#   --size ${size} \
+#   --bg ${bgcol} \
+#   --top ${top} /tmp/${model}.svg
+done
+
+echo ""
+digest=$(./mondrian.py -m ${model} --output JSON)
+#./bin/mv "/tmp/${model}.svg" "pub/${model}/${digest}.svg"
+echo "$0 drew new recurrink ${digest}.svg"

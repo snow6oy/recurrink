@@ -1,0 +1,14 @@
+a,afroclave,line,2,west,large,yellowgreen,True
+b,afroclave,line,2,north,large,mediumvioletred,True
+c,afroclave,square,7,east,large,orange,False
+d,afroclave,line,2,east,medium,orange,False
+e,afroclave,square,1,east,large,indianred,True
+f,afroclave,line,7,east,medium,gray,True
+g,afroclave,square,8,east,medium,orange,True
+h,afroclave,square,3,east,large,black,False
+i,afroclave,square,9,west,medium,gray,True
+j,afroclave,triangle,7,south,medium,indigo,True
+k,afroclave,circle,2,east,large,orange,True
+l,afroclave,line,1,east,medium,black,True
+m,afroclave,circle,6,east,medium,yellowgreen,False
+n,afroclave,triangle,4,west,medium,indigo,True
