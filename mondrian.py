@@ -31,7 +31,7 @@ class Mondrian(Builder):
     valstr = None
     for d in data:
       if (cell == d[0]):
-        valstr = ','.join(d)
+        valstr = ' '.join(d)
         break
     return valstr
 
@@ -57,6 +57,14 @@ class Mondrian(Builder):
     return data
 
   def random_cellvalues(self, model, cell):
+    ''' TODO these attributes were supposed to be updated interactively 
+        to expose them for randomisation, first need to update effect.py
+      'fill': '#fff',
+      'fill_opacity':1.0,
+      'stroke':'#000',
+      'stroke_dasharray': 0,
+      'stroke_opacity':1.0, '''
+
     # default 'shape':'square',
     shape = random.choice(["circle", "line", "square", "triangle"])
     facing = random.choice(["north", "south", "east", "west"])
@@ -160,3 +168,5 @@ if __name__ == '__main__':
   elif output == 'JSON':                      # convert tmp csv into json as permenant record 
     csvdata = m.read_tmp_csvfile(model)
     print(m.create_new_instance(csvdata))     # write json and return digest
+  else:
+    usage()
