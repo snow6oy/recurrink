@@ -9,9 +9,8 @@ import hmac
 import math
 import random
 import getopt
-#import inkex
-#from inkex import Group, Circle, Rectangle, Polygon, TextElement
-from recurrink import Builder
+import inkex
+from inkex import Group, Circle, Rectangle, Polygon, TextElement
 
 class Draw:
   ''' does the maths to render a cell
