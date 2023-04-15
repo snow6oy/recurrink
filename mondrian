@@ -2,18 +2,23 @@
 
 # use randmoness to automatically generate a recurrink
 
-model_path=$(ls -1 models/*.rink| sort -R| tail -1)
+model_path=$(ls -1 models/*.csv| sort -R| tail -1)
 model=${model_path%.*}  # retain the part before the colon
 model=${model##*/}  # retain the part after the last slash
 
 # do a RINK test
-if [ ! -f ${model_path} ]
+if [ ! -f models/${model}.rink ]
 then
-  echo "File '$model_path' not found! Run recurrink.py -a" # or input.py ?
+  echo "File '$model' has no RINK! Run recurrink.py --help" 
   exit 1
 fi
 
-cells=$(./recurrink.py -c ${model})
+if [ ! -f /tmp/${model}.svg ]
+then
+  ./input.py models/${model}.rink > /tmp/${model}.svg
+fi
+
+cells=$(./recurrink.py -m ${model} --output CSV)
 if [ -z "${cells}" ]
 then
   echo "cannot find cells for ${model}"
@@ -35,18 +40,18 @@ do
   top=${a[7]}
   # update cells
   echo "${cell},${model},${shape},${width},${facing},${size},${bgcol},${top}" >>pub.log
-#./effect.py \
-#   --id ${cell}1 \
-#   --output /tmp/${model}.svg \
-#   --shape ${shape} \
-#   --width ${width} \
-#   --facing ${facing} \
-#   --size ${size} \
-#   --bg ${bgcol} \
-#   --top ${top} /tmp/${model}.svg
+./effect.py \
+   --id ${cell}1 \
+   --output /tmp/${model}.svg \
+   --shape ${shape} \
+   --width ${width} \
+   --facing ${facing} \
+   --size ${size} \
+   --bg ${bgcol} \
+   --top ${top} /tmp/${model}.svg
 done
 
 echo ""
 digest=$(./recurrink.py -m ${model} --output JSON)
-#./bin/mv "/tmp/${model}.svg" "pub/${model}/${digest}.svg"
+/bin/mv /tmp/${model}.svg pub/${model}/${digest}.svg
 echo "$0 drew new recurrink ${digest}.svg"
