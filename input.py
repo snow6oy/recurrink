@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+import sys
 import json
 import inkex
 from inkex import Group
@@ -62,12 +63,11 @@ class Input(inkex.InputExtension):
     ''' inkscape passes us a json file as a stream
         self.options.input_file e.g. recurrink/models/arpeggio.rink
     '''
-    fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
-    doc = None
-
-    if fn is None:
+    if self.options.input_file is None:
       raise ValueError(f"bad file {self.options.input_file}")
     else:
+      fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
+      doc = None
       s = stream.read() # slurp the stream 
       data = json.loads(s) # create a json object
       scale = 1.0 if 'scale' not in self.options else self.options.scale
@@ -90,4 +90,9 @@ class Input(inkex.InputExtension):
     return svg
 
 if __name__ == '__main__':
-  Input().run()
+  if len(sys.argv[1:]):
+    Input().run()
+  else:
+    # the following line was copied as inkex.usage() failed
+    print("usage: input.py [-h] [--output OUTPUT] [--scale SCALE] [INPUT_FILE]")
+
