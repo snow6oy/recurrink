@@ -2,6 +2,5 @@
 doc/*
 *.swp
 .DS_Store
-pub/*
 Archive/*
 __pycache__/*

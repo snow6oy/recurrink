@@ -1,57 +1,92 @@
 #!/bin/bash
 
-# use randmoness to automatically generate a recurrink
+# opt 1 model= M has no value RETURN model
+# opt 2 model=M RETURN nothing for success or error
+# opt 3 model=M RETURN digest 
 
-model_path=$(ls -1 models/*.csv| sort -R| tail -1)
-model=${model_path%.*}  # retain the part before the colon
-model=${model##*/}  # retain the part after the last slash
+# use randmoness to automatically select a model for recurrink to process
+get_random_model() {
+  model_path=$(ls -1 models/*.csv| sort -R| tail -1)
+  model=${model_path%.*}  # retain the part before the colon
+  model=${model##*/}  # retain the part after the last slash
+}
 
-# do a RINK test
-if [ ! -f models/${model}.rink ]
-then
-  echo "File '$model' has no RINK! Run recurrink.py --help" 
-  exit 1
-fi
+get_cells() {
+  cells=$(./recurrink.py -m ${model} --output CSV)
+  if [ -z "${cells}" ]
+  then
+    echo "cannot find cells for ${model}"
+    exit 1
+  fi
+}
 
-if [ ! -f /tmp/${model}.svg ]
-then
-  ./input.py models/${model}.rink > /tmp/${model}.svg
-fi
+update_cell_attributes() {
+  for cell in ${cells}
+  do
+    echo -n "$cell" 
+    attrs=$(./recurrink.py -m ${model} --cell ${cell})
+    a=($attrs)  # convert to array with the magic of IFS separator
+    shape=${a[2]} # elems 0,1 are cell and model names
+    width=${a[3]}
+    facing=${a[4]}
+    size=${a[5]}
+    bgcol=${a[6]}
+    top=${a[7]}
+    # update cells
+    #echo "${cell},${model},${shape},${width},${facing},${size},${bgcol},${top}"
+  ./effect.py \
+     --id ${cell}1 \
+     --output /tmp/${model}.svg \
+     --shape ${shape} \
+     --width ${width} \
+     --facing ${facing} \
+     --size ${size} \
+     --bg ${bgcol} \
+     --top ${top} /tmp/${model}.svg
+  done
+}
+usage() { 
+  echo "Usage: $0 [-n new model ] [-m <model> ] [-d get digest ] [ -r make rink ] " 1>&2; exit 1; 
+}
 
-cells=$(./recurrink.py -m ${model} --output CSV)
-if [ -z "${cells}" ]
-then
-  echo "cannot find cells for ${model}"
-  exit 1
-fi
-
-# update cell attributes
-echo "updating $model"
-for cell in ${cells}
-do
-  echo -n "$cell" 
-  attrs=$(./recurrink.py -m ${model} --cell ${cell})
-  a=($attrs)  # convert to array with the magic of IFS separator
-  shape=${a[2]} # elems 0,1 are cell and model names
-  width=${a[3]}
-  facing=${a[4]}
-  size=${a[5]}
-  bgcol=${a[6]}
-  top=${a[7]}
-  # update cells
-  echo "${cell},${model},${shape},${width},${facing},${size},${bgcol},${top}" >>pub.log
-./effect.py \
-   --id ${cell}1 \
-   --output /tmp/${model}.svg \
-   --shape ${shape} \
-   --width ${width} \
-   --facing ${facing} \
-   --size ${size} \
-   --bg ${bgcol} \
-   --top ${top} /tmp/${model}.svg
+while getopts ":m:ndr" o; do
+  case "${o}" in
+    d)
+      d=1
+      ;;
+    r)
+      r=1
+      ;;
+    m)
+      m=${OPTARG}
+      ;;
+    n)
+      get_random_model
+      n=${model}
+      ;;
+    *)
+      usage
+      ;;
+  esac
 done
+shift $((OPTIND-1))
 
-echo ""
-digest=$(./recurrink.py -m ${model} --output JSON)
-/bin/mv /tmp/${model}.svg pub/${model}/${digest}.svg
-echo "$0 drew new recurrink ${digest}.svg"
+if [ -z "${n}" ] && [ -z "${m}" ]; then
+    usage
+fi
+
+if [ -n "${n}" ]; then
+  echo ${n}
+elif [ -n "${m}" ] && [ -n "${d}" ]; then
+  model=$m
+  digest=$(./recurrink.py -m ${model} --output JSON)
+  /bin/mv /tmp/${model}.svg ${digest}.svg
+  echo ${digest}
+elif [ -n "${m}" ] && [ -n "${r}" ]; then
+  model=$m
+  ./recurrink.py -m ${model} --output RINK
+else
+  model=$m
+  get_cells
+  update_cell_attributes
+fi

@@ -519,7 +519,7 @@ class Mondrian(Builder):
 
   ######################### p r i v a t e #############################
   def write_json_file(self, model, fn, data):
-    f = f"pub/{model}/{fn}.json"
+    f = f"/home/gavin/Pictures/artWork/recurrences/mondrian/{model}/{fn}.json"
     with open(f, "w") as outfile:
       json.dump(data, outfile, indent=2)
 
