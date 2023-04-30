@@ -309,6 +309,7 @@ class Builder:
       'top':False
     }
     self.models = self.load_models()
+    self.json_dir = '/home/gavin/Pictures/artWork/recurrences/mondrian'
 
   def write_rink_file(self, model, data):
     fn = f"models/{model}.rink"
@@ -316,24 +317,30 @@ class Builder:
       json.dump(data, outfile, indent=2)
     return fn
 
-  def make(self, model=None):
+  def make(self, model=None, id=None):
     ''' unpack the model(s) into a json database 
-        note: all models is supported but not used
     '''
     outfile = None
-    if model and model in self.models: # for dry run
+    data = {}
+    if id and model and model in self.models: # rink override
+      json_file = f"{self.json_dir}/{model}/{id}.json"
+      cells = self.load_view(json_file)
+      clist = self.list_cells(model)
+      if (len(cells.keys()) == len(clist)):
+        self.models[model]['json'] = cells
+      else:
+        raise KeyError(f"missing cells: {id}")
+
+    if model and model in self.models: # build rink from source
       # print(f"model {model} ok")
-      data = {}
       data = {
         'id': self.models[model]['id'],
         'size': self.models[model]['size'],
         'cells': self.get_cells(model)
       }
       outfile = self.write_rink_file(model, data)
-
     elif not model and len(self.models):
-      # print(f"all models ok")
-      data = {}
+      # this "build all models" option is supported but not used
       for m in self.models:
         data[m] = {
           'id': self.models[m]['id'],
@@ -341,16 +348,14 @@ class Builder:
           'cells': self.get_cells(m)
         }
         self.write_rink_file(m, data[m])
-
     else:
       raise KeyError(f"no such model: {model}")
 
     return outfile
 
   def get_positions(self, model):
-    ''' 
-    positions link the model and cell: for example 
-    csv with a line a, x, x a will appear in json as { a: { positions: [[0,0], [3,0] }}
+    ''' positions link the model and cell: for example 
+        csv with a line a, x, x a will appear in json as { a: { positions: [[0,0], [3,0] }}
     '''
     positions = dict()
     for row_num, row in enumerate(self.models[model]['csv']):
@@ -424,7 +429,7 @@ class Builder:
     return seen.keys()
 
   def load_view(self, json_file):
-    #print("load view  " + json_file)
+    # print("load view  " + json_file)
     with open(json_file) as f:
       conf = json.load(f)
       init = {}
@@ -519,7 +524,7 @@ class Mondrian(Builder):
 
   ######################### p r i v a t e #############################
   def write_json_file(self, model, fn, data):
-    f = f"/home/gavin/Pictures/artWork/recurrences/mondrian/{model}/{fn}.json"
+    f = f"{self.json_dir}/{model}/{fn}.json"
     with open(f, "w") as outfile:
       json.dump(data, outfile, indent=2)
 
@@ -612,13 +617,14 @@ def inputs():
   ''' get inputs from command line
   '''
   try:
-    (opts, args) = getopt.getopt(sys.argv[1:], "m:o:c:l", ["model=", "output=", "cell=", "list"])
+    (opts, args) = getopt.getopt(sys.argv[1:], "m:o:c:d:l", ["model=", "output=", "cell=", "digest=", "list"])
   except getopt.GetoptError as err:
     print(err)  # will print something like "option -a not recognized"
     usage()
     sys.exit(2)
   model = None
   cell = None
+  digest = None
   output = None
   ls = False
   for opt, arg in opts:
@@ -626,6 +632,8 @@ def inputs():
       output = arg
     elif opt in ("-c", "--cell"):
       cell = arg
+    elif opt in ("-d", "--digest"):
+      digest = arg
     elif opt in ("-m", "--model"):
       model = arg
     elif opt in ("-h", "--help"):
@@ -635,22 +643,24 @@ def inputs():
       ls = True
     else:
       assert False, "unhandled option"
-  return (model, output, cell, ls)
+  return (model, output, cell, digest, ls)
 
 if __name__ == '__main__':
   b = Builder()
   m = Mondrian()
-  (model, output, cell, ls) = inputs()
+  (model, output, cell, digest, ls) = inputs()
   ''''''''''''''''''''''''''''''''''''''''''''
   if output == 'CSV':                         # create tmp csv file containing a collection of random cell values
     print(m.write_tmp_csvfile(model))         # return cell vals a b c d
   elif cell:                                  # lookup values by cell return as comma-separated string '1,square,north'
     print(m.get_cellvalues(model, cell)) 
-  elif output == 'JSON':                      # convert tmp csv into json as permenant record 
+  elif digest:                                # write RINK with source digest.json
+    print(b.make(model=model, id=digest))
+  elif output == 'JSON':                      # convert tmp csv into json as permanent record 
     csvdata = m.read_tmp_csvfile(model)
     print(m.create_new_instance(csvdata))     # write json and return digest
   elif output == 'RINK':                      # combine CSV and JSON as RINK for inkscape to convert to SVG
-    print(b.make(model))
+    print(b.make(model=model))
   elif (ls):
     print(b.get_model_list())
   else:

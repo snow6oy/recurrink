@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# opt 1 model= M has no value RETURN model
+# opt 1 model=M has no value RETURN model
 # opt 2 model=M RETURN nothing for success or error
 # opt 3 model=M RETURN digest 
 
@@ -20,7 +20,7 @@ get_cells() {
   fi
 }
 
-update_cell_attributes() {
+update_svg() {
   for cell in ${cells}
   do
     echo -n "$cell" 
@@ -46,16 +46,16 @@ update_cell_attributes() {
   done
 }
 usage() { 
-  echo "Usage: $0 [-n new model ] [-m <model> ] [-d get digest ] [ -r make rink ] " 1>&2; exit 1; 
+  echo "Usage: $0 [-n new model ] [ -s scale ] [-m <model> -d get digest ] [ -m <model> -r make rink ] " 1>&2; exit 1; 
 }
 
-while getopts ":m:ndr" o; do
+while getopts "m:nsd:r:" o; do
   case "${o}" in
     d)
-      d=1
+      d=${OPTARG}
       ;;
     r)
-      r=1
+      r=${OPTARG}
       ;;
     m)
       m=${OPTARG}
@@ -64,6 +64,9 @@ while getopts ":m:ndr" o; do
       get_random_model
       n=${model}
       ;;
+    s)
+      s=1
+      ;;
     *)
       usage
       ;;
@@ -71,22 +74,35 @@ while getopts ":m:ndr" o; do
 done
 shift $((OPTIND-1))
 
-if [ -z "${n}" ] && [ -z "${m}" ]; then
+if [ -z "${n}" ] && [ -z "${m}" ] && [ -z "${s}" ]; then
     usage
 fi
 
 if [ -n "${n}" ]; then
   echo ${n}
-elif [ -n "${m}" ] && [ -n "${d}" ]; then
+elif [ -n "${m}" ] && [ "${d}" == 'none' ]; then
   model=$m
+  get_cells
+  update_svg
   digest=$(./recurrink.py -m ${model} --output JSON)
   /bin/mv /tmp/${model}.svg ${digest}.svg
   echo ${digest}
-elif [ -n "${m}" ] && [ -n "${r}" ]; then
+elif [ -n "${m}" ] && [ -n "${d}" ]; then
+  model=$m
+  /bin/mv /tmp/${model}.svg ${d}.svg
+elif [ -n "${m}" ] && [ "${r}" == 'none' ]; then
+  echo $r
   model=$m
   ./recurrink.py -m ${model} --output RINK
-else
+elif [ -n "${m}" ] && [ -n "${r}" ]; then
+  echo $r
   model=$m
-  get_cells
-  update_cell_attributes
+  ./recurrink.py -m ${model} --digest $r
+elif [ "${s}" -eq 1 ]; then
+  # scaling is weighted in favour of 1:1
+  declare -a a=(1.0 0.5 1.0 2.0 1.0)
+  i=$((0 + $RANDOM % 5))
+  echo ${a[$i]}
+else
+  usage
 fi
