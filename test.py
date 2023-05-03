@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 
-
 import os
 import inkex
 import unittest
-from configure import Builder
-from layout import Layout
+from recurrink import Layout
+# have a few setup dependencies on Builder
+from recurrink import Builder
 
-BASEDIR="/Users/gajohnson/me/recurrink"
-# "/home/gavin/recurrink"
+BASEDIR="/home/gavin/code/recurrink"
 
-class TestLayoutMethods(unittest.TestCase):
+class TestLayout(unittest.TestCase):
 
   def setUp(self):
     os.chdir(BASEDIR)  # working dir 
     model = 'soleares'
     svg = inkex.load_svg("samples/soleares.svg").getroot()
+    b = Builder()
+    b.make(model=model)
     l = Layout()
     l.add(model)
     self.l = l
-    self.b = Builder()
+    self.b = b
+
+  def tearDown(self):
+    os.unlink('models/soleares.rink')
   
   def test_scale(self):
     l5 = Layout(factor=0.5)
@@ -52,13 +56,6 @@ class TestLayoutMethods(unittest.TestCase):
     s = self.l.shape('a', 0, 0, self.l.get_cell('a'))
     self.assertTrue(type(s))
 
-  def test_case_0(self):
-    model = 'soleares'
-    self.assertEqual(self.b.load_model(model)[0], ['a', 'b', 'a'])
-
-  def test_case_1(self):
-    with self.assertRaises(KeyError):
-      self.b.make('fakemodel')  # expect ValueError
   '''
     the end
   '''
