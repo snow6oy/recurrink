@@ -2,6 +2,15 @@ ID := 'none'
 SCAL := $(shell ./mondrian -s)
 MODL := $(shell ./mondrian -n)
 # examples: MODL=afroclave OR MODL=soleares ID=66862c76787f3994f64cb79882d246f
+BASEDIR := /home/gavin/Pictures/recurrences
+
+help :
+	@echo "make png 			randomly generate new recurrence"
+	@echo "make MODL=<model> ID=<digest>	build SVG from existing recurrence"
+	@echo "make clean MODL=<model>		remove CSV, RINK, SVG, PNG from previous build"
+
+base : $(BASEDIR)/$(MODL)/index.csv
+	@echo $@
 
 # PNG for transfer from SVG output by cells.sh
 png : *.svg
@@ -34,14 +43,10 @@ $(MODL).rink :
 	./mondrian -m $(MODL) -r $(ID)
 	/usr/bin/mv models/$@ .
 
-help :
-	@echo "make 				randomly generate new recurrence"
-	@echo "make MODL=<model> ID=<digest>	build SVG from existing recurrence"
-	@echo "make clean MODL=<model>		remove CSV, RINK, SVG, PNG from previous build"
 
 # testing
 hi : 
-	@echo "$@ $(USER) with '$(MODL)' at $(SCAL)"
+	@echo "$@ $(USER) with $(MODL) at $(SCAL)"
 
 clean :
 	rm $(MODL).*

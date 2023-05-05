@@ -317,6 +317,7 @@ class Builder:
       json.dump(data, outfile, indent=2)
     return fn
 
+  # TODO make model a mandatory param
   def make(self, model=None, id=None):
     ''' unpack the model(s) into a json database 
     '''
@@ -407,11 +408,11 @@ class Builder:
 
     return models
 
-  def load_model(self, model):
+  def load_model(self, model, csvfile=None):
+    ''' load csv data
     '''
-    load csv data
-    '''
-    model_csv = f"./models/{model}.csv"
+    # old way is model_csv
+    model_csv = csvfile if csvfile else f"./models/{model}.csv"
     # print("load model " + model_csv)
     with open(model_csv) as f:
       reader = csv.reader(f, delimiter=' ')
@@ -420,7 +421,6 @@ class Builder:
 
   def list_cells(self, model):
     ''' send mondrian the robot a list of uniq cells 
-        also see: Layout uniq_cells
     '''
     seen = dict()
     for row in self.load_model(model):
@@ -428,8 +428,25 @@ class Builder:
         seen[cell] = seen[cell] + 1 if cell in seen else 0
     return seen.keys()
 
+  def get_base_conf(self, model, f):
+    ''' generate a json config 
+    '''
+    d = self.load_model(model, csvfile=f)
+    fn = self.get_digest(model, d[0])
+    seen = dict()
+    for row in d:
+      for cell in row:
+        seen[cell] = seen[cell] + 1 if cell in seen else 0
+    cells = seen.keys()
+    init = dict()
+    for cell in cells: # copy default values over
+      init[cell] = dict()
+      for a in self.attributes:
+        init[cell][a] = self.attributes[a]
+    return init
+
   def load_view(self, json_file):
-    # print("load view  " + json_file)
+    #print("load view  " + json_file)
     with open(json_file) as f:
       conf = json.load(f)
       init = {}
