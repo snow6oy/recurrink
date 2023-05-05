@@ -11,7 +11,7 @@ import math
 import random
 import getopt
 
-class Builder2:
+class Builder:
   ''' read and write data to file
       will replace Builder once new filesystem and data model is done
   '''
@@ -34,12 +34,13 @@ class Builder2:
       }
       self.header = ['cell', 'model'] + list(self.attributes.keys())
       # self.header = [ 'cell','model','shape', 'size', 'facing', 'bg', 'width', 'top' ]
-      self.author = 'human' if author else 'machine'
+      self.author = 'HUMAN' if author else 'MACHINE'
       self.uniq = self.uniq_cells()
     else:
       raise KeyError(f"model '{model}' has no entry in models")
 
-  #### Public ####
+  #################################################################
+  ################ p u b l i c ####################################
 
   def write_csvfile(self):
     ''' generate a config as cell x values matrix
@@ -48,7 +49,7 @@ class Builder2:
     '''
     init = dict()
     for c in self.uniq: 
-      rando = self.random_cellvalues(c) if self.author == 'machine' else dict()
+      rando = self.random_cellvalues(c) if self.author == 'MACHINE' else dict()
       row = list()
       row.append(c)
       row.append(self.model)
@@ -62,8 +63,9 @@ class Builder2:
     cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
     return cells
 
-  def write_rinkfile(self, view):
+  def write_rinkfile(self, view=None):
     fn = f"/tmp/{self.model}.rink"
+    view = view if view else self.model 
     data = self.load_rinkdata(view)
     self.write_json(fn, data)
     return fn
@@ -77,16 +79,14 @@ class Builder2:
     if model != self.model:
       raise ValueError(f"collision in /tmp {model} is not {self.model}")
 
-    fn = self.get_digest(cellvalues)
+    fn = self.get_digest(cellvalues) if author == 'MACHINE' else self.model
     #self.write_json(f"{self.datadir}/{model}/{fn}.json", source)
     self.write_json(f"/tmp/{fn}.json", jsondata)
     return fn
 
-  #### Private ####
-  ''' get digest
-    d = self.load_model()
-    fn = self.get_digest(self.model, d[0])
-  '''
+  #####################################################################
+  ######################### p r i v a t e #############################
+
   def list_model(self, datadir):
     os.chdir(datadir)
     return next(os.walk('.'))[1]
@@ -142,7 +142,7 @@ class Builder2:
     '''
     json_file = self.find_recurrence(view, 'json')[0]
     #print(findview('550d193efe80f67e92d5a0c59ad9d354'))
-    print("load view  " + json_file)
+    #print("load view  " + json_file)
     with open(json_file) as f:
       conf = json.load(f)
       init = {}
@@ -262,7 +262,79 @@ class Builder2:
 
     return positions
 
-  ######### REFACTOR after this ####################################
+  def get_cellvalues(self, model, cell):
+    data = m.read_tmp_csvfile(model)
+    valstr = None
+    for d in data:
+      if (cell == d[0]):
+        valstr = ' '.join(d)
+        break
+    return valstr
+###############################################################################
+def usage():
+  message = '''
+-l list models
+-m MODEL --output CSV
+-m MODEL --output JSON [--author HUMAN]
+-m MODEL --output RINK [--view VIEW]
+-m MODEL --cell CELL
+'''
+  print(message)
+
+def inputs():
+  ''' get inputs from command line
+  '''
+  try:
+    (opts, args) = getopt.getopt(sys.argv[1:], "m:o:c:v:la", ["model=", "output=", "cell=", "view=", "list", "author"])
+  except getopt.GetoptError as err:
+    print(err)  # will print something like "option -a not recognized"
+    usage()
+    sys.exit(2)
+
+  (model, output, cell, view, ls, author) = (None, None, None, None, False, 'MACHINE')
+  for opt, arg in opts:
+    if opt in ("-o", "--output") and arg in ('RINK', 'CSV', 'JSON'):
+      output = arg
+    elif opt in ("-c", "--cell"):
+      cell = arg
+    elif opt in ("-v", "--view"):
+      digest = arg
+    elif opt in ("-m", "--model"):
+      model = arg
+    elif opt in ("-h", "--help"):
+      usage()
+      sys.exit()
+    elif opt in ("-l", "--list"):
+      ls = True
+    elif opt in ("-a", "--author"):
+      author = 'HUMAN'
+    else:
+      assert False, "unhandled option"
+  return (model, output, cell, view, ls, author)
+
+if __name__ == '__main__':
+  (model, output, cell, view, ls, author) = inputs()
+  ''''''''''''''''''''''''''''''''''''''''''''
+  if model:
+    b = Builder(model)
+    if output == 'CSV':                            # create tmp csv file containing a collection of random cell values
+      print(b.write_csvfile(model, author=author)) # OR default vals for humans. return cell vals a b c d
+    elif cell:                                     # lookup values by cell return as comma-separated string '1,square,north'
+      print(b.get_cellvalues(model, cell)) 
+    elif view:                                     # write RINK with VIEW.json as source
+      print(b.write_rinkfile(view=view))
+    elif output == 'JSON':                         # convert tmp csv into json as permanent record 
+      print(b.write_jsonfile())                    # write json and return digest
+    elif output == 'RINK':                         # combine CSV and JSON as RINK for inkscape to convert to SVG
+      print(b.write_rinkfile())
+    else:
+      usage()
+  elif ls:
+    print("\n".join(Builder.list_model(None, '/home/gavin/Pictures/artWork/recurrences')))
+  else:
+    usage()
+
+  ''' extend builder to support Mondrian The Robot
   def load_models(self):
     models = {}
     conf = []
@@ -290,54 +362,20 @@ class Builder2:
 
     return models
 
-  def _get_model_list(self):
-    modelList = str()
-    for m in self.models:
-      modelList += f"{m}\n"
-    return modelList
 
-  def get_model_list(self):
-    modelList = str()
-    ranked = dict()
-    for m in self.models:
-      numCells = len(self.models[m]['json'].keys())
-      blockWidth = self.models[m]['size'][0]
-      blockHeight = self.models[m]['size'][1]
-      rank = (numCells + blockWidth + blockHeight)
-      ranked[m] = rank
-    # sort according to rank
-    sortRank = {k: v for k, v in sorted(ranked.items(), key=lambda item: item[1])}
-    for m in sortRank:
-      modelList += f"{sortRank[m]:{4}} {m}\n"
-    return modelList
-
-class Mondrian(Builder2):
-  ''' extend builder to support Mondrian The Robot
-  '''
+  class Mondrian(Builder2):
   def __init__(self):
     self.header = [ 'id','output','shape','width','facing','size','bg','top' ]
     super().__init__()
 
-  def get_cellvalues(self, model, cell):
-    data = m.read_tmp_csvfile(model)
-    valstr = None
-    for d in data:
-      if (cell == d[0]):
-        valstr = ' '.join(d)
-        break
-    return valstr
 
 
-  ######################### p r i v a t e #############################
   def write_json_file(self, model, fn, data):
     f = f"{self.json_dir}/{model}/{fn}.json"
     with open(f, "w") as outfile:
       json.dump(data, outfile, indent=2)
 
   def create_from_log(self, csvfile):
-    ''' this function is already obsolete
-        but it might be useful to troubleshoot /tmp/model.csv 
-    '''
     data = self.read_tmp_csvfile('./mondrian.log')
     model = None
     counter = 0
@@ -353,65 +391,19 @@ class Mondrian(Builder2):
       model = data[i][1]
       counter += 1
 
-
-###############################################################################
-def usage():
-  message = '''
--m MODEL --output CSV|JSON|RINK
--m MODEL --cell CELL
--l list models, simplest first
-'''
-  print(message)
-
-def inputs():
-  ''' get inputs from command line
+  def get_model_list(self):
+    modelList = str()
+    ranked = dict()
+    for m in self.models:
+      numCells = len(self.models[m]['json'].keys())
+      blockWidth = self.models[m]['size'][0]
+      blockHeight = self.models[m]['size'][1]
+      rank = (numCells + blockWidth + blockHeight)
+      ranked[m] = rank
+    # sort according to rank
+    sortRank = {k: v for k, v in sorted(ranked.items(), key=lambda item: item[1])}
+    for m in sortRank:
+      modelList += f"{sortRank[m]:{4}} {m}\n"
+    return modelList
   '''
-  try:
-    (opts, args) = getopt.getopt(sys.argv[1:], "m:o:c:d:l", ["model=", "output=", "cell=", "digest=", "list"])
-  except getopt.GetoptError as err:
-    print(err)  # will print something like "option -a not recognized"
-    usage()
-    sys.exit(2)
-  model = None
-  cell = None
-  digest = None
-  output = None
-  ls = False
-  for opt, arg in opts:
-    if opt in ("-o", "--output") and arg in ('RINK', 'CSV', 'JSON'):
-      output = arg
-    elif opt in ("-c", "--cell"):
-      cell = arg
-    elif opt in ("-d", "--digest"):
-      digest = arg
-    elif opt in ("-m", "--model"):
-      model = arg
-    elif opt in ("-h", "--help"):
-      usage()
-      sys.exit()
-    elif opt in ("-l", "--list"):
-      ls = True
-    else:
-      assert False, "unhandled option"
-  return (model, output, cell, digest, ls)
 
-if __name__ == '__main__':
-  b = Builder()
-  m = Mondrian()
-  (model, output, cell, digest, ls) = inputs()
-  ''''''''''''''''''''''''''''''''''''''''''''
-  if output == 'CSV':                         # create tmp csv file containing a collection of random cell values
-    print(m.write_tmp_csvfile(model))         # return cell vals a b c d
-  elif cell:                                  # lookup values by cell return as comma-separated string '1,square,north'
-    print(m.get_cellvalues(model, cell)) 
-  elif digest:                                # write RINK with source digest.json
-    print(b.make(model=model, id=digest))
-  elif output == 'JSON':                      # convert tmp csv into json as permanent record 
-    csvdata = m.read_tmp_csvfile(model)
-    print(m.create_new_view(csvdata))     # write json and return digest
-  elif output == 'RINK':                      # combine CSV and JSON as RINK for inkscape to convert to SVG
-    print(b.make(model=model))
-  elif (ls):
-    print(b.get_model_list())
-  else:
-    usage()
