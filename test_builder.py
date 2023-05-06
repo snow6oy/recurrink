@@ -34,14 +34,16 @@ class TestBuilder(unittest.TestCase):
 
   def test_get_cellvalues(self):
     ''' ./recurrink.py -m ${model} --cell ${cell}
+    0 1        2      3      4    5    6               7   8    9 0 1   2
+    a soleares circle medium west #fff mediumvioletred 1.0 #000 0 0 1.0 True
     '''
-    self.assertTrue(self.b.get_cellvalues('a'))
+    cells = self.b.get_cellvalues('a').split(' ')
+    self.assertTrue(cells[9].isdigit())
 
   def test_write_jsonfile(self):
     ''' ./recurrink.py -m ${model} --output JSON --random
     '''
     self.b.write_csvfile()
-    #self.assertEqual(self.view, bb.write_jsonfile())
     self.assertEqual('soleares', self.b.write_jsonfile())
 
   def test_load_view(self):

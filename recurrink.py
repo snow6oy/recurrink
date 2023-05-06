@@ -300,19 +300,21 @@ class Builder:
     models = self.list_model('/home/gavin/Pictures/artWork/recurrences') # paths are relative to working dir
     if model in models:
       self.model = model
+
       self.attributes = {
         'shape':'square',
-        'size':'medium',
-        'facing':'north',
+        'shape_size':'medium',
+        'shape_facing':'north',
         'fill': '#fff', 
         'bg': '#ccc',
-        'fillopacity':1.0, 
+        'fill_opacity':1.0, 
         'stroke':'#000', 
-        'width': 0, 
-        'dash': 0,
-        'dashopacity':1.0,
+        'stroke_width': 0, 
+        'stroke_dasharray': 0,
+        'stroke_opacity':1.0,
         'top':False
       }
+
       self.header = ['cell', 'model'] + list(self.attributes.keys())
       # self.header = [ 'cell','model','shape', 'size', 'facing', 'bg', 'width', 'top' ]
       self.author = 'MACHINE' if machine else 'HUMAN'
@@ -382,13 +384,6 @@ class Builder:
       wr.writerow(self.header)
       [wr.writerow(celldata[c]) for c in cells]
     return ' '.join(cells)
-
-  def read_tmp_csvfile(self):
-    with open(f"/tmp/{self.model}.csv") as f:
-      reader = csv.reader(f)
-      next(reader, None)
-      data = list(reader)
-    return data
 
   def uniq_cells(self):
     ''' send mondrian the robot a list of uniq cells 
@@ -463,16 +458,16 @@ class Builder:
     rando = dict()
     # default 'shape':'square',
     rando['shape'] = random.choice(["circle", "line", "square", "triangle"])
-    rando['facing'] = random.choice(["north", "south", "east", "west"])
+    rando['shape_facing'] = random.choice(["north", "south", "east", "west"])
     # default 'shape_size':'medium',
     sizes = ["medium", "large"]
     if rando['shape'] == "triangle":
-      rando['size'] = "medium"
+      rando['shape_size'] = "medium"
     else:
-      rando['size'] = random.choice(sizes)
+      rando['shape_size'] = random.choice(sizes)
     rando['top'] = str(random.choice([True, False]))
     rando['bg'] = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
-    rando['width'] = str(random.choice(range(10)))
+    rando['stroke_width'] = str(random.choice(range(10)))
  
     return rando
 
@@ -497,9 +492,9 @@ class Builder:
       model = row['model']
       source.update({cell: { 
         'shape': row['shape'],
-        'width': int(row['width']),
-        'facing':row['facing'],
-        'size': row['size'],
+        'stroke_width': int(row['stroke_width']),
+        'shape_facing':row['shape_facing'],
+        'shape_size': row['shape_size'],
         'bg': row['bg'],
         'top': bool(row['top'])
       }})
@@ -557,6 +552,14 @@ class Builder:
         valstr = ' '.join(d)
         break
     return valstr
+
+  def read_tmp_csvfile(self):
+    with open(f"/tmp/{self.model}.csv") as f:
+      reader = csv.reader(f)
+      next(reader, None)
+      data = list(reader)
+    return data
+
 ###############################################################################
 def usage():
   message = '''

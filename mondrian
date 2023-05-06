@@ -27,13 +27,16 @@ update_svg() {
     attrs=$(./recurrink.py -m ${model} --cell ${cell})
     a=($attrs)  # convert to array with the magic of IFS separator
     shape=${a[2]} # elems 0,1 are cell and model names
-    width=${a[3]}
+    size=${a[3]}
     facing=${a[4]}
-    size=${a[5]}
     bgcol=${a[6]}
-    top=${a[7]}
+    width=${a[9]}
+    top=${a[12]}
     # update cells
-    #echo "${cell},${model},${shape},${width},${facing},${size},${bgcol},${top}"
+    # echo "c ${cell},m ${model},s ${shape},w ${width},f ${facing},z ${size},b ${bgcol},t ${top}"
+    # 0 1        2      3      4    5    6               7   8    9 0 1   2
+    # a soleares circle medium west #fff mediumvioletred 1.0 #000 0 0 1.0 True
+    # d,soleares,circle,1.0,south,large,white,False
   ./effect.py \
      --id ${cell}1 \
      --output /tmp/${model}.svg \

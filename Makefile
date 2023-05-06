@@ -2,7 +2,7 @@ ID := 'none'
 SCAL := $(shell ./mondrian -s)
 MODL := $(shell ./mondrian -n)
 # examples: MODL=afroclave OR MODL=soleares ID=66862c76787f3994f64cb79882d246f
-BASEDIR := /home/gavin/Pictures/recurrences
+BASEDIR := /home/gavin/Pictures/artWork/recurrences
 
 help :
 	@echo "make png 			randomly generate new recurrence"
@@ -15,7 +15,8 @@ base : $(BASEDIR)/$(MODL)/index.csv
 # PNG for transfer from SVG output by cells.sh
 png : *.svg
 	@echo "made $@"
-	mv *.svg /home/gavin/Pictures/pubq
+	mv *.svg $(BASEDIR)/$(MODL)/m
+	mv /tmp/*.json $(BASEDIR)/$(MODL)/m
 	mv *.png /home/gavin/Pictures/pubq
 
 # wildcard resolves to DIGEST.svg

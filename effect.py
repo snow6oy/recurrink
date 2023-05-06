@@ -100,7 +100,6 @@ class Effect(inkex.EffectExtension):
     if not rinkId:
       inkex.errormsg("This extension only knows about SVGs created from a .rink file")
     elif self.svg.selection:
-      # c = Cells(self.options, factor)
       c = Cells(self.options, factor)
       message = c.update(self.svg)
       if message:
