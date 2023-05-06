@@ -41,8 +41,7 @@ png : *.svg
 $(MODL).rink : 
 	@echo $@
 	./mondrian -m $(MODL) -r $(ID)
-	/usr/bin/mv models/$@ .
-
+	/usr/bin/mv /tmp/$@ .
 
 # testing
 hi : 

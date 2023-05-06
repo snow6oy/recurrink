@@ -5,6 +5,7 @@ import os
 import sys
 import csv
 import json
+import glob
 import hmac
 import math
 import random
@@ -293,171 +294,123 @@ class Layout(Draw):
 
 class Builder:
   ''' read and write data to file
+      will replace Builder once new filesystem and data model is done
   '''
-  def __init__(self):
-    self.attributes = {
-      'shape':'square',
-      'shape_size':'medium',
-      'shape_facing':'north',
-      'fill': '#fff', 
-      'bg': '#ccc',
-      'fill_opacity':1.0, 
-      'stroke':'#000', 
-      'stroke_width': 0, 
-      'stroke_dasharray': 0,
-      'stroke_opacity':1.0,
-      'top':False
-    }
-    self.models = self.load_models()
-    self.json_dir = '/home/gavin/Pictures/artWork/recurrences/mondrian'
-
-  def write_rink_file(self, model, data):
-    fn = f"models/{model}.rink"
-    with open(fn, "w") as outfile:
-      json.dump(data, outfile, indent=2)
-    return fn
-
-  # TODO make model a mandatory param
-  def make(self, model=None, id=None):
-    ''' unpack the model(s) into a json database 
-    '''
-    outfile = None
-    data = {}
-    if id and model and model in self.models: # rink override
-      json_file = f"{self.json_dir}/{model}/{id}.json"
-      cells = self.load_view(json_file)
-      clist = self.list_cells(model)
-      if (len(cells.keys()) == len(clist)):
-        self.models[model]['json'] = cells
-      else:
-        raise KeyError(f"missing cells: {id}")
-
-    if model and model in self.models: # build rink from source
-      # print(f"model {model} ok")
-      data = {
-        'id': self.models[model]['id'],
-        'size': self.models[model]['size'],
-        'cells': self.get_cells(model)
+  def __init__(self, model, machine=False):
+    models = self.list_model('/home/gavin/Pictures/artWork/recurrences') # paths are relative to working dir
+    if model in models:
+      self.model = model
+      self.attributes = {
+        'shape':'square',
+        'size':'medium',
+        'facing':'north',
+        'fill': '#fff', 
+        'bg': '#ccc',
+        'fillopacity':1.0, 
+        'stroke':'#000', 
+        'width': 0, 
+        'dash': 0,
+        'dashopacity':1.0,
+        'top':False
       }
-      outfile = self.write_rink_file(model, data)
-    elif not model and len(self.models):
-      # this "build all models" option is supported but not used
-      for m in self.models:
-        data[m] = {
-          'id': self.models[m]['id'],
-          'size': self.models[m]['size'],
-          'cells': self.get_cells(m)
-        }
-        self.write_rink_file(m, data[m])
-    else:
-      raise KeyError(f"no such model: {model}")
-
-    return outfile
-
-  def get_positions(self, model):
-    ''' positions link the model and cell: for example 
-        csv with a line a, x, x a will appear in json as { a: { positions: [[0,0], [3,0] }}
-    '''
-    positions = dict()
-    for row_num, row in enumerate(self.models[model]['csv']):
-      for col_num, col in enumerate(row):
-        if col not in positions:
-          positions[col] = list()
-        coord = (col_num, row_num)
-        positions[col].append(coord)
-
-    return positions
-
-  def get_cells(self, model):
-    '''
-    '''
-    if model in self.models:
-      positions = self.get_positions(model)
-      cells = self.models[model]['json']
-      for p in positions:
-        cells[p]['positions'] = positions[p]
+      self.header = ['cell', 'model'] + list(self.attributes.keys())
+      # self.header = [ 'cell','model','shape', 'size', 'facing', 'bg', 'width', 'top' ]
+      self.author = 'MACHINE' if machine else 'HUMAN'
+      self.uniq = self.uniq_cells()
     else:
       raise KeyError(f"model '{model}' has no entry in models")
 
+  #################################################################
+  ################ p u b l i c ####################################
+
+  def write_csvfile(self):
+    ''' generate a config as cell x values matrix
+        for humans copy default values over
+        but machines get randoms
+    '''
+    init = dict()
+    for c in self.uniq: 
+      randomvals = self.random_cellvalues(c) if self.author == 'MACHINE' else dict()
+      row = list()
+      row.append(c)
+      row.append(self.model)
+      for a in self.attributes:
+        if a in randomvals:
+          row.append(randomvals[a])
+        else:
+          row.append(self.attributes[a])
+      init[c] = row
+
+    cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
     return cells
 
-  def load_models(self):
-    models = {}
-    conf = []
+  def write_rinkfile(self, view=None):
+    if view:
+      fn = f"/tmp/{view}.rink"
+      data = self.load_rinkdata(view)
+    else:
+      fn = f"/tmp/{self.model}.rink"
+      data = self.load_rinkdata(self.model)
+    self.write_json(fn, data)
+    return fn
 
-    for root, dir, files in os.walk('./models'):
-      conf.extend(files)
-
-    for f in conf:
-      (m, ext) = f.split('.')  # this.that
-      # print(m, ext)
-      if m not in models:
-        models[m] = dict()
-      if ext == 'csv':
-        csvData = self.load_model(m)
-        models[m]['csv'] = csvData
-        models[m]['size'] = (len(csvData[0]), len(csvData))
-        models[m]['id'] = self.get_digest(m, models[m]['csv'][0])
-      elif ext == 'json':
-        json_file = f"./models/{m}.json"
-        models[m]['json'] = self.load_view(json_file)
-      elif ext == 'rink':
-        pass # leave for inkscape
-      else:
-        raise ValueError(f"Unknown config {ext}")
-
-    return models
-
-  def load_model(self, model, csvfile=None):
-    ''' load csv data
+  # def create_new_view(self, cell_data):
+  def write_jsonfile(self):
+    ''' convert a 2d array of cell data into a hash and json file
     '''
-    # old way is model_csv
-    model_csv = csvfile if csvfile else f"./models/{model}.csv"
-    # print("load model " + model_csv)
-    with open(model_csv) as f:
-      reader = csv.reader(f, delimiter=' ')
+    csvdata = self.read_tmp_csvfile()
+    (model, cellvalues, jsondata) = self.convert_row2cell(csvdata)
+    if model != self.model:
+      raise ValueError(f"collision in /tmp {model} is not {self.model}")
+
+    fn = self.get_digest(cellvalues) if self.author == 'MACHINE' else self.model
+    #self.write_json(f"{self.datadir}/{model}/{fn}.json", source)
+    self.write_json(f"/tmp/{fn}.json", jsondata)
+    return fn
+
+  #####################################################################
+  ######################### p r i v a t e #############################
+
+  def list_model(self, datadir):
+    os.chdir(datadir)
+    return next(os.walk('.'))[1]
+
+  def write_tmp_csvfile(self, fn, celldata):
+    cells = self.uniq
+    with open(f"/tmp/{self.model}.csv", 'w') as f:
+      wr = csv.writer(f, quoting=csv.QUOTE_NONE)
+      wr.writerow(self.header)
+      [wr.writerow(celldata[c]) for c in cells]
+    return ' '.join(cells)
+
+  def read_tmp_csvfile(self):
+    with open(f"/tmp/{self.model}.csv") as f:
+      reader = csv.reader(f)
+      next(reader, None)
       data = list(reader)
     return data
 
-  def list_cells(self, model):
+  def uniq_cells(self):
     ''' send mondrian the robot a list of uniq cells 
     '''
     seen = dict()
-    for row in self.load_model(model):
+    for row in self.load_model():
       for cell in row:
         seen[cell] = seen[cell] + 1 if cell in seen else 0
     return seen.keys()
 
-  def get_base_conf(self, model, f):
-    ''' generate a json config 
+  def load_model(self):
+    ''' load csv data
     '''
-    d = self.load_model(model, csvfile=f)
-    fn = self.get_digest(model, d[0])
-    seen = dict()
-    for row in d:
-      for cell in row:
-        seen[cell] = seen[cell] + 1 if cell in seen else 0
-    cells = seen.keys()
-    init = dict()
-    for cell in cells: # copy default values over
-      init[cell] = dict()
-      for a in self.attributes:
-        init[cell][a] = self.attributes[a]
-    return init
+    #csvfile = f"{self.datadir}/{self.model}/index.csv"
+    csvfile = f"{self.model}/index.csv"
+    # print("load model " + csvfile)
+    with open(csvfile) as f:
+      reader = csv.reader(f, delimiter=' ')
+      data = list(reader)
+    return data
 
-  def load_view(self, json_file):
-    #print("load view  " + json_file)
-    with open(json_file) as f:
-      conf = json.load(f)
-      init = {}
-      for cell in conf:
-        init[cell] = dict()
-        for a in self.attributes:
-          if a in conf[cell]:
-            init[cell][a] = conf[cell][a]  # use value from json
-          else:
-            init[cell][a] = self.attributes[a] # default
-    return init
+  def load_view(self, view):
     '''
     TODO check that bg: values match
       '#FFA500':'orange', 
@@ -471,110 +424,61 @@ class Builder:
       '#fff':'white',
       '#ccc':'gray'
     '''
-  def _get_model_list(self):
-    modelList = str()
-    for m in self.models:
-      modelList += f"{m}\n"
-    return modelList
+    json_file = self.find_recurrence(view, 'json')[0]
+    #print(findview('550d193efe80f67e92d5a0c59ad9d354'))
+    #print("load view  " + json_file)
+    with open(json_file) as f:
+      conf = json.load(f)
+      init = {}
+      for cell in conf:
+        init[cell] = dict()
+        for a in self.attributes:
+          if a in conf[cell]:
+            init[cell][a] = conf[cell][a]  # use value from json
+          else:
+            init[cell][a] = self.attributes[a] # default
+    return init
 
-  def get_model_list(self):
-    modelList = str()
-    ranked = dict()
-    for m in self.models:
-      numCells = len(self.models[m]['json'].keys())
-      blockWidth = self.models[m]['size'][0]
-      blockHeight = self.models[m]['size'][1]
-      rank = (numCells + blockWidth + blockHeight)
-      ranked[m] = rank
-    # sort according to rank
-    sortRank = {k: v for k, v in sorted(ranked.items(), key=lambda item: item[1])}
-    for m in sortRank:
-      modelList += f"{sortRank[m]:{4}} {m}\n"
-    return modelList
-
-  def get_digest(self, model, row):
-    secret = b'model'
-    to_digest = ''.join(row)
-    digest_maker = hmac.new(secret, to_digest.encode('utf-8'), digestmod='MD5')
-    digest = digest_maker.hexdigest()
-    return digest
-
-  def update_digest(self, model, row):
-    ''' get digest has the same value for each model instance
-        update digest is useful for making new instances of models
+  def find_recurrence(self, file, ext):
+    ''' expected file structure
+        soleares/
+        ├── h
+        │   ├── 550d193efe80f67e92d5a0c59ad9d354.json
+        │   ├── 550d193efe80f67e92d5a0c59ad9d354.svg 
     '''
-    digest = self.get_digest(model, row)
-    self.models[model]['id'] = digest
-    return digest
+    paths = glob.glob(f'*/*/{file}.{ext}')
+    if paths:
+      return paths
+    else:
+      raise FileNotFoundError(f"{file}.{ext}")
 
-class Mondrian(Builder):
-  ''' extend builder to support Mondrian The Robot
-  '''
-  def __init__(self):
-    self.header = [ 'id','output','shape','width','facing','size','bg','top' ]
-    super().__init__()
-
-  def write_tmp_csvfile(self, model):
-    cells = self.list_cells(model)
-    with open(f"/tmp/{model}.csv", 'w') as f:
-      wr = csv.writer(f, quoting=csv.QUOTE_ALL)
-      wr.writerow(self.header)
-      [wr.writerow(m.random_cellvalues(model, cell)) for cell in cells]
-    return ' '.join(cells)
-
-  def get_cellvalues(self, model, cell):
-    data = m.read_tmp_csvfile(model)
-    valstr = None
-    for d in data:
-      if (cell == d[0]):
-        valstr = ' '.join(d)
-        break
-    return valstr
-
-  def create_new_instance(self, cell_data):
-    ''' convert a 2d array of cell data into a hash and json file
-    '''
-    (model, to_hash, source) = self.convert_row2cell(cell_data)
-    self.update_digest(model, to_hash)
-    self.write_json_file(model, self.models[model]['id'], source)
-    return self.models[model]['id']
-
-  ######################### p r i v a t e #############################
-  def write_json_file(self, model, fn, data):
-    f = f"{self.json_dir}/{model}/{fn}.json"
-    with open(f, "w") as outfile:
-      json.dump(data, outfile, indent=2)
-
-  def read_tmp_csvfile(self, model):
-    with open(f"/tmp/{model}.csv") as f:
-      reader = csv.reader(f)
-      next(reader, None)
-      data = list(reader)
-    return data
-
-  def random_cellvalues(self, model, cell):
+  def random_cellvalues(self, cell):
     ''' TODO these attributes were supposed to be updated interactively 
         to expose them for randomisation, first need to update effect.py
       'fill': '#fff',
       'fill_opacity':1.0,
       'stroke':'#000',
-      'stroke_dasharray': 0,
-      'stroke_opacity':1.0, '''
-
+      'dash': 0,
+      'opacity':1.0, '''
+    rando = dict()
     # default 'shape':'square',
-    shape = random.choice(["circle", "line", "square", "triangle"])
-    facing = random.choice(["north", "south", "east", "west"])
+    rando['shape'] = random.choice(["circle", "line", "square", "triangle"])
+    rando['facing'] = random.choice(["north", "south", "east", "west"])
     # default 'shape_size':'medium',
     sizes = ["medium", "large"]
-    if shape == "triangle":
-      size = "medium"
+    if rando['shape'] == "triangle":
+      rando['size'] = "medium"
     else:
-      size = random.choice(sizes)
-    top = str(random.choice([True, False]))
-    bg = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
-    width = str(random.choice(range(10)))
+      rando['size'] = random.choice(sizes)
+    rando['top'] = str(random.choice([True, False]))
+    rando['bg'] = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
+    rando['width'] = str(random.choice(range(10)))
+ 
+    return rando
 
-    return [cell,model,shape,width,facing,size,bg,top]
+  def write_json(self, fn, data):
+    with open(fn, "w") as outfile:
+      json.dump(data, outfile, indent=2)
 
   def convert_row2cell(self, data):
     ''' sample input 
@@ -589,8 +493,8 @@ class Mondrian(Builder):
       to_hash += ''.join(d)
       z = zip(self.header, d)
       row = dict(z)
-      cell = row['id']
-      model = row['output']
+      cell = row['cell']
+      model = row['model']
       source.update({cell: { 
         'shape': row['shape'],
         'width': int(row['width']),
@@ -601,32 +505,66 @@ class Mondrian(Builder):
       }})
     return (model, to_hash, source)
 
-  def create_from_log(self, csvfile):
-    ''' this function is already obsolete
-        but it might be useful to troubleshoot /tmp/model.csv 
+  def get_digest(self, cellvalues):
+    ''' hashkey should have a unique value for each model view
     '''
-    data = self.read_tmp_csvfile('./mondrian.log')
-    model = None
-    counter = 0
+    secret = b'self.model'
+    key = ''.join(cellvalues)
+    digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
+    return digest_maker.hexdigest()
 
-    for i, d in enumerate(data):
-      if model and model != data[i][1]:
-        start = i - counter
-        (model, to_hash, source) = self.convert_row2cell(data[start:i])
-        print(model, to_hash)
-        self.update_digest(model, to_hash)
-        self.write_json_file(model, self.models[model]['id'], source)
-        counter = 0
-      model = data[i][1]
-      counter += 1
+  def load_rinkdata(self, view):
+    ''' unpack the model(s) into a json database 
+    '''
+    model_data = self.load_model()
+    json_data = self.load_view(view)
+    if (len(json_data.keys()) != len(self.uniq)):
+      raise KeyError(f"missing cells: {view}")
 
+    return {
+        'id': view,
+        'size': (len(model_data[0]), len(model_data)),
+        'cells': self.get_cells(model_data, json_data)
+    }
 
+  def get_cells(self, model_data, json_data):
+    ''' combine model and view data to optimise SVG build process
+    '''
+    positions = self.get_positions(model_data)
+    for p in positions:
+      json_data[p]['positions'] = positions[p]
+    return json_data
+
+  def get_positions(self, model_data):
+    ''' positions link the model and cell: for example 
+        csv with a line a, x, x a will appear in json as { a: { positions: [[0,0], [3,0] }}
+    '''
+    positions = dict()
+    for row_num, row in enumerate(model_data):
+      for col_num, col in enumerate(row):
+        if col not in positions:
+          positions[col] = list()
+        coord = (col_num, row_num)
+        positions[col].append(coord)
+
+    return positions
+
+  def get_cellvalues(self, cell):
+    data = self.read_tmp_csvfile()
+    valstr = None
+    for d in data:
+      if (cell == d[0]):
+        valstr = ' '.join(d)
+        break
+    return valstr
 ###############################################################################
 def usage():
   message = '''
--m MODEL --output CSV|JSON|RINK
+-l list models
+-m MODEL --output CSV  [--random]
+-m MODEL --output JSON [--random]
+-m MODEL --output RINK [--view VIEW]
 -m MODEL --cell CELL
--l list models, simplest first
 '''
   print(message)
 
@@ -634,23 +572,20 @@ def inputs():
   ''' get inputs from command line
   '''
   try:
-    (opts, args) = getopt.getopt(sys.argv[1:], "m:o:c:d:l", ["model=", "output=", "cell=", "digest=", "list"])
+    (opts, args) = getopt.getopt(sys.argv[1:], "m:o:c:v:lr", ["model=", "output=", "cell=", "view=", "list", "random"])
   except getopt.GetoptError as err:
     print(err)  # will print something like "option -a not recognized"
     usage()
     sys.exit(2)
-  model = None
-  cell = None
-  digest = None
-  output = None
-  ls = False
+
+  (model, output, cell, view, ls, rand) = (None, None, None, None, False, False)
   for opt, arg in opts:
     if opt in ("-o", "--output") and arg in ('RINK', 'CSV', 'JSON'):
       output = arg
     elif opt in ("-c", "--cell"):
       cell = arg
-    elif opt in ("-d", "--digest"):
-      digest = arg
+    elif opt in ("-v", "--view"):
+      view = arg
     elif opt in ("-m", "--model"):
       model = arg
     elif opt in ("-h", "--help"):
@@ -658,27 +593,30 @@ def inputs():
       sys.exit()
     elif opt in ("-l", "--list"):
       ls = True
+    elif opt in ("-r", "--random"):
+      rand = True
     else:
       assert False, "unhandled option"
-  return (model, output, cell, digest, ls)
+  return (model, output, cell, view, ls, rand)
 
 if __name__ == '__main__':
-  b = Builder()
-  m = Mondrian()
-  (model, output, cell, digest, ls) = inputs()
-  ''''''''''''''''''''''''''''''''''''''''''''
-  if output == 'CSV':                         # create tmp csv file containing a collection of random cell values
-    print(m.write_tmp_csvfile(model))         # return cell vals a b c d
-  elif cell:                                  # lookup values by cell return as comma-separated string '1,square,north'
-    print(m.get_cellvalues(model, cell)) 
-  elif digest:                                # write RINK with source digest.json
-    print(b.make(model=model, id=digest))
-  elif output == 'JSON':                      # convert tmp csv into json as permanent record 
-    csvdata = m.read_tmp_csvfile(model)
-    print(m.create_new_instance(csvdata))     # write json and return digest
-  elif output == 'RINK':                      # combine CSV and JSON as RINK for inkscape to convert to SVG
-    print(b.make(model=model))
-  elif (ls):
-    print(b.get_model_list())
+  (model, output, cell, view, ls, rand) = inputs()
+  ''''''''''''''''''''''''''''''''''''''''''
+  if model:
+    b = Builder(model, machine=rand)
+    if output == 'CSV':                   # create tmp csv file containing a collection of random cell values
+      print(b.write_csvfile())            # OR default vals for humans. return cell vals a b c d
+    elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'
+      print(b.get_cellvalues(cell)) 
+    elif view:                            # write RINK with VIEW.json as source
+      print(b.write_rinkfile(view=view))
+    elif output == 'JSON':                # convert tmp csv into json as permanent record 
+      print(b.write_jsonfile())           # write json and return digest
+    elif output == 'RINK':                # combine CSV and JSON as RINK for inkscape to convert to SVG
+      print(b.write_rinkfile())
+    else:
+      usage()
+  elif ls:
+    print("\n".join(Builder.list_model(None, '/home/gavin/Pictures/artWork/recurrences'))) # bit of a hack
   else:
     usage()

@@ -12,7 +12,7 @@ get_random_model() {
 }
 
 get_cells() {
-  cells=$(./recurrink.py -m ${model} --output CSV)
+  cells=$(./recurrink.py -m ${model} --output CSV --random)
   if [ -z "${cells}" ]
   then
     echo "cannot find cells for ${model}"
@@ -82,11 +82,17 @@ if [ -n "${n}" ]; then
   echo ${n}
 elif [ -n "${m}" ] && [ "${d}" == 'none' ]; then
   model=$m
-  get_cells
-  update_svg
-  digest=$(./recurrink.py -m ${model} --output JSON)
-  /bin/mv /tmp/${model}.svg ${digest}.svg
-  echo ${digest}
+  if [ ! -f "/tmp/${model}.svg" ]
+  then
+    echo "File '$model.svg' not found in /tmp"
+    exit 1
+  else
+    get_cells
+    update_svg
+    digest=$(./recurrink.py -m ${model} --output JSON --random)
+    /bin/mv /tmp/${model}.svg ${digest}.svg
+    echo ${digest}
+  fi
 elif [ -n "${m}" ] && [ -n "${d}" ]; then
   model=$m
   /bin/mv /tmp/${model}.svg ${d}.svg
@@ -97,7 +103,7 @@ elif [ -n "${m}" ] && [ "${r}" == 'none' ]; then
 elif [ -n "${m}" ] && [ -n "${r}" ]; then
   echo $r
   model=$m
-  ./recurrink.py -m ${model} --digest $r
+  ./recurrink.py -m ${model} --output RINK --view $r
 elif [ "${s}" -eq 1 ]; then
   # scaling is weighted in favour of 1:1
   declare -a a=(1.0 0.5 1.0 2.0 1.0)
