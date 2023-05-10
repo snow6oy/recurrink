@@ -62,8 +62,9 @@ class TestBuilder(unittest.TestCase):
 
   def test_write_rinkfile(self):
     ''' ./recurrink.py -m ${model} --output RINK
+        check /tmp/{self.b.model}.rink
     '''
-    self.assertEqual(f"/tmp/{self.b.model}.rink", self.b.write_rinkfile(self.view))
+    self.assertFalse(self.b.write_rinkfile())
   ''' the end
 
   '''

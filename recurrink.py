@@ -347,15 +347,22 @@ class Builder:
     cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
     return cells
 
-  def write_rinkfile(self, view):
     ''' rink input can be JSON from HUMAN or MACHINE
         output is always same 
-    '''
+    def write_rinkfile(self, view):
     fn = f"/tmp/{self.model}.rink"
     json_file = self.find_recurrence(view, 'json')[0]
     data = self.load_rinkdata(json_file)
     self.write_json(fn, data)
     return fn
+    '''
+
+  def write_rinkfile(self):
+    ''' rink input can be JSON from HUMAN or MACHINE
+        output is always same 
+    '''
+    data = self.load_rinkdata(f"/tmp/{self.model}.json")
+    self.write_json(f"/tmp/{self.model}.rink", data)
 
   # def create_new_view(self, cell_data):
   def write_jsonfile(self):
@@ -367,7 +374,7 @@ class Builder:
       raise ValueError(f"collision in /tmp {model} is not {self.model}")
 
     digest = self.get_digest(cellvalues) # if self.author == 'MACHINE' else self.model
-    self.write_json(f"/tmp/{digest}.json", jsondata)
+    self.write_json(f"/tmp/{self.model}.json", jsondata)
     return digest
 
   def find_recurrence(self, file, ext):
@@ -588,7 +595,7 @@ def inputs():
 
   (model, output, cell, view, ls, rnd) = (None, None, None, None, False, False)
   for opt, arg in opts:
-    if opt in ("-o", "--output") and arg in ('RINK', 'CSV', 'JSON'):
+    if opt in ("-o", "--output") and arg in ('RINK', 'CSV', 'JSON', 'CELL', 'SVG'):
       output = arg
     elif opt in ("-c", "--cell"):
       cell = arg
@@ -614,21 +621,25 @@ if __name__ == '__main__':
   if model:
     if output == 'CSV':                   # create tmp csv file containing a collection of random cell values
       print(b.write_csvfile())            # OR default vals for humans. return cell vals a b c d
-    elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'
-      print(b.get_cellvalues(cell)) 
-    elif view:                            # write RINK with VIEW.json as source
-      print(b.write_rinkfile(view=view))
+    elif output == 'RINK':                # write RINK with MODEL.json as source
+      b.write_rinkfile()
     elif output == 'JSON':                # convert tmp csv into json as permanent record 
       print(b.write_jsonfile())           # write json and return digest
+    elif output == 'CELL':                # get a list of uniq cells
+      print(' '.join(b.uniq)) 
+    elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'
+      print(b.get_cellvalues(cell)) 
     else:
       usage()
   elif ls:
     print("\n".join(b.list_model()))      # has side effect of setting workdir
-  elif view and output == 'RINK':         # combine CSV and JSON as RINK for inkscape to convert to SVG
-    path = b.find_recurrence(view, 'json')[0]
-    b = Builder(path.split('/')[0])       # Builder works best with a known model
-    print(b.write_rinkfile(view))
-  elif view:                            # lookup SVG
+  elif view and output == 'JSON':         # query db
+    print(b.find_recurrence(view, 'json')[0])
+  elif view and output == 'SVG':          # lookup SVG
     print(b.find_recurrence(view, 'svg')[0])
   else:
     usage()
+  '''
+    elif view:                            # write RINK with VIEW.json as source
+      print(b.write_rinkfile(view=view))
+  '''
