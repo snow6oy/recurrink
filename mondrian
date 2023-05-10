@@ -4,9 +4,12 @@
 # opt 2 model=M RETURN nothing for success or error
 # opt 3 model=M RETURN digest 
 
+workdir=/home/gavin/Pictures/artWork/recurrences
+s=0
+
 # use randmoness to automatically select a model for recurrink to process
 get_random_model() {
-  model_path=$(ls -1 models/*.csv| sort -R| tail -1)
+  model_path=$(ls -1d ${workdir}/*| sort -R| tail -1)
   model=${model_path%.*}  # retain the part before the colon
   model=${model##*/}  # retain the part after the last slash
 }
@@ -83,35 +86,37 @@ fi
 
 if [ -n "${n}" ]; then
   echo ${n}
+elif [ "${s}" -eq 1 ]; then
+  # scaling is weighted in favour of 1:1
+  declare -a a=(1.0 0.5 1.0 2.0 1.0)
+  i=$((0 + $RANDOM % 5))
+  echo ${a[$i]}
 elif [ -n "${m}" ] && [ "${d}" == 'none' ]; then
+  model=$m
+  get_cells
+  echo ${cells}
+elif [ -n "${m}" ] && [ -n "${d}" ]; then
   model=$m
   if [ ! -f "/tmp/${model}.svg" ]
   then
     echo "File '$model.svg' not found in /tmp"
     exit 1
   else
-    get_cells
     update_svg
-    digest=$(./recurrink.py -m ${model} --output JSON --random)
-    /bin/mv /tmp/${model}.svg ${digest}.svg
+    /bin/mv /tmp/${model}.svg ${d}.svg
     echo ${digest}
   fi
-elif [ -n "${m}" ] && [ -n "${d}" ]; then
-  model=$m
-  /bin/mv /tmp/${model}.svg ${d}.svg
 elif [ -n "${m}" ] && [ "${r}" == 'none' ]; then
-  echo $r
   model=$m
-  ./recurrink.py -m ${model} --output RINK
+  digest=$(./recurrink.py -m ${model} --output JSON --random)
+  /bin/mv /tmp/${digest}.json ${workdir}/${model}/m
+  echo $digest
+  ./recurrink.py --view ${digest} --output RINK
+  ./input.py --output ${digest}.svg /tmp/${model}.rink
 elif [ -n "${m}" ] && [ -n "${r}" ]; then
   echo $r
   model=$m
   ./recurrink.py -m ${model} --output RINK --view $r
-elif [ "${s}" -eq 1 ]; then
-  # scaling is weighted in favour of 1:1
-  declare -a a=(1.0 0.5 1.0 2.0 1.0)
-  i=$((0 + $RANDOM % 5))
-  echo ${a[$i]}
 else
   usage
 fi

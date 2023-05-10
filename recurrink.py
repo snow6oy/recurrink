@@ -297,7 +297,8 @@ class Builder:
       will replace Builder once new filesystem and data model is done
   '''
   def __init__(self, model, machine=False):
-    models = self.list_model('/home/gavin/Pictures/artWork/recurrences') # paths are relative to working dir
+    self.workdir = '/home/gavin/Pictures/artWork/recurrences' # paths are relative to working dir
+    models = self.list_model() 
     if model in models:
       self.model = model
 
@@ -319,8 +320,8 @@ class Builder:
       # self.header = [ 'cell','model','shape', 'size', 'facing', 'bg', 'width', 'top' ]
       self.author = 'MACHINE' if machine else 'HUMAN'
       self.uniq = self.uniq_cells()
-    else:
-      raise KeyError(f"model '{model}' has no entry in models")
+    elif model:
+      raise ValueError(f"unknown {model}")
 
   #################################################################
   ################ p u b l i c ####################################
@@ -346,13 +347,13 @@ class Builder:
     cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
     return cells
 
-  def write_rinkfile(self, view=None):
-    if view:
-      fn = f"/tmp/{view}.rink"
-      data = self.load_rinkdata(view)
-    else:
-      fn = f"/tmp/{self.model}.rink"
-      data = self.load_rinkdata(self.model)
+  def write_rinkfile(self, view):
+    ''' rink input can be JSON from HUMAN or MACHINE
+        output is always same 
+    '''
+    fn = f"/tmp/{self.model}.rink"
+    json_file = self.find_recurrence(view, 'json')[0]
+    data = self.load_rinkdata(json_file)
     self.write_json(fn, data)
     return fn
 
@@ -365,17 +366,29 @@ class Builder:
     if model != self.model:
       raise ValueError(f"collision in /tmp {model} is not {self.model}")
 
-    fn = self.get_digest(cellvalues) if self.author == 'MACHINE' else self.model
-    #self.write_json(f"{self.datadir}/{model}/{fn}.json", source)
-    self.write_json(f"/tmp/{fn}.json", jsondata)
-    return fn
+    digest = self.get_digest(cellvalues) # if self.author == 'MACHINE' else self.model
+    self.write_json(f"/tmp/{digest}.json", jsondata)
+    return digest
+
+  def find_recurrence(self, file, ext):
+    ''' expected file structure
+        soleares/
+        ├── h
+        │   ├── 550d193efe80f67e92d5a0c59ad9d354.json
+        │   ├── 550d193efe80f67e92d5a0c59ad9d354.svg 
+    '''
+    paths = glob.glob(f'*/*/{file}.{ext}')
+    if paths:
+      return paths
+    else:
+      raise FileNotFoundError(f"{file}.{ext}")
+
+  def list_model(self):
+    os.chdir(self.workdir)
+    return next(os.walk('.'))[1]
 
   #####################################################################
   ######################### p r i v a t e #############################
-
-  def list_model(self, datadir):
-    os.chdir(datadir)
-    return next(os.walk('.'))[1]
 
   def write_tmp_csvfile(self, fn, celldata):
     cells = self.uniq
@@ -397,7 +410,6 @@ class Builder:
   def load_model(self):
     ''' load csv data
     '''
-    #csvfile = f"{self.datadir}/{self.model}/index.csv"
     csvfile = f"{self.model}/index.csv"
     # print("load model " + csvfile)
     with open(csvfile) as f:
@@ -405,7 +417,7 @@ class Builder:
       data = list(reader)
     return data
 
-  def load_view(self, view):
+  def load_view(self, json_file):
     '''
     TODO check that bg: values match
       '#FFA500':'orange', 
@@ -419,9 +431,7 @@ class Builder:
       '#fff':'white',
       '#ccc':'gray'
     '''
-    json_file = self.find_recurrence(view, 'json')[0]
-    #print(findview('550d193efe80f67e92d5a0c59ad9d354'))
-    #print("load view  " + json_file)
+    # print("load view  " + json_file)
     with open(json_file) as f:
       conf = json.load(f)
       init = {}
@@ -433,19 +443,6 @@ class Builder:
           else:
             init[cell][a] = self.attributes[a] # default
     return init
-
-  def find_recurrence(self, file, ext):
-    ''' expected file structure
-        soleares/
-        ├── h
-        │   ├── 550d193efe80f67e92d5a0c59ad9d354.json
-        │   ├── 550d193efe80f67e92d5a0c59ad9d354.svg 
-    '''
-    paths = glob.glob(f'*/*/{file}.{ext}')
-    if paths:
-      return paths
-    else:
-      raise FileNotFoundError(f"{file}.{ext}")
 
   def random_cellvalues(self, cell):
     ''' TODO these attributes were supposed to be updated interactively 
@@ -490,13 +487,21 @@ class Builder:
       row = dict(z)
       cell = row['cell']
       model = row['model']
+      # pad missing values with default
+      for a in self.attributes:
+        row[a] = self.attributes[a] if a not in row else row[a] 
       source.update({cell: { 
-        'shape': row['shape'],
-        'stroke_width': int(row['stroke_width']),
-        'shape_facing':row['shape_facing'],
-        'shape_size': row['shape_size'],
-        'bg': row['bg'],
-        'top': bool(row['top'])
+                   'shape': row['shape'],
+              'shape_size': row['shape_size'],
+            'shape_facing': row['shape_facing'],
+                    'fill': row['fill'], 
+                      'bg': row['bg'],
+            'fill_opacity': row['fill_opacity'], 
+                  'stroke': row['stroke'], 
+            'stroke_width': int(row['stroke_width']),
+        'stroke_dasharray': int(row['stroke_dasharray']),
+          'stroke_opacity': row['stroke_opacity'],
+                     'top': bool(row['top'])
       }})
     return (model, to_hash, source)
 
@@ -581,7 +586,7 @@ def inputs():
     usage()
     sys.exit(2)
 
-  (model, output, cell, view, ls, rand) = (None, None, None, None, False, False)
+  (model, output, cell, view, ls, rnd) = (None, None, None, None, False, False)
   for opt, arg in opts:
     if opt in ("-o", "--output") and arg in ('RINK', 'CSV', 'JSON'):
       output = arg
@@ -597,16 +602,16 @@ def inputs():
     elif opt in ("-l", "--list"):
       ls = True
     elif opt in ("-r", "--random"):
-      rand = True
+      rnd = True
     else:
       assert False, "unhandled option"
-  return (model, output, cell, view, ls, rand)
+  return (model, output, cell, view, ls, rnd)
 
 if __name__ == '__main__':
-  (model, output, cell, view, ls, rand) = inputs()
+  (model, output, cell, view, ls, rnd) = inputs()
   ''''''''''''''''''''''''''''''''''''''''''
+  b = Builder(model, machine=rnd)
   if model:
-    b = Builder(model, machine=rand)
     if output == 'CSV':                   # create tmp csv file containing a collection of random cell values
       print(b.write_csvfile())            # OR default vals for humans. return cell vals a b c d
     elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'
@@ -615,11 +620,15 @@ if __name__ == '__main__':
       print(b.write_rinkfile(view=view))
     elif output == 'JSON':                # convert tmp csv into json as permanent record 
       print(b.write_jsonfile())           # write json and return digest
-    elif output == 'RINK':                # combine CSV and JSON as RINK for inkscape to convert to SVG
-      print(b.write_rinkfile())
     else:
       usage()
   elif ls:
-    print("\n".join(Builder.list_model(None, '/home/gavin/Pictures/artWork/recurrences'))) # bit of a hack
+    print("\n".join(b.list_model()))      # has side effect of setting workdir
+  elif view and output == 'RINK':         # combine CSV and JSON as RINK for inkscape to convert to SVG
+    path = b.find_recurrence(view, 'json')[0]
+    b = Builder(path.split('/')[0])       # Builder works best with a known model
+    print(b.write_rinkfile(view))
+  elif view:                            # lookup SVG
+    print(b.find_recurrence(view, 'svg')[0])
   else:
     usage()
