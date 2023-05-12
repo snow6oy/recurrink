@@ -347,16 +347,6 @@ class Builder:
     cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
     return cells
 
-    ''' rink input can be JSON from HUMAN or MACHINE
-        output is always same 
-    def write_rinkfile(self, view):
-    fn = f"/tmp/{self.model}.rink"
-    json_file = self.find_recurrence(view, 'json')[0]
-    data = self.load_rinkdata(json_file)
-    self.write_json(fn, data)
-    return fn
-    '''
-
   def write_rinkfile(self, json_file=None):
     ''' rink input can be JSON from HUMAN or MACHINE
         output is always same 
@@ -366,7 +356,6 @@ class Builder:
     data = self.load_rinkdata(json_file)
     self.write_json(f"/tmp/{self.model}.rink", data)
 
-  # def create_new_view(self, cell_data):
   def write_jsonfile(self):
     ''' convert a 2d array of cell data into a hash and json file
     '''

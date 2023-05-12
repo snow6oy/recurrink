@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# use-case is when JSON/SVG pair is missing an SVG file
+# prerequisite is to link the JSON
+# ln -s ~/Pictures/artWork/recurrences/bossa/m/c954cb1e4f3f505897b267a91c4b4163.json rink.pid
+
+workdir=/home/gavin/Pictures/artWork/recurrences
+
+pid=/tmp/rink.pid
+dbentry=`readlink $pid`
+pubdir=/home/gavin/Pictures/pubq
+
+if [[ -L "${pid}" ]]
+then 
+  model=`readlink $pid | awk -v FS='/' '{print $7}'`
+  echo $model
+  svgname="${dbentry/json/svg}"
+  echo ${svgname}
+  if [ -f "${svgname}" ]
+  then
+    echo "error: $svgname exists"
+    exit 1
+  else
+    echo -m ${model} --output RINK --view ${dbentry}
+    ./recurrink.py -m ${model} --output RINK --view ${dbentry}
+    ./input.py --output /tmp/${model}.svg --scale 1.0 /tmp/${model}.rink
+    mv "/tmp/${model}.svg" ${svgname}
+    ln -s ${svgname} ${pubdir}
+    rm $pid
+  fi
+else
+  echo "missing pid ${pid}"
+fi
