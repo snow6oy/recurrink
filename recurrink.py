@@ -357,11 +357,13 @@ class Builder:
     return fn
     '''
 
-  def write_rinkfile(self):
+  def write_rinkfile(self, json_file=None):
     ''' rink input can be JSON from HUMAN or MACHINE
         output is always same 
     '''
-    data = self.load_rinkdata(f"/tmp/{self.model}.json")
+    if json_file is None:
+      json_file = f"/tmp/{self.model}.json"
+    data = self.load_rinkdata(json_file)
     self.write_json(f"/tmp/{self.model}.rink", data)
 
   # def create_new_view(self, cell_data):
@@ -621,6 +623,8 @@ if __name__ == '__main__':
   if model:
     if output == 'CSV':                   # create tmp csv file containing a collection of random cell values
       print(b.write_csvfile())            # OR default vals for humans. return cell vals a b c d
+    elif view and output == 'RINK':       # write RINK with Library json as source
+      b.write_rinkfile(json_file=view)
     elif output == 'RINK':                # write RINK with MODEL.json as source
       b.write_rinkfile()
     elif output == 'JSON':                # convert tmp csv into json as permanent record 
