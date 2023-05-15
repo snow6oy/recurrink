@@ -385,12 +385,17 @@ class Builder:
     os.chdir(self.workdir)
     return next(os.walk('.'))[1]
 
+  def list_model_with_stats(self):
+    for m in self.list_model():
+      self.model = m
+      print(f"{len(self.uniq_cells()):>4}  {m}")
+
   #####################################################################
   ######################### p r i v a t e #############################
 
   def write_tmp_csvfile(self, fn, celldata):
     cells = self.uniq
-    with open(f"/tmp/{self.model}.csv", 'w') as f:
+    with open(fn, 'w') as f:
       wr = csv.writer(f, quoting=csv.QUOTE_NONE)
       wr.writerow(self.header)
       [wr.writerow(celldata[c]) for c in cells]
@@ -570,6 +575,7 @@ def usage():
 -m MODEL --output CSV  [--random]
 -m MODEL --output JSON [--random]
 -m MODEL --output RINK [--view VIEW]
+-m MODEL --output CELL
 -m MODEL --cell CELL
 '''
   print(message)
@@ -625,7 +631,8 @@ if __name__ == '__main__':
     else:
       usage()
   elif ls:
-    print("\n".join(b.list_model()))      # has side effect of setting workdir
+    #print("\n".join(b.list_model()))      # has side effect of setting workdir
+    b.list_model_with_stats()               # has side effect of setting workdir
   elif view and output == 'JSON':         # query db
     print(b.find_recurrence(view, 'json')[0])
   elif view and output == 'SVG':          # lookup SVG
