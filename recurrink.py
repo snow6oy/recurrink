@@ -450,21 +450,25 @@ class Builder:
       'stroke':'#000',
       'dash': 0,
       'opacity':1.0, '''
-    rando = dict()
+    rnd = dict()
     # default 'shape':'square',
-    rando['shape'] = random.choice(["circle", "line", "square", "triangle"])
-    rando['shape_facing'] = random.choice(["north", "south", "east", "west"])
+    rnd['shape'] = random.choice(["circle", "line", "square", "triangle"])
+    rnd['shape_facing'] = random.choice(["north", "south", "east", "west"])
     # default 'shape_size':'medium',
     sizes = ["medium", "large"]
-    if rando['shape'] == "triangle":
-      rando['shape_size'] = "medium"
+    if rnd['shape'] == "triangle":
+      rnd['shape_size'] = "medium"
     else:
-      rando['shape_size'] = random.choice(sizes)
-    rando['top'] = str(random.choice([True, False]))
-    rando['bg'] = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
-    rando['stroke_width'] = str(random.choice(range(10)))
- 
-    return rando
+      rnd['shape_size'] = random.choice(sizes)
+    rnd['top'] = str(random.choice([True, False]))
+    rnd['bg'] = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
+    rnd['stroke_width'] = str(random.choice(range(10)))
+    # fill stroke opacity dash
+    rnd['fill'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
+    rnd['fill_opacity'] = random.choice(['0.1', '0.4', '0.7', '1.0', '1.0', '1.0'])
+    rnd['stroke'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
+    rnd['stroke_dasharray'] = str(random.choice(range(10)))
+    return rnd
 
   def write_json(self, fn, data):
     with open(fn, "w") as outfile:

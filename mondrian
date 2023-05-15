@@ -65,27 +65,23 @@ mksvg() {
   do
     attrs=$(./recurrink.py -m ${model} --cell ${cell})
     a=($attrs)  # convert to array with the magic of IFS separator
-    shape=${a[2]} # elems 0,1 are cell and model names
-    size=${a[3]}
-    facing=${a[4]}
-    bgcol=${a[6]}
-    width=${a[9]}
-    top=${a[12]}
-    echo -n "${cell} ${shape}" 
+    echo -n "${cell} ${a[2]}" 
     # update cells
-    # echo "c ${cell},m ${model},s ${shape},w ${width},f ${facing},z ${size},b ${bgcol},t ${top}"
-    # 0 1        2      3      4    5    6               7   8    9 0 1   2
-    # a soleares circle medium west #fff mediumvioletred 1.0 #000 0 0 1.0 True
-    # d,soleares,circle,1.0,south,large,white,False
+    # 0    1     2     3          4            5    6  7            8      9            0                1              2
+    # cell,model,shape,shape_size,shape_facing,fill,bg,fill_opacity,stroke,stroke_width,stroke_dasharray,stroke_opacity,top
   ./effect.py \
      --id ${cell}1 \
      --output /tmp/${model}.svg \
-     --shape ${shape} \
-     --width ${width} \
-     --facing ${facing} \
-     --size ${size} \
-     --bg ${bgcol} \
-     --top ${top} /tmp/${model}.svg
+     --shape ${a[2]} \
+     --size ${a[3]} \
+     --facing ${a[4]} \
+     --fill ${a[5]} \
+     --bg ${a[6]} \
+     --opacity ${a[7]} \
+     --stroke ${a[8]} \
+     --width ${a[9]} \
+     --dash ${a[10]} \
+     --top ${a[12]} /tmp/${model}.svg
   done
 }
 

@@ -12,7 +12,11 @@ class Cells(Layout):
       'shape_size': options.size,
       'shape_facing': options.facing,
       'top': options.top,
-      'stroke_width': int(options.width)
+      'stroke_width': int(options.width),
+      'fill': options.fill,
+      'fill_opacity': options.opacity,
+      'stroke': options.stroke,
+      'stroke_dasharray': options.dash
     }
     self.bg = options.bg 
     super().__init__(factor=float(factor))
@@ -39,7 +43,11 @@ class Cells(Layout):
       # update the background style, but only if we're given a new value
       self.set_background(gid, self.bg, svg) 
       self.set_foreground(shapes, self.requested)
+      shapes.style['fill'] = self.requested['fill']
+      shapes.style['fill-opacity'] = self.requested['fill_opacity']
+      shapes.style['stroke'] = self.requested['stroke']
       shapes.style['stroke-width'] = svg.unittouu(self.requested['stroke_width'])
+      shapes.style['stroke-dasharray'] = self.requested['stroke_dasharray']
       # add the top elems last
       if self.requested['top']:
         cell = shapes.get('id')[0]
@@ -84,13 +92,18 @@ class Effect(inkex.EffectExtension):
   ''' update cells imported as rink JSON
   '''
   def add_arguments(self, pars):
-    pars.add_argument("--tab",    type=str, dest="tab")
-    pars.add_argument("--shape",  default='square', help="Replace one shape with another")
-    pars.add_argument("--size",   default='normal', help="Increase shape size (not triangles)")
-    pars.add_argument("--facing", default='north', help="Rotate shapes (not squares or circles)")
-    pars.add_argument("--width",  default=0, help="Border thickness as a number 0-9")
-    pars.add_argument("--bg",     default='#FFFFFF', help="Change the background colour")
-    pars.add_argument("--top",    default=False, type=inkex.Boolean, help="Stay on top when overlapping")
+    pars.add_argument("--tab",      type=str, dest="tab")
+    pars.add_argument("--shape",    default='square', help="Replace one shape with another")
+    pars.add_argument("--size",     default='normal', help="Increase shape size (not triangles)")
+    pars.add_argument("--facing",   default='north', help="Rotate shapes (not squares or circles)")
+    pars.add_argument("--width",    default=0, help="Border thickness as a number 0-9")
+    pars.add_argument("--bg",       default='#FFFFFF', help="Change the background colour")
+    pars.add_argument("--top",      default=False, type=inkex.Boolean, help="Stay on top when overlapping")
+
+    pars.add_argument("--fill",     default='#FFFFFF', help="Change the foreground colour")
+    pars.add_argument("--stroke",   default='#000000', help="Change the stroke colour")
+    pars.add_argument("--dash",     default=0, help="Stroke dash as a number 0-9")
+    pars.add_argument("--opacity",  default=1.0, help="Transparency where 1.0 is opaque and 0 is fully transparent")
 
   def effect(self):  # effect because generate is a subset
     ''' check if svg is a recurrence and then apply inputs
