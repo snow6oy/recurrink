@@ -502,7 +502,7 @@ class Builder:
             'fill_opacity': row['fill_opacity'], 
                   'stroke': row['stroke'], 
             'stroke_width': int(row['stroke_width']),
-        'stroke_dasharray': int(row['stroke_dasharray']),
+        'stroke_dasharray': row['stroke_dasharray'],
           'stroke_opacity': row['stroke_opacity'],
                      'top': bool(row['top'])
       }})
