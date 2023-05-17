@@ -4,8 +4,11 @@
 '''
 import csv
 import inkex
+import pprint
 from inkex import Group, load_svg
 from recurrink import Builder
+
+pp = pprint.PrettyPrinter(indent=2)
 
 class BuilderMate(Builder):
 
@@ -25,6 +28,7 @@ class Input(inkex.OutputExtension):
 
     if self.model is None:
       print(' '.join(list(self.view.keys())))
+      pp.pprint(self.view)
     else:
       bm = BuilderMate(self.model) 
       print(self.model)
@@ -38,13 +42,13 @@ class Input(inkex.OutputExtension):
         for a in bm.attributes:
           if a in self.view[cell]:
             row.append(self.view[cell][a])              # dashes and underscores :/
-          elif a == 'fill_opacity':
+          elif a == 'fill_opacity' and 'fill-opacity' in self.view[cell]:
             row.append(self.view[cell]['fill-opacity'])
-          elif a == 'stroke_width':
+          elif a == 'stroke_width' and 'stroke-width' in self.view[cell]:
             row.append(self.view[cell]['stroke-width'])
-          elif a == 'stroke_dasharray':
+          elif a == 'stroke_dasharray' and 'stroke-dasharray' in self.view[cell]:
             row.append(self.view[cell]['stroke-dasharray'])
-          elif a == 'stroke_opacity':
+          elif a == 'stroke_opacity' and 'stroke-opacity' in self.view[cell]:
             row.append(self.view[cell]['stroke-opacity'])
           else:
             row.append(bm.attributes[a])
@@ -72,6 +76,33 @@ class Input(inkex.OutputExtension):
       (k, v) = s.split(':')
       k = 'bg' if fb == 'bg' else k
       self.view[cell][k] = v
+
+  def add_style_from_elem(self, fb, shape, el):
+    ''' shape shape_size shape_facing fill bg fill_opacity stroke stroke_width stroke_dasharray stroke_opacity top
+        uniq count of each cell attrib '''
+    #print(fb, shape, el.tag_name)
+    cell = el.tag_name
+    for s in ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-opacity']:
+      if s in el.attrib:
+        cell = ':'.join([cell, el.attrib[s]])
+    if cell not in self.view:
+      self.view[cell] = 1
+    else:
+      self.view[cell] += 1
+
+
+  def zzadd_style_from_elem(self, fb, shape, el):
+    k = el.attrib['id'] + el.attrib['fill']
+    if k not in self.uniq:
+      self.uniq[k] = chr(self.az)
+      self.az += 1
+    cell = self.uniq[k]
+    if cell not in self.view:
+      self.view[cell] = dict()
+    self.view[cell]['shape'] = shape
+    for s in ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-opacity']:
+      if s in el.attrib:
+        self.view[cell][s] = el.attrib[s]
 
   def query_shape(self, s):
     ''' create a list of strings
@@ -119,6 +150,8 @@ class Input(inkex.OutputExtension):
     '''
     self.model = None if 'model' not in self.options else self.options.model
     self.view = dict()
+    self.uniq = dict()
+    self.az = 97             # start the cell counter at a
     doc = load_svg(stream)
     x = doc.getroot()    #print(x.attrib['width'])
     if not len(x):
@@ -130,12 +163,23 @@ class Input(inkex.OutputExtension):
       # print(g.tag_name) 
       for tag in g:  # top layer
         #print(' ' * 1, root.attrib['id'], root.attrib['style'])
-        (fb, cell) = tag.attrib['id'].split('-')
+        idvals = tag.attrib['id'].split('-')
+        if len(idvals) == 1:
+          cell = idvals[0]
+          if tag.attrib['id'] == 'bg':
+            fb = 'bg'
+          else:
+            fb = 'fg'
+        elif len(idvals) == 2:
+          (fb, cell) = idvals
         if cell not in self.view:
           self.view[cell] = dict()
-        self.add_style(fb, cell, tag.attrib['style'])
-        # print(' ' * 1, fb, cell, style)
+        if 'style' in tag.attrib:
+          self.add_style(fb, cell, tag.attrib['style'])
+        else:
+          self.add_style_from_elem(fb, cell, tag)
         [self.add_shape(el.attrib['id'], el) for el in tag]
+    print(self.uniq)
 
 if __name__ == '__main__':
   Input().run()
