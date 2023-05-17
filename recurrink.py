@@ -386,9 +386,13 @@ class Builder:
     return next(os.walk('.'))[1]
 
   def list_model_with_stats(self):
+    print(f"uniq    x    y model")
+    print('-' * 80)
     for m in self.list_model():
       self.model = m
-      print(f"{len(self.uniq_cells()):>4}  {m}")
+      index_csv = self.load_model()
+      (x, y) = (len(index_csv[0]), len(index_csv))
+      print(f"{len(self.uniq_cells()):>4} {x:>4} {y:>4} {m}")
 
   #####################################################################
   ######################### p r i v a t e #############################
