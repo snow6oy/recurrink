@@ -533,7 +533,7 @@ class Builder:
       raise KeyError(f"missing cells: {view}")
 
     return {
-        'id': view,
+        'id': self.model,
         'size': (len(model_data[0]), len(model_data)),
         'cells': self.get_cells(model_data, json_data)
     }
