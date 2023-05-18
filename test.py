@@ -13,17 +13,18 @@ class TestLayout(unittest.TestCase):
 
   def setUp(self):
     os.chdir(BASEDIR)  # working dir 
-    model = 'soleares'
     svg = inkex.load_svg("samples/soleares.svg").getroot()
-    b = Builder()
-    b.make(model=model)
+    b = Builder('soleares')
+    b.write_csvfile()
+    b.write_jsonfile()
+    b.write_rinkfile()
     l = Layout()
-    l.add(model)
+    l.add('soleares')
     self.l = l
     self.b = b
 
   def tearDown(self):
-    os.unlink('models/soleares.rink')
+    os.unlink('/tmp/soleares.rink')
   
   def test_scale(self):
     l5 = Layout(factor=0.5)
@@ -39,7 +40,7 @@ class TestLayout(unittest.TestCase):
     self.assertEqual(self.l.blocksize(), (3,2))
 
   def test_get_id(self):
-    self.assertEqual(self.l.get_id(), '8b2c78bf119f3082714dabb23d5d46dc')
+    self.assertEqual(self.l.get_id(), 'soleares')
 
   def test_positions(self):
     rs = []

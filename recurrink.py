@@ -200,7 +200,7 @@ class Layout(Draw):
   def add(self, model, db=None):
     ''' load database of named model or use given db'''
     if db is None:
-      json_file = f"models/{model}.rink"
+      json_file = f"/tmp/{model}.rink"
       with open(json_file) as f:
         db = json.load(f)
       self.get = db
@@ -512,7 +512,7 @@ class Builder:
             'stroke_width': int(row['stroke_width']),
         'stroke_dasharray': row['stroke_dasharray'],
           'stroke_opacity': row['stroke_opacity'],
-                     'top': bool(row['top'])
+                     'top': (row['top'] in ['True', 'true'])
       }})
     return (model, to_hash, source)
 
@@ -570,6 +570,8 @@ class Builder:
     return valstr
 
   def read_tmp_csvfile(self):
+    ''' example csv row
+       a, soleares, square, medium, north, #fff, #ccc, 1.0, #000, 0, 0, 1.0, Fals] '''
     with open(f"/tmp/{self.model}.csv") as f:
       reader = csv.reader(f)
       next(reader, None)

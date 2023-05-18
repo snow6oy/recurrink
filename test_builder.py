@@ -31,12 +31,14 @@ class TestBuilder(unittest.TestCase):
 
   def test_write_csvfile_human(self):
     self.assertEqual('a b c d', self.b.write_csvfile())
+    os.unlink('/tmp/soleares.csv')
 
   def test_get_cellvalues(self):
     ''' ./recurrink.py -m ${model} --cell ${cell}
     0 1        2      3      4    5    6               7   8    9 0 1   2
     a soleares circle medium west #fff mediumvioletred 1.0 #000 0 0 1.0 True
     '''
+    self.b.write_csvfile()
     cells = self.b.get_cellvalues('a').split(' ')
     self.assertTrue(cells[9].isdigit())
 
