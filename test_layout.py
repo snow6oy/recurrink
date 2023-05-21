@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import inkex
 import unittest
 from recurrink import Layout
@@ -12,8 +13,6 @@ BASEDIR="/home/gavin/code/recurrink"
 class TestLayout(unittest.TestCase):
 
   def setUp(self):
-    os.chdir(BASEDIR)  # working dir 
-    # svg = inkex.load_svg("samples/soleares.svg").getroot()
     b = Builder('soleares')
     b.write_csvfile()
     b.write_jsonfile()
@@ -53,9 +52,15 @@ class TestLayout(unittest.TestCase):
   def test_sizeUu(self):
     self.assertEqual(self.l.sizeUu, 48.0)
 
-  def test_triangle(self):
-    s = self.l.shape('a', 0, 0, self.l.get_cell('a'))
-    self.assertTrue(type(s))
+  def test_top(self):
+    ''' test_card.rink uses top but will Layout reorder correctly
+    '''
+    print(os.getcwd())
+    with open(f'{BASEDIR}/samples/test_card.rink') as f:
+      testdb = json.load(f)
+    rink = self.l.add('soleares', db=testdb)
+    self.assertFalse(rink['cells']['a']['top'])
+    self.assertTrue(rink['cells']['b']['top'])
 
   '''
     the end
