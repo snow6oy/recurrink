@@ -33,6 +33,17 @@ class TestBuilder(unittest.TestCase):
     self.assertEqual('a b c d', self.b.write_csvfile())
     os.unlink('/tmp/soleares.csv')
 
+  def test_convert_row2cell(self):
+    ''' check vals from csv are correctly poured, e.g. top reordering
+        shape: shape_size: shape_facing: fill: bg: fill_opacity: stroke: stroke_width: stroke_dasharray: stroke_opacity: top:
+    '''
+    d = [[ 'a','soleares','triangle','medium','west','#fff','yellowgreen','1.0','#000','1','0','1.0','False' ],
+         [ 'b','soleares','circle','large','all','#fff','yellowgreen','1.0','#000','1','0','1.0','True' ],
+         [ 'c','soleares','line','medium','west','#fff','orange','1.0','#000','1','0','1.0','False' ]]
+    (model, hashkey, cells) = self.b.convert_row2cell(d)
+    sorted_by_top = list(cells.keys())
+    self.assertEqual(sorted_by_top, ['a', 'c', 'b'])
+
   def test_get_cellvalues(self):
     ''' ./recurrink.py -m ${model} --cell ${cell}
     0 1        2      3      4    5    6               7   8    9 0 1   2

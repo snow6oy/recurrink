@@ -529,35 +529,30 @@ class Builder:
 
   def convert_row2cell(self, data):
     ''' sample input 
-   [[ 'a','soleares','triangle','3','west','medium','yellowgreen','False' ],
-    [ 'b','soleares','circle','8','west','large','orange','True' ],
-    [ 'c','soleares','line','6','south','medium','gray','True' ]] '''
-
+      [[ 'a','soleares','triangle','medium','west','#fff','yellowgreen','1.0','#000','1','0','1.0','False' ]] '''
+    sortdata = list()
     source = dict()
     to_hash = str()
+
+    # convert values from string to primitives
     for d in data:
-      #z = zip(header, data[i])
       to_hash += ''.join(d)
+      d[9] = int(d[9])
+      d[10] = int(d[10])
+      d[12] = (d[12] in ['True', 'true'])
+
+    # sort them so that top:true will be rendered last
+    sortdata = sorted(data, key=lambda x: x[12])
+
+    for d in sortdata:
       z = zip(self.header, d)
-      row = dict(z)
-      cell = row['cell']
-      model = row['model']
+      attrs = dict(z)
+      cell = attrs['cell']
+      model = attrs['model']
       # pad missing values with default
       for a in self.attributes:
-        row[a] = self.attributes[a] if a not in row else row[a] 
-      source.update({cell: { 
-                   'shape': row['shape'],
-              'shape_size': row['shape_size'],
-            'shape_facing': row['shape_facing'],
-                    'fill': row['fill'], 
-                      'bg': row['bg'],
-            'fill_opacity': row['fill_opacity'], 
-                  'stroke': row['stroke'], 
-            'stroke_width': int(row['stroke_width']),
-        'stroke_dasharray': row['stroke_dasharray'],
-          'stroke_opacity': row['stroke_opacity'],
-                     'top': (row['top'] in ['True', 'true'])
-      }})
+        attrs[a] = self.attributes[a] if a not in attrs else attrs[a] 
+      source.update({cell: attrs})
     return (model, to_hash, source)
 
   def get_digest(self, cellvalues):
@@ -693,7 +688,3 @@ if __name__ == '__main__':
     print(b.find_recurrence(view, 'svg')[0])
   else:
     usage()
-  '''
-    elif view:                            # write RINK with VIEW.json as source
-      print(b.write_rinkfile(view=view))
-  '''
