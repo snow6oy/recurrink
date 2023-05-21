@@ -43,6 +43,8 @@ class Draw:
       s = self.set_square(cell, X, Y, a)
     elif a['shape'] == 'triangle':
       s = self.set_triangle(cell, X, Y, a)
+    elif a['shape'] == 'diamond':
+      s = self.set_diamond(cell, X, Y, a)
     else:
       s = self.set_text(a['shape'], X, Y)
 
@@ -159,6 +161,48 @@ class Draw:
       ]
     else:
       raise ValueError("Cannot face triangle {}".format(a['shape_facing']))
+    
+    polyg = Polygon(points=",".join(map(str, points)))
+    #polyg.label = cell
+    return polyg
+  
+  def set_diamond(self, cell, X, Y, a):
+
+    fullw = a['stroke_width']
+    halfw = a['stroke_width'] / 2 # stroke width is halved for repositioning
+
+    if a['shape_facing'] == 'north': 
+      points = [
+        X + fullw, Y + self.sizeUu / 2, 
+        X + self.sizeUu - halfw, Y + fullw, 
+        X + self.sizeUu - halfw, Y + self.sizeUu - fullw,
+        X + fullw, Y + self.sizeUu / 2
+      ]
+    else:
+      raise ValueError(f"Cannot face diamond {a['shape_facing']}")
+    '''
+    elif a['shape_facing'] == 'east': 
+      points = [
+        X + halfw, Y + fullw, 
+        X + self.sizeUu - fullw, Y + self.sizeUu / 2,
+        X + halfw, Y + self.sizeUu - fullw,
+        X + halfw, Y + fullw
+      ]
+    elif a['shape_facing'] == 'west': 
+      points = [
+        X + fullw, Y + self.sizeUu - halfw,
+        X + self.sizeUu / 2, Y + fullw,
+        X + self.sizeUu - fullw, Y + self.sizeUu - halfw,
+        X + fullw, Y + self.sizeUu - halfw
+      ]
+    elif a['shape_facing'] == 'south':
+      points = [
+        X + halfw, Y + halfw, 
+        X + self.sizeUu / 2, Y + self.sizeUu - fullw, 
+        X + self.sizeUu - halfw, Y + halfw,
+        X + halfw, Y + halfw
+      ]
+    '''
     
     polyg = Polygon(points=",".join(map(str, points)))
     #polyg.label = cell

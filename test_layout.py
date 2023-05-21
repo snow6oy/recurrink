@@ -13,7 +13,7 @@ class TestLayout(unittest.TestCase):
 
   def setUp(self):
     os.chdir(BASEDIR)  # working dir 
-    svg = inkex.load_svg("samples/soleares.svg").getroot()
+    # svg = inkex.load_svg("samples/soleares.svg").getroot()
     b = Builder('soleares')
     b.write_csvfile()
     b.write_jsonfile()
