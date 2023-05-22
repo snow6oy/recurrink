@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="109.6078mm"
+   height="51.441162mm"
+   viewBox="0 0 109.6078 51.441162"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="windsorNewton.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="1"
+     inkscape:pagecheckerboard="false"
+     inkscape:document-units="mm"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="2.0149341"
+     inkscape:cx="320.60602"
+     inkscape:cy="68.240445"
+     inkscape:window-width="1366"
+     inkscape:window-height="836"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid83770"
+       originx="-11.965728"
+       originy="-130.50584" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2">
+    <rect
+       x="-235.81058"
+       y="410.39777"
+       width="253.90587"
+       height="158.9897"
+       id="rect1023" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-11.965729,-130.50584)">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+       id="rect4469"
+       width="53.331825"
+       height="50.837936"
+       x="74.009224"
+       y="130.50584" />
+    <rect
+       style="fill:#cccccc;fill-opacity:1;stroke-width:0.264583"
+       id="rect9511"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="130.50584" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;stroke-width:0.264583"
+       x="77.395981"
+       y="134.77859"
+       id="text15623"><tspan
+         style="stroke-width:0.264583"
+         x="77.395981"
+         y="134.77859"
+         id="tspan15625"
+         sodipodi:role="line">      #CCC: gray</tspan></text>
+    <rect
+       style="fill:#cccccc;fill-opacity:1;stroke-width:0.264583"
+       id="rect31050"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="130.50584" />
+    <rect
+       style="fill:#9acd32;fill-opacity:1;stroke-width:0.264583"
+       id="rect31052"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="136.93599" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="76.13427"
+       y="140.97749"
+       id="text40630"><tspan
+         sodipodi:role="line"
+         id="tspan40628"
+         style="fill:#000000;stroke-width:0.264583"
+         x="76.13427"
+         y="140.97749"> #9ACD32: yellowgreen</tspan></text>
+    <rect
+       style="fill:#32cd32;fill-opacity:1;stroke-width:0.264583"
+       id="rect46734"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="143.36613" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="77.261574"
+       y="147.45348"
+       id="text49952"><tspan
+         sodipodi:role="line"
+         id="tspan49950"
+         style="fill:#000000;stroke-width:0.264583"
+         x="77.261574"
+         y="147.45348">#32CD32: limegreen</tspan></text>
+    <rect
+       style="fill:#4b0082;fill-opacity:1;stroke-width:0.264583"
+       id="rect55456"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="149.79628" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="77.866585"
+       y="153.58203"
+       id="text58080"><tspan
+         sodipodi:role="line"
+         id="tspan58078"
+         style="fill:#000000;stroke-width:0.264583"
+         x="77.866585"
+         y="153.58203">#4B0082: indigo</tspan></text>
+    <rect
+       style="fill:#c71585;fill-opacity:1;stroke-width:0.264583"
+       id="rect61946"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="156.22643" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="77.768456"
+       y="160.40114"
+       id="text65020"><tspan
+         sodipodi:role="line"
+         id="tspan65018"
+         style="fill:#000000;stroke-width:0.264583"
+         x="77.768456"
+         y="160.40114">#C71585: mediumvioletred</tspan></text>
+    <rect
+       style="fill:#cd5c5c;fill-opacity:1;stroke-width:0.264583"
+       id="rect70368"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="162.65657" />
+    <rect
+       style="fill:#dc143c;fill-opacity:1;stroke-width:0.264583"
+       id="rect70370"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="169.08672" />
+    <rect
+       style="fill:#ffa500;fill-opacity:1;stroke-width:0.264583"
+       id="rect70372"
+       width="62.043495"
+       height="6.4301434"
+       x="11.965729"
+       y="175.51686" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="77.108315"
+       y="166.5081"
+       id="text72618"><tspan
+         sodipodi:role="line"
+         id="tspan72616"
+         style="fill:#000000;stroke-width:0.264583"
+         x="77.108315"
+         y="166.5081">#CD5C5C: indianred</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="78.737595"
+       y="179.52844"
+       id="text77900"><tspan
+         sodipodi:role="line"
+         id="tspan77898"
+         style="fill:#000000;stroke-width:0.264583"
+         x="78.737595"
+         y="179.52844">#FFA500: orange</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:3.175px;fill:#000000;fill-opacity:1;stroke-width:0.264583"
+       x="77.208977"
+       y="172.80783"
+       id="text80674"><tspan
+         sodipodi:role="line"
+         id="tspan80672"
+         style="stroke-width:0.264583"
+         x="77.208977"
+         y="172.80783">#DC143C: crimson</tspan></text>
+  </g>
+</svg>
