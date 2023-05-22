@@ -38,6 +38,7 @@ class Model(Layout):
       fg = Group()
       sw1 = svg.unittouu(self.get_cell(g)['stroke_width'])
       fg.set_id(f'{g}1') 
+      # TODO fall back to defaults silently so RINK files can be slimmer
       fg.style = {
         'fill'            : self.get_cell(g)['fill'],
         'fill-opacity'    : self.get_cell(g)['fill_opacity'],

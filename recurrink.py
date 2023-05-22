@@ -171,41 +171,37 @@ class Draw:
     fullw = a['stroke_width']
     halfw = a['stroke_width'] / 2 # stroke width is halved for repositioning
 
-    if a['shape_facing'] == 'north': 
-      points = [
-        X + fullw, Y + self.sizeUu / 2, 
-        X + self.sizeUu - halfw, Y + fullw, 
-        X + self.sizeUu - halfw, Y + self.sizeUu - fullw,
-        X + fullw, Y + self.sizeUu / 2
-      ]
+    x = [ 
+      X + fullw,
+      X + halfw,
+      X + self.sizeUu - halfw,
+      X + self.sizeUu - fullw, 
+      X + self.sizeUu / 2,
+      X + self.sizeUu / 2 + halfw,
+      X + self.sizeUu / 2 - halfw,
+    ]
+    y = [
+      Y + fullw, 
+      Y + self.sizeUu / 2, 
+      Y + self.sizeUu - fullw,
+      Y + self.sizeUu / 2 + halfw, 
+      Y + self.sizeUu / 2 - halfw
+    ]
+
+    if a['shape_facing'] == 'all': 
+      points = [ x[0], y[1], x[4], y[0], x[3], y[1], x[4], y[2], x[0], y[1] ]
+    elif a['shape_facing'] == 'west': 
+      points = [ x[0], y[1], x[6], y[0], x[6], y[2], x[0], y[1] ]
+    elif a['shape_facing'] == 'east': 
+      points = [ x[5], y[0], x[3], y[1], x[5], y[2], x[5], y[0] ]
+    elif a['shape_facing'] == 'north': 
+      points = [ x[0], y[4], x[4], y[0], x[3], y[4], x[0], y[4] ]
+    elif a['shape_facing'] == 'south':
+      points = [ x[0], y[3], x[4], y[2], x[2], y[3], x[0], y[3] ]
     else:
       raise ValueError(f"Cannot face diamond {a['shape_facing']}")
-    '''
-    elif a['shape_facing'] == 'east': 
-      points = [
-        X + halfw, Y + fullw, 
-        X + self.sizeUu - fullw, Y + self.sizeUu / 2,
-        X + halfw, Y + self.sizeUu - fullw,
-        X + halfw, Y + fullw
-      ]
-    elif a['shape_facing'] == 'west': 
-      points = [
-        X + fullw, Y + self.sizeUu - halfw,
-        X + self.sizeUu / 2, Y + fullw,
-        X + self.sizeUu - fullw, Y + self.sizeUu - halfw,
-        X + fullw, Y + self.sizeUu - halfw
-      ]
-    elif a['shape_facing'] == 'south':
-      points = [
-        X + halfw, Y + halfw, 
-        X + self.sizeUu / 2, Y + self.sizeUu - fullw, 
-        X + self.sizeUu - halfw, Y + halfw,
-        X + halfw, Y + halfw
-      ]
-    '''
     
     polyg = Polygon(points=",".join(map(str, points)))
-    #polyg.label = cell
     return polyg
   
   def set_text(self, shape, X, Y):

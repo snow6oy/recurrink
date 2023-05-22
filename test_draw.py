@@ -29,12 +29,13 @@ class TestDraw(unittest.TestCase):
     self.assertTrue(s.tag_name == 'polygon')
 
   def test_diamond(self):
-    ''' diamond has a new facing value ALL 
+    ''' are diamonds drawn correctly, excepting formatting differences ?
     '''
     self.geometry['shape'] = 'diamond'
     s = self.d.shape('a', 0, 0, self.geometry)
-    # print(s.get("points"))
-    self.assertTrue(s.tag_name == 'polygon')
+    p = s.get("points").split(',')
+    points = list(map(float, p))
+    self.assertEqual(points, [0.0,24.0,24.0,0.0,48.0,24.0,0.0,24.0])
 
   def test_bad_facing(self):
     self.geometry['shape_size'] = 'very tiny'
