@@ -35,7 +35,7 @@ svg: /tmp/$(MODL).svg
 # RINK needed to build initial SVG
 /tmp/$(MODL).rink : /tmp/rink.pid
 	@echo $@
-	./recurrink.py -m $(MODL) --output RINK
+	./mondrian -s -m $(MODL)
 /tmp/rink.pid : /tmp/$(MODL).json
 	@echo $@
 /tmp/$(MODL).json : /tmp/$(MODL).csv
@@ -47,7 +47,7 @@ svg: /tmp/$(MODL).svg
 
 # update SVG from CSV
 view : /tmp/$(MODL).csv /tmp/$(MODL).svg
-	./mondrian -s -m $(MODL)
+	./mondrian -u -m $(MODL)
 	@echo $@
 
 install : /tmp/rink.pid
