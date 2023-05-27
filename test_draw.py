@@ -6,8 +6,6 @@ from inkex import Group
 import unittest
 from recurrink import Draw
 
-BASEDIR = "/home/gavin/code/recurrink"
-
 class TestDraw(unittest.TestCase):
 
   def setUp(self):
