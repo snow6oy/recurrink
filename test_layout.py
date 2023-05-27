@@ -4,26 +4,20 @@ import os
 import json
 import inkex
 import unittest
-from recurrink import Layout
+from layout import Layout
 # have a few setup dependencies on Builder
-from recurrink import Builder
+from recurrink import Recurrink
 
 BASEDIR="/home/gavin/code/recurrink"
 
 class TestLayout(unittest.TestCase):
 
   def setUp(self):
-    b = Builder('soleares')
-    b.write_csvfile()
-    b.write_jsonfile()
-    b.write_rinkfile()
+    r = Recurrink('soleares')
+    rinkdata = r.load_rinkdata('e4681aa9b7aef66efc6290f320b43e55')
     l = Layout()
-    l.add('soleares')
+    l.add(rinkdata)
     self.l = l
-    self.b = b
-
-  def tearDown(self):
-    os.unlink('/tmp/soleares.rink')
   
   def test_scale(self):
     l5 = Layout(factor=0.5)
@@ -33,7 +27,7 @@ class TestLayout(unittest.TestCase):
     self.assertFalse(self.l.get_cell('a')['top'])
 
   def test_uniq_cells(self):
-    self.assertEqual(self.l.uniq_cells(), ['a','b','c','d'])
+    self.assertEqual(self.l.uniq_cells(), ['d','a','c','b'])
 
   def test_blocksize(self):
     self.assertEqual(self.l.blocksize(), (3,2))
@@ -55,12 +49,12 @@ class TestLayout(unittest.TestCase):
   def test_top(self):
     ''' test_card.rink uses top but will Layout reorder correctly
     '''
-    print(os.getcwd())
-    with open(f'{BASEDIR}/samples/test_card.rink') as f:
+    #print(os.getcwd())
+    with open(f'{BASEDIR}/samples/test_card.json') as f:
       testdb = json.load(f)
-    rink = self.l.add('soleares', db=testdb)
-    self.assertFalse(rink['cells']['a']['top'])
+    rink = self.l.add(testdb)
     self.assertTrue(rink['cells']['b']['top'])
+    self.assertFalse(rink['cells']['c']['top'])
 
   '''
     the end
