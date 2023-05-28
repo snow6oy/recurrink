@@ -16,11 +16,11 @@ class TestRecurrink(unittest.TestCase):
     ''' ./recurrink.py -m ${model} --output CSV
     '''
     rr = Recurrink('soleares', machine=True)
-    self.assertEqual('d c b a', rr.write_csvfile())
+    self.assertEqual('a b c d', rr.write_csvfile())
 
   def test_write_csvfile_human(self):
-    self.assertEqual('d c b a', self.r.write_csvfile())
-    os.unlink('/tmp/soleares.csv')
+    self.assertEqual('a b c d', self.r.write_csvfile())
+    # os.unlink('/tmp/soleares.csv')
 
   def test_convert_row2cell(self):
     ''' check vals from csv are correctly poured, e.g. top reordering

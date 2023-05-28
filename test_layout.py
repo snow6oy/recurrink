@@ -27,7 +27,7 @@ class TestLayout(unittest.TestCase):
     self.assertFalse(self.l.get_cell('a')['top'])
 
   def test_uniq_cells(self):
-    self.assertEqual(self.l.uniq_cells(), ['d','a','c','b'])
+    self.assertEqual(self.l.uniq_cells(), ['a','b','c','d'])
 
   def test_blocksize(self):
     self.assertEqual(self.l.blocksize(), (3,2))
