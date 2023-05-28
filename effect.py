@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf-8
 import inkex
-from builder import Layout
+from layout import Layout
 
 class Cells(Layout):
   ''' replace cells according to user input

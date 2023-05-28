@@ -3,8 +3,8 @@ workdir=/home/gavin/Pictures/artWork/recurrences
 
 # use randmoness to automatically select a model for recurrink to process
 rndmodel() {
-  model=$(./recurrink.py --random)
-  echo $model
+  model=$(./mondrian.py --random)
+  echo ${model}
 }
 
 rndfactor() {
@@ -19,10 +19,10 @@ mkcsv() {
   model=$m
   if [ "$a" == 'machine' ]
   then
-    cells=$(./recurrink.py -m ${model} --output CSV --random)
+    cells=$(./mondrian.py -m ${model} --output CSV --random)
   elif [ "$a" == 'human' ]
   then
-    cells=$(./recurrink.py -m ${model} --output CSV)
+    cells=$(./mondrian.py -m ${model} --output CSV)
   else
     usage
   fi
@@ -36,18 +36,23 @@ mkcsv() {
   fi
 }
 
+# TODO now that JSON is in db the symlink must point to something else
+# otherwise Make will keep trying ..
 mkjson() {
   # echo "mkjson" $m $a
   # symlink is a promise that will be fulfilled when /tmp/MODEL.json is approved
   model=$m
   if [ "$a" == 'machine' ]
   then
-    digest=$(./recurrink.py -m ${model} --output JSON --random)
-    ln -s "$workdir/$model/m/$digest.json" /tmp/rink.pid
+    digest=$(./mondrian.py -m ${model} --output JSON --random)
+    #ln -s "$workdir/$model/m/$digest.json" /tmp/rink.pid
+    touch "/tmp/${model}_${digest}"
+    ln -s "/tmp/${model}_${digest}" /tmp/rink.pid
   elif [ "$a" == 'human' ]
   then
-    digest=$(./recurrink.py -m ${model} --output JSON)
-    ln -s "$workdir/$model/h/$digest.json" /tmp/rink.pid 
+    digest=$(./mondrian.py -m ${model} --output JSON)
+    touch "/tmp/${model}_${digest}"
+    ln -s "/tmp/${model}_${digest}" /tmp/rink.pid 
   else
     usage
   fi
@@ -58,11 +63,10 @@ mksvg() {
   pid=/tmp/rink.pid
   if [[ -L "${pid}" ]]
   then 
-    model=`readlink $pid | awk -v FS='/' '{print $7}'`
-    view=`readlink $pid | awk -v FS='/' '{print $9}'`
-    view="${view/.json/}"
-    # echo "/tmp/${model}.rink"
-    ./recurrink.py -m ${model} --output RINK --view ${view}
+    model=`readlink $pid | awk -v FS='_' '{print $1}'`
+    view=`readlink $pid | awk -v FS='_' '{print $2}'`
+    echo "./mondrian.py -m ${model} --output RINK --view ${view}"
+    ./mondrian.py -m ${model} --output RINK --view ${view}
   else
     echo "error: $0 -i needs ${pid}"
     exit 1
@@ -72,11 +76,11 @@ mksvg() {
 updsvg() {
   # echo "mksvg" $m
   model=$m
-  cells=$(./recurrink.py -m ${model} --output CELL)
+  cells=$(./mondrian.py -m ${model} --output CELL)
 
   for cell in ${cells}
   do
-    attrs=$(./recurrink.py -m ${model} --cell ${cell})
+    attrs=$(./mondrian.py -m ${model} --cell ${cell})
     a=($attrs)  # convert to array with the magic of IFS separator
     echo -n "${cell} ${a[2]}" 
     # update cells
@@ -101,16 +105,16 @@ updsvg() {
 mkinstall() {
 
   pid=/tmp/rink.pid
-  dbentry=`readlink $pid`
   pubdir=/home/gavin/Pictures/pubq
 
   if [[ -L "${pid}" ]]
   then 
-    model=`readlink $pid | awk -v FS='/' '{print $7}'`
+    model=`readlink $pid | awk -v FS='_' '{print $1}'`
+    view=`readlink $pid | awk -v FS='_' '{print $2}'`
     # echo $model
     if [ -f "/tmp/${model}.svg" ]
     then
-      svgname="${dbentry/json/svg}"
+      svgname="${workdir}/${model}/${view}.svg"
       echo ${svgname}
       mv "/tmp/${model}.svg" ${svgname}
       ln -s ${svgname} ${pubdir}

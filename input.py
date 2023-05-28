@@ -5,7 +5,7 @@ import sys
 import json
 import inkex
 from inkex import Group
-from builder import Layout
+from layout import Layout
 
 class Model(Layout):
 
@@ -18,7 +18,7 @@ class Model(Layout):
   # def build(self, svg):
   def make(self, data, svg):
     ''' Generate an svg document for given model '''
-    cells = self.add(self.model, data)
+    cells = self.add(data)
     if not cells: # is model with given name available from db ?
       raise ValueError(f'not found <{model}>')
 

@@ -59,7 +59,7 @@ FROM models;""",)
   def uniq_cells(self):
     self.cursor.execute("""
 SELECT DISTINCT(cell)
-FROM views 
+FROM blocks
 WHERE model = %s;""", [self.model])
     cells = [c[0] for c in self.cursor.fetchall()]
     return cells
@@ -242,7 +242,7 @@ class Recurrink(Db):
       json.dump(data, outfile, indent=2)
     return fn
 
-  def write_view(self, view=None, author='human'):
+  def write_view(self, view=None, random=False):
     ''' convert a 2d array of cell data into a hash and json file
     '''
     csvdata = self.read_tmp_csvfile()
@@ -251,6 +251,7 @@ class Recurrink(Db):
       raise ValueError(f"collision in /tmp {model} is not {self.model}")
     if view is None:
       view = self.get_digest(cellvalues)
+    author = 'machine' if random else 'human'
 
     [self.write_cell(view, cell, author, list(jsondata[cell].values())) for cell in jsondata]
     return view

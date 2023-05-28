@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
 import sys
+import random
 import getopt
 from recurrink import Recurrink
 
 def usage():
   message = '''
+-r random model
 -l list models
 -m MODEL --output CSV  [--random]
 -m MODEL --output JSON [--random]
@@ -54,11 +56,12 @@ if __name__ == '__main__':
     if output == 'CSV':                   # create tmp csv file containing a collection of random cell values
       print(r.write_csvfile())            # OR default vals for humans. return cell vals a b c d
     elif view and output == 'RINK':       # write RINK with Library json as source
-      r.write_rinkfile(json_file=view)
+      r.write_rinkfile(view)
     elif output == 'RINK':                # write RINK with MODEL.json as source
-      r.write_rinkfile()
+      # r.write_rinkfile()
+      print("deprecated")
     elif output == 'JSON':                # convert tmp csv into json as permanent record 
-      print(r.write_jsonfile())           # write json and return digest
+      print(r.write_view())               # write json and return digest
     elif output == 'CELL':                # get a list of uniq cells
       print(' '.join(r.uniq)) 
     elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'
@@ -68,6 +71,8 @@ if __name__ == '__main__':
   elif ls:
     #print("\n".join(r.list_model()))      # has side effect of setting workdir
     r.list_model_with_stats()               # has side effect of setting workdir
+  elif rnd:
+    print(random.choice(r.list_model()))
   elif view and output == 'JSON':         # query db
     print(r.find_recurrence(view, 'json')[0])
   elif view and output == 'SVG':          # lookup SVG

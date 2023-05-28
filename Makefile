@@ -17,6 +17,7 @@ hi :
 	@echo "$@ $(USER) with $(MODL) by $(AUTH) at $(SCAL)"
 clean :
 	rm /tmp/$(MODL).*
+	rm /tmp/$(MODL)_*
 	rm /tmp/rink.pid
 
 csv : $(BASEDIR)/$(MODL)/index.csv
@@ -36,9 +37,7 @@ svg: /tmp/$(MODL).svg
 /tmp/$(MODL).rink : /tmp/rink.pid
 	@echo $@
 	./mondrian -s -m $(MODL)
-/tmp/rink.pid : /tmp/$(MODL).json
-	@echo $@
-/tmp/$(MODL).json : /tmp/$(MODL).csv
+/tmp/rink.pid : /tmp/$(MODL).csv 
 	@echo $@
 	./mondrian -j -m $(MODL) -a $(AUTH)
 # declaring target 'csv' as a dependency will overwrite
