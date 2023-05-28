@@ -37,7 +37,7 @@ svg: /tmp/$(MODL).svg
 /tmp/$(MODL).rink : /tmp/rink.pid
 	@echo $@
 	./mondrian -s -m $(MODL)
-/tmp/rink.pid : /tmp/$(MODL).csv 
+/tmp/rink.pid : 
 	@echo $@
 	./mondrian -j -m $(MODL) -a $(AUTH)
 # declaring target 'csv' as a dependency will overwrite
@@ -45,7 +45,8 @@ svg: /tmp/$(MODL).svg
 	ls $@
 
 # update SVG from CSV
-view : /tmp/$(MODL).csv /tmp/$(MODL).svg
+# view : /tmp/$(MODL).csv /tmp/$(MODL).svg
+view : /tmp/rink.pid
 	./mondrian -u -m $(MODL)
 	@echo $@
 
