@@ -63,15 +63,12 @@ mkjson() {
     if [ "$a" == 'machine' ]
     then
       digest=$(./mondrian.py -m ${model} --output JSON --random)
-      #ln -s "$workdir/$model/m/$digest.json" /tmp/rink.pid
-      touch "/tmp/${model}_${digest}"
-      ln -s "/tmp/${model}_${digest}" /tmp/rink.pid
     elif [ "$a" == 'human' ]
     then
       digest=$(./mondrian.py -m ${model} --output JSON)
-      touch "/tmp/${model}_${digest}"
-      ln -s "/tmp/${model}_${digest}" /tmp/rink.pid 
     fi
+    touch "/tmp/${model}_${digest}"
+    ln -s "/tmp/${model}_${digest}" /tmp/rink.pid
     echo $digest
   fi
 }
@@ -143,9 +140,9 @@ usage() {
 	-n 			get random model name
 	-f 			get random factor
 	-c -m MODEL -a AUTH	make csv
-	-j -m MODEL -a AUTH	make json
-	-s -m MODEL        	make svg
-	-u -m MODEL        	update svg
+	-j -m MODEL -a AUTH	create db entry
+	-s -m MODEL        	make svg from csv
+	-u -m MODEL        	update svg from csv
 	-i 			install svg in pubq
 " 1>&2; exit 1; 
 }

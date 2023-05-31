@@ -52,3 +52,7 @@ view : /tmp/rink.pid
 
 install : /tmp/rink.pid
 	./mondrian -i
+
+repair:
+	./mondrian.py -m $(MODL) --output RINK --view $(VIEW)
+	./input.py --output $(BASEDIR)/$(MODL)/$(VIEW).svg --scale $(SCAL) /tmp/$(MODL).rink

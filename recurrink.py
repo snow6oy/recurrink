@@ -38,6 +38,26 @@ WHERE model = %s;""", [self.model])
       data[x][y] = r[1]
     return data
 
+  def set_model(self, model, uniqcells, blocksizexy, scale):
+    success = True
+    try:
+      self.cursor.execute("""
+INSERT INTO models (model, uniqcells, blocksizexy, scale)
+VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      success = False
+    return success
+
+  def set_blocks(self, model, position, cell):
+    success = True
+    try:
+      self.cursor.execute("""
+INSERT INTO blocks (model, position, cell)
+VALUES (%s, %s, %s);""", [model, position, cell])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      success = False
+    return success
+
   def list_model(self):
     self.cursor.execute("""
 SELECT model
@@ -63,6 +83,18 @@ FROM blocks
 WHERE model = %s;""", [self.model])
     cells = [c[0] for c in self.cursor.fetchall()]
     return cells
+
+  def count_view(self, view):
+    vcount = 0
+    if len(view) == 32:
+      self.cursor.execute("""
+SELECT COUNT(view) as vcount
+FROM views
+WHERE view = %s;""", [view])
+      vcount = self.cursor.fetchone()[0]
+    else:
+      raise ValueError(f"not expecting this kinda view '{view}'")
+    return vcount
 
   def load_view(self, view):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
