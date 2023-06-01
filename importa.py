@@ -89,7 +89,11 @@ class Builder:
       '#ccc':'gray'
     '''
     with open(json_file) as f:
-      conf = json.load(f)
+      try:
+        conf = json.load(f)
+      except:
+        print(f"error loading view {json_file}")
+        conf = dict()
       init = {}
       for cell in conf:
         init[cell] = dict()
@@ -174,11 +178,11 @@ if __name__ == '__main__':
   b = Builder(None)
   db = Db()
   #print(db.list_model())
-  #for m in b.list_model():
-  for m in ['waltz']:
+  for m in b.list_model():
+  #for m in ['waltz']:
     bb = Builder(m)
-    #for view in bb.find_recurrence(): 69bb61a1a667797f91c2784c549d257e.json
-    for viewpath in ['waltz/m/2a7dca249abd4ed562fd5c37b59983fd.json']:
+    for viewpath in bb.find_recurrence(): 
+    # for viewpath in ['waltz/m/2a7dca249abd4ed562fd5c37b59983fd.json']: 69bb61a1a667797f91c2784c549d257e.json
       rink = bb.load_rinkdata(viewpath)
       i.add(m, db=rink)
       if m not in db.list_model():
