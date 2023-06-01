@@ -20,9 +20,9 @@ class Builder:
       self.attributes = {
         'shape':'square',
         'shape_size':'medium',
-        'shape_facing':'north',
-        'fill': '#fff', 
-        'bg': '#ccc',
+        'shape_facing':None,
+        'fill': '#FFF', 
+        'bg': '#CCC',
         'fill_opacity':1.0, 
         'stroke':'#000', 
         'stroke_width': 0, 
@@ -100,6 +100,10 @@ class Builder:
         for a in self.attributes:
           if a in conf[cell]:
             init[cell][a] = conf[cell][a]  # use value from json
+          elif a == 'shape_facing' and 'facing' in conf[cell]:
+            init[cell][a] = conf[cell]['facing']
+          elif a == 'shape_size' and 'size' in conf[cell]:
+            init[cell][a] = conf[cell]['size']
           else:
             init[cell][a] = self.attributes[a] # default
     return init
@@ -177,12 +181,11 @@ if __name__ == '__main__':
   i = Importer()
   b = Builder(None)
   db = Db()
-  #print(db.list_model())
   for m in b.list_model():
-  #for m in ['waltz']:
+  #for m in ['buleria']:
     bb = Builder(m)
     for viewpath in bb.find_recurrence(): 
-    # for viewpath in ['waltz/m/2a7dca249abd4ed562fd5c37b59983fd.json']: 69bb61a1a667797f91c2784c549d257e.json
+    #for viewpath in ['buleria/m/f11909036a7d7686620546f78ffcf2a9.json']:
       rink = bb.load_rinkdata(viewpath)
       i.add(m, db=rink)
       if m not in db.list_model():

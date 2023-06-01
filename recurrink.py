@@ -147,6 +147,8 @@ AND cell=%s;""", [author, sid, gid, view, cell])
     '''
     gid = None
 
+    if items[0] in ['square', 'circle']:
+      items[2] = 'all'
     if items[0] in ['triangle', 'diamond'] and items[1] == 'large': 
       items[1] = 'medium' # triangles and diamonds cannot be large
     if items[3] and items[1] != 'large': 
@@ -172,6 +174,27 @@ RETURNING gid;""", items)
   def set_styles(self, items, sid=None):
     ''' update with sid or insert otherwise
     '''
+    fill = {
+      'orange':'#FFA500',
+      'crimson':'#DC143C',
+      'indianred':'#CD5C5C',
+      'mediumvioletred':'#C71585',
+      'indigo':'#4B0082',
+      '#4B0083':'#4B0082',
+      'limegreen':'#32CD32',
+      'yellowgreen':'#9ACD32',
+      'black':'#000',
+      'white':'#FFF',
+      'gray':'#CCC',
+      '#fff':'#FFF',
+      '#ccc':'#CCC',
+      '#333':'#CCC'
+    }
+    for f in fill:
+      items[0] = items[0].replace(f, fill[f])
+      items[1] = items[1].replace(f, fill[f])
+      items[3] = items[3].replace(f, fill[f])
+
     if sid:
       #print(len(items),sid)  
       items.append(sid)
@@ -257,7 +280,7 @@ class Recurrink(Db):
     model_data = self.load_model()
     view_data = self.load_view(view)
     if (len(view_data.keys()) != len(self.uniq)):
-      raise KeyError(f"missing cells: {view}")
+      raise KeyError(f"missing cells: {view}: {len(view_data.keys())} is not {len(self.uniq)}")
     return {
         'id': self.model,
         'size': (len(model_data[0]), len(model_data)),
@@ -429,16 +452,6 @@ class Recurrink(Db):
   def _load_view(self, json_file):
     '''
     TODO check that bg: values match
-      '#FFA500':'orange', 
-      '#DC143C':'crimson', 
-      '#CD5C5C':'indianred', 
-      '#C71585':'mediumvioletred', 
-      '#4B0082':'indigo', 
-      '#32CD32':'limegreen', 
-      '#9ACD32':'yellowgreen',
-      '#000':'black',
-      '#fff':'white',
-      '#ccc':'gray'
     '''
     # print("load view  " + json_file)
     with open(json_file) as f:

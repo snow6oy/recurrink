@@ -30,7 +30,7 @@ class TestDb(unittest.TestCase):
       geometries are never updated, only inserted when shape/size/facing combination is new
       also it avoids side-effectof incrementing SERIAL by anticipating UniqueViolation '''
     gid = self.db.set_geometry(['square', 'medium', 'north', False])
-    self.assertEqual(gid, 3)
+    self.assertTrue(int(gid))
 
   def testSetGeometryTop(self):
     ''' force top to False unless shape is large
@@ -53,11 +53,11 @@ class TestDb(unittest.TestCase):
     '''
     sid = self.db.get_style('e4681aa9b7aef66efc6290f320b43e55', 'd')
     self.assertEqual(sid, 4)
-    sid = self.db.set_styles(['#fff', 'limegreen', 1.0, '#000', 0, 0, 0.5], sid=sid)
+    sid = self.db.set_styles(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 0.5], sid=sid)
     self.assertEqual(sid, 4)
 
   def testSetStyleInsert(self):
-    sid = self.db.set_styles(['#00f', 'limegreen', 1.0, '#000', 0, 0, 1.5])
+    sid = self.db.set_styles(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 1.5])
     self.assertTrue(sid)
 
   def testWriteCell(self):

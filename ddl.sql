@@ -1,16 +1,17 @@
--- recurrink POC
-
+-- recurrink data model
 
 DROP TABLE geometry CASCADE;
+DROP TYPE shapes;
 DROP TYPE sizes;
 DROP TYPE direction;
 CREATE TYPE sizes as ENUM ('large', 'medium', 'small');
 CREATE TYPE direction as ENUM ('all', 'north', 'south', 'east', 'west');
+CREATE TYPE shapes as ENUM ('circle', 'line', 'square', 'triangle', 'diamond');
 
 -- Geometry ID +:1 one Geom many positions
 CREATE TABLE geometry (
   GID serial PRIMARY KEY,
-  shape VARCHAR(50) NOT NULL,
+  shape shapes NOT NULL,
   size sizes DEFAULT 'medium',
   facing direction NOT NULL,
   top BOOLEAN DEFAULT FALSE,
@@ -18,14 +19,17 @@ CREATE TABLE geometry (
 );
 
 DROP TABLE styles CASCADE;
+DROP TYPE fill;
+CREATE TYPE fill as ENUM ('#FFF','#CCC','#CD5C5C','#000','#FFA500','#DC143C','#C71585','#4B0082','#32CD32','#9ACD32');
+
 -- Styles ID +:1 one Style many positions
 -- fill and bg are mandated
 CREATE TABLE styles (
   SID serial PRIMARY KEY,
-  fill VARCHAR(50) NOT NULL,
-  bg VARCHAR(50) NOT NULL,
+  fill fill NOT NULL,
+  bg fill NOT NULL,
   fill_opacity FLOAT DEFAULT 1.0,
-  stroke VARCHAR(50) DEFAULT '#000',
+  stroke fill DEFAULT '#000',
   stroke_width INT DEFAULT 1,
   stroke_dasharray INT DEFAULT 0,
   stroke_opacity FLOAT DEFAULT 1.0
@@ -62,8 +66,10 @@ CREATE TABLE views (
   cell CHAR(1) NOT NULL,
   model VARCHAR(50) NOT NULL,
   author authors DEFAULT 'human',
-  SID INT NOT NULL,
-  GID INT NOT NULL,
+  control INT NOT NULL DEFAULT 0,
+  sid INT NOT NULL,
+  gid INT NOT NULL,
+  created timestamp DEFAULT current_timestamp,
   FOREIGN KEY (model) REFERENCES models (model),
   FOREIGN KEY (SID) REFERENCES styles (SID),
   FOREIGN KEY (GID) REFERENCES geometry (GID),

@@ -1,3 +1,5 @@
+-- test data
+-- validate new schemas here
 INSERT INTO models (model, uniqcells, blocksizeXY, scale) 
 VALUES 
   ('soleares', 4, '{3, 2}', 1.0),
@@ -26,20 +28,20 @@ VALUES
 
 INSERT INTO geometry (shape, size, facing, top) 
 VALUES 
-  ('square', 'large', 'south', TRUE),
   ('triangle', 'medium', 'south', FALSE),
-  ('square', 'medium', 'north', FALSE),
-  ('line', 'large', 'east', TRUE);
+  ('square', 'large', 'south', TRUE),
+  ('line', 'large', 'east', TRUE),
+  ('square', 'medium', 'north', FALSE);
 
 INSERT INTO styles (fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity)
 VALUES
-  ('#fff', 'crimson', '1.0', '#000', 2, 0, '1.0'),
-  ('#fff', 'black', '1.0', '#000', 6, 0, '1.0'),
-  ('#fff', 'yellowgreen', '1.0', '#000', 1, 0, '1.0');
+  ('#FFF', '#DC143C', '1.0', '#000', 2, 0, '1.0'),
+  ('#FFF', '#000', '1.0', '#000', 6, 0, '1.0'),
+  ('#FFF', '#9ACD32', '1.0', '#000', 1, 0, '1.0');
 -- use defaults
 INSERT INTO styles (sid, fill, bg)
 VALUES
-  (DEFAULT, '#fff', 'white');
+  (DEFAULT, '#FFF', '#CCC');
 
 INSERT INTO views (view, model, author, cell, sid, gid) 
 VALUES 
