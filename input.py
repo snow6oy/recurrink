@@ -6,6 +6,7 @@ import json
 import inkex
 from inkex import Group
 from layout import Layout
+from recurrink import Db
 
 class Model(Layout):
 
@@ -59,12 +60,23 @@ class Input(inkex.InputExtension):
   # TODO add portrait as input options
   def add_arguments(self, pars):
     pars.add_argument("--scale",  default=1.0, help="Scale in or out (0.5 - 2.0)")
+    pars.add_argument("--info",  default=None, help="Fetch view info from db")
+    #pars.add_argument("--info",  default=False, type=inkex.Boolean, help="Fetch view info from db")
 
   def load(self, stream):
     ''' inkscape passes us a json file as a stream
         self.options.input_file e.g. recurrink/models/arpeggio.rink
     '''
-    if self.options.input_file is None:
+    if 'info' in self.options:
+      ''' paused as schema update 
+      '''
+      print(self.options.info)
+      #print(self.options.input_file)
+      db = Db()
+      n = db.count_view(self.options.info)
+      doc = f"count view {n}"
+
+    elif self.options.input_file is None:
       raise ValueError(f"bad file {self.options.input_file}")
     else:
       fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
