@@ -279,9 +279,10 @@ SELECT *
 FROM views
 WHERE view = %s;""", [view])
       row = self.cursor.fetchone()
+      row = row[1:3] if row else list() # only need model and author
     else:
       raise ValueError(f"not expecting this kinda view '{view}'")
-    return list(row[1:3]) # return model and author
+    return row 
 
 ###############################################################################
 class Recurrink(Db):

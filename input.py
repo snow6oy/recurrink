@@ -60,22 +60,23 @@ class Input(inkex.InputExtension):
   # TODO add portrait as input options
   def add_arguments(self, pars):
     pars.add_argument("--scale",  default=1.0, help="Scale in or out (0.5 - 2.0)")
-    pars.add_argument("--info",  default=None, help="Fetch view info from db")
-    #pars.add_argument("--info",  default=False, type=inkex.Boolean, help="Fetch view info from db")
+    pars.add_argument("--read",  default=None, help="Read view info from db")
+    pars.add_argument("--delete",  default=None, help="Delete view from db")
 
   def load(self, stream):
     ''' inkscape passes us a json file as a stream
         self.options.input_file e.g. recurrink/models/arpeggio.rink
     '''
-    ''' paused as schema update 
-    '''
-    if self.options.info:
-      ''' info has a view value e.g. c364ab54ff542adb322dc5c1d6aa4cc8
+    view = View()
+    if self.options.read:
+      ''' read accepts a view value e.g. c364ab54ff542adb322dc5c1d6aa4cc8
       '''
-      view = View()
-      v = view.read(self.options.info)
+      v = view.read(self.options.read)
       v.append("\n")
       doc = " ".join(v)
+    elif self.options.delete:
+      view.delete(self.options.delete)
+      doc = str()
     elif self.options.input_file:
       fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
       doc = None
