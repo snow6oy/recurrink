@@ -111,8 +111,9 @@ VALUES (%s, %s, %s, %s);""", [view, self.model, author, control])
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
       ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
     header = [
-      'cell','shape','shape_size','shape_facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
+      'cell','shape','size','facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
     ]
+    # header = [ 'cell','shape','shape_size','shape_facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity' ]
     data = dict()
     self.cursor.execute("""
 SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
@@ -284,8 +285,8 @@ class Recurrink(Db):
 
       self.attributes = {
         'shape':'square',
-        'shape_size':'medium',
-        'shape_facing':'north',
+        'size':'medium',
+        'facing':'north',
         'fill': '#fff', 
         'bg': '#ccc',
         'fill_opacity':1.0, 
@@ -297,7 +298,6 @@ class Recurrink(Db):
       }
 
       self.header = ['cell', 'model'] + list(self.attributes.keys())
-      # self.header = [ 'cell','model','shape', 'size', 'facing', 'bg', 'width', 'top' ]
       self.author = 'MACHINE' if machine else 'HUMAN'
       self.uniq = self.uniq_cells()
     elif model:
@@ -384,14 +384,14 @@ class Recurrink(Db):
       'opacity':1.0, '''
     rnd = dict()
     # default 'shape':'square',
-    rnd['shape'] = random.choice(["circle", "line", "square", "triangle"])
-    rnd['shape_facing'] = random.choice(["north", "south", "east", "west"])
+    rnd['shape'] = random.choice(["circle", "line", "square", "triangle", "diamond"])
+    rnd['facing'] = random.choice(["north", "south", "east", "west"])
     # default 'shape_size':'medium',
     sizes = ["medium", "large"]
     if rnd['shape'] == "triangle":
-      rnd['shape_size'] = "medium"
+      rnd['size'] = "medium"
     else:
-      rnd['shape_size'] = random.choice(sizes)
+      rnd['size'] = random.choice(sizes)
     rnd['top'] = str(random.choice([True, False]))
     rnd['bg'] = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
     rnd['stroke_width'] = str(random.choice(range(10)))
@@ -478,122 +478,3 @@ class Recurrink(Db):
       next(reader, None)
       data = list(reader)
     return data
-
-###############################################################################
-###############################################################################
-
-  def _uniq_cells(self):
-    ''' send mondrian the robot a list of uniq cells 
-    '''
-    seen = dict()
-    for row in self.load_model():
-      for cell in row:
-        seen[cell] = seen[cell] + 1 if cell in seen else 0
-    return seen.keys()
-
-  def _load_model(self):
-    ''' load csv data
-    '''
-    csvfile = f"{self.model}/index.csv"
-    # print("load model " + csvfile)
-    with open(csvfile) as f:
-      reader = csv.reader(f, delimiter=' ')
-      data = list(reader)
-    return data
-
-  def _load_view(self, json_file):
-    '''
-    TODO check that bg: values match
-    '''
-    # print("load view  " + json_file)
-    with open(json_file) as f:
-      conf = json.load(f)
-      init = {}
-      for cell in conf:
-        init[cell] = dict()
-        for a in self.attributes:
-          if a in conf[cell]:
-            init[cell][a] = conf[cell][a]  # use value from json
-          else:
-            init[cell][a] = self.attributes[a] # default
-    return init
-
-
-  def _write_jsonfile(self):
-    ''' convert a 2d array of cell data into a hash and json file
-    '''
-    csvdata = self.read_tmp_csvfile()
-    (model, cellvalues, jsondata) = self.convert_row2cell(csvdata)
-    if model != self.model:
-      raise ValueError(f"collision in /tmp {model} is not {self.model}")
-
-    digest = self.get_digest(cellvalues) # if self.author == 'MACHINE' else self.model
-    self.write_json(f"/tmp/{self.model}.json", jsondata)
-    return digest
-
-  def _find_recurrence(self, file, ext):
-    ''' expected file structure
-        soleares/
-        ├── h
-        │   ├── 550d193efe80f67e92d5a0c59ad9d354.json
-        │   ├── 550d193efe80f67e92d5a0c59ad9d354.svg 
-    '''
-    paths = glob.glob(f'*/*/{file}.{ext}')
-    if paths:
-      return paths
-    else:
-      raise FileNotFoundError(f"{file}.{ext}")
-
-  def _list_model(self):
-    os.chdir(self.workdir)
-    return next(os.walk('.'))[1]
-
-  def _list_model_with_stats(self):
-    print(f"uniq    x    y model")
-    print('-' * 80)
-    for m in self.list_model():
-      self.model = m
-      index_csv = self.load_model()
-      (x, y) = (len(index_csv[0]), len(index_csv))
-      print(f"{len(self.uniq_cells()):>4} {x:>4} {y:>4} {m}")
-
-  def _write_jsonfile(self, view, author=None):
-    ''' convert a 2d array of cell data into a hash and json file
-    DEPRECATED see write_view
-    '''
-    #csvdata = self.read_tmp_csvfile()
-    #(model, cellvalues, jsondata) = self.convert_row2cell(csvdata)
-    update = False
-    model = 'soleares'
-    if model != self.model:
-      raise ValueError(f"collision in /tmp {model} is not {self.model}")
-    jsondata = {
-      'a': {
-        'shape':'triangle', 
-        'size': 'medium', 
-        'facing': 'south', 
-        'top': True,
-        'fill': '#0f0',
-        'bg': 'gray'
-       }
-    }
-    # digest = self.get_digest(cellvalues) # if self.author == 'MACHINE' else self.model
-    #self.write_json(f"/tmp/{self.model}.json", jsondata)
-    for cell in 'a':
-      items = list(jsondata[cell].values())
-      gid = self.set_geometry(items)
-      sid = self.set_styles(items)
-      # UPSERT the view table
-      try:
-        self.cursor.execute("""
-INSERT INTO views (view, cell, model, author, sid, gid)
-VALUES (%s, %s, %s, %s, %s, %s);""", [view, cell, self.model, author, sid, gid])
-      except psycopg2.errors.UniqueViolation:  # 23505 
-        update = True
-        self.cursor.execute("""
-UPDATE views SET
-author=%s, sid=%s, gid=%s
-WHERE view=%s
-AND cell=%s;""", [author, sid, gid, view, cell])
-      digest = f"{update} updated"
-    return digest

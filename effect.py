@@ -9,8 +9,8 @@ class Cells(Layout):
   def __init__(self, options, factor=None):
     self.requested = {
       'shape': options.shape,
-      'shape_size': options.size,
-      'shape_facing': options.facing,
+      'size': options.size,
+      'facing': options.facing,
       'top': options.top,
       'stroke_width': int(options.width),
       'fill': options.fill,
@@ -37,7 +37,7 @@ class Cells(Layout):
     if paintOrder == '0': # the selection is a background cell we will assume it was a mis-click
       shapes = svg.getElementById(f"{gid}1")
 
-    if self.requested['shape'] == 'triangle' and self.requested['shape_size'] == 'large':
+    if self.requested['shape'] == 'triangle' and self.requested['size'] == 'large':
       message = 'Large triangles are not possible, ignoring this request.'
     elif shapes is not None:
       # update the background style, but only if we're given a new value

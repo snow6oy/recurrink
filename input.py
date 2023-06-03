@@ -67,16 +67,16 @@ class Input(inkex.InputExtension):
     ''' inkscape passes us a json file as a stream
         self.options.input_file e.g. recurrink/models/arpeggio.rink
     '''
+    ''' paused as schema update 
     if 'info' in self.options:
-      ''' paused as schema update 
-      '''
       print(self.options.info)
       #print(self.options.input_file)
       db = Db()
       n = db.count_view(self.options.info)
       doc = f"count view {n}"
 
-    elif self.options.input_file is None:
+    '''
+    if self.options.input_file is None:
       raise ValueError(f"bad file {self.options.input_file}")
     else:
       fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 

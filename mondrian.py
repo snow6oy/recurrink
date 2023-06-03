@@ -61,7 +61,8 @@ if __name__ == '__main__':
       # r.write_rinkfile()
       print("deprecated")
     elif output == 'JSON':                # convert tmp csv into json as permanent record 
-      print(r.write_view())               # write json and return digest
+      (author, view, data) = r.load_view_csvfile(random=rnd)
+      print(r.write_view(view, author, 0, data)) # write json and return digest
     elif output == 'CELL':                # get a list of uniq cells
       print(' '.join(r.uniq)) 
     elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'

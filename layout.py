@@ -55,14 +55,14 @@ class Draw:
     halfw = a['stroke_width'] / 2
     fullw = a['stroke_width']
 
-    if a['shape_size'] == 'large': 
+    if a['size'] == 'large': 
       size = self.sizeUu / 2
       sum_two_sides = (size**2 + size**2) # pythagoras was a pythonista :)
       r = math.sqrt(sum_two_sides) - halfw
-    elif a['shape_size'] == 'medium':
+    elif a['size'] == 'medium':
       r = (self.sizeUu / 2 - halfw) # normal size
     else:
-      raise ValueError(f"Cannot set circle <{cell}> to {a['shape_size']} size")
+      raise ValueError(f"Cannot set circle <{cell}> to {a['size']} size")
 
     x = str(X + self.sizeUu / 2)
     y = str(Y + self.sizeUu / 2)
@@ -77,31 +77,31 @@ class Draw:
         but the user can choose any of the four cardinal directions
         here we silently collapse the non-sensical directions
     '''
-    a['shape_facing'] = 'north' if a['shape_facing'] == 'south' else a['shape_facing']
-    a['shape_facing'] = 'east' if a['shape_facing'] == 'west' else a['shape_facing']
+    a['facing'] = 'north' if a['facing'] == 'south' else a['facing']
+    a['facing'] = 'east' if a['facing'] == 'west' else a['facing']
 
-    if a['shape_size'] == 'large' and a['shape_facing'] == 'north':
+    if a['size'] == 'large' and a['facing'] == 'north':
       x      = str(X + self.sizeUu / 3 + halfw)
       y      = str(Y - self.sizeUu / 3 + halfw)
       width  = str(self.sizeUu / 3 - fullw)
       height = str((self.sizeUu / 3 * 2 + self.sizeUu) - fullw)
-    elif a['shape_size'] == 'large' and a['shape_facing'] == 'east':
+    elif a['size'] == 'large' and a['facing'] == 'east':
       x      = str(X - self.sizeUu / 3 + halfw)
       y      = str(Y + self.sizeUu / 3 + halfw)
       width  = str((self.sizeUu / 3 * 2 + self.sizeUu) - fullw)
       height = str(self.sizeUu / 3 - fullw)
-    elif a['shape_size'] == 'medium' and a['shape_facing'] == 'north':
+    elif a['size'] == 'medium' and a['facing'] == 'north':
       x      = str(X + self.sizeUu / 3 + halfw)
       y      = str(Y + halfw)
       width  = str(self.sizeUu / 3 - fullw)
       height = str(self.sizeUu - fullw)
-    elif a['shape_size'] == 'medium' and a['shape_facing'] == 'east':
+    elif a['size'] == 'medium' and a['facing'] == 'east':
       x      = str(X + halfw)
       y      = str(Y + self.sizeUu / 3 + halfw)
       width  = str(self.sizeUu - fullw)
       height = str(self.sizeUu / 3 - fullw)
     else:
-      raise ValueError(f"Cannot set {cell} to {a['shape_size']}")
+      raise ValueError(f"Cannot set {cell} to {a['size']}")
 
     rect = Rectangle(x=x, y=y, width=width, height=height)
     return rect
@@ -110,12 +110,12 @@ class Draw:
     fullw = a['stroke_width']
     halfw = a['stroke_width'] / 2
       
-    if a['shape_size'] == 'medium':
+    if a['size'] == 'medium':
       x      = str(xSizeMm + halfw)
       y      = str(ySizeMm + halfw)
       width  = str(self.sizeUu - fullw)
       height = str(self.sizeUu - fullw)
-    elif a['shape_size'] == 'large':
+    elif a['size'] == 'large':
       third  = self.sizeUu / 3
       x      = str(xSizeMm - third / 2 + halfw)
       y      = str(ySizeMm - third / 2 + halfw)
@@ -132,28 +132,28 @@ class Draw:
     fullw = a['stroke_width']
     halfw = a['stroke_width'] / 2 # stroke width is halved for repositioning
 
-    if a['shape_facing'] == 'west': 
+    if a['facing'] == 'west': 
       points = [
         X + fullw, Y + self.sizeUu / 2, 
         X + self.sizeUu - halfw, Y + fullw, 
         X + self.sizeUu - halfw, Y + self.sizeUu - fullw,
         X + fullw, Y + self.sizeUu / 2
       ]
-    elif a['shape_facing'] == 'east': 
+    elif a['facing'] == 'east': 
       points = [
         X + halfw, Y + fullw, 
         X + self.sizeUu - fullw, Y + self.sizeUu / 2,
         X + halfw, Y + self.sizeUu - fullw,
         X + halfw, Y + fullw
       ]
-    elif a['shape_facing'] == 'north': 
+    elif a['facing'] == 'north': 
       points = [
         X + fullw, Y + self.sizeUu - halfw,
         X + self.sizeUu / 2, Y + fullw,
         X + self.sizeUu - fullw, Y + self.sizeUu - halfw,
         X + fullw, Y + self.sizeUu - halfw
       ]
-    elif a['shape_facing'] == 'south':
+    elif a['facing'] == 'south':
       points = [
         X + halfw, Y + halfw, 
         X + self.sizeUu / 2, Y + self.sizeUu - fullw, 
@@ -161,7 +161,7 @@ class Draw:
         X + halfw, Y + halfw
       ]
     else:
-      raise ValueError("Cannot face triangle {}".format(a['shape_facing']))
+      raise ValueError("Cannot face triangle {}".format(a['facing']))
     
     polyg = Polygon(points=",".join(map(str, points)))
     #polyg.label = cell
@@ -189,18 +189,18 @@ class Draw:
       Y + self.sizeUu / 2 - halfw
     ]
 
-    if a['shape_facing'] == 'all': 
+    if a['facing'] == 'all': 
       points = [ x[0], y[1], x[4], y[0], x[3], y[1], x[4], y[2], x[0], y[1] ]
-    elif a['shape_facing'] == 'west': 
+    elif a['facing'] == 'west': 
       points = [ x[0], y[1], x[6], y[0], x[6], y[2], x[0], y[1] ]
-    elif a['shape_facing'] == 'east': 
+    elif a['facing'] == 'east': 
       points = [ x[5], y[0], x[3], y[1], x[5], y[2], x[5], y[0] ]
-    elif a['shape_facing'] == 'north': 
+    elif a['facing'] == 'north': 
       points = [ x[0], y[4], x[4], y[0], x[3], y[4], x[0], y[4] ]
-    elif a['shape_facing'] == 'south':
+    elif a['facing'] == 'south':
       points = [ x[0], y[3], x[4], y[2], x[2], y[3], x[0], y[3] ]
     else:
-      raise ValueError(f"Cannot face diamond {a['shape_facing']}")
+      raise ValueError(f"Cannot face diamond {a['facing']}")
     
     polyg = Polygon(points=",".join(map(str, points)))
     return polyg
