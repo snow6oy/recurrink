@@ -15,8 +15,8 @@ class TestRecurrink(unittest.TestCase):
   def test_write_csvfile_machine(self):
     ''' ./recurrink.py -m ${model} --output CSV
     '''
-    rr = Recurrink('soleares', machine=True)
-    self.assertEqual('a b c d', rr.write_csvfile())
+    rr = Recurrink('soleares')
+    self.assertEqual('a b c d', rr.write_csvfile(rnd=True))
 
   def test_write_csvfile_human(self):
     self.assertEqual('a b c d', self.r.write_csvfile())

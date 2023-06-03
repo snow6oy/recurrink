@@ -276,7 +276,7 @@ WHERE view = %s;""", [view])
 class Recurrink(Db):
   ''' read and write data to postgres
   '''
-  def __init__(self, model, machine=False):
+  def __init__(self, model):
     super().__init__()
     self.workdir = '/home/gavin/Pictures/artWork/recurrences' # paths are relative to working dir
     models = self.list_model() 
@@ -298,7 +298,7 @@ class Recurrink(Db):
       }
 
       self.header = ['cell', 'model'] + list(self.attributes.keys())
-      self.author = 'MACHINE' if machine else 'HUMAN'
+      # self.author = 'MACHINE' if machine else 'HUMAN'
       self.uniq = self.uniq_cells()
     elif model:
       raise ValueError(f"unknown {model}")
@@ -306,14 +306,14 @@ class Recurrink(Db):
   #################################################################
   ################ p u b l i c ####################################
 
-  def write_csvfile(self):
+  def write_csvfile(self, rnd=False):
     ''' generate a config as cell x values matrix
         for humans copy default values over
         but machines get randoms
     '''
     init = dict()
     for c in self.uniq: 
-      randomvals = self.random_cellvalues(c) if self.author == 'MACHINE' else dict()
+      randomvals = self.random_cellvalues(c) if rnd else dict()
       row = list()
       row.append(c)
       row.append(self.model)

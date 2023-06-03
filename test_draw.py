@@ -16,8 +16,8 @@ class TestDraw(unittest.TestCase):
     ])
     self.geometry = {
       'shape':'square',
-      'shape_size':'medium',
-      'shape_facing':'north',
+      'size':'medium',
+      'facing':'north',
       'stroke_width': 0
     }
 
@@ -36,7 +36,7 @@ class TestDraw(unittest.TestCase):
     self.assertEqual(points, [0.0,24.0,24.0,0.0,48.0,24.0,0.0,24.0])
 
   def test_bad_facing(self):
-    self.geometry['shape_size'] = 'very tiny'
+    self.geometry['size'] = 'very tiny'
     with self.assertRaises(ValueError):
       self.d.shape('a', 0, 0, self.geometry)
 
