@@ -43,9 +43,13 @@ INSERT INTO styles (sid, fill, bg)
 VALUES
   (DEFAULT, '#FFF', '#CCC');
 
-INSERT INTO views (view, model, author, cell, sid, gid) 
+INSERT INTO views (view, model, author, control) 
 VALUES 
-  ('e4681aa9b7aef66efc6290f320b43e55', 'soleares', 'machine', 'a', 1, 1),
-  ('e4681aa9b7aef66efc6290f320b43e55', 'soleares', 'machine', 'b', 2, 2),
-  ('e4681aa9b7aef66efc6290f320b43e55', 'soleares', 'machine', 'c', 3, 3),
-  ('e4681aa9b7aef66efc6290f320b43e55', 'soleares', 'machine', 'd', 4, 4);
+  ('e4681aa9b7aef66efc6290f320b43e55', 'soleares', 'human', 5);
+
+INSERT INTO cells (view, cell, sid, gid) 
+VALUES
+  ('e4681aa9b7aef66efc6290f320b43e55', 'a', 1, 1),
+  ('e4681aa9b7aef66efc6290f320b43e55', 'b', 2, 2),
+  ('e4681aa9b7aef66efc6290f320b43e55', 'c', 3, 3),
+  ('e4681aa9b7aef66efc6290f320b43e55', 'd', 4, 4);

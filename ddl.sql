@@ -60,17 +60,23 @@ DROP TYPE authors;
 CREATE TYPE authors as ENUM ('human', 'machine');
 
 -- view is a model instance
--- each cell is a tuple containing [Pos, Geom, Style]
 CREATE TABLE views (
-  view VARCHAR(50) NOT NULL,
-  cell CHAR(1) NOT NULL,
+  view VARCHAR(50) PRIMARY KEY,
   model VARCHAR(50) NOT NULL,
   author authors DEFAULT 'human',
   control INT NOT NULL DEFAULT 0,
+  created timestamp DEFAULT current_timestamp,
+  FOREIGN KEY (model) REFERENCES models (model)
+);
+
+DROP TABLE cells;
+-- a cell is a tuple containing [blocks.position+, geometry.gid, styles.sid]
+CREATE TABLE cells (
+  view VARCHAR(50) NOT NULL,
+  cell CHAR(1) NOT NULL,
   sid INT NOT NULL,
   gid INT NOT NULL,
-  created timestamp DEFAULT current_timestamp,
-  FOREIGN KEY (model) REFERENCES models (model),
+  FOREIGN KEY (view) REFERENCES views (view),
   FOREIGN KEY (SID) REFERENCES styles (SID),
   FOREIGN KEY (GID) REFERENCES geometry (GID),
   UNIQUE (view, cell)

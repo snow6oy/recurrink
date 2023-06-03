@@ -205,6 +205,7 @@ if __name__ == '__main__':
       else:
         print(f"adding {view} to {m}")
         db.model = m # self.model was designed to inherit but not the case here
+        db.write_view(view, author, 0, dict())
         for cell in bb.uniq_cells():
           items = [cell, m] + list(i.get_cell(cell).values())
-          db.write_cell(view, cell, author, items[:13])
+          db.write_cell(view, cell, items[:13])

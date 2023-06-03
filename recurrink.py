@@ -96,6 +96,17 @@ WHERE view = %s;""", [view])
       raise ValueError(f"not expecting this kinda view '{view}'")
     return vcount
 
+  def write_view(self, view, author, control, cells):
+    ''' create views and cells
+    '''
+    if not self.count_view(view):
+      self.cursor.execute("""
+INSERT INTO views (view, model, author, control)
+VALUES (%s, %s, %s, %s);""", [view, self.model, author, control])
+
+    [self.write_cell(view, c, list(cells[c].values())) for c in cells]
+    return view
+
   def load_view(self, view):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
       ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
@@ -105,9 +116,9 @@ WHERE view = %s;""", [view])
     data = dict()
     self.cursor.execute("""
 SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
-FROM views, styles, geometry
-WHERE views.sid = styles.sid
-AND views.gid = geometry.gid
+FROM cells, styles, geometry
+WHERE cells.sid = styles.sid
+AND cells.gid = geometry.gid
 AND view = %s;""", [view])
     for cellvals in self.cursor.fetchall():
       z = zip(header, cellvals)
@@ -117,9 +128,33 @@ AND view = %s;""", [view])
       data[cell] = d
     return data
 
-  def write_cell(self, view, cell, author, items):
+  def write_cell(self, view, cell, items):
     ''' update a a single row in the views table
     '''
+    update = False # used only by unit test
+    # re-order top print(type(top), top)
+    top = items.pop()
+    items.insert(5, bool(top))
+    # ignore first 2 items cell and model
+    gid = self.set_geometry(items[2:6])
+    sid = self.get_style(view, cell)
+    sid = self.set_styles(items[6:], sid=sid)
+    # UPSERT the cells
+    try:
+      self.cursor.execute("""
+INSERT INTO cells (view, cell, sid, gid)
+VALUES (%s, %s, %s, %s);""", [view, cell, sid, gid])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      update = True
+      self.cursor.execute("""
+UPDATE cells SET
+sid=%s, gid=%s
+WHERE view=%s
+AND cell=%s;""", [sid, gid, view, cell])
+    return update
+
+  ''' update a a single row in the views table
+  def write_cell(self, view, cell, author, items):
     update = False # used only by unit test
     # re-order top print(type(top), top)
     top = items.pop()
@@ -141,6 +176,7 @@ author=%s, sid=%s, gid=%s
 WHERE view=%s
 AND cell=%s;""", [author, sid, gid, view, cell])
     return update
+  '''
 
   def set_geometry(self, items):
     ''' first attempt to find an existing record and then insert as fallback
@@ -213,11 +249,28 @@ RETURNING sid;""", items)
   def get_style(self, view, cell):
     self.cursor.execute("""
 SELECT sid
-FROM views
+FROM cells
 WHERE view = %s
 AND cell = %s;""", [view, cell])
     sid = self.cursor.fetchone()
     return sid[0] if sid else None
+###############################################################################
+class View(Db):
+
+  def __init__(self):
+    super().__init__()
+
+  def delete(self, view):
+    ''' no error checks, this is gonzo style !
+    '''
+    self.cursor.execute("""
+DELETE FROM cells
+WHERE view = %s;""", [view])
+    self.cursor.execute("""
+DELETE FROM views
+WHERE view = %s;""", [view])
+    return True
+
 ###############################################################################
 class Recurrink(Db):
   ''' read and write data to postgres
@@ -297,7 +350,7 @@ class Recurrink(Db):
       json.dump(data, outfile, indent=2)
     return fn
 
-  def write_view(self, view=None, random=False):
+  def load_view_csvfile(self, view=None, random=False):
     ''' convert a 2d array of cell data into a hash and json file
     '''
     csvdata = self.read_tmp_csvfile()
@@ -308,8 +361,7 @@ class Recurrink(Db):
       view = self.get_digest(cellvalues)
     author = 'machine' if random else 'human'
 
-    [self.write_cell(view, cell, author, list(jsondata[cell].values())) for cell in jsondata]
-    return view
+    return author, view, jsondata
 
   #####################################################################
   ######################### p r i v a t e #############################

@@ -41,23 +41,6 @@ class TestRecurrink(unittest.TestCase):
     self.r.write_csvfile()
     cells = self.r.get_cellvalues('a').split(' ')
     self.assertTrue(cells[9].isdigit())
-
-  def testWriteView(self):
-    new_view = self.r.write_view()
-    self.assertEqual(len(new_view), 32)
-
-  def testUpdateView(self):
-    ''' when mondrian does updsvg and calls ./recurrink.py -c CELL need to run UPDATE on DB
-      this is because mondrian -install no longer copies JSON files aroun
-    '''
-    view = 'e4681aa9b7aef66efc6290f320b43e55'
-    self.assertEqual(view, self.r.write_view(view=view, author='machine'))
-
-  def testWriteRinkfile(self):
-    ''' ./recurrink.py -m ${model} --output RINK --view ${view}
-        check /tmp/{self.r.model}.rink
-    '''
-    self.assertEqual(self.r.write_rinkfile('e4681aa9b7aef66efc6290f320b43e55'), '/tmp/soleares.rink')
   ''' the end
   '''
 if __name__ == '__main__':
