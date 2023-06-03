@@ -272,6 +272,17 @@ DELETE FROM views
 WHERE view = %s;""", [view])
     return True
 
+  def read(self, view):
+    if len(view) == 32:
+      self.cursor.execute("""
+SELECT *
+FROM views
+WHERE view = %s;""", [view])
+      row = self.cursor.fetchone()
+    else:
+      raise ValueError(f"not expecting this kinda view '{view}'")
+    return list(row[1:3]) # return model and author
+
 ###############################################################################
 class Recurrink(Db):
   ''' read and write data to postgres

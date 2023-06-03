@@ -6,7 +6,7 @@ import json
 import inkex
 from inkex import Group
 from layout import Layout
-from recurrink import Db
+from recurrink import Db, View
 
 class Model(Layout):
 
@@ -69,16 +69,13 @@ class Input(inkex.InputExtension):
     '''
     ''' paused as schema update 
     '''
-    print(self.options)
-
     if self.options.info:
       ''' info has a view value e.g. c364ab54ff542adb322dc5c1d6aa4cc8
       '''
-      print(self.options.info)
-      #print(self.options.input_file)
-      db = Db()
-      n = db.count_view(self.options.info)
-      doc = f"count view {n}"
+      view = View()
+      v = view.read(self.options.info)
+      v.append("\n")
+      doc = " ".join(v)
     elif self.options.input_file:
       fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
       doc = None
@@ -91,8 +88,6 @@ class Input(inkex.InputExtension):
       svg = self.add_metadata(doc, data['id'], scale)
       group, strokeWidth = m.make(data, svg)
       m.render(group, strokeWidth) # generate the model from the rink file
-    #elif self.options.input_file is None:
-    #  raise ValueError(f"bad file {self.options.input_file}")
 
     return doc
 
