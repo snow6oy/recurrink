@@ -72,8 +72,8 @@ class Input(inkex.InputExtension):
       ''' read accepts a view value e.g. c364ab54ff542adb322dc5c1d6aa4cc8
       '''
       v = view.read(self.options.read)
-      v.append("\n")
       doc = " ".join(v)
+      doc += "\n"
     elif self.options.delete:
       view.delete(self.options.delete)
       doc = str()
