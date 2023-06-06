@@ -277,11 +277,11 @@ class Layout(Draw):
     blocksize = self.get['size']
     return tuple(blocksize)
 
+  '''
   def get_id(self):
-    '''
-     lookup a digest such as 3e8539a9929c0b2595f44146f1b3770c
-    '''
+    was supposed to lookup a digest such as 3e8539a9929c0b2595f44146f1b3770c
     return self.get['id']
+  '''
 
   def get_cell_by_position(self, x, y):
     '''

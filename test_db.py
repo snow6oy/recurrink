@@ -4,7 +4,7 @@
 '''
 import unittest
 import pprint
-from recurrink import Recurrink, View
+from recurrink import Recurrink, Views
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestDb(unittest.TestCase):
@@ -61,10 +61,11 @@ class TestDb(unittest.TestCase):
     self.assertEqual(len(list(view.keys())), 4)
 
   def testWriteView(self):
+    v = Views()
     self.db.write_csvfile() 
     (author, view, data) = self.db.load_view_csvfile(view='e4681aa9b7aef66efc6290f320b43e55')
     control = 3
-    self.assertEqual(self.db.write_view(view, author, control, data), 'e4681aa9b7aef66efc6290f320b43e55')
+    self.assertEqual(v.set('soleares', view, author, control), 'e4681aa9b7aef66efc6290f320b43e55')
 
   '''
   def testWriteView(self):
@@ -76,7 +77,7 @@ class TestDb(unittest.TestCase):
   def testDeleteView(self):
     ''' test delete on a separate view to avoid impacting other tests
     '''
-    view = View()
+    view = Views()
     data = dict()
     cellvals = {
       "cell": "c",
@@ -94,7 +95,7 @@ class TestDb(unittest.TestCase):
       "top": False
     }
     data['c'] = cellvals
-    self.db.write_view('abcdefghijklmnopqrstuvwxyz012345', 'human', 5, data)
+    view.set('koto', 'abcdefghijklmnopqrstuvwxyz012345', 'human', 5)
     self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
 
   def testWriteCell(self):
@@ -105,6 +106,10 @@ class TestDb(unittest.TestCase):
     cell = 'a'
     data = ['a', 'soleares', 'triangle', 'medium', 'west', '#FFF', '#CCC', 1.0, '#000', 0, 0, 0.5, False]
     self.assertTrue(self.db.write_cell(view, cell, data))
+
+  def testGetDigest(self):
+    v = Views()
+    self.assertEqual(len(v.get(celldata='abcd')), 32)
   ''' the end
   '''
 if __name__ == '__main__':

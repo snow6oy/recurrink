@@ -5,7 +5,7 @@ import os
 import csv
 import json
 import glob
-from recurrink import Db
+from recurrink import Db, Views
 
 class Builder:
   ''' read and write data to file
@@ -179,13 +179,14 @@ class Importer:
 
 if __name__ == '__main__':
   i = Importer()
+  v = Views()
   b = Builder(None)
   db = Db()
-  for m in b.list_model():
-  #for m in ['buleria']:
+  #for m in b.list_model():
+  for m in ['buleria']:
     bb = Builder(m)
-    for viewpath in bb.find_recurrence(): 
-    #for viewpath in ['buleria/m/f11909036a7d7686620546f78ffcf2a9.json']:
+    #for viewpath in bb.find_recurrence(): 
+    for viewpath in ['buleria/m/01ddc8757dc3df56b2308bae0c1e0b04.json']:
       rink = bb.load_rinkdata(viewpath)
       i.add(m, db=rink)
       if m not in db.list_model():
@@ -200,12 +201,11 @@ if __name__ == '__main__':
       (_, a, filename) = viewpath.split('/')
       author = 'machine' if a == 'm' else 'human'
       view = filename.replace('.json', '')
-      if db.count_view(view):
+      if v.count(view):
         print(f"skipping view {view}")
       else:
         print(f"adding {view} to {m}")
-        db.model = m # self.model was designed to inherit but not the case here
-        db.write_view(view, author, 0, dict())
+        v.set(m, view, author, 0, dict())
         for cell in bb.uniq_cells():
           items = [cell, m] + list(i.get_cell(cell).values())
           db.write_cell(view, cell, items[:13])

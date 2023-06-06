@@ -3,7 +3,7 @@
 import sys
 import random
 import getopt
-from recurrink import Recurrink
+from recurrink import Recurrink, Views
 
 def usage():
   message = '''
@@ -52,6 +52,7 @@ if __name__ == '__main__':
   (model, output, cell, view, ls, rnd) = inputs()
   ''''''''''''''''''''''''''''''''''''''''''
   r = Recurrink(model)
+  v = Views()
   if model:
     if output == 'CSV':                   # create tmp csv file containing a collection of random cell values
       print(r.write_csvfile(rnd=rnd))     # OR default vals for humans. return cell vals a b c d
@@ -61,8 +62,11 @@ if __name__ == '__main__':
       # r.write_rinkfile()
       print("deprecated")
     elif output == 'JSON':                # convert tmp csv into json as permanent record 
-      (author, view, data) = r.load_view_csvfile(random=rnd)
-      print(r.write_view(view, author, 0, data)) # write json and return digest
+      #(author, view, data) = r.load_view_csvfile(random=rnd)
+      #print(r.write_view(view, author, 0, data)) # write json and return digest
+      (author, view, cells) = r.load_view_csvfile(random=rnd)
+      print(v.set(model, view, author, 0))       # write view metadata and return digest
+      [r.write_cell(view, c, list(cells[c].values())) for c in cells]
     elif output == 'CELL':                # get a list of uniq cells
       print(' '.join(r.uniq)) 
     elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'

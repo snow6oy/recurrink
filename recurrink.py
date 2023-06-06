@@ -84,36 +84,12 @@ WHERE model = %s;""", [self.model])
     cells = [c[0] for c in self.cursor.fetchall()]
     return cells
 
-  def count_view(self, view):
-    vcount = 0
-    if len(view) == 32:
-      self.cursor.execute("""
-SELECT COUNT(view) as vcount
-FROM views
-WHERE view = %s;""", [view])
-      vcount = self.cursor.fetchone()[0]
-    else:
-      raise ValueError(f"not expecting this kinda view '{view}'")
-    return vcount
-
-  def write_view(self, view, author, control, cells):
-    ''' create views and cells
-    '''
-    if not self.count_view(view):
-      self.cursor.execute("""
-INSERT INTO views (view, model, author, control)
-VALUES (%s, %s, %s, %s);""", [view, self.model, author, control])
-
-    [self.write_cell(view, c, list(cells[c].values())) for c in cells]
-    return view
-
   def load_view(self, view):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
       ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
     header = [
       'cell','shape','size','facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
     ]
-    # header = [ 'cell','shape','shape_size','shape_facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity' ]
     data = dict()
     self.cursor.execute("""
 SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
@@ -256,7 +232,7 @@ AND cell = %s;""", [view, cell])
     sid = self.cursor.fetchone()
     return sid[0] if sid else None
 ###############################################################################
-class View(Db):
+class Views(Db):
 
   def __init__(self):
     super().__init__()
@@ -272,17 +248,53 @@ DELETE FROM views
 WHERE view = %s;""", [view])
     return True
 
-  def read(self, view):
-    if len(view) == 32:
+  def set(self, model, view, author, control):
+    ''' create views metadata and try Cells()
+    '''
+    if not self.count(view):
+      self.cursor.execute("""
+INSERT INTO views (view, model, author, control)
+VALUES (%s, %s, %s, %s);""", [view, model, author, control])
+
+    #[self.write_cell(view, c, list(cells[c].values())) for c in cells]
+    return view
+
+  def get(self, vid=None, celldata=None):
+    ''' returns either data for an existing view
+        or an ID for a new view
+    '''
+    view = str()
+    if vid and len(vid) == 32:
       self.cursor.execute("""
 SELECT *
 FROM views
-WHERE view = %s;""", [view])
+WHERE view = %s;""", [vid])
       row = self.cursor.fetchone()
       row = row[1:3] if row else list() # only need model and author
+      view = " ".join(row)
+    elif celldata is not None:
+      ''' hashkey should have a unique value for each model view
+      '''
+      secret = b'recurrink'
+      key = ''.join(celldata)
+      digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
+      view = digest_maker.hexdigest()
     else:
       raise ValueError(f"not expecting this kinda view '{view}'")
-    return row 
+    return view
+
+  def count(self, view):
+    vcount = 0
+    if len(view) == 32:
+      self.cursor.execute("""
+SELECT COUNT(view) as vcount
+FROM views
+WHERE view = %s;""", [view])
+      vcount = self.cursor.fetchone()[0]
+    else:
+      raise ValueError(f"not expecting this kinda view '{view}'")
+    return vcount
+
 
 ###############################################################################
 class Recurrink(Db):
@@ -370,7 +382,9 @@ class Recurrink(Db):
     if model != self.model:
       raise ValueError(f"collision in /tmp {model} is not {self.model}")
     if view is None:
-      view = self.get_digest(cellvalues)
+      v = Views()
+      view = v.get(celldata=cellvalues)
+      # view = self.get_digest(cellvalues)
     author = 'machine' if random else 'human'
 
     return author, view, jsondata
@@ -442,14 +456,6 @@ class Recurrink(Db):
         attrs[a] = self.attributes[a] if a not in attrs else attrs[a] 
       source.update({cell: attrs})
     return (model, to_hash, source)
-
-  def get_digest(self, cellvalues):
-    ''' hashkey should have a unique value for each model view
-    '''
-    secret = b'self.model'
-    key = ''.join(cellvalues)
-    digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
-    return digest_maker.hexdigest()
 
   def get_cells(self, model_data, json_data):
     ''' combine model and view data to optimise SVG build process
