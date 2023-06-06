@@ -16,38 +16,6 @@ class Db:
     connection.autocommit = True  # Ensure data is added to the database immediately after write commands
     self.cursor = connection.cursor()
 
-  def load_model(self):
-    ''' load csv data as 2D array
-      ./recurrink.py -m soleares -o CELL
-      [['a', 'b', 'a'], ['c', 'd', 'c']]
-    '''
-    self.cursor.execute("""
-SELECT blocksizeXY
-FROM models
-WHERE model = %s;""", [self.model])
-    (bsX, bsY) = self.cursor.fetchone()[0]
-    data = [[0 for x in range(bsX)] for y in range(bsY)]
-    self.cursor.execute("""
-SELECT position, cell 
-FROM blocks 
-WHERE model = %s;""", [self.model])
-    records = self.cursor.fetchall()
-    for r in records:
-      x = r[0][1] # x is the inner array
-      y = r[0][0]
-      data[x][y] = r[1]
-    return data
-
-  def set_model(self, model, uniqcells, blocksizexy, scale):
-    success = True
-    try:
-      self.cursor.execute("""
-INSERT INTO models (model, uniqcells, blocksizexy, scale)
-VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      success = False
-    return success
-
   def set_blocks(self, model, position, cell):
     success = True
     try:
@@ -57,24 +25,6 @@ VALUES (%s, %s, %s);""", [model, position, cell])
     except psycopg2.errors.UniqueViolation:  # 23505 
       success = False
     return success
-
-  def list_model(self):
-    self.cursor.execute("""
-SELECT model
-FROM models;""", )
-    records = [m[0] for m in self.cursor.fetchall()]
-    return records
-
-  def list_model_with_stats(self):
-    ''' display uniq cells, blocksize and model names
-    '''
-    output = f"uniq    x    y model\n" + ('-' * 80) + "\n"
-    self.cursor.execute("""
-SELECT model, uniqcells, blocksizexy
-FROM models;""",)
-    for m in self.cursor.fetchall():
-      output += f"{m[1]:>4} {m[2][0]:>4} {m[2][1]:>4} {m[0]}\n"
-    return output
 
   def uniq_cells(self):
     self.cursor.execute("""
@@ -294,6 +244,75 @@ WHERE view = %s;""", [view])
     else:
       raise ValueError(f"not expecting this kinda view '{view}'")
     return vcount
+###############################################################################
+class Models(Db):
+  ''' a model is the base template
+  '''
+  def __init__(self):
+    super().__init__()
+
+  def set(self, model, uniqcells, blocksizexy, scale):
+    success = True
+    try:
+      self.cursor.execute("""
+INSERT INTO models (model, uniqcells, blocksizexy, scale)
+VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      success = False
+    return success
+
+  def get(self, output='table', model=None):
+    if output == 'table':
+      return self.table(model)
+    elif output == 'list':
+      return self.list()
+    elif output == 'stats':
+      return self.stats()
+    else:
+      raise ValueError("models only come in three flavours")
+
+  # load_model
+  def table(self, model):
+    ''' load csv data as 2D array
+      ./recurrink.py -m soleares -o CELL
+      [['a', 'b', 'a'], ['c', 'd', 'c']]
+    '''
+    self.cursor.execute("""
+SELECT blocksizeXY
+FROM models
+WHERE model = %s;""", [model])
+    (bsX, bsY) = self.cursor.fetchone()[0]
+    data = [[0 for x in range(bsX)] for y in range(bsY)]
+    self.cursor.execute("""
+SELECT position, cell 
+FROM blocks 
+WHERE model = %s;""", [model])
+    records = self.cursor.fetchall()
+    for r in records:
+      x = r[0][1] # x is the inner array
+      y = r[0][0]
+      data[x][y] = r[1]
+    return data
+
+  # list_model
+  def list(self):
+    self.cursor.execute("""
+SELECT model
+FROM models;""", )
+    records = [m[0] for m in self.cursor.fetchall()]
+    return records
+
+  # list_model_with_stats
+  def stats(self):
+    ''' display uniq cells, blocksize and model names
+    '''
+    output = f"uniq    x    y model\n" + ('-' * 80) + "\n"
+    self.cursor.execute("""
+SELECT model, uniqcells, blocksizexy
+FROM models;""",)
+    for m in self.cursor.fetchall():
+      output += f"{m[1]:>4} {m[2][0]:>4} {m[2][1]:>4} {m[0]}\n"
+    return output
 
 
 ###############################################################################
@@ -303,8 +322,8 @@ class Recurrink(Db):
   def __init__(self, model):
     super().__init__()
     self.workdir = '/home/gavin/Pictures/artWork/recurrences' # paths are relative to working dir
-    models = self.list_model() 
-    if model in models:
+    m = Models()
+    if model in m.get(output='list'):
       self.model = model
 
       self.attributes = {

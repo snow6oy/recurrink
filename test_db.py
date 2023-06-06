@@ -4,7 +4,7 @@
 '''
 import unittest
 import pprint
-from recurrink import Recurrink, Views
+from recurrink import Recurrink, Views, Models
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestDb(unittest.TestCase):
@@ -13,10 +13,12 @@ class TestDb(unittest.TestCase):
     self.db = Recurrink('soleares') # inherit Db() class
 
   def testListModel(self):
-    self.assertTrue('soleares' in self.db.list_model())
+    m = Models()
+    self.assertTrue('soleares' in m.get(output='list'))
 
   def testLoadModel(self):
-    self.assertEqual(self.db.load_model()[1][1], 'd')
+    m = Models()
+    self.assertEqual(m.get(model='soleares')[1][1], 'd')
 
   def testSetGeometry(self):
     ''' geometries are shared and have a 1:* relation with views and cells
