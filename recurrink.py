@@ -16,134 +16,60 @@ class Db:
     connection.autocommit = True  # Ensure data is added to the database immediately after write commands
     self.cursor = connection.cursor()
 
-  def set_blocks(self, model, position, cell):
+class Blocks(Db):
+
+  def __init__(self, model):
+    self.model = model
+    super().__init__()
+
+  def set(self, position, cell):
     success = True
     try:
       self.cursor.execute("""
 INSERT INTO blocks (model, position, cell)
-VALUES (%s, %s, %s);""", [model, position, cell])
+VALUES (%s, %s, %s);""", [self.model, position, cell])
     except psycopg2.errors.UniqueViolation:  # 23505 
       success = False
     return success
 
-  def uniq_cells(self):
+  def cells(self, cell_count=0):
     self.cursor.execute("""
 SELECT DISTINCT(cell)
 FROM blocks
 WHERE model = %s;""", [self.model])
     cells = [c[0] for c in self.cursor.fetchall()]
-    return cells
+    if cell_count:
+      return len(cells) is not cell_count
+    else: 
+      return cells
 
-  def load_view(self, view):
-    ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
-      ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
-    header = [
-      'cell','shape','size','facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
-    ]
-    data = dict()
+  def get(self):
+    ''' positions link the model and cell: for example 
+        model with a line a, x, x a will be represented as positions[(3,0)] : a
+        note that lists from db have to be cast to tuples before hashing in a dict
+    '''
+    positions = dict()
     self.cursor.execute("""
-SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
-FROM cells, styles, geometry
-WHERE cells.sid = styles.sid
-AND cells.gid = geometry.gid
-AND view = %s;""", [view])
-    for cellvals in self.cursor.fetchall():
-      z = zip(header, cellvals)
-      d = dict(z)
-      cell = d['cell']
-      del d['cell']         # bit of a tongue twister that one :-D
-      data[cell] = d
-    return data
+SELECT cell, position
+FROM blocks
+WHERE model = %s;""", [self.model])
+    rows = self.cursor.fetchall()
+    for r in rows:
+      (cell, pos) = (r[0], tuple(r[1]))
+      positions[pos] = cell
+    return positions
 
-  def write_cell(self, view, cell, items):
-    ''' update a a single row in the views table
-    '''
-    update = False # used only by unit test
-    # re-order top print(type(top), top)
-    top = items.pop()
-    items.insert(5, bool(top))
-    # ignore first 2 items cell and model
-    gid = self.set_geometry(items[2:6])
-    sid = self.get_style(view, cell)
-    sid = self.set_styles(items[6:], sid=sid)
-    # UPSERT the cells
-    try:
-      self.cursor.execute("""
-INSERT INTO cells (view, cell, sid, gid)
-VALUES (%s, %s, %s, %s);""", [view, cell, sid, gid])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      update = True
-      self.cursor.execute("""
-UPDATE cells SET
-sid=%s, gid=%s
-WHERE view=%s
-AND cell=%s;""", [sid, gid, view, cell])
-    return update
+###############################################################################
+class Styles(Db):
 
-  ''' update a a single row in the views table
-  def write_cell(self, view, cell, author, items):
-    update = False # used only by unit test
-    # re-order top print(type(top), top)
-    top = items.pop()
-    items.insert(5, bool(top))
-    # ignore first 2 items cell and model
-    gid = self.set_geometry(items[2:6])
-    sid = self.get_style(view, cell)
-    sid = self.set_styles(items[6:], sid=sid)
-    # UPSERT the view table
-    try:
-      self.cursor.execute("""
-INSERT INTO views (view, cell, model, author, sid, gid)
-VALUES (%s, %s, %s, %s, %s, %s);""", [view, cell, self.model, author, sid, gid])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      update = True
-      self.cursor.execute("""
-UPDATE views SET
-author=%s, sid=%s, gid=%s
-WHERE view=%s
-AND cell=%s;""", [author, sid, gid, view, cell])
-    return update
-  '''
-
-  def set_geometry(self, items):
-    ''' first attempt to find an existing record and then insert as fallback
-    '''
-    gid = None
-
-    if items[0] in ['square', 'circle']:
-      items[2] = 'all'
-    if items[0] in ['triangle', 'diamond'] and items[1] == 'large': 
-      items[1] = 'medium' # triangles and diamonds cannot be large
-    if items[3] and items[1] != 'large': 
-      items[3] = False    # only large shapes can be on top
-
-    # avoid this psycopg2.errors.UniqueViolation:  # 23505 because it consumes SERIAL
-    self.cursor.execute("""
-SELECT gid
-FROM geometry
-WHERE shape = %s
-AND size = %s
-AND facing = %s;""", items[:3])  # ignore top
-    gid = self.cursor.fetchone()
-
-    if not gid:
-      self.cursor.execute("""
-INSERT INTO geometry (gid, shape, size, facing, top)
-VALUES (DEFAULT, %s, %s, %s, %s)
-RETURNING gid;""", items)
-      gid = self.cursor.fetchone()
-    return gid[0]
-
-  def set_styles(self, items, sid=None):
-    ''' update with sid or insert otherwise
-    '''
-    fill = {
+  def __init__(self):
+    super().__init__()
+    self.fill = {
       'orange':'#FFA500',
       'crimson':'#DC143C',
       'indianred':'#CD5C5C',
       'mediumvioletred':'#C71585',
-      'indigo':'#4B0082',
-      '#4B0083':'#4B0082',
+
       'limegreen':'#32CD32',
       'yellowgreen':'#9ACD32',
       'black':'#000',
@@ -153,11 +79,20 @@ RETURNING gid;""", items)
       '#ccc':'#CCC',
       '#333':'#CCC'
     }
-    for f in fill:
-      items[0] = items[0].replace(f, fill[f])
-      items[1] = items[1].replace(f, fill[f])
-      items[3] = items[3].replace(f, fill[f])
 
+  def validate(self, items):
+    ''' old bad code has various ways of saying RED BLUE GREEN
+    '''
+    for f in self.fill:
+      items[0] = items[0].replace(f, self.fill[f])
+      items[1] = items[1].replace(f, self.fill[f])
+      items[3] = items[3].replace(f, self.fill[f])
+    return items
+
+  def set(self, items, sid=None):
+    ''' update with sid or insert otherwise
+    '''
+    items = self.validate(items)
     if sid:
       #print(len(items),sid)  
       items.append(sid)
@@ -173,7 +108,7 @@ RETURNING sid;""", items)
       sid = self.cursor.fetchone()[0]
     return sid
 
-  def get_style(self, view, cell):
+  def get(self, view, cell):
     self.cursor.execute("""
 SELECT sid
 FROM cells
@@ -261,9 +196,9 @@ VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
       success = False
     return success
 
-  def get(self, output='table', model=None):
-    if output == 'table':
-      return self.table(model)
+  def get(self, model=None, output='matrix'):
+    if output == 'matrix':
+      return self.matrix(model)
     elif output == 'list':
       return self.list()
     elif output == 'stats':
@@ -272,7 +207,7 @@ VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
       raise ValueError("models only come in three flavours")
 
   # load_model
-  def table(self, model):
+  def matrix(self, model):
     ''' load csv data as 2D array
       ./recurrink.py -m soleares -o CELL
       [['a', 'b', 'a'], ['c', 'd', 'c']]
@@ -342,7 +277,7 @@ class Recurrink(Db):
 
       self.header = ['cell', 'model'] + list(self.attributes.keys())
       # self.author = 'MACHINE' if machine else 'HUMAN'
-      self.uniq = self.uniq_cells()
+      #self.uniq = self.uniq_cells()
     elif model:
       raise ValueError(f"unknown {model}")
 
@@ -354,33 +289,40 @@ class Recurrink(Db):
         for humans copy default values over
         but machines get randoms
     '''
+    c = Cells()
+    b = Blocks(self.model)
     init = dict()
-    for c in self.uniq: 
-      randomvals = self.random_cellvalues(c) if rnd else dict()
+    for cell in b.cells(): 
+      randomvals = c.random_cellvalues(cell) if rnd else dict()
       row = list()
-      row.append(c)
+      row.append(cell)
       row.append(self.model)
       for a in self.attributes:
         if a in randomvals:
           row.append(randomvals[a])
         else:
           row.append(self.attributes[a])
-      init[c] = row
+      init[cell] = row
 
     cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
     return cells
 
   def load_rinkdata(self, view):
+    m = Models()
+    c = Cells()
+    b = Blocks(self.model)
     if view is None:
       raise ValueError("need a digest to make a rink")
-    model_data = self.load_model()
-    view_data = self.load_view(view)
-    if (len(view_data.keys()) != len(self.uniq)):
-      raise KeyError(f"missing cells: {view}: {len(view_data.keys())} is not {len(self.uniq)}")
+    model_data = m.get(self.model)
+    view_data = c.load_view(view)
+    cell_count = len(view_data.keys())
+    if b.cells(cell_count=cell_count):
+      raise KeyError(f"{view} is missing cells: {cell_count} is not correct")
     return {
         'id': self.model,
         'size': (len(model_data[0]), len(model_data)),
-        'cells': self.get_cells(model_data, view_data)
+        'cells': view_data
+        #'cells': c.get_cells(model_data, view_data)
     }
 
   def write_rinkfile(self, view):
@@ -396,8 +338,10 @@ class Recurrink(Db):
   def load_view_csvfile(self, view=None, random=False):
     ''' convert a 2d array of cell data into a hash and json file
     '''
-    csvdata = self.read_tmp_csvfile()
-    (model, cellvalues, jsondata) = self.convert_row2cell(csvdata)
+    c = Cells()
+    #csvdata = self.read_tmp_csvfile()
+    #(model, cellvalues, jsondata) = c.convert_row2cell(csvdata)
+    (model, cellvalues, jsondata) = c.convert_row2cell(self.model)
     if model != self.model:
       raise ValueError(f"collision in /tmp {model} is not {self.model}")
     if view is None:
@@ -408,16 +352,51 @@ class Recurrink(Db):
 
     return author, view, jsondata
 
-  #####################################################################
-  ######################### p r i v a t e #############################
-
   def write_tmp_csvfile(self, fn, celldata):
-    cells = self.uniq
+    b = Blocks(self.model)
+    cells = b.cells()
     with open(fn, 'w') as f:
       wr = csv.writer(f, quoting=csv.QUOTE_NONE)
       wr.writerow(self.header)
       [wr.writerow(celldata[c]) for c in cells]
     return ' '.join(cells)
+
+  def read_tmp_csvfile(self): 
+    ''' TODO is this used since it was copied to Cells()
+       a, soleares, square, medium, north, #fff, #ccc, 1.0, #000, 0, 0, 1.0, Fals] '''
+    with open(f"/tmp/{self.model}.csv") as f:
+      reader = csv.reader(f)
+      next(reader, None)
+      data = list(reader)
+    return data
+
+#####################################################################
+class Cells(Db):
+  ''' a cell data set can be initiated in one of three ways
+      1. randomly creating cell attributes
+      2. selecting existing shapes/syles from any view
+      3. cloning attributes from a given view
+    data needs to be synchronised between a CSV file and Postgres
+    Cells also need to provide default values for undefined attribute
+  '''
+  def __init__(self):
+    super().__init__()
+    self.header = [
+      'cell','model','shape','size','facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
+    ] # different from the similar list in self.load_view
+    self.attributes = {
+      'shape':'square',
+      'size':'medium',
+      'facing':'north',
+      'fill': '#FFF', 
+      'bg': '#CCC',
+      'fill_opacity':1.0, 
+      'stroke':'#000', 
+      'stroke_width': 0, 
+      'stroke_dasharray': 0,
+      'stroke_opacity':1.0,
+      'top':False
+    }
 
   def random_cellvalues(self, cell):
     ''' TODO these attributes were supposed to be updated interactively 
@@ -447,10 +426,13 @@ class Recurrink(Db):
     rnd['stroke_dasharray'] = str(random.choice(range(10)))
     return rnd
 
-
-  def convert_row2cell(self, data):
+  #def convert_row2cell(self, data):
+  def convert_row2cell(self, model, data=[]):
     ''' sample input 
       [[ 'a','soleares','triangle','medium','west','#fff','yellowgreen','1.0','#000','1','0','1.0','False' ]] '''
+    if not len(data):
+      data = self.read_tmp_csvfile(model)
+
     sortdata = list()
     source = dict()
     to_hash = str()
@@ -484,10 +466,186 @@ class Recurrink(Db):
       json_data[p]['positions'] = positions[p]
     return json_data
 
-  def get_positions(self, model_data):
-    ''' positions link the model and cell: for example 
-        csv with a line a, x, x a will appear in json as { a: { positions: [[0,0], [3,0] }}
+  def load_view(self, view):
+    ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
+      ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
+    header = [
+      'cell','shape','size','facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
+    ]
+    data = dict()
+    self.cursor.execute("""
+SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
+FROM cells, styles, geometry
+WHERE cells.sid = styles.sid
+AND cells.gid = geometry.gid
+AND view = %s;""", [view])
+    for cellvals in self.cursor.fetchall():
+      z = zip(header, cellvals)
+      d = dict(z)
+      cell = d['cell']
+      del d['cell']         # bit of a tongue twister that one :-D
+      data[cell] = d
+    return data
+
+  def write_cell(self, view, cell, items):
+    ''' update a a single row in the views table
     '''
+    update = False # used only by unit test
+    g = Geometry()
+    s = Styles()
+    # re-order top print(type(top), top)
+    top = items.pop()
+    items.insert(5, bool(top))
+    # ignore first 2 items cell and model
+    gid = g.set(items=items[2:6])
+    sid = s.get(view, cell)
+    sid = s.set(items[6:], sid=sid) # retry in case sid was None
+    # UPSERT the cells
+    try:
+      self.cursor.execute("""
+INSERT INTO cells (view, cell, sid, gid)
+VALUES (%s, %s, %s, %s);""", [view, cell, sid, gid])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      update = True
+      self.cursor.execute("""
+UPDATE cells SET
+sid=%s, gid=%s
+WHERE view=%s
+AND cell=%s;""", [sid, gid, view, cell])
+    return update
+
+  def get_cellvalues(self, model, cell):
+    data = self.read_tmp_csvfile(model)
+    valstr = None
+    for d in data:
+      if (cell == d[0]):
+        valstr = ' '.join(d)
+        break
+    return valstr
+
+  def read_tmp_csvfile(self ,model):
+    ''' example csv row
+       a, soleares, square, medium, north, #fff, #ccc, 1.0, #000, 0, 0, 1.0, Fals] '''
+    with open(f"/tmp/{model}.csv") as f:
+      reader = csv.reader(f)
+      next(reader, None)
+      data = list(reader)
+    return data
+
+  ''' update a a single row in the views table
+  def write_cell(self, view, cell, author, items):
+    update = False # used only by unit test
+    # re-order top print(type(top), top)
+    top = items.pop()
+    items.insert(5, bool(top))
+    # ignore first 2 items cell and model
+    gid = self.set_geometry(items[2:6])
+    sid = self.get_style(view, cell)
+    sid = self.set_styles(items[6:], sid=sid)
+    # UPSERT the view table
+    try:
+      self.cursor.execute("""
+INSERT INTO views (view, cell, model, author, sid, gid)
+VALUES (%s, %s, %s, %s, %s, %s);""", [view, cell, self.model, author, sid, gid])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      update = True
+      self.cursor.execute("""
+UPDATE views SET
+author=%s, sid=%s, gid=%s
+WHERE view=%s
+AND cell=%s;""", [author, sid, gid, view, cell])
+    return update
+  '''
+###############################################################################
+class Geometry(Db):
+  ''' TODO review shape functions in Draw() as members of this class
+    This class can
+      * update an existing geometry
+      * randomly create new geometries and create a new GID
+      * selecting existing geometries from a random GID
+      * selecting existing geometries from a given GID
+    data is handled as an ordered list (gid, shape, size, facing, top)
+    inputs are validated and default values provided for undefined attribute
+  '''
+  def __init__(self):
+    super().__init__()
+    self.defaults = { 'shape':'square', 'size':'medium', 'facing':None, 'top':False }
+    self.attributes = {
+      'shape': ['circle', 'line', 'square', 'triangle', 'diamond'],
+      'facing': ['all','north', 'south', 'east', 'west'],
+      'size': ['medium', 'large'],
+      'top': [True, False]
+    }
+
+  def get(self, items=[], rnd=False, gid=0):
+    ''' always returns a list, even if only one member (gid)
+    '''
+    if gid:  # select entries
+      self.cursor.execute("""
+SELECT *
+FROM geometry
+WHERE gid = %s;""", gid)
+      items = self.cursor.fetchone()
+    elif rnd:  # randomly generate a GID and select entries
+      self.cursor.execute("""
+SELECT MAX(gid)
+FROM geometry;""", [])
+      gid = self.cursor.fetchone()
+      items = self.get(items)  # recursive recurrink :)
+    elif len(items): # attempt to select gid
+      self.cursor.execute("""
+SELECT gid
+FROM geometry
+WHERE shape = %s
+AND size = %s
+AND facing = %s;""", items[:3])  # ignore top
+      items = self.cursor.fetchone()
+    else:
+      pass # throw error here?
+    return items
+
+  def set(self, items=[]):
+    gid = None
+    if items:  # validate and update
+      items = self.validate(items)
+      gid = self.get(items)
+      if gid is None:
+        gid = self.add(items)
+    else:      # randomly create new geometries and a new GID
+      items = []
+      items[0] = random.choice(self.attributes['shape'])
+      items[1] = random.choice(self.attributes['size'])
+      items[2] = random.choice(self.attributes['facing'])
+      items[3] = random.choice(self.attributes['top'])
+      items = self.validate(items)
+      gid = self.add(items)
+    return gid[0]
+
+  def validate(self, items):
+    if items[0] in ['square', 'circle']:
+      items[2] = 'all'
+    if items[0] in ['triangle', 'diamond'] and items[1] == 'large': 
+      items[1] = 'medium' # triangles and diamonds cannot be large
+    if items[3] and items[1] != 'large': 
+      items[3] = False    # only large shapes can be on top
+    # TODO items[2] = None
+    # write validation test to understand why list comp fails when there is None value
+    items = [self.defaults[a] if items[i] is None else items[i] for i, a in enumerate(items)]
+    return items
+
+  def add(self, items):
+    ''' before calling this attempt to find an existing record and then insert as fallback
+        because psycopg2.errors.UniqueViolation:  # 23505 consumes SERIAL
+    '''
+    self.cursor.execute("""
+INSERT INTO geometry (gid, shape, size, facing, top)
+VALUES (DEFAULT, %s, %s, %s, %s)
+RETURNING gid;""", items)
+    gid = self.cursor.fetchone()
+    return gid[0]
+
+  '''
+  def get_positions(self, model_data):
     positions = dict()
     for row_num, row in enumerate(model_data):
       for col_num, col in enumerate(row):
@@ -497,21 +655,4 @@ class Recurrink(Db):
         positions[col].append(coord)
 
     return positions
-
-  def get_cellvalues(self, cell):
-    data = self.read_tmp_csvfile()
-    valstr = None
-    for d in data:
-      if (cell == d[0]):
-        valstr = ' '.join(d)
-        break
-    return valstr
-
-  def read_tmp_csvfile(self):
-    ''' example csv row
-       a, soleares, square, medium, north, #fff, #ccc, 1.0, #000, 0, 0, 1.0, Fals] '''
-    with open(f"/tmp/{self.model}.csv") as f:
-      reader = csv.reader(f)
-      next(reader, None)
-      data = list(reader)
-    return data
+  '''

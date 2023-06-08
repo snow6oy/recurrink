@@ -19,7 +19,7 @@ class Model(Layout):
   # def build(self, svg):
   def make(self, data, svg):
     ''' Generate an svg document for given model '''
-    cells = self.add(data)
+    cells = self.add(self.model, data)
     if not cells: # is model with given name available from db ?
       raise ValueError(f'not found <{model}>')
 

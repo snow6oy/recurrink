@@ -16,7 +16,7 @@ class TestLayout(unittest.TestCase):
     r = Recurrink('soleares')
     rinkdata = r.load_rinkdata('e4681aa9b7aef66efc6290f320b43e55')
     l = Layout()
-    l.add(rinkdata)
+    l.add('soleares', rinkdata)
     self.l = l
   
   def test_scale(self):
@@ -52,7 +52,7 @@ class TestLayout(unittest.TestCase):
     #print(os.getcwd())
     with open(f'{BASEDIR}/samples/test_card.json') as f:
       testdb = json.load(f)
-    rink = self.l.add(testdb)
+    rink = self.l.add('soleares', testdb)
     self.assertTrue(rink['cells']['b']['top'])
     self.assertFalse(rink['cells']['c']['top'])
 

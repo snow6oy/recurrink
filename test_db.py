@@ -4,7 +4,7 @@
 '''
 import unittest
 import pprint
-from recurrink import Recurrink, Views, Models
+from recurrink import Recurrink, Views, Models, Cells, Geometry, Styles
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestDb(unittest.TestCase):
@@ -24,7 +24,8 @@ class TestDb(unittest.TestCase):
     ''' geometries are shared and have a 1:* relation with views and cells
       geometries are never updated, only inserted when shape/size/facing combination is new
       also it avoids side-effectof incrementing SERIAL by anticipating UniqueViolation '''
-    gid = self.db.set_geometry(['square', 'medium', 'north', False])
+    g = Geometry()
+    gid = g.set(['square', 'medium', 'north', False])
     self.assertTrue(int(gid))
 
   def testSetGeometryTop(self):
@@ -32,33 +33,38 @@ class TestDb(unittest.TestCase):
       because otherwise when a shared geom is updated there would be side-effects 
       to properly test this first DELETE shape then run test and check top with SELECT
     '''
-    gid = self.db.set_geometry(['square', 'medium', 'west', True])
+    g = Geometry()
+    gid = g.set(['square', 'medium', 'west', True])
     self.assertTrue(int(gid))
 
   def testSetGeometryMedium(self):
     ''' only circles, lines and square may be large
       to properly test this first DELETE shape then run test and check top with SELECT
     ''' 
-    gid = self.db.set_geometry(['triangle', 'large', 'west', True])
+    g = Geometry()
+    gid = g.set(['triangle', 'large', 'west', True])
     self.assertTrue(int(gid))
 
   def testSetStyleUpdate(self):
     ''' styles are not shareable. styles have 1:1 relation view/cell <> style
       this means styles are EITHER updated when the SID exists OR inserted
     '''
-    sid = self.db.get_style('e4681aa9b7aef66efc6290f320b43e55', 'd')
+    s = Styles()
+    sid = s.get('e4681aa9b7aef66efc6290f320b43e55', 'd')
     self.assertEqual(sid, 4)
-    sid = self.db.set_styles(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 0.5], sid=sid)
+    sid = s.set(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 0.5], sid=sid)
     self.assertEqual(sid, 4)
 
   def testSetStyleInsert(self):
-    sid = self.db.set_styles(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 1.5])
+    s = Styles()
+    sid = s.set(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 1.5])
     self.assertTrue(sid)
 
   def testLoadView(self):
     ''' construct JSON like view from db
     '''
-    view = self.db.load_view('e4681aa9b7aef66efc6290f320b43e55')
+    c = Cells()
+    view = c.load_view('e4681aa9b7aef66efc6290f320b43e55')
     #pp.pprint(view)
     self.assertEqual(len(list(view.keys())), 4)
 
@@ -104,10 +110,11 @@ class TestDb(unittest.TestCase):
     ''' when mondrian does updsvg and calls ./recurrink.py -c CELL need to run UPDATE on DB
         this is because mondrian -install no longer copies JSON files aroun
     '''
+    c = Cells()
     view = 'e4681aa9b7aef66efc6290f320b43e55'
     cell = 'a'
     data = ['a', 'soleares', 'triangle', 'medium', 'west', '#FFF', '#CCC', 1.0, '#000', 0, 0, 0.5, False]
-    self.assertTrue(self.db.write_cell(view, cell, data))
+    self.assertTrue(c.write_cell(view, cell, data))
 
   def testGetDigest(self):
     v = Views()

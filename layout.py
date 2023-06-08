@@ -13,6 +13,7 @@
 import math
 import inkex
 from inkex import Group, Circle, Rectangle, Polygon, TextElement
+from recurrink import Blocks
 
 class Draw:
   ''' does the maths to render a cell
@@ -251,8 +252,9 @@ class Layout(Draw):
       raise ValueError(f"cannot find model {model}. db len is {len(db)}")
     return self.get
   '''
-  def add(self, view_data):
+  def add(self, model, view_data):
     ''' load database of named model or use given db'''
+    self.model = model
     if view_data:
       self.get = view_data
     else: 
@@ -282,8 +284,27 @@ class Layout(Draw):
     was supposed to lookup a digest such as 3e8539a9929c0b2595f44146f1b3770c
     return self.get['id']
   '''
-
   def get_cell_by_position(self, x, y):
+    '''
+    repeat the block to fit the canvas
+    1. calculate the block number using integer division, blocksize and counter
+    2. then new counter = counter - blocknumber * blocksize
+    '''
+    b = Blocks(self.model)
+    cell = None
+    (x_blocksize, y_blocksize) = self.blocksize()
+
+    y_blocknum = int(y / y_blocksize)
+    Y = y - (y_blocknum * y_blocksize)
+
+    x_blocknum = int(x / x_blocksize)
+    X = x - (x_blocknum * x_blocksize)
+    #print(f'xy({x}, {y})  XY({X}, {Y})  blocknum({x_blocknum}, {y_blocknum})')
+    current_posn = (X, Y) # tuples are immutable
+    positions = b.get()
+    return positions[current_posn]
+
+  def _get_cell_by_position(self, x, y):
     '''
     repeat the block to fit the canvas
     1. calculate the block number using integer division, blocksize and counter

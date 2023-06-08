@@ -5,7 +5,7 @@ import os
 import csv
 import json
 import glob
-from recurrink import Db, Views
+from recurrink import Db, Views, Models
 
 class Builder:
   ''' read and write data to file
@@ -180,24 +180,25 @@ class Importer:
 if __name__ == '__main__':
   i = Importer()
   v = Views()
+  m = Models()
   b = Builder(None)
   db = Db()
   #for m in b.list_model():
-  for m in ['buleria']:
-    bb = Builder(m)
+  for model in ['buleria']:
+    bb = Builder(model)
     #for viewpath in bb.find_recurrence(): 
     for viewpath in ['buleria/m/01ddc8757dc3df56b2308bae0c1e0b04.json']:
       rink = bb.load_rinkdata(viewpath)
-      i.add(m, db=rink)
-      if m not in db.list_model():
-        print(f"adding {m}")
+      i.add(model, db=rink)
+      if model not in m.get(output='list'):
+        print(f"adding {model}")
         cells = bb.uniq_cells()
         bs = f'{{{i.blocksize()[0]}, {i.blocksize()[1]}}}'
-        if db.set_model(m, len(cells), bs, 1.0):
+        if m.set(model, len(cells), bs, 1.0):
           for cell in cells:
             for p in i.get_cell(cell)['positions']:
               position = f'{{{p[0]}, {p[1]}}}'
-              db.set_blocks(m, position, cell)
+              db.set_blocks(model, position, cell)
       (_, a, filename) = viewpath.split('/')
       author = 'machine' if a == 'm' else 'human'
       view = filename.replace('.json', '')
@@ -205,7 +206,7 @@ if __name__ == '__main__':
         print(f"skipping view {view}")
       else:
         print(f"adding {view} to {m}")
-        v.set(m, view, author, 0, dict())
+        v.set(model, view, author, 0, dict())
         for cell in bb.uniq_cells():
           items = [cell, m] + list(i.get_cell(cell).values())
           db.write_cell(view, cell, items[:13])
