@@ -3,7 +3,7 @@
 import sys
 import random
 import getopt
-from recurrink import Recurrink, Views
+from recurrink import Recurrink, Views, Models, Cells, Blocks
 
 def usage():
   message = '''
@@ -51,8 +51,11 @@ def inputs():
 if __name__ == '__main__':
   (model, output, cell, view, ls, rnd) = inputs()
   ''''''''''''''''''''''''''''''''''''''''''
-  r = Recurrink(model)
   v = Views()
+  m = Models()
+  c = Cells()
+  b = Blocks(model)
+  r = Recurrink(model)
   if model:
     if output == 'CSV':                   # create tmp csv file containing a collection of random cell values
       print(r.write_csvfile(rnd=rnd))     # OR default vals for humans. return cell vals a b c d
@@ -66,18 +69,18 @@ if __name__ == '__main__':
       #print(r.write_view(view, author, 0, data)) # write json and return digest
       (author, view, cells) = r.load_view_csvfile(random=rnd)
       print(v.set(model, view, author, 0))       # write view metadata and return digest
-      [r.write_cell(view, c, list(cells[c].values())) for c in cells]
+      [c.write_cell(view, cell, list(cells[cell].values())) for cell in cells]
     elif output == 'CELL':                # get a list of uniq cells
-      print(' '.join(r.uniq)) 
+      print(' '.join(b.cells())) 
     elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'
-      print(r.get_cellvalues(cell)) 
+      print(c.get_cellvalues(model, cell)) 
     else:
       usage()
   elif ls:
     #print("\n".join(r.list_model()))      # has side effect of setting workdir
-    r.list_model_with_stats()               # has side effect of setting workdir
+    print(m.get(output='stats'))              # has side effect of setting workdir
   elif rnd:
-    print(random.choice(r.list_model()))
+    print(random.choice(m.get(output='list')))
   elif view and output == 'JSON':         # query db
     print(r.find_recurrence(view, 'json')[0])
   elif view and output == 'SVG':          # lookup SVG
