@@ -69,7 +69,8 @@ if __name__ == '__main__':
       #print(r.write_view(view, author, 0, data)) # write json and return digest
       (author, view, cells) = r.load_view_csvfile(random=rnd)
       print(v.set(model, view, author, 0))       # write view metadata and return digest
-      [c.write_cell(view, cell, list(cells[cell].values())) for cell in cells]
+      # [c.write_cell(view, cell, list(cells[cell].values())) for cell in cells]
+      [c.set(view, cell, list(cells[cell].values())) for cell in cells]
     elif output == 'CELL':                # get a list of uniq cells
       print(' '.join(b.cells())) 
     elif cell:                            # lookup values by cell return as comma-separated string '1,square,north'

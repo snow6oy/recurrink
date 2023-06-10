@@ -106,7 +106,7 @@ class TestDb(unittest.TestCase):
     view.set('koto', 'abcdefghijklmnopqrstuvwxyz012345', 'human', 5)
     self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
 
-  def testWriteCell(self):
+  def testSetCell(self):
     ''' when mondrian does updsvg and calls ./recurrink.py -c CELL need to run UPDATE on DB
         this is because mondrian -install no longer copies JSON files aroun
     '''
@@ -114,7 +114,7 @@ class TestDb(unittest.TestCase):
     view = 'e4681aa9b7aef66efc6290f320b43e55'
     cell = 'a'
     data = ['a', 'soleares', 'triangle', 'medium', 'west', '#FFF', '#CCC', 1.0, '#000', 0, 0, 0.5, False]
-    self.assertTrue(c.write_cell(view, cell, data))
+    self.assertTrue(c.set(view, cell, data))
 
   def testGetDigest(self):
     v = Views()

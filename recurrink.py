@@ -353,13 +353,14 @@ WHERE view = %s;""", [view])
 class Cells(Db):
   ''' a cell data set can be initiated in one of three ways
       1. randomly creating cell attributes
-      2. selecting existing shapes/syles from any view
+      2. selecting existing shapes/syles from any view by given model
       3. cloning attributes from a given view
     data needs to be synchronised between a CSV file and Postgres
     Cells also need to provide default values for undefined attribute
   '''
   def __init__(self):
-    super().__init__()
+    self.g = Geometry()
+    self.s = Styles()
     self.header = [
       'cell','model','shape','size','facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
     ] # different from the similar list in self.load_view
@@ -376,6 +377,7 @@ class Cells(Db):
       'stroke_opacity':1.0,
       'top':False
     }
+    super().__init__()
 
   def random_cellvalues(self, cell):
     ''' TODO these attributes were supposed to be updated interactively 
@@ -466,19 +468,18 @@ AND view = %s;""", [view])
       data[cell] = d
     return data
 
-  def write_cell(self, view, cell, items):
+  #def write_cell(self, view, cell, items):
+  def set(self, view, cell, items):
     ''' update a a single row in the views table
     '''
     update = False # used only by unit test
-    g = Geometry()
-    s = Styles()
     # re-order top print(type(top), top)
     top = items.pop()
     items.insert(5, bool(top))
     # ignore first 2 items cell and model
-    gid = g.set(items=items[2:6])
-    sid = s.get(view, cell)
-    sid = s.set(items[6:], sid=sid) # retry in case sid was None
+    gid = self.g.set(items=items[2:6])
+    sid = self.s.get(view, cell)
+    sid = self.s.set(items[6:], sid=sid) # retry in case sid was None
     # UPSERT the cells
     try:
       self.cursor.execute("""
