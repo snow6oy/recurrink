@@ -4,3 +4,5 @@ doc/*
 .DS_Store
 Archive/*
 __pycache__/*
+t/__pycache__/*
+t/__init__.py

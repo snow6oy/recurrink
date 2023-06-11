@@ -156,14 +156,17 @@ class Geometry(Db):
       self.cursor.execute("""
 SELECT *
 FROM geometry
-WHERE gid = %s;""", gid)
+WHERE gid = %s;""", [gid])
       items = self.cursor.fetchone()
     elif rnd:  # randomly generate a GID and select entries
       self.cursor.execute("""
 SELECT MAX(gid)
 FROM geometry;""", [])
-      gid = self.cursor.fetchone()
-      items = self.get(items)  # recursive recurrink :)
+      maxgid = self.cursor.fetchone()[0]
+      # print(f"gid {maxgid}")
+      gids = list()
+      [gids.append(i) for i in range(1, maxgid + 1)]
+      items = self.get(gid=random.choice(gids))  # recursive recurrink :)
     elif len(items): # attempt to select gid
       self.cursor.execute("""
 SELECT gid
@@ -177,21 +180,25 @@ AND facing = %s;""", items[:3])  # ignore top
     return items
 
   def set(self, items=[]):
+    ''' create new geometry or add given values to db
+        return a list [gid, shape .. top]
+    ''' 
     gid = None
     if items:  # validate and update
       items = self.validate(items)
-      gid = self.get(items)
+      gid = self.get(items=items)
       if gid is None:
         gid = self.add(items)
     else:      # randomly create new geometries and a new GID
-      items = []
-      items[0] = random.choice(self.attributes['shape'])
-      items[1] = random.choice(self.attributes['size'])
-      items[2] = random.choice(self.attributes['facing'])
-      items[3] = random.choice(self.attributes['top'])
+      items.append(random.choice(self.attributes['shape']))
+      items.append(random.choice(self.attributes['size']))
+      items.append(random.choice(self.attributes['facing']))
+      items.append(random.choice(self.attributes['top']))
       items = self.validate(items)
-      gid = self.add(items)
-    return gid[0]
+      gid = self.get(items=items) # did we randomly make a new geometry ?
+      if gid is None:
+        gid = self.add(items)
+    return gid + tuple(items)
 
   def validate(self, items):
     if items[0] in ['square', 'circle']:
@@ -249,6 +256,18 @@ class Styles(Db):
       '#ccc':'#CCC',
       '#333':'#CCC'
     }
+    self.defaults = {
+     'fill': '#FFF',
+      'bg': '#CCC',
+      'fill_opacity':1.0,
+      'stroke':'#000',
+      'stroke_width': 0,
+      'stroke_dasharray': 0,
+      'stroke_opacity':1.0
+    }
+    self.colours = ['#FFF','#CCC','#CD5C5C','#000','#FFA500','#DC143C','#C71585','#4B0082','#32CD32','#9ACD32']
+    self.opacity = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1 ] 
+    self.strokes = [n for n in range(1, 11)]
 
   def validate(self, items):
     ''' old bad code has various ways of saying RED BLUE GREEN
@@ -259,10 +278,10 @@ class Styles(Db):
       items[3] = items[3].replace(f, self.fill[f])
     return items
 
-  def set(self, items, sid=None):
-    ''' update with sid or insert otherwise
+  def set(self, items=[], sid=None):
+    ''' update with sid or insert or randomly create
+        always returns a list
     '''
-    items = self.validate(items)
     if sid:
       #print(len(items),sid)  
       items.append(sid)
@@ -270,22 +289,64 @@ class Styles(Db):
 UPDATE styles SET
 fill=%s, bg=%s, fill_opacity=%s, stroke=%s, stroke_width=%s, stroke_dasharray=%s, stroke_opacity=%s
 WHERE sid=%s;""", items)
-    else:
-      self.cursor.execute("""
-INSERT INTO styles (sid, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity)
-VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s)
-RETURNING sid;""", items)
-      sid = self.cursor.fetchone()[0]
-    return sid
+      sid = tuple([sid])  # repackage for consistency
+    elif items:
+      sid = self.add(items)
+    else: # quick make something up!
+      items = []
+      items.append(random.choice(self.colours))  # fill
+      items.append(random.choice(self.colours))  # bg
+      items.append(random.choice(self.opacity))  # fill_opacity
+      items.append(random.choice(self.colours))  # stroke
+      items.append(random.choice(self.strokes))  # width
+      items.append(random.choice(self.strokes))  # dash
+      items.append(random.choice(self.opacity))  # stroke_opacity
+      sid = self.add(items)  # no check for duplication, testing will spam the styles table :/
+    return sid + tuple(items)
 
-  def get(self, view, cell):
-    self.cursor.execute("""
+  def get(self, view=None, cell=None, rnd=False, sid=None):
+    ''' select various items according to incoming params
+        always return a list
+    '''
+    styles = list()
+    if sid:
+      self.cursor.execute("""
+SELECT *
+FROM styles
+WHERE sid = %s;""", [sid])
+      styles = self.cursor.fetchone()
+    elif rnd:
+      self.cursor.execute("""
+SELECT MAX(sid)
+FROM styles;""", [])
+      maxsid = self.cursor.fetchone()[0]
+      sids = list()
+      [sids.append(i) for i in range(1, maxsid + 1)]
+      styles = self.get(sid=random.choice(sids))
+    elif view and cell:
+      self.cursor.execute("""
 SELECT sid
 FROM cells
 WHERE view = %s
 AND cell = %s;""", [view, cell])
+      styles = self.cursor.fetchone()
+    else:
+      pass # raise error here?
+    return styles
+
+  def add(self, items):
+    ''' private method called by self.set()
+        returns tuple with single elem
+    '''
+    items = self.validate(items)
+    self.cursor.execute("""
+INSERT INTO styles (sid, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity)
+VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s)
+RETURNING sid;""", items)
     sid = self.cursor.fetchone()
-    return sid[0] if sid else None
+    print(f"adding sid {sid}")
+    return sid
+
 ###############################################################################
 class Views(Db):
 
@@ -379,33 +440,15 @@ class Cells(Db):
     }
     super().__init__()
 
-  def random_cellvalues(self, cell):
-    ''' TODO these attributes were supposed to be updated interactively 
-        to expose them for randomisation, first need to update effect.py
-      'fill': '#fff',
-      'fill_opacity':1.0,
-      'stroke':'#000',
-      'dash': 0,
-      'opacity':1.0, '''
-    rnd = dict()
-    # default 'shape':'square',
-    rnd['shape'] = random.choice(["circle", "line", "square", "triangle", "diamond"])
-    rnd['facing'] = random.choice(["north", "south", "east", "west"])
-    # default 'shape_size':'medium',
-    sizes = ["medium", "large"]
-    if rnd['shape'] == "triangle":
-      rnd['size'] = "medium"
+  def get(self, control=True):
+    ''' varying degress of randomness
+        with control will select from existing entries
+        no control means that entries are randomly generated
+    '''
+    if control:  
+      return self.g.get(rnd=True) + self.s.get(rnd=True)
     else:
-      rnd['size'] = random.choice(sizes)
-    rnd['top'] = str(random.choice([True, False]))
-    rnd['bg'] = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
-    rnd['stroke_width'] = str(random.choice(range(10)))
-    # fill stroke opacity dash
-    rnd['fill'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
-    rnd['fill_opacity'] = random.choice(['0.1', '0.4', '0.7', '1.0', '1.0', '1.0'])
-    rnd['stroke'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
-    rnd['stroke_dasharray'] = str(random.choice(range(10)))
-    return rnd
+      return self.g.set() + self.s.set() 
 
   #def convert_row2cell(self, data):
   def convert_row2cell(self, model, data=[]):
@@ -477,9 +520,9 @@ AND view = %s;""", [view])
     top = items.pop()
     items.insert(5, bool(top))
     # ignore first 2 items cell and model
-    gid = self.g.set(items=items[2:6])
-    sid = self.s.get(view, cell)
-    sid = self.s.set(items[6:], sid=sid) # retry in case sid was None
+    gid = self.g.set(items=items[2:6])[0]
+    sid = self.s.get(view, cell)[0]
+    sid = self.s.set(items[6:], sid=sid)[0] # retry in case sid was None
     # UPSERT the cells
     try:
       self.cursor.execute("""
@@ -651,4 +694,24 @@ author=%s, sid=%s, gid=%s
 WHERE view=%s
 AND cell=%s;""", [author, sid, gid, view, cell])
     return update
-  '''
+  def _random_cellvalues(self, cell):
+    rnd = dict()
+    # default 'shape':'square',
+    rnd['shape'] = random.choice(["circle", "line", "square", "triangle", "diamond"])
+    rnd['facing'] = random.choice(["north", "south", "east", "west"])
+    # default 'shape_size':'medium',
+    sizes = ["medium", "large"]
+    if rnd['shape'] == "triangle":
+      rnd['size'] = "medium"
+    else:
+      rnd['size'] = random.choice(sizes)
+    rnd['top'] = str(random.choice([True, False]))
+    rnd['bg'] = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
+    rnd['stroke_width'] = str(random.choice(range(10)))
+    # fill stroke opacity dash
+    rnd['fill'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
+    rnd['fill_opacity'] = random.choice(['0.1', '0.4', '0.7', '1.0', '1.0', '1.0'])
+    rnd['stroke'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
+    rnd['stroke_dasharray'] = str(random.choice(range(10)))
+    return rnd
+
