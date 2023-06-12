@@ -67,12 +67,12 @@ class Input(inkex.InputExtension):
     ''' inkscape passes us a json file as a stream
         self.options.input_file e.g. recurrink/models/arpeggio.rink
     '''
-    view = Views()
+    v = Views()
     if self.options.read:
       ''' read accepts a view value e.g. c364ab54ff542adb322dc5c1d6aa4cc8
       '''
-      v = view.get(vid=self.options.read)
-      doc = v + "\n"
+      view = v.get(digest=self.options.read)
+      doc = " ".join(view) + "\n"
     elif self.options.delete:
       view.delete(self.options.delete)
       doc = str()

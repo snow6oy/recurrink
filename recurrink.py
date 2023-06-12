@@ -154,7 +154,7 @@ class Geometry(Db):
     '''
     if gid:  # select entries
       self.cursor.execute("""
-SELECT *
+SELECT shape, size, facing, top
 FROM geometry
 WHERE gid = %s;""", [gid])
       items = self.cursor.fetchone()
@@ -311,7 +311,7 @@ WHERE sid=%s;""", items)
     styles = list()
     if sid:
       self.cursor.execute("""
-SELECT *
+SELECT fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
 FROM styles
 WHERE sid = %s;""", [sid])
       styles = self.cursor.fetchone()
@@ -348,64 +348,166 @@ RETURNING sid;""", items)
     return sid
 
 ###############################################################################
+# TODO should these be done in r.init or here in Views() ?
+    #[self.write_cell(view, c, list(cells[c].values())) for c in cells]
+    #cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
+    #view = " ".join(row)
 class Views(Db):
-
+  ''' a View is a collection of Cells
+      valstr = ' '.join(d)
+  '''
   def __init__(self):
+    self.c = Cells()
+    self.header = [
+      'cell','shape','size','facing','top',
+      'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
+    ]
+    ''' different from the similar list in self.load_view
+    self.header = [
+      'cell','model','shape','size','facing','top',
+      'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
+    ] '''
     super().__init__()
 
-  def delete(self, view):
+  def delete(self, digest):
     ''' no error checks, this is gonzo style !
     '''
     self.cursor.execute("""
 DELETE FROM cells
-WHERE view = %s;""", [view])
+WHERE view = %s;""", [digest])
     self.cursor.execute("""
 DELETE FROM views
-WHERE view = %s;""", [view])
+WHERE view = %s;""", [digest])
     return True
 
-  def set(self, model, view, author, control):
+  def set(self, model, digest, author, control):
     ''' create views metadata and try Cells()
     '''
-    if not self.count(view):
+    if not self.count(digest):
       self.cursor.execute("""
 INSERT INTO views (view, model, author, control)
-VALUES (%s, %s, %s, %s);""", [view, model, author, control])
+VALUES (%s, %s, %s, %s);""", [digest, model, author, control])
+    return digest
 
-    #[self.write_cell(view, c, list(cells[c].values())) for c in cells]
-    return view
-
-  def get(self, vid=None, celldata=None):
+  def get(self, digest=None, output=None, model=None):
     ''' returns either data for an existing view
         or an ID for a new view
     '''
     view = str()
-    if vid and len(vid) == 32:
-      self.cursor.execute("""
-SELECT *
-FROM views
-WHERE view = %s;""", [vid])
-      row = self.cursor.fetchone()
-      row = row[1:3] if row else list() # only need model and author
-      view = " ".join(row)
-    elif celldata is not None:
+    if model:
+      (celldata, cells) = self.csvfile(model)
       ''' hashkey should have a unique value for each model view
       '''
       secret = b'recurrink'
       key = ''.join(celldata)
       digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
-      view = digest_maker.hexdigest()
+      digest = digest_maker.hexdigest()
+      return digest, cells
+    elif digest and len(digest) == 32 and output == 'celldata':
+      return self.celldata(digest)
+    elif digest and len(digest) == 32:
+      self.cursor.execute("""
+SELECT *
+FROM views
+WHERE view = %s;""", [digest])
+      row = self.cursor.fetchone()
+      row = row[1:3] if row else list() # only need model and author
+      return row
     else:
       raise ValueError(f"not expecting this kinda view '{view}'")
     return view
 
-  def count(self, view):
+  def generate(self, model, rnd=False):
+    ''' generate a config as cell * values matrix
+    '''
+    b = Blocks(model)
+    init = list()
+    for cell in b.cells(): 
+      row = list()
+      row.append(cell)
+      if rnd:
+        vals = list(self.c.get(control=False))
+      else:
+        vals = list(self.c.get())
+      init.append(vals)
+    return init
+
+  def celldata(self, digest):
+    ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
+      ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
+    data = dict()
+    self.cursor.execute("""
+SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
+FROM cells, styles, geometry
+WHERE cells.sid = styles.sid
+AND cells.gid = geometry.gid
+AND view = %s;""", [digest])
+    for cellvals in self.cursor.fetchall():
+      z = zip(self.header, cellvals)
+      d = dict(z)
+      cell = d['cell']
+      del d['cell']         # bit of a tongue twister that one :-D
+      data[cell] = d
+    return data
+  ''' sample input 
+    #for d in data:
+    #  if (cell == d[0]):
+    #    break
+    #return d
+  #def convert_row2cell(self, data):
+  def convert_row2cell(self, model, data=[]):
+      [[ 'a','soleares','triangle','medium','west','#fff','yellowgreen','1.0','#000','1','0','1.0','False' ]] 
+    if not len(data):
+      data = self.read_tmp_csvfile(model)
+    return data
+  '''
+  def csvfile(self, model):
+    ''' example csv row
+        a, soleares, square, medium, north, #fff, #ccc, 1.0, #000, 0, 0, 1.0, Fals] '''
+    sortdata = list()
+    cells = dict()
+    to_hash = str()
+
+    with open(f"/tmp/{model}.csv") as f:
+      reader = csv.reader(f)
+      next(reader, None)
+      data = list(reader)
+
+    # cell shape size facing top fill bg fill_opacity stroke stroke_width stroke_dasharray stroke_opacity
+    # convert values from string to primitives
+    for d in data:
+      to_hash += ''.join(d)
+      d[4] = (d[4] in ['True', 'true'])
+      d[9] = int(d[9])
+      d[10] = int(d[10])
+
+    # sort them so that top:true will be rendered last
+    sortdata = sorted(data, key=lambda x: x[11])
+
+    for d in sortdata:
+      z = zip(self.header, d)
+      attrs = dict(z)
+      cell = attrs['cell']
+      #model = attrs['model']
+      # pad missing values with default
+      #for a in self.attributes:
+      #  attrs[a] = self.attributes[a] if a not in attrs else attrs[a] 
+      cells.update({cell: attrs})
+    return (to_hash, cells)
+  ''' combine model and view data to optimise SVG build process
+  def get_cells(self, model_data, json_data):
+    positions = self.get_positions(model_data)
+    for p in positions:
+      json_data[p]['positions'] = positions[p]
+    return json_data
+  '''
+  def count(self, digest):
     vcount = 0
-    if len(view) == 32:
+    if len(digest) == 32:
       self.cursor.execute("""
 SELECT COUNT(view) as vcount
 FROM views
-WHERE view = %s;""", [view])
+WHERE view = %s;""", [digest])
       vcount = self.cursor.fetchone()[0]
     else:
       raise ValueError(f"not expecting this kinda view '{view}'")
@@ -422,9 +524,6 @@ class Cells(Db):
   def __init__(self):
     self.g = Geometry()
     self.s = Styles()
-    self.header = [
-      'cell','model','shape','size','facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
-    ] # different from the similar list in self.load_view
     self.attributes = {
       'shape':'square',
       'size':'medium',
@@ -440,76 +539,17 @@ class Cells(Db):
     }
     super().__init__()
 
+  # def get(self, model=None, cell=None, control=True):
   def get(self, control=True):
     ''' varying degress of randomness
         with control will select from existing entries
         no control means that entries are randomly generated
     '''
     if control:  
+      # print(self.g.get(rnd=True) + self.s.get(rnd=True))
       return self.g.get(rnd=True) + self.s.get(rnd=True)
     else:
-      return self.g.set() + self.s.set() 
-
-  #def convert_row2cell(self, data):
-  def convert_row2cell(self, model, data=[]):
-    ''' sample input 
-      [[ 'a','soleares','triangle','medium','west','#fff','yellowgreen','1.0','#000','1','0','1.0','False' ]] '''
-    if not len(data):
-      data = self.read_tmp_csvfile(model)
-
-    sortdata = list()
-    source = dict()
-    to_hash = str()
-
-    # convert values from string to primitives
-    for d in data:
-      to_hash += ''.join(d)
-      d[9] = int(d[9])
-      d[10] = int(d[10])
-      d[12] = (d[12] in ['True', 'true'])
-
-    # sort them so that top:true will be rendered last
-    sortdata = sorted(data, key=lambda x: x[12])
-
-    for d in sortdata:
-      z = zip(self.header, d)
-      attrs = dict(z)
-      cell = attrs['cell']
-      model = attrs['model']
-      # pad missing values with default
-      for a in self.attributes:
-        attrs[a] = self.attributes[a] if a not in attrs else attrs[a] 
-      source.update({cell: attrs})
-    return (model, to_hash, source)
-
-  def get_cells(self, model_data, json_data):
-    ''' combine model and view data to optimise SVG build process
-    '''
-    positions = self.get_positions(model_data)
-    for p in positions:
-      json_data[p]['positions'] = positions[p]
-    return json_data
-
-  def load_view(self, view):
-    ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
-      ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
-    header = [
-      'cell','shape','size','facing','top','fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
-    ]
-    data = dict()
-    self.cursor.execute("""
-SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
-FROM cells, styles, geometry
-WHERE cells.sid = styles.sid
-AND cells.gid = geometry.gid
-AND view = %s;""", [view])
-    for cellvals in self.cursor.fetchall():
-      z = zip(header, cellvals)
-      d = dict(z)
-      cell = d['cell']
-      del d['cell']         # bit of a tongue twister that one :-D
-      data[cell] = d
-    return data
+      return self.g.set()[1:] + self.s.set()[1:]
 
   #def write_cell(self, view, cell, items):
   def set(self, view, cell, items):
@@ -537,23 +577,6 @@ WHERE view=%s
 AND cell=%s;""", [sid, gid, view, cell])
     return update
 
-  def get_cellvalues(self, model, cell):
-    data = self.read_tmp_csvfile(model)
-    valstr = None
-    for d in data:
-      if (cell == d[0]):
-        valstr = ' '.join(d)
-        break
-    return valstr
-
-  def read_tmp_csvfile(self ,model):
-    ''' example csv row
-       a, soleares, square, medium, north, #fff, #ccc, 1.0, #000, 0, 0, 1.0, Fals] '''
-    with open(f"/tmp/{model}.csv") as f:
-      reader = csv.reader(f)
-      next(reader, None)
-      data = list(reader)
-    return data
 ###############################################################################
 class Recurrink(Db):
   ''' read and write data to postgres
@@ -585,37 +608,14 @@ class Recurrink(Db):
     elif model:
       raise ValueError(f"unknown {model}")
 
-  def write_csvfile(self, rnd=False):
-    ''' generate a config as cell x values matrix
-        for humans copy default values over
-        but machines get randoms
-    '''
-    c = Cells()
-    b = Blocks(self.model)
-    init = dict()
-    for cell in b.cells(): 
-      randomvals = c.random_cellvalues(cell) if rnd else dict()
-      row = list()
-      row.append(cell)
-      row.append(self.model)
-      for a in self.attributes:
-        if a in randomvals:
-          row.append(randomvals[a])
-        else:
-          row.append(self.attributes[a])
-      init[cell] = row
-
-    cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
-    return cells
-
-  def load_rinkdata(self, view):
+  def load_rinkdata(self, digest):
     m = Models()
-    c = Cells()
+    v = Views()
     b = Blocks(self.model)
-    if view is None:
+    if digest is None:
       raise ValueError("need a digest to make a rink")
     model_data = m.get(self.model)
-    view_data = c.load_view(view)
+    view_data = v.get(digest, output='celldata')
     cell_count = len(view_data.keys())
     if b.cells(cell_count=cell_count):
       raise ValueError(f"{view} is missing cells: {cell_count} is not correct")
@@ -714,4 +714,4 @@ AND cell=%s;""", [author, sid, gid, view, cell])
     rnd['stroke'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
     rnd['stroke_dasharray'] = str(random.choice(range(10)))
     return rnd
-
+  '''
