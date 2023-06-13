@@ -524,6 +524,7 @@ class Cells(Db):
   def __init__(self):
     self.g = Geometry()
     self.s = Styles()
+    '''
     self.attributes = {
       'shape':'square',
       'size':'medium',
@@ -537,6 +538,7 @@ class Cells(Db):
       'stroke_opacity':1.0,
       'top':False
     }
+    '''
     super().__init__()
 
   # def get(self, model=None, cell=None, control=True):
@@ -553,10 +555,11 @@ class Cells(Db):
 
   #def write_cell(self, view, cell, items):
   def set(self, view, cell, items):
-    ''' update a a single row in the views table
+    ''' update the members of a view
     '''
     update = False # used only by unit test
     # re-order top print(type(top), top)
+    # TODO how much longer is this hack requred???
     top = items.pop()
     items.insert(5, bool(top))
     # ignore first 2 items cell and model
@@ -578,12 +581,13 @@ AND cell=%s;""", [sid, gid, view, cell])
     return update
 
 ###############################################################################
-class Recurrink(Db):
+#class Recurrink(Db):
+class Recurrink():
   ''' read and write data to postgres
   '''
-  def __init__(self, model):
-    super().__init__()
-    self.workdir = '/home/gavin/Pictures/artWork/recurrences' # paths are relative to working dir
+  def __init__(self):
+    #super().__init__()
+    #self.workdir = '/home/gavin/Pictures/artWork/recurrences' # paths are relative to working dir
     m = Models()
     if model in m.get(output='list'):
       self.model = model
@@ -608,13 +612,23 @@ class Recurrink(Db):
     elif model:
       raise ValueError(f"unknown {model}")
 
+  def init(self, rnd=False):
+    pass
+ 
+  def update(self, model):
+    pass
+
+  def commit(self, cells):
+    return dict()
+
   def load_rinkdata(self, digest):
     m = Models()
     v = Views()
-    b = Blocks(self.model)
+    model = v.get(digest, 'SOMEMETADATA')
+    b = Blocks(model)
     if digest is None:
       raise ValueError("need a digest to make a rink")
-    model_data = m.get(self.model)
+    model_data = m.get(model)
     view_data = v.get(digest, output='celldata')
     cell_count = len(view_data.keys())
     if b.cells(cell_count=cell_count):
@@ -625,16 +639,6 @@ class Recurrink(Db):
         'cells': view_data
         #'cells': c.get_cells(model_data, view_data)
     }
-
-  def write_rinkfile(self, view):
-    ''' rink input can be from HUMAN or MACHINE
-        output is always same 
-    '''
-    data = self.load_rinkdata(view)
-    fn = f"/tmp/{self.model}.rink"
-    with open(fn, "w") as outfile:
-      json.dump(data, outfile, indent=2)
-    return fn
 
   def load_view_csvfile(self, view=None, random=False):
     ''' convert a 2d array of cell data into a hash and json file
@@ -650,7 +654,6 @@ class Recurrink(Db):
       view = v.get(celldata=cellvalues)
       # view = self.get_digest(cellvalues)
     author = 'machine' if random else 'human'
-
     return author, view, jsondata
 
   def write_tmp_csvfile(self, fn, celldata):
@@ -671,47 +674,13 @@ class Recurrink(Db):
       data = list(reader)
     return data
 
-  ''' update a a single row in the views table
-  def write_cell(self, view, cell, author, items):
-    update = False # used only by unit test
-    # re-order top print(type(top), top)
-    top = items.pop()
-    items.insert(5, bool(top))
-    # ignore first 2 items cell and model
-    gid = self.set_geometry(items[2:6])
-    sid = self.get_style(view, cell)
-    sid = self.set_styles(items[6:], sid=sid)
-    # UPSERT the view table
-    try:
-      self.cursor.execute("""
-INSERT INTO views (view, cell, model, author, sid, gid)
-VALUES (%s, %s, %s, %s, %s, %s);""", [view, cell, self.model, author, sid, gid])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      update = True
-      self.cursor.execute("""
-UPDATE views SET
-author=%s, sid=%s, gid=%s
-WHERE view=%s
-AND cell=%s;""", [author, sid, gid, view, cell])
-    return update
-  def _random_cellvalues(self, cell):
-    rnd = dict()
-    # default 'shape':'square',
-    rnd['shape'] = random.choice(["circle", "line", "square", "triangle", "diamond"])
-    rnd['facing'] = random.choice(["north", "south", "east", "west"])
-    # default 'shape_size':'medium',
-    sizes = ["medium", "large"]
-    if rnd['shape'] == "triangle":
-      rnd['size'] = "medium"
-    else:
-      rnd['size'] = random.choice(sizes)
-    rnd['top'] = str(random.choice([True, False]))
-    rnd['bg'] = random.choice(["orange","crimson","indianred","mediumvioletred","indigo","limegreen","yellowgreen","black","white","gray"])
-    rnd['stroke_width'] = str(random.choice(range(10)))
-    # fill stroke opacity dash
-    rnd['fill'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
-    rnd['fill_opacity'] = random.choice(['0.1', '0.4', '0.7', '1.0', '1.0', '1.0'])
-    rnd['stroke'] = random.choice(["#fff","#ccc","#CD5C5C","#000","#FFA500","#DC143C","#C71585","#4B0082","#32CD32","#9ACD32"])
-    rnd['stroke_dasharray'] = str(random.choice(range(10)))
-    return rnd
-  '''
+  def write_rinkfile(self, view):
+    ''' rink input can be from HUMAN or MACHINE
+        output is always same 
+    '''
+    data = self.load_rinkdata(view)
+    fn = f"/tmp/{self.model}.rink"
+    with open(fn, "w") as outfile:
+      json.dump(data, outfile, indent=2)
+    return fn
+
