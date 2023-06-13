@@ -3,20 +3,26 @@
 ''' see recurrink-ddl and recurrink-dml sql
 '''
 import unittest
-import pprint
 from recurrink import Views
-#, Models, Cells, Geometry, Styles
+
+import pprint
 pp = pprint.PrettyPrinter(indent=2)
+#import os
+#from recurrink import Recurrink, Cells, Blocks, Models
+#, Models, Cells, Geometry, Styles
 
 class TestViews(unittest.TestCase):
 
   def setUp(self):
     self.v = Views()
+    #self.r = Recurrink('soleares')
+    self.view = 'e4681aa9b7aef66efc6290f320b43e55'
+    #550d193efe80f67e92d5a0c59ad9d354'
 
   def testGetViewDigest(self):
     ''' construct JSON like view from db
     '''
-    view = self.v.get(digest='e4681aa9b7aef66efc6290f320b43e55', output='celldata')
+    view = self.v.get(digest=self.view, output='celldata')
     #pp.pprint(view)
     self.assertEqual(len(list(view.keys())), 4)
 
@@ -27,20 +33,18 @@ class TestViews(unittest.TestCase):
     # pp.pprint(cells.keys())
     self.assertEqual(len(list(cells.keys())), 4)
 
-  def testViewMeta(self):
+  def testGetViewMeta(self):
     ''' handle View metadata
     '''
-    #self.v.write_csvfile('soleares') 
-    (model, author) = self.v.get(digest='e4681aa9b7aef66efc6290f320b43e55')
+    (model, author) = self.v.get(digest=self.view)
     self.assertEqual(author, 'human')
 
   def testSetView(self):
     ''' no insert will take place because view exists
     '''
-    digest = 'e4681aa9b7aef66efc6290f320b43e55'
-    (model, author) = self.v.get(digest=digest )
+    (model, author) = self.v.get(digest=self.view)
     control = 3
-    self.assertEqual(self.v.set('soleares', digest, author, control), 'e4681aa9b7aef66efc6290f320b43e55')
+    self.assertEqual(self.v.set('soleares', self.view, author, control), self.view)
 
   def testDeleteView(self):
     ''' test delete on a separate view to avoid impacting other tests
@@ -81,8 +85,5 @@ class TestViews(unittest.TestCase):
     # cells = self.v.generate('soleares', rnd=True)
     # pp.pprint(cells)
     # self.assertTrue(cells)
-
-
-
   ''' the end
   '''

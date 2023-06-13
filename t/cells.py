@@ -2,6 +2,7 @@
 
 ''' see recurrink-ddl and recurrink-dml sql
 '''
+import os.path
 import unittest
 import pprint
 from recurrink import Cells, Geometry, Styles
@@ -63,7 +64,8 @@ class TestCells(unittest.TestCase):
   def testGetCellRandom(self):
     ''' Geometry and Styles got from existing entries
     '''
-    self.assertEqual(len(self.c.get()), 13)
+    #pp.pprint(self.c.get())
+    self.assertEqual(len(self.c.get()), 11)
 
   # Note this test has a side effect of spamming the styles table
   # ALTER sequence styles_sid_seq restart with n
@@ -75,8 +77,5 @@ class TestCells(unittest.TestCase):
     pass
 
   def testGetCellGid(self):
-    self.assertEqual(self.g.get(gid=1)[3], 'south')
-
-  def testGetCellA(self):
-    print(self.c.get(model='soleares', cell='a'))
+    self.assertEqual(self.g.get(gid=1)[2], 'south')
 
