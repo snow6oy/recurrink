@@ -613,14 +613,22 @@ class Recurrink():
     elif model:
       raise ValueError(f"unknown {model}")
 
-  def init(self, rnd=False):
+  def init(self, rnd=False, model=None, digest=None):
+    control = 0 if rnd else 5
+    model, celldata = v.create(model, control, digest)
+    tf.write(model, celldata)
     pass
  
-  def update(self, model):
+  def update(self, model, scale):
+    celldata = tf.read(model)
+    svg.write(celldata, scale) 
     pass
 
-  def commit(self, cells):
-    return dict()
+  def commit(self, model, scale, control, author):
+    celldata = tf.read(model)
+    digest = v.set(celldata)
+    v.add(digest, scale, control, author)
+    pass
 
   def load_rinkdata(self, digest):
     m = Models()
