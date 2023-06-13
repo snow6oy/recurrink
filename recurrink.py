@@ -350,8 +350,8 @@ RETURNING sid;""", items)
 ###############################################################################
 # TODO should these be done in r.init or here in Views() ?
     #[self.write_cell(view, c, list(cells[c].values())) for c in cells]
-    #cells = self.write_tmp_csvfile(f"/tmp/{self.model}.csv", init)
     #view = " ".join(row)
+
 class Views(Db):
   ''' a View is a collection of Cells
       valstr = ' '.join(d)
@@ -585,9 +585,10 @@ AND cell=%s;""", [sid, gid, view, cell])
 class Recurrink():
   ''' read and write data to postgres
   '''
-  def __init__(self):
+  def __init__(self, model):
     #super().__init__()
     #self.workdir = '/home/gavin/Pictures/artWork/recurrences' # paths are relative to working dir
+    self.v = Views()
     m = Models()
     if model in m.get(output='list'):
       self.model = model
@@ -646,15 +647,24 @@ class Recurrink():
     c = Cells()
     #csvdata = self.read_tmp_csvfile()
     #(model, cellvalues, jsondata) = c.convert_row2cell(csvdata)
-    (model, cellvalues, jsondata) = c.convert_row2cell(self.model)
-    if model != self.model:
-      raise ValueError(f"collision in /tmp {model} is not {self.model}")
-    if view is None:
-      v = Views()
-      view = v.get(celldata=cellvalues)
-      # view = self.get_digest(cellvalues)
+    # (model, cellvalues, jsondata) = c.convert_row2cell(self.model)
+    (digest, cells) = v.get(model=self.model)
+    #if model != self.model:
+    #  raise ValueError(f"collision in /tmp {model} is not {self.model}")
+    #if view is None:
+    #  view = v.get(celldata=cellvalues)
+    # view = self.get_digest(cellvalues)
     author = 'machine' if random else 'human'
-    return author, view, jsondata
+    return author, digest, cells
+
+  def write_csvfile(self, rnd=False):
+    celldata = self.v.generate(self.model, rnd=False) # hardwired until refactor finished
+    with open(f"/tmp/{self.model}.csv", 'w') as f:
+      for data in celldata:
+        c = [str(d) for d in data]
+        line = ' '.join(c)
+        print(line, file=f)
+    return str()
 
   def write_tmp_csvfile(self, fn, celldata):
     b = Blocks(self.model)

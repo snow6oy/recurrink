@@ -58,7 +58,8 @@ if __name__ == '__main__':
   r = Recurrink(model)
   if model:
     if output == 'CSV':                   # create tmp csv file containing a collection of random cell values
-      print(r.write_csvfile(rnd=rnd))     # OR default vals for humans. return cell vals a b c d
+      r.write_csvfile(rnd=rnd)            
+      print(' '.join(b.cells()))                      # return cell keys a b c d
     elif view and output == 'RINK':       # write RINK with Library json as source
       r.write_rinkfile(view)
     elif output == 'RINK':                # write RINK with MODEL.json as source
