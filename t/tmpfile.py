@@ -49,6 +49,17 @@ class TestTmpFile(unittest.TestCase):
       self.assertTrue(isinstance(cells['a']['stroke_dasharray'], int))
     else:
       pass
+
+  def testReadText(self):
+    soleares_txt = """cell shape size facing top fill bg fo stroke sw sd so
+a line medium south False #FFF #32CD32 1.0 #000 0 0 1.5
+b square medium all False #FFF #FFA500 1.0 #000 0 0 1.0
+c triangle medium east False #FFF #4B0082 1.0 #000 0 0 1.0
+d diamond medium south False #CCC #32CD32 1.0 #000 0 0 1.0
+"""
+    celldata = self.tf.read('soleares', txt=soleares_txt)
+    self.assertEqual(len(celldata.keys()), 4)
+    self.assertEqual(len(self.tf.digest), 32)
   '''
   the
   end

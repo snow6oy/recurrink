@@ -5,7 +5,6 @@ import random
 import getopt
 import hmac
 from db import Views, Models, Cells, Blocks
-from svgfile import SvgFile
 
 class TmpFile():
   ''' read and write data to /tmp
@@ -29,18 +28,16 @@ class TmpFile():
         line = ' '.join(vals)
         print(line, file=f)
 
-  def read(self, model):
+  def read(self, model, txt=None):
     ''' read text file, convert values from string to primitives and sort on top
+        > cell shape size facing top fill bg fo stroke sw sd so
         > a square medium north False #FFF #CCC 1.0 #000 0 0 1.0
         return a dictionary keyed by cell
     '''
     sortdata = list()
     cells = dict()
     to_hash = str()
-    with open(f"/tmp/{model}.txt") as f:
-      data = [line.rstrip() for line in f] # read and strip newlines
-    data = [d.split() for d in data[1:]] # ignore header and split on space
-    # cell shape size facing top fill bg fo stroke sw sd so
+    data = self.get_text(txt) if txt else self.get_file(model)
 
     for d in data:
       to_hash += ''.join(d)
@@ -56,7 +53,48 @@ class TmpFile():
       cell = attrs['cell']
       del attrs['cell']
       cells.update({cell: attrs})
+    if not cells: # is model with given name available from db ?
+      raise ValueError(f'non readable <{model}>')
     return cells
+
+  def get_file(self, model):
+    with open(f"/tmp/{model}.txt") as f:
+      data = [line.rstrip() for line in f] # read and strip newlines
+    data = [d.split() for d in data[1:]] # ignore header and split on space
+    return data
+
+  def get_text(self, text):
+    data = list()
+    [data.append(line.split()) for line in text.splitlines()]
+    del data[0] # remove header
+    return data
+
+  ''' should be a function of TmpFile
+  def getcells(self, model, txt=None):
+    header = [
+      'cell','shape','size','facing','top',
+      'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
+    ]
+    cells = dict()
+    if txt:
+      print(f"str {txt}")
+    else:
+      print(f"modl {model}")
+    linedata = self.get_text(txt) if txt else self.get_file(model)
+    #[linedata.append(line.split()) for line in txt.splitlines()]
+    #del linedata[0] # remove header
+    for d in linedata:
+      d[4] = (d[4] in ['True', 'true'])
+      d[9] = int(d[9])
+      d[10] = int(d[10])
+    for d in linedata:
+      z = zip(header, d)
+      attrs = dict(z)
+      cell = attrs['cell']
+      del attrs['cell']
+      cells.update({cell: attrs})
+    return cells
+  '''
 
   def set(self, key):
     ''' make a digest that has a unique value for each model view
@@ -64,12 +102,6 @@ class TmpFile():
     secret = b'recurrink'
     digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
     self.digest = digest_maker.hexdigest()
-
-class SvgFile:
-  def update(self, celldata, scale=None):
-    pass
-  def create(self, model, control):
-    pass
 
 def usage():
   message = '''
@@ -80,51 +112,59 @@ def usage():
 '''
   print(message)
 
+class Options:
+ 
+  def __init__(self):
+    self.init  = False
+    self.commit= False 
+    self.list  = False 
+    self.delete= False 
+    self.read  = False
+    self.model = None
+    self.scale = None
+    self.author= None
+    self.view  = None
+
 def inputs():
   ''' get inputs from command line
   '''
+  options = Options()
   try:
-    (opts, args) = getopt.getopt(sys.argv[1:], "m:s:a:v:", ["init", "update", "commit", "list"])
+    (opts, args) = getopt.getopt(sys.argv[1:], "m:s:a:v:", ["init", "delete", "commit", "list", "read"])
   except getopt.GetoptError as err:
     print(err)  # will print something like "option -a not recognized"
     usage()
     sys.exit(2)
 
-  control = {
-    'init'  : False,
-    'update': False, 
-    'commit': False, 
-    'list':   False, 
-    'model':  None,
-    'scale':  None,
-    'author': None,
-    'view':   None
-  }
   for opt, arg in opts:
     if opt in ("-h", "--help"):
       usage()
       sys.exit()
     elif opt == '--init':
-      control['init'] = True
+      options.init = True
     elif opt == '--update':
-      control['update'] = True
+      options.update = True
     elif opt == '--commit':
-      control['commit'] = True
-    elif opt in ("--list"):
-      control['list'] = True
+      options.commit = True
+    elif opt == ("--list"):
+      options.list = True
+    elif opt == ("--read"):
+      options.read = True
     elif opt == "-a" and arg in ('human', 'machine'):
-      control['author'] = arg
+      options.author = arg
     elif opt == "-v" and len(arg) == 32:
-      control['view'] = arg
+      options.view = arg
     elif opt == "-s" and float(arg):
-      control['scale'] = arg
+      options.scale = arg
     elif opt == "-m":
-      control['model'] = arg
+      options.model = arg
     else:
       assert False, "unhandled option"
-  return control
+  return options
 
 def init(model=None, digest=None):
+  ''' after init create SVG by calling svgfile
+  '''
   if digest:
     control = 5
     model, celldata = v.clone(digest)
@@ -136,38 +176,39 @@ def init(model=None, digest=None):
     model, celldata = v.create(rnd=True)
   b = Blocks(model)
   tf.write(model, b.cells(), celldata)
-  svg.create(model, control)
-  svg.update(celldata)
-  # TODO create rink.pid
+  # svg.create(model, control)
+  # svg.update(celldata)
+  # TODO create rink.pid HERE and ditch bash script
  
 def update(model, scale):
-  scale = 1.0 if scale is None else 1.0
-  if model is None:
-    model = 'soleares'  # TODO check for rink.pid
-  celldata = tf.read(model)
-  svg.update(celldata, scale) 
+  ''' update by calling svgfile.py directly
+  '''
+  pass
 
 def commit(model, scale, author):
   celldata = tf.read(model)
   v.update(tf.digest, scale, author)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
-  control = inputs()
-  v = Views()
+  options = inputs()
   m = Models()
+  v = Views()
   tf = TmpFile()
-  svg = SvgFile()
-  if control['list']:
+  if options.list:
     print(m.get(output='stats'))              # pretty list of models
-  elif control['init']:                       # generate TXT and SVG files in tmp
-    init(model=control['model'], digest=control['view']) 
-  elif control['update']:                     # copy from TXT to SVG
-    update(control['model'], control['scale'])
-  elif control['commit']:                     # copy from TXT to DB 
-    commit(control['model'], control['scale'], control['author'])
+  elif options.init:                       # generate TXT and SVG files in tmp
+    init(model=options.model, digest=options.view) 
+  elif options.commit:                     # copy from TXT to DB 
+    commit(options.model, options.scale, options.author)
+  elif options.read: # read accepts a view value e.g. c364ab54ff542adb322dc5c1d6aa4cc8
+    view = v.get(digest=options.view)
+    print(" ".join(view) + "\n")
+  elif options.delete:
+    view.delete(options.view)
   else:
     usage()
   '''
   the 
   end
   '''
+

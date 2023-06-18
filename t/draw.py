@@ -4,7 +4,7 @@ import os
 import inkex
 from inkex import Group
 import unittest
-from layout import Draw
+from svgfile import Draw
 
 class TestDraw(unittest.TestCase):
 
