@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from recurrink import Models, Blocks
+from db import Models, Blocks
 import unittest
 
 class TestModels(unittest.TestCase):

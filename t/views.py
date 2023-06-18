@@ -3,13 +3,10 @@
 ''' see recurrink-ddl and recurrink-dml sql
 '''
 import unittest
-from recurrink import Views
+from db import Views
 
 import pprint
 pp = pprint.PrettyPrinter(indent=2)
-#import os
-#from recurrink import Recurrink, Cells, Blocks, Models
-#, Models, Cells, Geometry, Styles
 
 class TestViews(unittest.TestCase):
 
@@ -22,16 +19,9 @@ class TestViews(unittest.TestCase):
   def testGetViewDigest(self):
     ''' construct JSON like view from db
     '''
-    view = self.v.get(digest=self.view, output='celldata')
+    view = self.v.get(digest=self.view, celldata=True)
     #pp.pprint(view)
     self.assertEqual(len(list(view.keys())), 4)
-
-  def testGetViewModel(self):
-    ''' construct JSON like view from db
-    '''
-    digest, cells = self.v.get(model='soleares')
-    # pp.pprint(cells.keys())
-    self.assertEqual(len(list(cells.keys())), 4)
 
   def testGetViewMeta(self):
     ''' handle View metadata
@@ -69,12 +59,8 @@ class TestViews(unittest.TestCase):
     view.set('koto', 'abcdefghijklmnopqrstuvwxyz012345', 'human', 5)
     self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
 
-  def testGetDigest(self):
-    digest, _ = self.v.get(model='soleares')
-    self.assertEqual(len(digest), 32)
-  
   def testViewGenerate(self):
-    cells = self.v.generate('soleares')
+    cells = self.v.create('soleares')
     # pp.pprint(cells)
     self.assertTrue(cells)
 
@@ -86,4 +72,14 @@ class TestViews(unittest.TestCase):
     # pp.pprint(cells)
     # self.assertTrue(cells)
   ''' the end
+  '''
+  ''' construct JSON like view from db
+  def testGetViewModel(self):
+    digest, cells = self.v.get(model='soleares')
+    # pp.pprint(cells.keys())
+    self.assertEqual(len(list(cells.keys())), 4)
+
+  def testGetDigest(self):
+    digest, _ = self.v.get(model='soleares')
+    self.assertEqual(len(digest), 32)
   '''

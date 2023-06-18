@@ -1,5 +1,5 @@
-from recurrink import Views, Blocks
-from tmpfile import TmpFile
+from db import Views, Blocks
+from recurrink import TmpFile
 import unittest
 import pprint
 import os.path
@@ -14,10 +14,42 @@ class TestTmpFile(unittest.TestCase):
   def testWrite(self):
     v = Views()
     b = Blocks(self.model)
-    celldata = v.generate(self.model, rnd=False) 
+    celldata = v.create(self.model, rnd=False) 
     self.tf.write(self.model, b.cells(), celldata)
     self.assertTrue(os.path.isfile('/tmp/soleares.txt'))
 
   def testRead(self):
     celldata = self.tf.read(self.model)
-    pp.pprint(celldata)
+    self.assertEqual(len(celldata.keys()), 4)
+    self.assertEqual(len(self.tf.digest), 32)
+
+  def testTopOk2Commit(self):
+    ''' check vals from csv are correctly poured, e.g. top reordering
+        shape size facing top fill bg fo stroke sw sd so
+    '''
+    test = [
+      [ 'triangle','medium','west','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
+      [ 'circle','large','all','True','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
+      [ 'line','medium','west','False','#FFA500','#CCC','1.0','#000','1','0','1.0' ],
+      [ 'circle','large','all','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ]
+    ]
+    self.tf.write(self.model, ['a','b','c','d'], test)
+    cells = self.tf.read(self.model)
+    sorted_by_top = list(cells.keys())
+    self.assertEqual(sorted_by_top, ['a', 'c', 'd', 'b'])
+
+  def testGetCellValues(self):
+    ''' ./recurrink.py -m ${model} --cell ${cell}
+    0 1        2      3      4    5    6               7   8    9 0 1   2
+    a soleares circle medium west #fff mediumvioletred 1.0 #000 0 0 1.0 True
+    '''
+    if os.path.isfile('/tmp/soleares.txt'):
+      cells = self.tf.read('soleares')
+      # pp.pprint(cells['a'])
+      self.assertTrue(isinstance(cells['a']['stroke_dasharray'], int))
+    else:
+      pass
+  '''
+  the
+  end
+  '''

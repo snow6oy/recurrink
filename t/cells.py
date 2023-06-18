@@ -5,7 +5,7 @@
 import os.path
 import unittest
 import pprint
-from recurrink import Cells, Geometry, Styles
+from db import Cells, Geometry, Styles
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestCells(unittest.TestCase):
