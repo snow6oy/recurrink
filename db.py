@@ -164,7 +164,6 @@ class Geometry(Db):
   def get(self, items=[], rnd=False, gid=0):
     ''' always returns a list, even if only one member (gid)
     '''
-    items = ()
     if gid:  # select entries
       self.cursor.execute("""
 SELECT shape, size, facing, top
@@ -461,7 +460,7 @@ class Cells(Db):
     '''
     if control:  
       gid = self.g.get(rnd=True) 
-      if (tuple(gid)):
+      if gid is not None:
         return gid + self.s.get(rnd=True)
       else:
         raise ValueError("Geometry is sending us empties again")
@@ -472,14 +471,10 @@ class Cells(Db):
     ''' update the members of a view
     '''
     update = False # used only by unit test
-    # re-order top print(type(top), top)
-    # TODO how much longer is this hack requred???
-    #top = items.pop()
-    #items.insert(5, bool(top))
-    # ignore first 2 items cell and model
-    gid = self.g.set(items=items[2:6])[0]
+    # ignore first item cell
+    gid = self.g.set(items=items[1:5])[0]
     sid = self.s.get(view, cell)[0]
-    sid = self.s.set(items[6:], sid=sid)[0] # retry in case sid was None
+    sid = self.s.set(items[5:], sid=sid)[0] # retry in case sid was None
     # UPSERT the cells
     try:
       self.cursor.execute("""

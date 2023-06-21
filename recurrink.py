@@ -1,11 +1,54 @@
 #!/usr/bin/env python3
 
+import argparse
+import re
+import pprint
+import inkex
 import sys
 import random
-import getopt
 import hmac
 from db import Views, Models, Cells, Blocks
+from svgfile import Layout
 
+pp = pprint.PrettyPrinter(indent=2)
+m = Models()
+v = Views()
+
+class Input(inkex.InputExtension):
+  ''' create a model SVG from a txt file /tmp/MODEL.txt
+      model, and scale SHOULD be written in SVG metadata
+      
+      NICE to have would be add portrait as input options
+  '''
+  def load(self, stream):
+    ''' inkscape passes in a stream from io.BufferedReader
+        self.options.input_file is immutable and must exist or FileNotFoundError is raised
+    '''
+    doc = None
+    fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
+    model = fn[0]
+    s = stream.read() # slurp the stream 
+    data = s.decode() # convert to string
+    cells = tf.read(model, txt=data) # convert string to dict
+    #l = Layout(model, factor=float(self.options.scale))
+    l = Layout(model)
+    # prepare A4 document but with pixels for units
+    doc = self.get_template(width=l.width, height=l.height, unit='px')
+    svg = self.add_metadata(doc, model, self.options)
+    # group, cells = l.build(data, svg)
+    group = l.build(cells, svg)
+    l.render(group, cells)
+    return doc
+
+  def add_metadata(self, doc, model, scale):
+    ''' namspeces work when they feel like it so we avoid them like the plague
+    '''
+    svg = doc.getroot()
+    svg.namedview.set('inkscape:document-units', 'px')
+    svg.set('recurrink-id', model)
+    svg.set('recurrink-factor', scale)
+    return svg
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class TmpFile():
   ''' read and write data to /tmp
   '''
@@ -69,105 +112,62 @@ class TmpFile():
     del data[0] # remove header
     return data
 
-  ''' should be a function of TmpFile
-  def getcells(self, model, txt=None):
-    header = [
-      'cell','shape','size','facing','top',
-      'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
-    ]
-    cells = dict()
-    if txt:
-      print(f"str {txt}")
-    else:
-      print(f"modl {model}")
-    linedata = self.get_text(txt) if txt else self.get_file(model)
-    #[linedata.append(line.split()) for line in txt.splitlines()]
-    #del linedata[0] # remove header
-    for d in linedata:
-      d[4] = (d[4] in ['True', 'true'])
-      d[9] = int(d[9])
-      d[10] = int(d[10])
-    for d in linedata:
-      z = zip(header, d)
-      attrs = dict(z)
-      cell = attrs['cell']
-      del attrs['cell']
-      cells.update({cell: attrs})
-    return cells
-  '''
-
   def set(self, key):
     ''' make a digest that has a unique value for each model view
     '''
     secret = b'recurrink'
     digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
     self.digest = digest_maker.hexdigest()
-
-def usage():
-  message = '''
---list 
---init   [-m MODEL -v VIEW]
---update [-m MODEL -s SCALE]
---commit [-m MODEL -s SCALE -a AUTHOR]
-'''
-  print(message)
-
-class Options:
- 
-  def __init__(self):
-    self.init  = False
-    self.commit= False 
-    self.list  = False 
-    self.delete= False 
-    self.read  = False
-    self.model = None
-    self.scale = None
-    self.author= None
-    self.view  = None
-
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def inputs():
   ''' get inputs from command line
   '''
-  options = Options()
-  try:
-    (opts, args) = getopt.getopt(sys.argv[1:], "m:s:a:v:", ["init", "delete", "commit", "list", "read"])
-  except getopt.GetoptError as err:
-    print(err)  # will print something like "option -a not recognized"
-    usage()
-    sys.exit(2)
+  parser = argparse.ArgumentParser(prog='recurrink')
+  subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
+  parser_l = subparsers.add_parser('list', help='list models in db')
+  parser_r = subparsers.add_parser('read', help='get view metadata')
+  parser_r.add_argument("-v", "--view", help='hex name with 32 char', required=True)
+  parser_i = subparsers.add_parser('init', help='set config for new image')
+  parser_i.add_argument('-m', '--model', help='name of base model')
+  parser_i.add_argument("-v", "--view", help='view to clone')
+  parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
+  parser_c.add_argument('-m', '--model', help='name of base model')
+  parser_c.add_argument("-a", "--author", choices=['human', 'machine'])
+  parser_c.add_argument("-s", "--scale", type=float, default=1.0, help='range of 0.5 to 2.0 ish')
+  #  pars.add_argument("--control",  default=0, help="Control 0-9 zero is random")
+  parser_d = subparsers.add_parser('delete')
+  parser_d.add_argument("-v", "--view", help='view to remove from db')
+  parser_u = subparsers.add_parser('update', help='update svg from config')
+  parser_u.add_argument('-m', '--model', help='name of model to update', required=True)
+  return parser.parse_args()
 
-  for opt, arg in opts:
-    if opt in ("-h", "--help"):
-      usage()
-      sys.exit()
-    elif opt == '--init':
-      options.init = True
-    elif opt == '--update':
-      options.update = True
-    elif opt == '--commit':
-      options.commit = True
-    elif opt == ("--list"):
-      options.list = True
-    elif opt == ("--read"):
-      options.read = True
-    elif opt == "-a" and arg in ('human', 'machine'):
-      options.author = arg
-    elif opt == "-v" and len(arg) == 32:
-      options.view = arg
-    elif opt == "-s" and float(arg):
-      options.scale = arg
-    elif opt == "-m":
-      options.model = arg
-    else:
-      assert False, "unhandled option"
-  return options
+def stats():
+  ''' pretty list of models
+  '''
+  return m.get(output='stats')              
 
+def info(digest):
+  ''' accept a view id e.g. c364ab54ff542adb322dc5c1d6aa4cc8
+      return view meta data for publisher to use
+  '''
+  view = v.get(digest=digest)
+  return " ".join(view)
+
+# TODO stop losting control :-D
+# control should be written as view metadata 
+# but we generate the digest much later
+
+# TODO when model is none glob *.txt and source model from /tmp
+
+# TODO call update
 def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
   '''
+  print(model, digest)
   if digest:
     control = 5
-    model, celldata = v.clone(digest)
+    #model, celldata = v.clone(digest)
+    return 'not implemented'
   elif model:
     control = 3
     celldata = v.create(model)
@@ -176,39 +176,46 @@ def init(model=None, digest=None):
     model, celldata = v.create(rnd=True)
   b = Blocks(model)
   tf.write(model, b.cells(), celldata)
-  # svg.create(model, control)
-  # svg.update(celldata)
-  # TODO create rink.pid HERE and ditch bash script
+  # update(model)
+  return model
  
-def update(model, scale):
+# TODO add scale and control as params
+#   '--scale', str(scale), 
+def update(model, scale=1.0):
+  Input().run([
+    '--output', f'/tmp/{model}.svg', 
+    f'/tmp/{model}.txt'
+  ])
+  return model
+
+def delete(view):
+  return v.delete(view)
+
+# TODO celldata is not being saved
+def commit(model, scale, author):
   ''' update by calling svgfile.py directly
   '''
-  pass
-
-def commit(model, scale, author):
   celldata = tf.read(model)
   v.update(tf.digest, scale, author)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
-  options = inputs()
-  m = Models()
-  v = Views()
   tf = TmpFile()
-  if options.list:
-    print(m.get(output='stats'))              # pretty list of models
-  elif options.init:                       # generate TXT and SVG files in tmp
-    init(model=options.model, digest=options.view) 
-  elif options.commit:                     # copy from TXT to DB 
-    commit(options.model, options.scale, options.author)
-  elif options.read: # read accepts a view value e.g. c364ab54ff542adb322dc5c1d6aa4cc8
-    view = v.get(digest=options.view)
-    print(" ".join(view) + "\n")
-  elif options.delete:
-    view.delete(options.view)
-  else:
-    usage()
+  args = inputs()
+  if (args.keyword == 'list'):
+    print(stats())
+  elif (args.keyword == 'read'):
+    print(info(args.view))
+  elif (args.keyword == 'init'):
+    print(init(model=args.model, digest=args.view))
+  elif (args.keyword == 'commit'):
+    #print(args.model, args.author, args.scale)
+    print(commit(args.model, args.scale, args.author))
+  elif (args.keyword == 'delete'):
+    #print(args.view)
+    print(view.delete(args.view))
+  elif (args.keyword == 'update'):
+    print(update(args.model))
   '''
   the 
   end
   '''
-

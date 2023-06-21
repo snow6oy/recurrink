@@ -7,9 +7,9 @@ import math
 import os.path
 from inkex import Group, Circle, Rectangle, Polygon, TextElement
 from db import Views, Blocks, Models
-from recurrink import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 
+#from recurrink import TmpFile
 # from inkex import Group, load_svg
 # from svgfile import Layout
 # from db import Blocks, Models
@@ -223,7 +223,7 @@ class Layout(Draw):
       2.0      6.0    30   44   15.0   16.5  half size
     '''
     self.b = Blocks(model)
-    self.tf = TmpFile()
+    #self.tf = TmpFile()
     self.model = model
     self.width   = 1122.5197  # px
     self.height  = 793.70081
@@ -291,15 +291,17 @@ class Layout(Draw):
             group[gid].add(shape)
     return None
 
-  def build(self, data, svg):
-    ''' Generate an svg document for given model '''
-    cells = self.tf.read(self.model, txt=data) # convert string to dict
+  def build(self, cells, svg):
+    ''' Generate inkex groups for the svg renderer to use  
+    '''
+    #cells = self.tf.read(self.model, txt=data) # convert string to dict
     groups_to_create = self.b.cells()
     group = {}  # hold a local reference to groups created in svg doc
     stroke_width = {}
     sw0 = svg.unittouu(0) # hide the cracks between the background tiles
     for g in groups_to_create:
       # draw background  cells
+      print(g, end='')
       bg = Group()
       bg.set_id(f'{g}0')
       bg.style = { 'fill' : cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#fff' }
@@ -321,54 +323,4 @@ class Layout(Draw):
       # TODO what is stroke width used for ?
       stroke_width[f'{g}1'] = sw1  # adjust cell dimension according to stroke width
       svg.add(fg)
-    return group, cells 
-
-class Input(inkex.InputExtension):
-  ''' create a model SVG from a txt file /tmp/MODEL.txt
-      model, scale and control SHOULD be written in SVG metadata
-      
-      NICE to have would be 
-      update(self, celldata, scale=None)
-      to apply changes to an existing SVG
-    
-      TODO add portrait as input options
-  '''
-
-  def add_arguments(self, pars):
-    pars.add_argument("--scale",  default=1.0, help="Scale in or out (0.5 - 2.0)")
-    pars.add_argument("--read",  default=None, help="Read view info from db")
-    pars.add_argument("--delete",  default=None, help="Delete view from db")
-    pars.add_argument("--control",  default=0, help="Control 0-9 zero is random")
-
-  def load(self, stream):
-    ''' inkscape passes in a stream from io.BufferedReader
-        self.options.input_file is immutable and must exist or FileNotFoundError is raised
-    '''
-    doc = None
-    fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
-    model = fn[0]
-    s = stream.read() # slurp the stream 
-    data = s.decode() # convert to string
-    #scale = 1.0 if 'scale' not in self.options else self.options.scale
-    #m = Model(model, factor=float(scale))
-    l = Layout(model, factor=float(self.options.scale))
-    # prepare A4 document but with pixels for units
-    doc = self.get_template(width=l.width, height=l.height, unit='px')
-    svg = self.add_metadata(doc, model, self.options)
-    group, cells = l.build(data, svg)
-    l.render(group, cells)
-    return doc
-
-  def add_metadata(self, doc, model, opts):
-    ''' namspeces work when they feel like it so we avoid them like the plague
-    '''
-    svg = doc.getroot()
-    svg.namedview.set('inkscape:document-units', 'px')
-    svg.set('recurrink-id', model)
-    svg.set('recurrink-factor', opts.scale)
-    svg.set('recurrink-control', opts.control)
-    return svg
-
-if __name__ == '__main__':
-  Input().run()
-  v = Views()
+    return group

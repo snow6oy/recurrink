@@ -53,12 +53,12 @@ class TestCells(unittest.TestCase):
     self.assertTrue(sid)
 
   def testSetCell(self):
-    ''' when mondrian does updsvg and calls ./recurrink.py -c CELL need to run UPDATE on DB
-        this is because mondrian -install no longer copies JSON files aroun
+    ''' send line from /tmp/MODEL.txt to update an existing view
+        cell shape size facing top fill bg fo stroke sw sd so
     '''
     view = 'e4681aa9b7aef66efc6290f320b43e55'
     cell = 'a'
-    data = ['a', 'soleares', 'triangle', 'medium', 'west', '#FFF', '#CCC', 1.0, '#000', 0, 0, 0.5, False]
+    data = ['a','triangle','medium','west',False,'#FFF','#CCC',1.0,'#000',0,1,0.5]
     self.assertTrue(self.c.set(view, cell, data))
 
   def testGetCellRandom(self):

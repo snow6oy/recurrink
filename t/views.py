@@ -61,7 +61,7 @@ class TestViews(unittest.TestCase):
 
   def testViewGenerate(self):
     cells = self.v.create('soleares')
-    # pp.pprint(cells)
+    #pp.pprint(cells)
     self.assertTrue(cells)
 
   def testViewGenerateRandom(self):

@@ -13,7 +13,12 @@ class TestModels(unittest.TestCase):
     self.assertTrue('soleares' in self.m.get(output='list'))
 
   def testLoadModel(self):
-    self.assertEqual(self.m.get(model='soleares')[1][1], 'd')
+    cell_1_1 = self.m.get(model='soleares', output='matrix')[1][1]
+    self.assertEqual(cell_1_1, 'd')
+
+  def testModelEntry(self):
+    name = self.m.get(model='soleares')[0]
+    self.assertEqual(name, 'soleares')
 
   def testGetCellByPosition(self):
     ''' model with a line a, x, x a will appear in result as { a: { positions: [[0,0], [3,0] }}

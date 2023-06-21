@@ -1,0 +1,5 @@
+cell shape size facing top fill bg fo stroke sw sd so
+a line large west True #FFF #32CD32 1.0 #000 0 0 1.0
+b circle medium all False #FFF #CCC 1.0 #000 0 0 1.0
+c line medium north False #FFF #9ACD32 1.0 #000 0 0 1.0
+d triangle medium east False #CCC #32CD32 0.7 #000 0 0 1.0
