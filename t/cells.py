@@ -15,6 +15,10 @@ class TestCells(unittest.TestCase):
     self.g = Geometry()
     self.s = Styles()
 
+  def testGetGeometryRnd(self):
+    items = self.g.get(rnd=True)
+    self.assertTrue(len(items))
+
   def testSetGeometry(self):
     ''' geometries are shared and have a 1:* relation with views and cells
       geometries are never updated, only inserted when shape/size/facing combination is new
@@ -36,6 +40,10 @@ class TestCells(unittest.TestCase):
     ''' 
     gid = self.g.set(['triangle', 'large', 'west', True])
     self.assertTrue(tuple(gid))
+
+  def testGeometryFacing(self):
+    a = ['triangle', 'medium', 'all', False]
+    self.assertEqual(self.g.validate(a)[2], 'north')
 
   def testSetStyleUpdate(self):
     ''' styles are not shareable. styles have 1:1 relation view/cell <> style
@@ -64,7 +72,7 @@ class TestCells(unittest.TestCase):
   def testGetCellRandom(self):
     ''' Geometry and Styles got from existing entries
     '''
-    #pp.pprint(self.c.get())
+    # pp.pprint(self.c.get())
     self.assertEqual(len(self.c.get()), 11)
 
   # Note this test has a side effect of spamming the styles table

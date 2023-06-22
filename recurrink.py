@@ -36,7 +36,7 @@ class Input(inkex.InputExtension):
     # prepare A4 document but with pixels for units
     doc = self.get_template(width=l.width, height=l.height, unit='px')
     svg = self.add_metadata(doc, model, self.options)
-    # group, cells = l.build(data, svg)
+    print('.', end='', flush=True)
     group = l.build(cells, svg)
     l.render(group, cells)
     return doc
@@ -171,7 +171,6 @@ def info(digest):
 def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
   '''
-  print(model, digest)
   if digest:
     control = 5
     #model, celldata = v.clone(digest)
@@ -190,10 +189,12 @@ def init(model=None, digest=None):
 # TODO add scale and control as params
 #   '--scale', str(scale), 
 def update(model, scale=1.0):
+  print('.', end='', flush=True)
   Input().run([
     '--output', f'/tmp/{model}.svg', 
     f'/tmp/{model}.txt'
   ])
+  print()
   return model
 
 def delete(view):

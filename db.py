@@ -170,6 +170,10 @@ SELECT shape, size, facing, top
 FROM geometry
 WHERE gid = %s;""", [gid])
       items = self.cursor.fetchone()
+      if items is None:
+        raise ValueError(f"Geometry has empties again {gid}")
+      else:
+        return items
     elif rnd:  # randomly generate a GID and select entries
       self.cursor.execute("""
 SELECT MAX(gid)
@@ -178,7 +182,7 @@ FROM geometry;""", [])
       gids = list()
       [gids.append(i) for i in range(1, maxgid + 1)]
       # we assume the postgres SERIAL ensures there are no gaps 
-      #print(f"gids {gids}")
+      # print(f"gids {gids}")
       items = self.get(gid=random.choice(gids))  # recursive recurrink :)
     elif len(items): # attempt to select gid
       self.cursor.execute("""
@@ -189,7 +193,7 @@ AND size = %s
 AND facing = %s;""", items[:3])  # ignore top
       items = self.cursor.fetchone()
     else:
-      pass # throw error here?
+      raise ValueError("items cannot be empty") # throw error here
     return items
 
   def set(self, items=[]):
@@ -216,6 +220,8 @@ AND facing = %s;""", items[:3])  # ignore top
   def validate(self, items):
     if items[0] in ['square', 'circle']:
       items[2] = 'all'
+    elif items[2] == 'all': 
+      items[2] = 'north'
     if items[0] in ['triangle', 'diamond'] and items[1] == 'large': 
       items[1] = 'medium' # triangles and diamonds cannot be large
     if items[3] and items[1] != 'large': 
@@ -456,13 +462,10 @@ class Cells(Db):
     ''' varying degress of randomness
         with control will select from existing entries
         no control means that entries are randomly generated
+        return a tuple(shape .. top)
     '''
     if control:  
-      gid = self.g.get(rnd=True) 
-      if gid is not None:
-        return gid + self.s.get(rnd=True)
-      else:
-        raise ValueError("Geometry is sending us empties again")
+      return self.g.get(rnd=True) + self.s.get(rnd=True)
     else:
       return self.g.set()[1:] + self.s.set()[1:]
 

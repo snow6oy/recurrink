@@ -265,13 +265,12 @@ class Layout(Draw):
     yUu = self.yOffset + (yBlocknum * self.size)
     return xUu, yUu
 
-  #def render(self, group, stroke_width, cells):
   def render(self, group, cells):
     ''' draw out a model by repeating blocks across the canvas
     '''
-    # TODO the algorithm should follow JSON 
     for paintOrder in range(2):
       for y in range(self.maxRows):
+        print('.', end='', flush=True)
         for x in range(self.maxCols):
           pos = tuple([x, y])
           (xSizeMm, ySizeMm) = self.blocknum_to_uu(pos)
@@ -301,7 +300,6 @@ class Layout(Draw):
     sw0 = svg.unittouu(0) # hide the cracks between the background tiles
     for g in groups_to_create:
       # draw background  cells
-      print(g, end='')
       bg = Group()
       bg.set_id(f'{g}0')
       bg.style = { 'fill' : cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#fff' }
