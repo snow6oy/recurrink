@@ -343,7 +343,6 @@ INSERT INTO styles (sid, fill, bg, fill_opacity, stroke, stroke_width, stroke_da
 VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s)
 RETURNING sid;""", items)
     sid = self.cursor.fetchone()
-    print(f"adding sid {sid}")
     return sid
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
@@ -369,7 +368,7 @@ DELETE FROM views
 WHERE view = %s;""", [digest])
     return True
 
-  def set(self, model, digest, author, control):
+  def set(self, model, digest, author, control=0):
     ''' create views metadata and try Cells()
     '''
     if not self.count(digest):
@@ -473,8 +472,9 @@ class Cells(Db):
     update = False # used only by unit test
     # ignore first item cell
     gid = self.g.set(items=items[1:5])[0]
-    sid = self.s.get(view, cell)[0]
-    sid = self.s.set(items[5:], sid=sid)[0] # retry in case sid was None
+    sid = self.s.get(view, cell)
+    if sid is None: # add new style
+      sid = self.s.set(items[5:], sid=sid)[0] 
     # UPSERT the cells
     try:
       self.cursor.execute("""

@@ -13,6 +13,7 @@ from svgfile import Layout
 pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
+c = Cells()
 
 class Input(inkex.InputExtension):
   ''' create a model SVG from a txt file /tmp/MODEL.txt
@@ -71,14 +72,14 @@ class TmpFile():
         line = ' '.join(vals)
         print(line, file=f)
 
-  def read(self, model, txt=None):
+  def read(self, model, txt=None, output=dict()):
     ''' read text file, convert values from string to primitives and sort on top
         > cell shape size facing top fill bg fo stroke sw sd so
         > a square medium north False #FFF #CCC 1.0 #000 0 0 1.0
         return a dictionary keyed by cell
     '''
+    cells = None
     sortdata = list()
-    cells = dict()
     to_hash = str()
     data = self.get_text(txt) if txt else self.get_file(model)
 
@@ -90,12 +91,19 @@ class TmpFile():
     self.set(to_hash)
     # sort them so that top:true will be rendered last
     sortdata = sorted(data, key=lambda x: x[4])
-    for d in sortdata:
-      z = zip(self.header, d)
-      attrs = dict(z)
-      cell = attrs['cell']
-      del attrs['cell']
-      cells.update({cell: attrs})
+
+    if isinstance(output, list):
+      cells = data
+    elif isinstance(output, dict):
+      cells = dict()
+      for d in sortdata:
+        z = zip(self.header, d)
+        attrs = dict(z)
+        cell = attrs['cell']
+        del attrs['cell']
+        cells.update({cell: attrs})
+    else:
+      raise TypeError(f"unsupported type {output}")
     if not cells: # is model with given name available from db ?
       raise ValueError(f'non readable <{model}>')
     return cells
@@ -189,14 +197,18 @@ def update(model, scale=1.0):
   return model
 
 def delete(view):
-  return v.delete(view)
+  return view if v.delete(view) else 'not deleted'
 
 # TODO celldata is not being saved
 def commit(model, scale, author):
-  ''' update by calling svgfile.py directly
+  ''' read config, write to database and return digest
   '''
-  celldata = tf.read(model)
-  v.update(tf.digest, scale, author)
+  celldata = tf.read(model, output=list())
+  if v.set(model, tf.digest, author):
+    [c.set(tf.digest, row[0], row) for row in celldata]
+    return tf.digest
+  else:
+    return 'unknown error'
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
   tf = TmpFile()
@@ -208,11 +220,10 @@ if __name__ == '__main__':
   elif (args.keyword == 'init'):
     print(init(model=args.model, digest=args.view))
   elif (args.keyword == 'commit'):
-    #print(args.model, args.author, args.scale)
+    # TODO why collect scale here? it is part of Model not View
     print(commit(args.model, args.scale, args.author))
   elif (args.keyword == 'delete'):
-    #print(args.view)
-    print(view.delete(args.view))
+    print(delete(args.view))
   elif (args.keyword == 'update'):
     print(update(args.model))
   '''

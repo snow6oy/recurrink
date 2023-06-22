@@ -23,6 +23,10 @@ class TestTmpFile(unittest.TestCase):
     self.assertEqual(len(celldata.keys()), 4)
     self.assertEqual(len(self.tf.digest), 32)
 
+  def testReadAsList(self):
+    celldata = self.tf.read(self.model, output=list())
+    self.assertTrue(len(celldata))
+  
   def testTopOk2Commit(self):
     ''' check vals from csv are correctly poured, e.g. top reordering
         shape size facing top fill bg fo stroke sw sd so
