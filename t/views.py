@@ -17,11 +17,18 @@ class TestViews(unittest.TestCase):
     #550d193efe80f67e92d5a0c59ad9d354'
 
   def testGetViewDigest(self):
-    ''' construct JSON like view from db
+    ''' get a view from db as a dictionary
     '''
     view = self.v.get(digest=self.view, celldata=True)
-    #pp.pprint(view)
+    # pp.pprint(view)
     self.assertEqual(len(list(view.keys())), 4)
+
+  def testGetViewDigestList(self):
+    ''' get a view from db as a list
+    '''
+    view = self.v.get(digest=self.view, celldata=True, output=list())
+    pp.pprint(view[0])
+    self.assertEqual(len(list(view[0])), 12)
 
   def testGetViewMeta(self):
     ''' handle View metadata

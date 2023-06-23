@@ -61,13 +61,16 @@ class TmpFile():
       'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
     ]
 
-  def write(self, model, keys, celldata):
+  def write(self, model, keys, celldata, celltype=dict()):
+    ''' accept cells as list or dict and write them to a space-separated text file
+    '''
     expectedsize = len(self.header)
     with open(f"/tmp/{model}.txt", 'w') as f:
       print(' '.join(self.colnam), file=f)
       for i, data in enumerate(celldata):
         vals = [str(d) for d in data] # convert everything to string
-        vals.insert(0, keys[i])
+        if isinstance(celltype, dict): 
+          vals.insert(0, keys[i])     # push the dict key into the list
         if len(vals) != expectedsize:
           raise ValueError(f"{model}.txt has {len(vals)} not {expectedsize}\n{vals}")
         line = ' '.join(vals)
@@ -172,18 +175,17 @@ def info(digest):
 def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
   '''
+  ct = dict()
   if digest:
-    control = 5
-    #model, celldata = v.clone(digest)
-    return 'not implemented'
+    celldata = v.get(digest=digest, celldata=True, output=list())
+    model, _ = v.get(digest=digest)
+    ct = list() # configure TmpFile to write from a list
   elif model:
-    control = 3
     celldata = v.create(model)
   else:
-    control = 0
     model, celldata = v.create(rnd=True)
   b = Blocks(model)
-  tf.write(model, b.cells(), celldata)
+  tf.write(model, b.cells(), celldata, celltype=ct)
   # update(model)
   return model
  

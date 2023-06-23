@@ -383,12 +383,21 @@ INSERT INTO views (view, model, author, control)
 VALUES (%s, %s, %s, %s);""", [digest, model, author, control])
     return digest
 
-  def get(self, digest, celldata=False):
+  def get(self, digest, celldata=False, output=dict()):
     ''' returns either meta data for a view or cell data 
     '''
     view = None
-    if digest and celldata:
+    if digest and celldata and isinstance(output, list):
       view = self.celldata(digest)
+    elif digest and celldata:
+      view = dict()
+      data = self.celldata(digest)
+      for cellvals in data:
+        z = zip(self.header, cellvals)
+        d = dict(z)
+        cell = d['cell']
+        del d['cell']         # bit of a tongue twister that one :-D
+        view[cell] = d
     elif digest:
       self.cursor.execute("""
 SELECT *
@@ -418,19 +427,14 @@ WHERE view = %s;""", [digest])
   def celldata(self, digest):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
       ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
-    data = dict()
+    data = list()
     self.cursor.execute("""
 SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
 FROM cells, styles, geometry
 WHERE cells.sid = styles.sid
 AND cells.gid = geometry.gid
 AND view = %s;""", [digest])
-    for cellvals in self.cursor.fetchall():
-      z = zip(self.header, cellvals)
-      d = dict(z)
-      cell = d['cell']
-      del d['cell']         # bit of a tongue twister that one :-D
-      data[cell] = d
+    data = self.cursor.fetchall()
     return data
 
   def count(self, digest):
