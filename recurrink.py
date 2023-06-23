@@ -204,12 +204,22 @@ def delete(view):
 def commit(model, scale, author):
   ''' read config, write to database and return digest
   '''
+  workdir = '/home/gavin/Pictures/artWork/recurrences'
+  pubdir = '/home/gavin/Pictures/pubq'
   celldata = tf.read(model, output=list())
   if v.set(model, tf.digest, author):
     [c.set(tf.digest, row[0], row) for row in celldata]
-    return tf.digest
+    if os.path.isfile(f"/tmp/{model}.svg"):
+      svgname = f"{workdir}/{model}/{tf.digest}.svg"
+      print(svgname)
+      os.rename(f"/tmp/{model}.svg", svgname)
+      ln -s svgname} pubdir
+    else:
+      reponse = f"{model}.svg not found in /tmp"
+    response = tf.digest
   else:
-    return 'unknown error'
+    response 'unknown error'
+  return response
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
   tf = TmpFile()
