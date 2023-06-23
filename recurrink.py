@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import argparse
 import re
 import pprint
@@ -200,25 +201,23 @@ def update(model, scale=1.0):
 def delete(view):
   return view if v.delete(view) else 'not deleted'
 
-# TODO celldata is not being saved
 def commit(model, scale, author):
   ''' read config, write to database and return digest
   '''
   workdir = '/home/gavin/Pictures/artWork/recurrences'
   pubdir = '/home/gavin/Pictures/pubq'
   celldata = tf.read(model, output=list())
+  response = 'unknown error'
   if v.set(model, tf.digest, author):
     [c.set(tf.digest, row[0], row) for row in celldata]
     if os.path.isfile(f"/tmp/{model}.svg"):
       svgname = f"{workdir}/{model}/{tf.digest}.svg"
-      print(svgname)
       os.rename(f"/tmp/{model}.svg", svgname)
-      ln -s svgname} pubdir
+      os.symlink(svgname, f"{pubdir}/{tf.digest}.svg")
+      # TODO rm /tmp/model.txt
+      response = svgname
     else:
-      reponse = f"{model}.svg not found in /tmp"
-    response = tf.digest
-  else:
-    response 'unknown error'
+      raise FileNotFoundError(f"{model}.svg not found in /tmp")
   return response
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
