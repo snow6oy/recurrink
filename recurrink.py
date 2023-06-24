@@ -29,26 +29,29 @@ class Input(inkex.InputExtension):
     doc = None
     fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
     model = fn[0]
+    # print(model, CONTROL)
     s = stream.read() # slurp the stream 
     data = s.decode() # convert to string
     cells = tf.read(model, txt=data) # convert string to dict
-    #l = Layout(model, factor=float(self.options.scale))
-    l = Layout(model)
+    l = Layout(model, CONTROL)
     # prepare A4 document but with pixels for units
     doc = self.get_template(width=l.width, height=l.height, unit='px')
-    svg = self.add_metadata(doc, model, self.options)
-    print('.', end='', flush=True)
-    group = l.build(cells, svg)
-    l.render(group, cells)
+    svg = self.add_metadata(doc, model, l.factor)
+    l.transform(cells)
+    # TODO stop passing cells to build and render 
+    #group = l.build(cells, svg)
+    #l.render(group, cells)
+    group = l.build(svg)
+    l.render(group)
     return doc
 
-  def add_metadata(self, doc, model, scale):
+  def add_metadata(self, doc, model, factor):
     ''' namspeces work when they feel like it so we avoid them like the plague
     '''
     svg = doc.getroot()
     svg.namedview.set('inkscape:document-units', 'px')
     svg.set('recurrink-id', model)
-    svg.set('recurrink-factor', scale)
+    svg.set('recurrink-factor', factor)
     return svg
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class TmpFile():
@@ -145,12 +148,12 @@ def inputs():
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_c.add_argument('-m', '--model', help='name of base model')
   parser_c.add_argument("-a", "--author", choices=['human', 'machine'])
-  parser_c.add_argument("-s", "--scale", type=float, default=1.0, help='range of 0.5 to 2.0 ish')
-  #  pars.add_argument("--control",  default=0, help="Control 0-9 zero is random")
+  parser_c.add_argument("-c", "--control",  default='00', help="Control is a two digest code 00-99")
   parser_d = subparsers.add_parser('delete')
   parser_d.add_argument("-v", "--view", help='view to remove from db')
   parser_u = subparsers.add_parser('update', help='update svg from config')
   parser_u.add_argument('-m', '--model', help='name of model to update', required=True)
+  parser_u.add_argument("-c", "--control",  default='00', help="Control is a two digest code 00-99")
   return parser.parse_args()
 
 def stats():
@@ -189,28 +192,28 @@ def init(model=None, digest=None):
   # update(model)
   return model
  
-# TODO add scale and control as params
-#   '--scale', str(scale), 
-def update(model, scale=1.0):
-  print('.', end='', flush=True)
-  Input().run([
-    '--output', f'/tmp/{model}.svg', 
-    f'/tmp/{model}.txt'
-  ])
+def update(model, control):
+  ''' send inputs from to inkex with argparse and Layout() as a global
+      inkex creates an SVG file and its name is printed to screen
+  '''
+  global CONTROL
+  CONTROL = control
+  output, input_file = f'/tmp/{model}.svg', f'/tmp/{model}.txt'
+  Input().run(['--output', output, input_file]) # inkex argparse
   print()
-  return model
+  return output
 
 def delete(view):
   return view if v.delete(view) else 'not deleted'
 
-def commit(model, scale, author):
+def commit(model, control, author):
   ''' read config, write to database and return digest
   '''
   workdir = '/home/gavin/Pictures/artWork/recurrences'
   pubdir = '/home/gavin/Pictures/pubq'
   celldata = tf.read(model, output=list())
   response = 'unknown error'
-  if v.set(model, tf.digest, author):
+  if v.set(model, tf.digest, author, control=control):
     [c.set(tf.digest, row[0], row) for row in celldata]
     if os.path.isfile(f"/tmp/{model}.svg"):
       svgname = f"{workdir}/{model}/{tf.digest}.svg"
@@ -232,12 +235,11 @@ if __name__ == '__main__':
   elif (args.keyword == 'init'):
     print(init(model=args.model, digest=args.view))
   elif (args.keyword == 'commit'):
-    # TODO why collect scale here? it is part of Model not View
-    print(commit(args.model, args.scale, args.author))
+    print(commit(args.model, args.control, args.author))
   elif (args.keyword == 'delete'):
     print(delete(args.view))
   elif (args.keyword == 'update'):
-    print(update(args.model))
+    print(update(args.model, args.control))
   '''
   the 
   end

@@ -87,3 +87,15 @@ class TestCells(unittest.TestCase):
   def testGetCellGid(self):
     self.assertEqual(self.g.get(gid=1)[2], 'south')
 
+  def testCellUpdate(self):
+    cells = { 
+      'a': { 
+        'bg': '#DC143C', 'facing': 'east', 'fill': '#4B0082', 'fill_opacity': '1.0',
+        'shape': 'line', 'size': 'large', 'stroke': '#DC143C', 'stroke_dasharray': 0,
+        'stroke_opacity': '1.0', 'stroke_width': 6, 'top': True
+      }
+    }
+    updated = self.c.update(cells, 1)
+    pp.pprint(updated)
+    self.assertEqual(updated['a']['shape'], 'square')
+    self.assertEqual(updated['a']['stroke_width'], 0)

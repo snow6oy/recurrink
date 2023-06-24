@@ -6,7 +6,7 @@ import inkex
 import math
 import os.path
 from inkex import Group, Circle, Rectangle, Polygon, TextElement
-from db import Views, Blocks, Models
+from db import Cells, Blocks, Models
 pp = pprint.PrettyPrinter(indent=2)
 
 #from recurrink import TmpFile
@@ -212,7 +212,7 @@ class Draw:
 class Layout(Draw):
   ''' expand cells provided by Draw across a canvas
   '''
-  def __init__(self, model, factor=1.0):
+  def __init__(self, model, control):
     ''' 
     original calculation was page size 210 x 297 mm (A4 portrait)
     since unit are not millimeters this table is inaccurate
@@ -223,17 +223,33 @@ class Layout(Draw):
       2.0      6.0    30   44   15.0   16.5  half size
     '''
     self.b = Blocks(model)
-    #self.tf = TmpFile()
+    self.c = Cells()
     self.model = model
+    self.create(control)
     self.width   = 1122.5197  # px
     self.height  = 793.70081
-    self.size    = (48 / factor)  
-    self.maxCols = int(22 * factor)
-    self.maxRows = int(15 * factor)  # num of row  
+    self.size    = (48 / self.factor)  
+    self.maxCols = int(22 * self.factor)
+    self.maxRows = int(15 * self.factor)  # num of row  
     numOfMargins = 2
     self.xOffset = (self.width  - (self.maxCols * self.size)) / numOfMargins # 33.25985000000003
     self.yOffset = (self.height - (self.maxRows * self.size)) / numOfMargins # 36.85040500000002
     super().__init__([self.size, self.xOffset, self.yOffset])
+
+  def create(self, control):
+    ''' convert a two digit control code into a float for scaling
+        0 is default
+        odd numbers zoom out
+        even numbers zoom in
+    '''
+    # = int(list(control)[0])
+    f, c = list(control)
+    scale = [1.0, 1.1, 0.9, 1.3, 0.8, 1.5, 0.7, 1.8, 0.5, 2.0]
+    self.factor = scale[int(f)]
+    self.control = int(c)
+
+  def transform(self, cells):
+    self.cells = self.c.update(cells, self.control)
 
   def get_cell_by_position(self, pos):
     '''
@@ -242,7 +258,7 @@ class Layout(Draw):
     2. then new counter = counter - blocknumber * blocksize
     '''
     x, y = pos[0], pos[1]
-    b = Blocks(self.model)
+    #b = Blocks(self.model)
     m = Models()
     cell = None
     positions = self.b.get() 
@@ -265,7 +281,7 @@ class Layout(Draw):
     yUu = self.yOffset + (yBlocknum * self.size)
     return xUu, yUu
 
-  def render(self, group, cells):
+  def render(self, group):
     ''' draw out a model by repeating blocks across the canvas
     '''
     for paintOrder in range(2):
@@ -275,7 +291,8 @@ class Layout(Draw):
           pos = tuple([x, y])
           (xSizeMm, ySizeMm) = self.blocknum_to_uu(pos)
           cell = self.get_cell_by_position(pos)
-          data = cells[cell]
+          #data = cells[cell]
+          data = self.cells[cell]
           if not data:
             continue # checker-board background !
           gid = f"{cell}{paintOrder}"
@@ -290,7 +307,7 @@ class Layout(Draw):
             group[gid].add(shape)
     return None
 
-  def build(self, cells, svg):
+  def build(self, svg):
     ''' Generate inkex groups for the svg renderer to use  
     '''
     #cells = self.tf.read(self.model, txt=data) # convert string to dict
@@ -302,20 +319,21 @@ class Layout(Draw):
       # draw background  cells
       bg = Group()
       bg.set_id(f'{g}0')
-      bg.style = { 'fill' : cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#fff' }
+      #bg.style = { 'fill' : cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#fff' }
+      bg.style = { 'fill' : self.cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#fff' }
       group[f'{g}0'] = bg # local copy
       svg.add(bg)
       # draw foreground cells
       fg = Group()
-      sw1 = svg.unittouu(cells[g]['stroke_width'])
+      sw1 = svg.unittouu(self.cells[g]['stroke_width'])
       fg.set_id(f'{g}1') 
       fg.style = {
-        'fill'            : cells[g]['fill'],
-        'fill-opacity'    : cells[g]['fill_opacity'],
-        'stroke'          : cells[g]['stroke'],
+        'fill'            : self.cells[g]['fill'],
+        'fill-opacity'    : self.cells[g]['fill_opacity'],
+        'stroke'          : self.cells[g]['stroke'],
         'stroke-width'    : sw1,
-        'stroke-dasharray': cells[g]['stroke_dasharray'],
-        'stroke-opacity'  : cells[g]['stroke_opacity']
+        'stroke-dasharray': self.cells[g]['stroke_dasharray'],
+        'stroke-opacity'  : self.cells[g]['stroke_opacity']
       }
       group[f'{g}1'] = fg
       # TODO what is stroke width used for ?

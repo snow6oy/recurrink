@@ -241,6 +241,12 @@ VALUES (DEFAULT, %s, %s, %s, %s)
 RETURNING gid;""", items)
     gid = self.cursor.fetchone()
     return gid[0]
+
+  def update(self, cells, control):
+    if control == 1:
+      for c in cells:
+        cells[c]['shape'] = 'square' 
+    return cells
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Styles(Db):
 
@@ -262,7 +268,7 @@ class Styles(Db):
       '#333':'#CCC'
     }
     self.defaults = {
-     'fill': '#FFF',
+      'fill': '#FFF',
       'bg': '#CCC',
       'fill_opacity':1.0,
       'stroke':'#000',
@@ -350,6 +356,12 @@ VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s)
 RETURNING sid;""", items)
     sid = self.cursor.fetchone()
     return sid
+
+  def update(self, cells, control):
+    if control == 1:
+      for c in cells:
+        cells[c]['stroke_width'] = 0
+    return cells
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
   ''' a View is a collection of Cells
@@ -495,3 +507,8 @@ sid=%s, gid=%s
 WHERE view=%s
 AND cell=%s;""", [sid, gid, view, cell])
     return update
+
+  def update(self, cells, control):
+    cells = self.g.update(cells, control)
+    return self.s.update(cells, control)
+    
