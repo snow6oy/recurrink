@@ -249,7 +249,7 @@ class Layout(Draw):
     self.control = int(c)
 
   def transform(self, cells):
-    self.cells = self.c.update(cells, self.control)
+    self.cells = self.c.transform(self.control, cells)
 
   def get_cell_by_position(self, pos):
     '''

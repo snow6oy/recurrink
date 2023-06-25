@@ -12,82 +12,37 @@ class TestCells(unittest.TestCase):
 
   def setUp(self):
     self.c = Cells() # inherit Db() class
-    self.g = Geometry()
-    self.s = Styles()
 
-  def testGetGeometryRnd(self):
-    items = self.g.get(rnd=True)
-    self.assertTrue(len(items))
-
-  def testSetGeometry(self):
-    ''' geometries are shared and have a 1:* relation with views and cells
-      geometries are never updated, only inserted when shape/size/facing combination is new
-      also it avoids side-effectof incrementing SERIAL by anticipating UniqueViolation '''
-    gid = self.g.set(['square', 'medium', 'north', False])
-    self.assertTrue(tuple(gid))
-
-  def testSetGeometryTop(self):
-    ''' force top to False unless shape is large
-      because otherwise when a shared geom is updated there would be side-effects 
-      to properly test this first DELETE shape then run test and check top with SELECT
-    '''
-    gid = self.g.set(['square', 'medium', 'west', True])
-    self.assertTrue(tuple(gid))
-
-  def testSetGeometryMedium(self):
-    ''' only circles, lines and square may be large
-      to properly test this first DELETE shape then run test and check top with SELECT
-    ''' 
-    gid = self.g.set(['triangle', 'large', 'west', True])
-    self.assertTrue(tuple(gid))
-
-  def testGeometryFacing(self):
-    a = ['triangle', 'medium', 'all', False]
-    self.assertEqual(self.g.validate(a)[2], 'north')
-
-  def testSetStyleUpdate(self):
+  def testRead(self):
     ''' styles are not shareable. styles have 1:1 relation view/cell <> style
       this means styles are EITHER updated when the SID exists OR inserted
     '''
-    sid = self.s.get('e4681aa9b7aef66efc6290f320b43e55', 'd')[0]
-    self.assertEqual(sid, 4)
-    sid = self.s.set(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 0.5], sid=sid)[0]
+    sid = self.c.read('e4681aa9b7aef66efc6290f320b43e55', 'd')
     self.assertEqual(sid, 4)
 
-  # uncomment to spam the styles table
-  def testSetStyleInsert(self):
-    # sid = self.s.set(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 1.5])
-    sid = True
-    self.assertTrue(sid)
-
-  def testSetCell(self):
+  def testCreate(self):
     ''' send line from /tmp/MODEL.txt to update an existing view
         cell shape size facing top fill bg fo stroke sw sd so
     '''
-    view = 'e4681aa9b7aef66efc6290f320b43e55'
-    cell = 'a'
-    data = ['a','triangle','medium','west',False,'#FFF','#CCC',1.0,'#000',0,1,0.5]
-    self.assertTrue(self.c.set(view, cell, data))
+    self.assertFalse(self.c.create(
+      'e4681aa9b7aef66efc6290f320b43e55',
+      ['a','triangle','medium','west',False,'#FFF','#CCC',1.0,'#000',0,1,0.5]
+    ))
 
-  def testGetCellRandom(self):
-    ''' Geometry and Styles got from existing entries
+  def testGenerate0(self):
+    ''' Geometry and Styles got from existing entries with default control 0
     '''
-    # pp.pprint(self.c.get())
-    self.assertEqual(len(self.c.get()), 11)
+    #pp.pprint(self.c.generate(0))
+    self.assertEqual(len(self.c.generate(0)), 11)
 
-  # Note this test has a side effect of spamming the styles table
-  # ALTER sequence styles_sid_seq restart with n
-  # where n is SELECT MAX(sid) FROM cells
-  def testGetCellRandomCreate(self):
-    ''' Geometry and Styles set with randomly created entries
+  def testGenerate1(self):
+    ''' Geometry and Styles set with randomly created entries control 1
     '''
-    # self.assertEqual(len(self.c.get(control=False)), 13)
-    pass
+    self.assertEqual(len(self.c.generate(1)), 11)
 
-  def testGetCellGid(self):
-    self.assertEqual(self.g.get(gid=1)[2], 'south')
-
-  def testCellUpdate(self):
+  def testTransform(self):
+    ''' first transform control makes everything square and zaps strokes
+    '''
     cells = { 
       'a': { 
         'bg': '#DC143C', 'facing': 'east', 'fill': '#4B0082', 'fill_opacity': '1.0',
@@ -95,7 +50,7 @@ class TestCells(unittest.TestCase):
         'stroke_opacity': '1.0', 'stroke_width': 6, 'top': True
       }
     }
-    updated = self.c.update(cells, 1)
-    pp.pprint(updated)
-    self.assertEqual(updated['a']['shape'], 'square')
-    self.assertEqual(updated['a']['stroke_width'], 0)
+    tx = self.c.transform(1, cells)
+    #pp.pprint(tx)
+    self.assertEqual(tx['a']['shape'], 'square')
+    self.assertEqual(tx['a']['stroke_width'], 0)

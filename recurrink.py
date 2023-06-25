@@ -203,6 +203,7 @@ def update(model, control):
   print()
   return output
 
+# TODO think about the orphaned styles
 def delete(view):
   return view if v.delete(view) else 'not deleted'
 
@@ -214,7 +215,7 @@ def commit(model, control, author):
   celldata = tf.read(model, output=list())
   response = 'unknown error'
   if v.set(model, tf.digest, author, control=control):
-    [c.set(tf.digest, row[0], row) for row in celldata]
+    [c.create(tf.digest, row) for row in celldata]
     if os.path.isfile(f"/tmp/{model}.svg"):
       svgname = f"{workdir}/{model}/{tf.digest}.svg"
       os.rename(f"/tmp/{model}.svg", svgname)
