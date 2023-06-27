@@ -39,8 +39,6 @@ class Input(inkex.InputExtension):
     svg = self.add_metadata(doc, model, l.factor)
     l.transform(cells)
     # TODO stop passing cells to build and render 
-    #group = l.build(cells, svg)
-    #l.render(group, cells)
     group = l.build(svg)
     l.render(group)
     return doc
@@ -214,7 +212,7 @@ def commit(model, control, author):
   pubdir = '/home/gavin/Pictures/pubq'
   celldata = tf.read(model, output=list())
   response = 'unknown error'
-  if v.set(model, tf.digest, author, control=control):
+  if v.create(model, tf.digest, author, control=control):
     [c.create(tf.digest, row) for row in celldata]
     if os.path.isfile(f"/tmp/{model}.svg"):
       svgname = f"{workdir}/{model}/{tf.digest}.svg"

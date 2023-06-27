@@ -17,7 +17,7 @@ class TestCells(unittest.TestCase):
     ''' styles are not shareable. styles have 1:1 relation view/cell <> style
       this means styles are EITHER updated when the SID exists OR inserted
     '''
-    sid = self.c.read('e4681aa9b7aef66efc6290f320b43e55', 'd')
+    sid = self.c.read('e4681aa9b7aef66efc6290f320b43e55', 'd')[0]
     self.assertEqual(sid, 4)
 
   def testCreate(self):

@@ -19,29 +19,29 @@ class TestViews(unittest.TestCase):
   def testGetViewDigest(self):
     ''' get a view from db as a dictionary
     '''
-    view = self.v.get(digest=self.view, celldata=True)
+    view = self.v.read(digest=self.view, celldata=True)
     # pp.pprint(view)
     self.assertEqual(len(list(view.keys())), 4)
 
   def testGetViewDigestList(self):
     ''' get a view from db as a list
     '''
-    view = self.v.get(digest=self.view, celldata=True, output=list())
-    pp.pprint(view[0])
+    view = self.v.read(digest=self.view, celldata=True, output=list())
+    # pp.pprint(view[0])
     self.assertEqual(len(list(view[0])), 12)
 
   def testGetViewMeta(self):
     ''' handle View metadata
     '''
-    (model, author) = self.v.get(digest=self.view)
+    (model, author) = self.v.read(digest=self.view)
     self.assertEqual(author, 'human')
 
   def testSetView(self):
     ''' no insert will take place because view exists
     '''
-    (model, author) = self.v.get(digest=self.view)
+    (model, author) = self.v.read(digest=self.view)
     control = 3
-    self.assertEqual(self.v.set('soleares', self.view, author, control), self.view)
+    self.assertEqual(self.v.create('soleares', self.view, author, control), self.view)
 
   def testDeleteView(self):
     ''' test delete on a separate view to avoid impacting other tests
@@ -63,30 +63,21 @@ class TestViews(unittest.TestCase):
       "stroke_opacity": "1",
       "top": False
     }
-    view.set('koto', 'abcdefghijklmnopqrstuvwxyz012345', 'human', 5)
+    view.create('koto', 'abcdefghijklmnopqrstuvwxyz012345', 'human', 5)
     self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
 
   def testViewGenerate(self):
-    cells = self.v.create('soleares')
+    cells = self.v.generate('soleares')
     #pp.pprint(cells)
     self.assertTrue(cells)
 
   def testViewGenerateRandom(self):
     ''' pass to avoid spamming styles table
     '''
-    pass
-    # cells = self.v.generate('soleares', rnd=True)
-    # pp.pprint(cells)
-    # self.assertTrue(cells)
-  ''' the end
-  '''
-  ''' construct JSON like view from db
-  def testGetViewModel(self):
-    digest, cells = self.v.get(model='soleares')
-    # pp.pprint(cells.keys())
-    self.assertEqual(len(list(cells.keys())), 4)
-
-  def testGetDigest(self):
-    digest, _ = self.v.get(model='soleares')
-    self.assertEqual(len(digest), 32)
+    cells = self.v.generate('soleares', rnd=True)
+    #pp.pprint(cells)
+    self.assertTrue(cells)
+  ''' 
+  the 
+  end
   '''
