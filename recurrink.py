@@ -157,13 +157,14 @@ def inputs():
 def stats():
   ''' pretty list of models
   '''
-  return m.get(output='stats')              
+  #return m.get(output='stats')              
+  return m.stats()
 
 def info(digest):
   ''' accept a view id e.g. c364ab54ff542adb322dc5c1d6aa4cc8
       return view meta data for publisher to use
   '''
-  view = v.get(digest=digest)
+  view = v.read(digest=digest)
   return " ".join(view)
 
 # TODO stop losting control :-D
@@ -178,11 +179,11 @@ def init(model=None, digest=None):
   '''
   ct = dict()
   if digest:
-    celldata = v.get(digest=digest, celldata=True, output=list())
-    model, _ = v.get(digest=digest)
+    celldata = v.read(digest=digest, celldata=True, output=list())
+    model, _ = v.read(digest=digest)
     ct = list() # configure TmpFile to write from a list
   elif model:
-    celldata = v.create(model)
+    celldata = v.generate(model)
   else:
     model, celldata = v.create(rnd=True)
   b = Blocks(model)

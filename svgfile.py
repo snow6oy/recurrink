@@ -261,8 +261,9 @@ class Layout(Draw):
     #b = Blocks(self.model)
     m = Models()
     cell = None
-    positions = self.b.get() 
-    blocksize = m.get(model=self.model)[2]
+    positions = self.b.read() 
+    #blocksize = m.get(model=self.model)[2]
+    blocksize = m.read(model=self.model)[2]
     (x_blocksize, y_blocksize) = blocksize
     y_blocknum = int(y / y_blocksize)
     Y = y - (y_blocknum * y_blocksize)

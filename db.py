@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 ''' sudo apt-get install python3-psycopg2 
-'''
 import csv
-import sys
 import json
+import sys
+'''
 import random
 import psycopg2
 
 class Db:
 
   def __init__(self):
-    # Create connection to postgres
+    ''' create connection to postgres
+    '''
     connection = psycopg2.connect(dbname='recurrink')
     connection.autocommit = True  # Ensure data is added to the database immediately after write commands
     self.cursor = connection.cursor()
@@ -43,19 +44,29 @@ VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
     else:
       raise ValueError("models only come in three flavours")
 
-  def entry(self, model):
+  #def entry(self, model):
+  #def list(self):
+  def read(self, model=None):
     ''' fetch a single entry indexed by model 
         return a tuple
     '''
-    self.cursor.execute("""
+    if model:
+      self.cursor.execute("""
 SELECT *
 FROM models
 WHERE model = %s;""", [model])
-    entry = self.cursor.fetchone()
-    return entry
+      entry = self.cursor.fetchone()
+      return entry
+    else:
+      self.cursor.execute("""
+SELECT model
+FROM models;""", )
+      records = [m[0] for m in self.cursor.fetchall()]
+      return records
 
   # load_model
-  def matrix(self, model):
+  #def matrix(self, model):
+  def positions(self, model):
     ''' load csv data as 2D array
       ./recurrink.py -m soleares -o CELL
       [['a', 'b', 'a'], ['c', 'd', 'c']]
@@ -77,14 +88,6 @@ WHERE model = %s;""", [model])
       data[x][y] = r[1]
     return data
 
-  # list_model
-  def list(self):
-    self.cursor.execute("""
-SELECT model
-FROM models;""", )
-    records = [m[0] for m in self.cursor.fetchall()]
-    return records
-
   # list_model_with_stats
   def stats(self):
     ''' display uniq cells, blocksize and model names
@@ -103,7 +106,7 @@ class Blocks(Db):
     self.model = model
     super().__init__()
 
-  def set(self, position, cell):
+  def create(self, position, cell):
     success = True
     try:
       self.cursor.execute("""
@@ -125,7 +128,7 @@ WHERE model = %s;""", [self.model])
     else: 
       return cells
 
-  def get(self):
+  def read(self):
     ''' positions link the model and cell: for example 
         model with a line a, x, x a will be represented as positions[(3,0)] : a
         note that lists from db have to be cast to tuples before hashing in a dict
