@@ -9,11 +9,6 @@ from inkex import Group, Circle, Rectangle, Polygon, TextElement
 from db import Cells, Blocks, Models
 pp = pprint.PrettyPrinter(indent=2)
 
-#from recurrink import TmpFile
-# from inkex import Group, load_svg
-# from svgfile import Layout
-# from db import Blocks, Models
-
 class Draw:
   ''' do the maths to render a cell
   '''

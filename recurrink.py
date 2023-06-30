@@ -37,6 +37,7 @@ class Input(inkex.InputExtension):
     # prepare A4 document but with pixels for units
     doc = self.get_template(width=l.width, height=l.height, unit='px')
     svg = self.add_metadata(doc, model, l.factor)
+    print(f"factor {l.factor} control {l.control}")
     l.transform(cells)
     # TODO stop passing cells to build and render 
     group = l.build(svg)

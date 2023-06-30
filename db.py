@@ -44,8 +44,6 @@ VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
     else:
       raise ValueError("models only come in three flavours")
 
-  #def entry(self, model):
-  #def list(self):
   def read(self, model=None):
     ''' fetch a single entry indexed by model 
         return a tuple
@@ -158,11 +156,19 @@ class Views(Db):
 
   def delete(self, digest):
     ''' no error checks, this is gonzo style !
+        cascade the delete to avoid orphaned styles
     '''
-    #TODO move this to cells and cascade the delete to avoid orphaned styles
+    self.cursor.execute("""
+SELECT min(sid), max(sid) 
+FROM cells where view = %s;""", [digest])
+    minmax = self.cursor.fetchone()
+    #print(f"minmax {[minmax]}")
     self.cursor.execute("""
 DELETE FROM cells
 WHERE view = %s;""", [digest])
+    self.cursor.execute("""
+DELETE from styles
+WHERE sid >= %s and sid <= %s;""", minmax)
     self.cursor.execute("""
 DELETE FROM views
 WHERE view = %s;""", [digest])
@@ -298,10 +304,10 @@ WHERE sid = %s;""", [sid])
       return styles
     else: # for example output=int() 
       self.cursor.execute("""
-SELECT MAX(sid)
+SELECT sid
 FROM styles;""", [])
-      maxsid = self.cursor.fetchone()[0]
-      return maxsid
+      sids = self.cursor.fetchall()
+      return sids
 
   def update(self, sid, items):
     ''' perform crud and returns None as success 
@@ -331,9 +337,7 @@ WHERE sid=%s;""", items)
       items.append(random.choice(self.strokes))  # dash
       items.append(random.choice(self.opacity))  # stroke_opacity
     else: # control 0 is default
-      maxsid = self.read()
-      sids = list()
-      [sids.append(i) for i in range(1, maxsid + 1)]
+      sids = self.read()
       items = self.read(sid=random.choice(sids))
     return items
 
