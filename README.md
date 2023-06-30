@@ -1,5 +1,6 @@
 # recurrink
-An inkscape extension to create recurring patterns
+An inkscape extension to create [recurring patterns](https://www.instagram.com/recurrink/)
+
 
 ## Introduction to Recurrink
 Blocks, Cells and Models make a recurrink.
