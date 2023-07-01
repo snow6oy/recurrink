@@ -1,5 +1,7 @@
 # local stuff
 doc/*
+rinks/*
+pubq/*
 *.swp
 .DS_Store
 Archive/*

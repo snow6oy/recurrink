@@ -9,6 +9,10 @@ class TestModels(unittest.TestCase):
     self.m = Models()
     self.b = Blocks('soleares') # inherit Db() class
 
+  def testRndModel(self):
+    #print(self.m.generate())
+    self.assertTrue(self.m.generate())
+
   def testListModel(self):
     self.assertTrue('soleares' in self.m.read())
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 import os
 import argparse
@@ -184,9 +184,9 @@ def init(model=None, digest=None):
     model, _ = v.read(digest=digest)
     ct = list() # configure TmpFile to write from a list
   elif model:
-    celldata = v.generate(model)
+    _, celldata = v.generate(model=model)
   else:
-    model, celldata = v.create(rnd=True)
+    model, celldata = v.generate(rnd=True)
   b = Blocks(model)
   tf.write(model, b.cells(), celldata, celltype=ct)
   # update(model)
@@ -210,8 +210,8 @@ def delete(view):
 def commit(model, control, author):
   ''' read config, write to database and return digest
   '''
-  workdir = '/home/gavin/Pictures/artWork/recurrences'
-  pubdir = '/home/gavin/Pictures/pubq'
+  workdir = 'rinks'
+  pubdir = 'pubq'
   celldata = tf.read(model, output=list())
   response = 'unknown error'
   if v.create(model, tf.digest, author, control=control):
@@ -219,7 +219,7 @@ def commit(model, control, author):
     if os.path.isfile(f"/tmp/{model}.svg"):
       svgname = f"{workdir}/{model}/{tf.digest}.svg"
       os.rename(f"/tmp/{model}.svg", svgname)
-      os.symlink(svgname, f"{pubdir}/{tf.digest}.svg")
+      os.symlink(f"../{svgname}", f"{pubdir}/{tf.digest}.svg")
       # TODO rm /tmp/model.txt
       response = svgname
     else:

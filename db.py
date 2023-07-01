@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-''' sudo apt-get install python3-psycopg2 
-import csv
-import json
-import sys
-'''
 import random
 import psycopg2
 
@@ -17,11 +11,12 @@ class Db:
     self.cursor = connection.cursor()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Models(Db):
-  ''' a model is the base template
+  ''' models give us the base template to draw a rink
   '''
   def __init__(self):
     super().__init__()
 
+  '''
   def set(self, model, uniqcells, blocksizexy, scale):
     success = True
     try:
@@ -43,7 +38,7 @@ VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
       return self.stats()
     else:
       raise ValueError("models only come in three flavours")
-
+  '''
   def read(self, model=None):
     ''' fetch a single entry indexed by model 
         return a tuple
@@ -62,8 +57,10 @@ FROM models;""", )
       records = [m[0] for m in self.cursor.fetchall()]
       return records
 
-  # load_model
-  #def matrix(self, model):
+  def generate(self):
+    models = self.read()
+    return random.choice(models)
+
   def positions(self, model):
     ''' load csv data as 2D array
       ./recurrink.py -m soleares -o CELL
@@ -147,6 +144,7 @@ class Views(Db):
       valstr = ' '.join(d)
   '''
   def __init__(self):
+    self.m = Models()
     self.c = Cells()
     self.header = [
       'cell','shape','size','facing','top',
@@ -210,9 +208,11 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return view
 
-  def generate(self, model, rnd=False):
+  def generate(self, model=None, rnd=False):
     ''' generate a config as cell * values matrix
     '''
+    if model is None:
+      model = self.m.generate()
     b = Blocks(model)
     init = list()
     for cell in b.cells(): 
@@ -223,7 +223,7 @@ WHERE view = %s;""", [digest])
       else:
         vals = list(self.c.generate(0))
       init.append(vals)
-    return init
+    return model, init
 
   def celldata(self, digest):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
