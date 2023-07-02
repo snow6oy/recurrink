@@ -309,6 +309,7 @@ FROM styles;""", [])
       sids = self.cursor.fetchall()
       return sids
 
+  # TODO test the effect of not calling self.validate after TXT edit
   def update(self, sid, items):
     ''' perform crud and returns None as success 
     '''
@@ -398,12 +399,7 @@ AND cell = %s;""", [digest, cell])
         no control means that entries are randomly generated
         return a tuple(shape .. top)
     '''
-    if control == 1:
-      #return self.g.set()[1:] + self.s.set()[1:]
-      return self.g.generate(control) + self.s.generate(control)
-    else:
-      # return self.g.get(rnd=True) + self.s.generate(control)
-      return self.g.generate(control) + self.s.generate(control)
+    return self.g.generate(control) + self.s.generate(control)
 
   def transform(self, control, cells):
     cells = self.g.transform(control, cells)
