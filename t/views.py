@@ -33,7 +33,7 @@ class TestViews(unittest.TestCase):
   def testGetViewMeta(self):
     ''' handle View metadata
     '''
-    (model, author) = self.v.read(digest=self.view)
+    (model, author, control) = self.v.read(digest=self.view)
     self.assertEqual(author, 'human')
 
   def testSetView(self):

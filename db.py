@@ -203,7 +203,7 @@ SELECT *
 FROM views
 WHERE view = %s;""", [digest])
       row = self.cursor.fetchone()
-      view = row[1:3] if row else list() # only need model and author
+      view = row[1:4] if row else list() # only need model and author
     else:
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return view

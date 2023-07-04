@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import os
 import argparse
@@ -166,22 +166,18 @@ def info(digest):
       return view meta data for publisher to use
   '''
   view = v.read(digest=digest)
-  return " ".join(view)
-
-# TODO stop losting control :-D
-# control should be written as view metadata 
-# but we generate the digest much later
+  return " ".join(view[:2])
 
 # TODO when model is none glob *.txt and source model from /tmp
-
 # TODO call update
 def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
   '''
   ct = dict()
+  control = 0
   if digest:
     celldata = v.read(digest=digest, celldata=True, output=list())
-    model, _ = v.read(digest=digest)
+    model, _, control = v.read(digest=digest)
     ct = list() # configure TmpFile to write from a list
   elif model:
     _, celldata = v.generate(model=model)
@@ -190,7 +186,7 @@ def init(model=None, digest=None):
   b = Blocks(model)
   tf.write(model, b.cells(), celldata, celltype=ct)
   # update(model)
-  return model
+  return model if not control else f"{model} {control}"
  
 def update(model, control):
   ''' send inputs from to inkex with argparse and Layout() as a global
