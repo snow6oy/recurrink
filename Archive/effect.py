@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+# coding=utf-8
+import inkex
+from layout import Layout
+
+class Cells(Layout):
+  ''' replace cells according to user input
+  '''
+  def __init__(self, options, factor=None):
+    self.requested = {
+      'shape': options.shape,
+      'size': options.size,
+      'facing': options.facing,
+      'top': options.top,
+      'stroke_width': int(options.width),
+      'fill': options.fill,
+      'fill_opacity': options.opacity,
+      'stroke': options.stroke,
+      'stroke_dasharray': options.dash
+    }
+    self.bg = options.bg 
+    super().__init__(factor=float(factor))
+
+  def update(self, svg):
+    ''' all the elems according to cell id
+        input id is 'f1' where f is cell name and 1 is foreground
+        for example f1-0-0 .. f1-360-360 '''
+    message = None
+    shapes = svg.selection.first() # assume that first in ElementList is <g />
+    shapes_by_id = list(shapes.get('id')) 
+    if len(shapes_by_id) == 2:
+      (gid, paintOrder) = shapes_by_id
+      # inkex.errormsg(f"gid {gid} po {paintOrder}")
+    else:
+      return f"unexpected length {shapes_by_id} id format is a1"
+
+    if paintOrder == '0': # the selection is a background cell we will assume it was a mis-click
+      shapes = svg.getElementById(f"{gid}1")
+
+    if self.requested['shape'] == 'triangle' and self.requested['size'] == 'large':
+      message = 'Large triangles are not possible, ignoring this request.'
+    elif shapes is not None:
+      # update the background style, but only if we're given a new value
+      self.set_background(gid, self.bg, svg) 
+      self.set_foreground(shapes, self.requested)
+      shapes.style['fill'] = self.requested['fill']
+      shapes.style['fill-opacity'] = self.requested['fill_opacity']
+      shapes.style['stroke'] = self.requested['stroke']
+      shapes.style['stroke-width'] = svg.unittouu(self.requested['stroke_width'])
+      shapes.style['stroke-dasharray'] = self.requested['stroke_dasharray']
+      # add the top elems last
+      if self.requested['top']:
+        cell = shapes.get('id')[0]
+        group = svg.getElementById(f"{cell}1")
+        groupLast = group
+        svg.remove(group)
+        svg.add(groupLast)
+    else:
+      message = "not found"
+    return message
+
+  def set_background(self, gid, givenFill, svg):
+    ''' background will be changed when it is different from what is given
+        unless we are not given anything 
+    '''
+    bgElem = svg.getElementById(f"{gid}0")
+    # TODO check that #FFF #ffffff etc are consistent
+    if givenFill and bgElem.style['fill'] != givenFill:  
+      bgElem.set('style', f"fill:{givenFill}")
+
+  def set_foreground(self, shapes, requested):
+    ''' replace shape based on user input '''
+    message = ""
+    for elem in shapes:
+      idItems = elem.get_id().split('-')
+      if len(idItems) == 3:
+        (gid, xBlocknum, yBlocknum) = idItems 
+        # calculate coordinates based on blocknums
+        (x, y) = self.blocknum_to_uu(int(xBlocknum), int(yBlocknum))
+        fgid = f"{gid[0]}1"  # force to be a foreground ID
+      else:
+        raise ValueError(f"Unexpected format id={idItems}")
+      #message += f"fgid {fgid} gid {gid}\n"
+      newShape = self.shape(fgid, float(x), float(y), requested)
+      elem.replace_with(newShape)
+      # set id after replacement to avoid collisions
+      elem.set_id(f"{fgid}-{x}-{y}")
+    inkex.errormsg(message)
+    return None
+
+class Effect(inkex.EffectExtension):
+  ''' update cells imported as rink JSON
+  '''
+  def add_arguments(self, pars):
+    pars.add_argument("--tab",      type=str, dest="tab")
+    pars.add_argument("--shape",    default='square', help="Replace one shape with another")
+    pars.add_argument("--size",     default='normal', help="Increase shape size (not triangles)")
+    pars.add_argument("--facing",   default='north', help="Rotate shapes (not squares or circles)")
+    pars.add_argument("--width",    default=0, help="Border thickness as a number 0-9")
+    pars.add_argument("--bg",       default='#FFFFFF', help="Change the background colour")
+    pars.add_argument("--top",      default=False, type=inkex.Boolean, help="Stay on top when overlapping")
+
+    pars.add_argument("--fill",     default='#FFFFFF', help="Change the foreground colour")
+    pars.add_argument("--stroke",   default='#000000', help="Change the stroke colour")
+    pars.add_argument("--dash",     default=0, help="Stroke dash as a number 0-9")
+    pars.add_argument("--opacity",  default=1.0, help="Transparency where 1.0 is opaque and 0 is fully transparent")
+
+  def effect(self):  # effect because generate is a subset
+    ''' check if svg is a recurrence and then apply inputs
+    '''
+    rinkId = self.svg.get('recurrink-id')
+    factor = self.svg.get('recurrink-factor')
+    if not rinkId:
+      inkex.errormsg("This extension only knows about SVGs created from a .rink file")
+    elif self.svg.selection:
+      c = Cells(self.options, factor)
+      message = c.update(self.svg)
+      if message:
+        inkex.errormsg(message)
+    else:
+      inkex.errormsg("After opening up a model you have to select a cell for editing")
+
+if __name__ == '__main__':
+  Effect().run()
