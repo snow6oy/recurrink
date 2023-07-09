@@ -81,3 +81,6 @@ CREATE TABLE cells (
   FOREIGN KEY (GID) REFERENCES geometry (GID),
   UNIQUE (view, cell)
 );
+
+-- temporary for data cleaning
+-- CREATE TABLE files ( view CHAR(32) PRIMARY KEY, model VARCHAR(50) NOT NULL);
