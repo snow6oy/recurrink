@@ -39,8 +39,7 @@ class TestViews(unittest.TestCase):
   def testSetView(self):
     ''' no insert will take place because view exists
     '''
-    (model, author) = self.v.read(digest=self.view)
-    control = 3
+    (model, author, control) = self.v.read(digest=self.view)
     self.assertEqual(self.v.create('soleares', self.view, author, control), self.view)
 
   def testDeleteView(self):
