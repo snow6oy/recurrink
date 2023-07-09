@@ -14,7 +14,7 @@ class TestTmpFile(unittest.TestCase):
   def testWrite(self):
     v = Views()
     b = Blocks(self.model)
-    celldata = v.generate(self.model, rnd=False) 
+    model, celldata = v.generate(self.model, rnd=False) 
     self.tf.write(self.model, b.cells(), celldata)
     self.assertTrue(os.path.isfile('/tmp/soleares.txt'))
 
@@ -25,6 +25,7 @@ class TestTmpFile(unittest.TestCase):
 
   def testReadAsList(self):
     celldata = self.tf.read(self.model, output=list())
+    #pp.pprint(celldata)
     self.assertTrue(len(celldata))
   
   def testTopOk2Commit(self):

@@ -68,14 +68,15 @@ class TmpFile():
     '''
     expectedsize = len(self.header)
     with open(f"/tmp/{model}.txt", 'w') as f:
-      print(' '.join(self.colnam), file=f)
+      print("\t".join(self.colnam), file=f)
       for i, data in enumerate(celldata):
         vals = [str(d) for d in data] # convert everything to string
         if isinstance(celltype, dict): 
           vals.insert(0, keys[i])     # push the dict key into the list
         if len(vals) != expectedsize:
           raise ValueError(f"{model}.txt has {len(vals)} not {expectedsize}\n{vals}")
-        line = ' '.join(vals)
+        line = "\t".join(vals)
+        #line = ' '.join(vals)
         print(line, file=f)
 
   def read(self, model, txt=None, output=dict()):

@@ -44,15 +44,15 @@ WHERE v.view IS NULL""")
   found = c.fetchall()
   return found
 
+''' add any new files to the db
+    compare files against views and list orphans
 '''
 fcount = add('rinks/*/*.svg')
-print(f"{fcount} files inserted")
+print(f"{fcount} files inserted\n")
 views = count_views()
 [print(f"{v[0]} {v[1]}") for v in views]
 print()
-print(f"{len(views)} views without files")
-print()
-'''
+print(f"{len(views)} views without files\n")
 files = count_files()
 [print(f"{f[0]} {f[1]}") for f in files]
 print()
