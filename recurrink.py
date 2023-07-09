@@ -141,7 +141,8 @@ def inputs():
   subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
   parser_l = subparsers.add_parser('list', help='list models in db')
   parser_r = subparsers.add_parser('read', help='get view metadata')
-  parser_r.add_argument("-v", "--view", help='hex name with 32 char', required=True)
+  parser_r.add_argument('-m', '--model', help='name of base model')
+  parser_r.add_argument("-v", "--view", help='hex name with 32 char')
   parser_i = subparsers.add_parser('init', help='set config for new image')
   parser_i.add_argument('-m', '--model', help='name of base model')
   parser_i.add_argument("-v", "--view", help='view to clone')
@@ -162,12 +163,24 @@ def stats():
   #return m.get(output='stats')              
   return m.stats()
 
-def info(digest):
+def info(model=None, digest=None):
   ''' accept a view id e.g. c364ab54ff542adb322dc5c1d6aa4cc8
       return view meta data for publisher to use
+      OR a pretty text visualation of a model
   '''
-  view = v.read(digest=digest)
-  return " ".join(view[:2])
+  out = str()
+  if model:
+    posdata = m.positions('koto')
+    for row in posdata:
+      for col in row:
+        out += col + ' '
+      out += "\n"
+  elif digest:
+    view = v.read(digest=digest)
+    out = " ".join(view[:2])
+  else:
+    pass # expected either a model or digest as input but whatever ..
+  return out
 
 # TODO when model is none glob *.txt and source model from /tmp
 # TODO call update
@@ -229,7 +242,7 @@ if __name__ == '__main__':
   if (args.keyword == 'list'):
     print(stats())
   elif (args.keyword == 'read'):
-    print(info(args.view))
+    print(info(model=args.model, digest=args.view))
   elif (args.keyword == 'init'):
     print(init(model=args.model, digest=args.view))
   elif (args.keyword == 'commit'):

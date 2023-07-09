@@ -16,29 +16,6 @@ class Models(Db):
   def __init__(self):
     super().__init__()
 
-  '''
-  def set(self, model, uniqcells, blocksizexy, scale):
-    success = True
-    try:
-      self.cursor.execute("""
-INSERT INTO models (model, uniqcells, blocksizexy, scale)
-VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      success = False
-    return success
-
-  def get(self, model=None, output='entry'):
-    if output == 'entry':
-      return self.entry(model)
-    elif output == 'matrix':
-      return self.matrix(model)
-    elif output == 'list':
-      return self.list()
-    elif output == 'stats':
-      return self.stats()
-    else:
-      raise ValueError("models only come in three flavours")
-  '''
   def read(self, model=None):
     ''' fetch a single entry indexed by model 
         return a tuple
@@ -65,6 +42,7 @@ FROM models;""", )
     ''' load csv data as 2D array
       ./recurrink.py -m soleares -o CELL
       [['a', 'b', 'a'], ['c', 'd', 'c']]
+      represented as a string
     '''
     self.cursor.execute("""
 SELECT blocksizeXY
@@ -502,3 +480,26 @@ FROM geometry;""", [])
     # write validation test to understand why list comp fails when there is None value
     items = [self.defaults[a] if items[i] is None else items[i] for i, a in enumerate(items)]
     return items
+  '''
+  def set(self, model, uniqcells, blocksizexy, scale):
+    success = True
+    try:
+      self.cursor.execute("""
+INSERT INTO models (model, uniqcells, blocksizexy, scale)
+VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      success = False
+    return success
+
+  def get(self, model=None, output='entry'):
+    if output == 'entry':
+      return self.entry(model)
+    elif output == 'matrix':
+      return self.matrix(model)
+    elif output == 'list':
+      return self.list()
+    elif output == 'stats':
+      return self.stats()
+    else:
+      raise ValueError("models only come in three flavours")
+  '''
