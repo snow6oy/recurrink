@@ -6,7 +6,8 @@ DROP TYPE sizes;
 DROP TYPE direction;
 CREATE TYPE sizes as ENUM ('large', 'medium', 'small');
 CREATE TYPE direction as ENUM ('all', 'north', 'south', 'east', 'west');
-CREATE TYPE shapes as ENUM ('circle', 'line', 'square', 'triangle', 'diamond');
+-- dropped shapes in favor CHAR(7) and NOT NULL
+-- CREATE TYPE shapes as ENUM ('circle', 'line', 'square', 'triangle', 'diamond');
 
 -- Geometry ID +:1 one Geom many positions
 CREATE TABLE geometry (

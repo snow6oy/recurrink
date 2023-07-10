@@ -33,9 +33,9 @@ class TestGeometry(unittest.TestCase):
   def testValidate2(self):
     ''' only circles, lines and square may be large
     ''' 
-    items = ['triangle', 'large', 'west', True]
+    items = ['triangl', 'large', 'west', True]
     self.assertEqual(self.g.validate(items)[1], 'medium')
 
   def testValidate3(self):
-    a = ['triangle', 'medium', 'all', False]
+    a = ['triangl', 'medium', 'all', False]
     self.assertEqual(self.g.validate(a)[2], 'north')

@@ -33,7 +33,7 @@ class TestTmpFile(unittest.TestCase):
         shape size facing top fill bg fo stroke sw sd so
     '''
     test = [
-      [ 'triangle','medium','west','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
+      [ 'triangl','medium','west','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
       [ 'circle','large','all','True','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
       [ 'line','medium','west','False','#FFA500','#CCC','1.0','#000','1','0','1.0' ],
       [ 'circle','large','all','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ]
@@ -59,7 +59,7 @@ class TestTmpFile(unittest.TestCase):
     soleares_txt = """cell shape size facing top fill bg fo stroke sw sd so
 a line medium south False #FFF #32CD32 1.0 #000 0 0 1.5
 b square medium all False #FFF #FFA500 1.0 #000 0 0 1.0
-c triangle medium east False #FFF #4B0082 1.0 #000 0 0 1.0
+c triangl medium east False #FFF #4B0082 1.0 #000 0 0 1.0
 d diamond medium south False #CCC #32CD32 1.0 #000 0 0 1.0
 """
     celldata = self.tf.read('soleares', txt=soleares_txt)

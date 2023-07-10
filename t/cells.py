@@ -26,7 +26,7 @@ class TestCells(unittest.TestCase):
     '''
     self.assertFalse(self.c.create(
       'e4681aa9b7aef66efc6290f320b43e55',
-      ['a','triangle','medium','west',False,'#FFF','#CCC',1.0,'#000',0,1,0.5]
+      ['a','triangl','medium','west',False,'#FFF','#CCC',1.0,'#000',0,1,0.5]
     ))
 
   def testGenerate0(self):

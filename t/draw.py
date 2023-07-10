@@ -20,7 +20,7 @@ class TestDraw(unittest.TestCase):
     }
 
   def test_triangle(self):
-    self.geometry['shape'] = 'triangle'
+    self.geometry['shape'] = 'triangl'
     s = self.d.shape('a', 0, 0, self.geometry)
     self.assertTrue(s.tag_name == 'polygon')
 
