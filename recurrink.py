@@ -214,6 +214,7 @@ def update(model, control):
   return output
 
 # TODO think about the orphaned styles
+# and dont ferrget the rinks
 def delete(view):
   return view if v.delete(view) else 'not deleted'
 
