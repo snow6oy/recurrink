@@ -1,5 +1,5 @@
 {
-  "id": "test_card",
+  "id": "test_card_1",
   "size": [ 10, 4 ],
   "cells": {
     "x": {
@@ -40,6 +40,8 @@
     },
     "B": {
       "shape": "S L N",
+      "shape_size": "medium",
+      "shape_facing": "north",
       "fill": "#fff",
       "fill_opacity": "1.0",
       "top": false,

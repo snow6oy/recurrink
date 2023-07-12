@@ -397,7 +397,7 @@ class Geometry(Db):
     super().__init__()
     self.defaults = { 'shape':'square', 'size':'medium', 'facing':None, 'top':False }
     self.attributes = {
-      'shape': ['circle', 'line', 'square', 'triangle', 'diamond'],
+      'shape': ['circle', 'line', 'square', 'triangl', 'diamond'],
       'facing': ['all','north', 'south', 'east', 'west'],
       'size': ['medium', 'large'],
       'top': [True, False]
@@ -472,7 +472,7 @@ FROM geometry;""", [])
       items[2] = 'all'
     elif items[2] == 'all': 
       items[2] = 'north'
-    if items[0] in ['triangle', 'diamond'] and items[1] == 'large': 
+    if items[0] in ['triangl', 'diamond'] and items[1] == 'large': 
       items[1] = 'medium' # triangles and diamonds cannot be large
     if items[3] and items[1] != 'large': 
       items[3] = False    # only large shapes can be on top

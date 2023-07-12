@@ -28,7 +28,7 @@ VALUES
 
 INSERT INTO geometry (shape, size, facing, top) 
 VALUES 
-  ('triangle', 'medium', 'south', FALSE),
+  ('triangl', 'medium', 'south', FALSE),
   ('square', 'large', 'south', TRUE),
   ('line', 'large', 'east', TRUE),
   ('square', 'medium', 'north', FALSE);

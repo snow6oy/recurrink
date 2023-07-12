@@ -39,7 +39,7 @@ class Draw:
       s = self.line(cell, X, Y, a)
     elif a['shape'] == 'square':
       s = self.square(cell, X, Y, a)
-    elif a['shape'] == 'triangle':
+    elif a['shape'] == 'triangl':
       s = self.triangle(cell, X, Y, a)
     elif a['shape'] == 'diamond':
       s = self.diamond(cell, X, Y, a)
