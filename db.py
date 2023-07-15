@@ -233,6 +233,7 @@ class Styles(Db):
   def __init__(self):
     super().__init__()
     self.fill = {
+      'cyan':'#CD5C5C',
       'orange':'#FFA500',
       'crimson':'#DC143C',
       'indianred':'#CD5C5C',

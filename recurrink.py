@@ -33,14 +33,14 @@ class Input(inkex.InputExtension):
     s = stream.read() # slurp the stream 
     data = s.decode() # convert to string
     cells = tf.read(model, txt=data) # convert string to dict
+    top_order = list(cells.keys())
     l = Layout(model, CONTROL)
     # prepare A4 document but with pixels for units
     doc = self.get_template(width=l.width, height=l.height, unit='px')
     svg = self.add_metadata(doc, model, l.factor)
     print(f"factor {l.factor} control {l.control}")
     l.transform(cells)
-    # TODO stop passing cells to build and render 
-    group = l.build(svg)
+    group = l.build(svg, top_order)
     l.render(group)
     return doc
 
@@ -170,7 +170,7 @@ def info(model=None, digest=None):
   '''
   out = str()
   if model:
-    posdata = m.positions('koto')
+    posdata = m.positions(model)
     for row in posdata:
       for col in row:
         out += col + ' '

@@ -1,0 +1,16 @@
+cell	shape	size	facing	top	fill	bg	fo	stroke	sw	sd	so
+x	square	medium	north	False	#ccc	#fff	1.0	cyan	0	0	1.0
+A	square	medium	north	False	#fff	#ccc	1.0	#000	1	0	1.0
+B	square	large	north	False	#fff	#ccc	1.0	#000	1	0	1.0
+C	diamond	medium	north	False	#fff	#ccc	1.0	#000	4	0	0.5
+D	diamond	medium	south	False	#fff	#ccc	1.0	#000	4	0	0.5
+E	diamond	medium	east	False	#fff	#ccc	1.0	#000	4	0	0.5
+F	diamond	medium	west	False	#fff	#ccc	1.0	#000	4	0	0.5
+G	diamond	medium	all	False	#fff	#fff	1.0	#000	4	0	0.5
+a	square	medium	north	False	#fff	#ccc	1.0	#000	1	0	1.0
+b	square	large	north	False	#fff	#ccc	1.0	#000	1	0	1.0
+c	diamond	medium	north	False	#fff	#ccc	1.0	#000	4	0	0.5
+d	diamond	medium	south	False	#fff	#ccc	1.0	#000	4	0	0.5
+e	diamond	medium	east	False	#fff	#ccc	1.0	#000	4	0	0.5
+f	diamond	medium	west	False	#fff	#ccc	1.0	#000	4	0	0.5
+g	diamond	medium	all	False	#fff	#fff	1.0	#000	4	0	0.5

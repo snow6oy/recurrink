@@ -33,7 +33,10 @@ class Draw:
     '''
     self.hw = a['stroke_width'] / 2  # stroke width is halved for repositioning
     self.fw = a['stroke_width']      # full width
-    if a['shape'] == 'circle':
+
+    if ord(cell) < 97:  # upper case
+      s = self.set_text(a['shape'], X, Y)
+    elif a['shape'] == 'circle':
       s = self.circle(cell, X, Y, a)
     elif a['shape'] == 'line':
       s = self.line(cell, X, Y, a)
@@ -280,43 +283,43 @@ class Layout(Draw):
   def render(self, group):
     ''' draw out a model by repeating blocks across the canvas
     '''
-    for paintOrder in range(2):
+    top = list()
+    for paintOrder in range(2): # background first then foreground
       for y in range(self.maxRows):
         print('.', end='', flush=True)
         for x in range(self.maxCols):
           pos = tuple([x, y])
           (xSizeMm, ySizeMm) = self.blocknum_to_uu(pos)
           cell = self.get_cell_by_position(pos)
-          #data = cells[cell]
           data = self.cells[cell]
           if not data:
             continue # checker-board background !
           gid = f"{cell}{paintOrder}"
           sid = f"{cell}{paintOrder}-{x}-{y}"
           if paintOrder:
+            #print(f'{gid} ', end='', flush=True)
             shape = self.shape(cell, xSizeMm, ySizeMm, data)
             shape.set_id(sid)    # calling an inkex method here
             group[gid].add(shape) 
           else:
+            #print(f'{gid} ', end='', flush=True)
             shape = self.backgrounds(cell, xSizeMm, ySizeMm)
             shape.set_id(sid)    # calling an inkex method
             group[gid].add(shape)
+        #print("")
     return None
 
-  def build(self, svg):
+  def build(self, svg, top_order):
     ''' Generate inkex groups for the svg renderer to use  
     '''
-    #cells = self.tf.read(self.model, txt=data) # convert string to dict
-    groups_to_create = self.b.cells()
     group = {}  # hold a local reference to groups created in svg doc
     stroke_width = {}
     sw0 = svg.unittouu(0) # hide the cracks between the background tiles
-    for g in groups_to_create:
+    for g in top_order:
       # draw background  cells
       bg = Group()
       bg.set_id(f'{g}0')
-      #bg.style = { 'fill' : cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#fff' }
-      bg.style = { 'fill' : self.cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#fff' }
+      bg.style = { 'fill' : self.cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#FFF' }
       group[f'{g}0'] = bg # local copy
       svg.add(bg)
       # draw foreground cells

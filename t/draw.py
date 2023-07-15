@@ -1,7 +1,7 @@
 import os
+import unittest
 import inkex
 from inkex import Group
-import unittest
 from svgfile import Draw
 
 class TestDraw(unittest.TestCase):
@@ -38,6 +38,11 @@ class TestDraw(unittest.TestCase):
     with self.assertRaises(ValueError):
       self.d.shape('a', 0, 0, self.geometry)
 
+  def testLabel(self):
+    ''' upper case Cells display metadata
+    '''
+    s = self.d.shape('A', 0, 0, self.geometry)
+    self.assertEqual(s.tag_name, 'text')
   '''
     the end
   '''
