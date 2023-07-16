@@ -55,7 +55,7 @@ class Draw:
       size = self.sizeUu / 2
       sum_two_sides = (size**2 + size**2) # pythagoras was a pythonista :)
       r = math.sqrt(sum_two_sides) - self.hw
-    elif a['size'] == 'medium':
+    elif a['size'] == 'medium' or a['size'] == 'small':
       r = (self.sizeUu / 2 - self.hw) # normal size
     else:
       raise ValueError(f"Cannot set circle <{cell}> to {a['size']} size")
@@ -97,7 +97,7 @@ class Draw:
     return rect
 
   def square(self, cell, xSizeMm, ySizeMm, a):
-    if a['size'] == 'medium':
+    if a['size'] == 'medium' or a['size'] == 'small':
       x      = str(xSizeMm + self.hw)
       y      = str(ySizeMm + self.hw)
       width  = str(self.sizeUu - self.fw)
@@ -312,6 +312,7 @@ class Layout(Draw):
   def build(self, svg, top_order):
     ''' Generate inkex groups for the svg renderer to use  
     '''
+    #print(top_order) Large cells should be last
     group = {}  # hold a local reference to groups created in svg doc
     stroke_width = {}
     sw0 = svg.unittouu(0) # hide the cracks between the background tiles

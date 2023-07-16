@@ -1,6 +1,5 @@
-
-INSERT INTO models (model, uniqcells, blocksizeXY, scale) 
-VALUES ('testcard', 15, '{10, 4}', 1.0);
+-- INSERT INTO models (model, uniqcells, blocksizeXY, scale) 
+-- VALUES ('testcard', 15, '{10, 4}', 1.0);
 
 INSERT INTO blocks (model, position, cell) 
 VALUES 
