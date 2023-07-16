@@ -81,12 +81,12 @@ class Draw:
       y      = str(Y + self.sizeUu / 3 + self.hw)
       width  = str((self.sizeUu / 3 * 2 + self.sizeUu) - self.fw)
       height = str(self.sizeUu / 3 - self.fw)
-    elif a['size'] == 'medium' and a['facing'] == 'north':
+    elif a['size'] == 'medium' and a['facing'] == 'north' or a['size'] == 'small' and a['facing'] == 'north':
       x      = str(X + self.sizeUu / 3 + self.hw)
       y      = str(Y + self.hw)
       width  = str(self.sizeUu / 3 - self.fw)
       height = str(self.sizeUu - self.fw)
-    elif a['size'] == 'medium' and a['facing'] == 'east':
+    elif a['size'] == 'medium' and a['facing'] == 'east' or a['size'] == 'small' and a['facing'] == 'east':
       x      = str(X + self.hw)
       y      = str(Y + self.sizeUu / 3 + self.hw)
       width  = str(self.sizeUu - self.fw)
@@ -132,11 +132,11 @@ class Draw:
       Y + self.hw
     ]
     if a['facing'] == 'west': 
-      points = [ x[0], y[1], x[2], y[1], x[2], y[2], x[0], y[1] ]
+      points = [ x[0], y[1], x[2], y[0], x[2], y[2], x[0], y[1] ]
     elif a['facing'] == 'east': 
       points = [ x[1], y[0], x[3], y[1], x[1], y[2], x[1], y[0] ]
     elif a['facing'] == 'north': 
-      points = [ x[0], y[4], x[4], y[0], x[3], y[4], x[0], y[4] ]
+      points = [ x[0], y[2], x[4], y[0], x[3], y[2], x[0], y[2] ]
     elif a['facing'] == 'south':
       points = [ x[1], y[5], x[4], y[2], x[2], y[5], x[1], y[5] ]
     else:
