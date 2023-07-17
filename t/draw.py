@@ -24,7 +24,7 @@ class TestDraw(unittest.TestCase):
     s = self.d.shape('a', 0, 0, self.geometry)
     self.assertTrue(s.tag_name == 'polygon')
 
-  def test_diamond(self):
+  def testDiamond(self):
     ''' are diamonds drawn correctly, excepting formatting differences ?
     '''
     self.geometry['shape'] = 'diamond'

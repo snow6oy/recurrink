@@ -9,8 +9,25 @@ from inkex import Group, Circle, Rectangle, Polygon, TextElement
 from db import Cells, Blocks, Models
 pp = pprint.PrettyPrinter(indent=2)
 
+
+class Points:
+  ''' nw n ne    do the maths to render a cell
+      w  c  e    points are calculated and called as p.ne p.nne p.s
+      sw s se
+  '''
+  def __init__(self, x, y, stroke_width, size):
+    self.n  = [x + size / 2,              y + stroke_width]
+    self.e  = [x + size - stroke_width,   y + size / 2]
+    self.s  = [x + size / 2,              y + size - stroke_width]
+    self.w  = [x + stroke_width,          y + size / 2]
+    self.ne = [x + size - stroke_width,   y + stroke_width] 
+    self.se = [x + size - stroke_width,   y + size - stroke_width]
+    self.nw = [x + stroke_width,          y + stroke_width]
+    self.sw = [x + stroke_width,          y + size - stroke_width]
+    self.mid= [x + size / 2,              y + size / 2]
+
 class Draw:
-  ''' do the maths to render a cell
+  ''' create a shape for the required position
   '''
   def __init__(self, baseUnit):
     ''' units must be in sync with Layout.sizeUu 
@@ -33,167 +50,130 @@ class Draw:
     '''
     self.hw = a['stroke_width'] / 2  # stroke width is halved for repositioning
     self.fw = a['stroke_width']      # full width
+    p = Points(X, Y, a['stroke_width'], self.sizeUu)
 
     if ord(cell) < 97:  # upper case
       s = self.set_text(a['shape'], X, Y)
     elif a['shape'] == 'circle':
-      s = self.circle(cell, X, Y, a)
+      s = self.circle(a['size'], a['stroke_width'], p)
     elif a['shape'] == 'line':
-      s = self.line(cell, X, Y, a)
+      s = self.line(X, Y, a['size'], a['facing'])
     elif a['shape'] == 'square':
-      s = self.square(cell, X, Y, a)
+      s = self.square(X, Y, a['size'])
     elif a['shape'] == 'triangl':
-      s = self.triangle(cell, X, Y, a)
+      s = self.triangle(a['facing'], p)
     elif a['shape'] == 'diamond':
-      s = self.diamond(cell, X, Y, a)
+      s = self.diamond(a['facing'], p)
     else:
       s = self.set_text(a['shape'], X, Y)
     return s
 
-  def circle(self, cell, X, Y, a):
-    if a['size'] == 'large': 
+  def circle(self, size, stroke_width, p):
+    if size == 'large': 
       size = self.sizeUu / 2
       sum_two_sides = (size**2 + size**2) # pythagoras was a pythonista :)
-      r = math.sqrt(sum_two_sides) - self.hw
-    elif a['size'] == 'medium' or a['size'] == 'small':
-      r = (self.sizeUu / 2 - self.hw) # normal size
+      r = math.sqrt(sum_two_sides) - stroke_width
+    elif size == 'medium':
+      r = (self.sizeUu / 2 - stroke_width) # normal size
+    elif size == 'small':
+      r = (self.sizeUu / 3 - stroke_width) 
     else:
-      raise ValueError(f"Cannot set circle <{cell}> to {a['size']} size")
-    x = str(X + self.sizeUu / 2)
-    y = str(Y + self.sizeUu / 2)
-    circle = Circle(cx=x, cy=y, r=str(r))
+      raise ValueError(f"Cannot set circle to {size} size")
+    circle = Circle(cx=str(p.mid[0]), cy=str(p.mid[1]), r=str(r))
     return circle
 
-  def line(self, cell, X, Y, a):
+  def line(self, X, Y, size, facing):
     ''' lines can be orientated along a north-south axis or east-west axis
         but the user can choose any of the four cardinal directions
         here we silently collapse the non-sensical directions
     '''
-    a['facing'] = 'north' if a['facing'] == 'south' else a['facing']
-    a['facing'] = 'east' if a['facing'] == 'west' else a['facing']
-    if a['size'] == 'large' and a['facing'] == 'north':
+    facing = 'north' if facing == 'south' else facing
+    facing = 'east' if facing == 'west' else facing
+    if size == 'large' and facing == 'north':
       x      = str(X + self.sizeUu / 3 + self.hw)
       y      = str(Y - self.sizeUu / 3 + self.hw)
       width  = str(self.sizeUu / 3 - self.fw)
       height = str((self.sizeUu / 3 * 2 + self.sizeUu) - self.fw)
-    elif a['size'] == 'large' and a['facing'] == 'east':
+    elif size == 'large' and facing == 'east':
       x      = str(X - self.sizeUu / 3 + self.hw)
       y      = str(Y + self.sizeUu / 3 + self.hw)
       width  = str((self.sizeUu / 3 * 2 + self.sizeUu) - self.fw)
       height = str(self.sizeUu / 3 - self.fw)
-    elif a['size'] == 'medium' and a['facing'] == 'north' or a['size'] == 'small' and a['facing'] == 'north':
+    elif size == 'medium' and facing == 'north':
       x      = str(X + self.sizeUu / 3 + self.hw)
       y      = str(Y + self.hw)
       width  = str(self.sizeUu / 3 - self.fw)
       height = str(self.sizeUu - self.fw)
-    elif a['size'] == 'medium' and a['facing'] == 'east' or a['size'] == 'small' and a['facing'] == 'east':
+    elif size == 'medium' and facing == 'east':
       x      = str(X + self.hw)
       y      = str(Y + self.sizeUu / 3 + self.hw)
       width  = str(self.sizeUu - self.fw)
       height = str(self.sizeUu / 3 - self.fw)
+    elif size == 'small' and facing == 'north':
+      x      = str(X + self.sizeUu / 3 + self.hw)
+      y      = str(Y + self.sizeUu / 4 + self.hw)
+      width  = str(self.sizeUu / 3 - self.fw)
+      height = str(self.sizeUu / 2 - self.fw)
+    elif size == 'small' and facing == 'east':
+      x      = str(X + self.sizeUu / 4 + self.hw)
+      y      = str(Y + self.sizeUu / 3 + self.hw)
+      width  = str(self.sizeUu / 2 - self.fw)
+      height = str(self.sizeUu / 3 - self.fw)
     else:
-      raise ValueError(f"Cannot set {cell} to {a['size']}")
+      raise ValueError(f"Cannot set line to {size}")
     rect = Rectangle(x=x, y=y, width=width, height=height)
     return rect
 
-  def square(self, cell, xSizeMm, ySizeMm, a):
-    if a['size'] == 'medium' or a['size'] == 'small':
-      x      = str(xSizeMm + self.hw)
-      y      = str(ySizeMm + self.hw)
+  def square(self, X, Y, size):
+    if size == 'medium':
+      x      = str(X + self.hw)
+      y      = str(Y + self.hw)
       width  = str(self.sizeUu - self.fw)
       height = str(self.sizeUu - self.fw)
-    elif a['size'] == 'large':
+    elif size == 'large':
       third  = self.sizeUu / 3
-      x      = str(xSizeMm - third / 2 + self.hw)
-      y      = str(ySizeMm - third / 2 + self.hw)
+      x      = str(X - third / 2 + self.hw)
+      y      = str(Y - third / 2 + self.hw)
       width  = str(self.sizeUu + third - self.fw)
       height = str(self.sizeUu + third - self.fw)
+    elif size == 'small':
+      third  = self.sizeUu / 3
+      x      = str(X + self.fw + third)
+      y      = str(Y + self.fw + third)
+      width  = str(third - self.fw)
+      height = str(third - self.fw)
     else:
-      raise ValueError("Cannot set rectangle {}".format(cell))
+      raise ValueError(f"Cannot make square with {size}")
     rect = Rectangle(x=x, y=y, width=width, height=height)
     return rect
 
-  def triangle(self, cell, X, Y, a):
-    x = [ 
-      X + self.fw,
-      X + self.hw,
-      X + self.sizeUu - self.hw,
-      X + self.sizeUu - self.fw, 
-      X + self.sizeUu / 2,
-      X + self.sizeUu / 2 + self.hw,
-      X + self.sizeUu / 2 - self.hw,
-    ]
-    y = [
-      Y + self.fw, 
-      Y + self.sizeUu / 2, 
-      Y + self.sizeUu - self.fw,
-      Y + self.sizeUu / 2 + self.hw, 
-      Y + self.sizeUu / 2 - self.hw,
-      Y + self.hw
-    ]
-    if a['facing'] == 'west': 
-      points = [ x[0], y[1], x[2], y[0], x[2], y[2], x[0], y[1] ]
-    elif a['facing'] == 'east': 
-      points = [ x[1], y[0], x[3], y[1], x[1], y[2], x[1], y[0] ]
-    elif a['facing'] == 'north': 
-      points = [ x[0], y[2], x[4], y[0], x[3], y[2], x[0], y[2] ]
-    elif a['facing'] == 'south':
-      points = [ x[1], y[5], x[4], y[2], x[2], y[5], x[1], y[5] ]
+  def triangle(self, facing, p):
+    if facing == 'west': 
+      points = p.w + p.ne + p.se + p.w
+    elif facing == 'east': 
+      points = p.nw + p.e + p.sw + p.nw
+    elif facing == 'north': 
+      points = p.sw + p.n + p.se + p.sw
+    elif facing == 'south':
+      points = p.nw + p.ne + p.s + p.nw
     else:
-      raise ValueError("Cannot face triangle {}".format(a['facing']))
+      raise ValueError("Cannot face triangle {}".format(facing))
     polyg = Polygon(points=",".join(map(str, points)))
     return polyg
-    ''' south
-        X + self.hw, Y + self.hw, 
-        X + self.sizeUu / 2, Y + self.sizeUu - self.fw, 
-        X + self.sizeUu - self.hw, Y + self.hw,
-        X + self.hw, Y + self.hw
-      north
-        X + self.fw, Y + self.sizeUu - self.hw,
-        X + self.sizeUu / 2, Y + self.fw,
-        X + self.sizeUu - self.fw, Y + self.sizeUu - self.hw,
-        X + self.fw, Y + self.sizeUu - self.hw
-      west
-        X + self.fw, Y + self.sizeUu / 2, 
-        X + self.sizeUu - self.hw, Y + self.fw, 
-        X + self.sizeUu - self.hw, Y + self.sizeUu - self.fw,
-        X + self.fw, Y + self.sizeUu / 2
-      east
-        X + self.hw, Y + self.fw, 
-        X + self.sizeUu - self.fw, Y + self.sizeUu / 2,
-        X + self.hw, Y + self.sizeUu - self.fw,
-        X + self.hw, Y + self.fw
-    '''
-  
-  def diamond(self, cell, X, Y, a):
-    x = [ 
-      X + self.fw,
-      X + self.hw,
-      X + self.sizeUu - self.hw,
-      X + self.sizeUu - self.fw, 
-      X + self.sizeUu / 2,
-      X + self.sizeUu / 2 + self.hw,
-      X + self.sizeUu / 2 - self.hw,
-    ]
-    y = [
-      Y + self.fw, 
-      Y + self.sizeUu / 2, 
-      Y + self.sizeUu - self.fw,
-      Y + self.sizeUu / 2 + self.hw, 
-      Y + self.sizeUu / 2 - self.hw
-    ]
-    if a['facing'] == 'all': 
-      points = [ x[0], y[1], x[4], y[0], x[3], y[1], x[4], y[2], x[0], y[1] ]
-    elif a['facing'] == 'west': 
-      points = [ x[0], y[1], x[6], y[0], x[6], y[2], x[0], y[1] ]
-    elif a['facing'] == 'east': 
-      points = [ x[5], y[0], x[3], y[1], x[5], y[2], x[5], y[0] ]
-    elif a['facing'] == 'north': 
-      points = [ x[0], y[4], x[4], y[0], x[3], y[4], x[0], y[4] ]
-    elif a['facing'] == 'south':
-      points = [ x[0], y[3], x[4], y[2], x[2], y[3], x[0], y[3] ]
+
+  def diamond(self, facing, p):
+    if facing == 'all': 
+      points = p.w + p.n + p.e + p.s + p.w
+    elif facing == 'west': 
+      points = p.w + p.n + p.s + p.w
+    elif facing == 'east': 
+      points = p.n + p.e + p.s + p.n
+    elif facing == 'north': 
+      points = p.w + p.n + p.e + p.w
+    elif facing == 'south':
+      points = p.w + p.e + p.s + p.w
     else:
-      raise ValueError(f"Cannot face diamond {a['facing']}")
+      raise ValueError(f"Cannot face diamond {facing}")
     polyg = Polygon(points=",".join(map(str, points)))
     return polyg
   
@@ -340,3 +320,92 @@ class Layout(Draw):
       stroke_width[f'{g}1'] = sw1  # adjust cell dimension according to stroke width
       svg.add(fg)
     return group
+
+  '''
+  #def triangle(self, cell, X, Y, a):
+    x = [ 
+      X + self.fw,
+      X + self.hw,
+      X + self.sizeUu - self.hw,
+      X + self.sizeUu - self.fw, 
+      X + self.sizeUu / 2,
+      X + self.sizeUu / 2 + self.hw,
+      X + self.sizeUu / 2 - self.hw,
+    ]
+    y = [
+      Y + self.fw, 
+      Y + self.sizeUu / 2, 
+      Y + self.sizeUu - self.fw,
+      Y + self.sizeUu / 2 + self.hw, 
+      Y + self.sizeUu / 2 - self.hw,
+      Y + self.hw
+    ]
+      #points = [ x[0], y[1], x[2], y[0], x[2], y[2], x[0], y[1] ]
+      #points = [ x[1], y[0], x[3], y[1], x[1], y[2], x[1], y[0] ]
+      #points = [ x[0], y[2], x[4], y[0], x[3], y[2], x[0], y[2] ]
+      #points = [ x[1], y[5], x[4], y[2], x[2], y[5], x[1], y[5] ]
+        south
+        X + self.hw, Y + self.hw, 
+        X + self.sizeUu / 2, Y + self.sizeUu - self.fw, 
+        X + self.sizeUu - self.hw, Y + self.hw,
+        X + self.hw, Y + self.hw
+      north
+        X + self.fw, Y + self.sizeUu - self.hw,
+        X + self.sizeUu / 2, Y + self.fw,
+        X + self.sizeUu - self.fw, Y + self.sizeUu - self.hw,
+        X + self.fw, Y + self.sizeUu - self.hw
+      west
+        X + self.fw, Y + self.sizeUu / 2, 
+        X + self.sizeUu - self.hw, Y + self.fw, 
+        X + self.sizeUu - self.hw, Y + self.sizeUu - self.fw,
+        X + self.fw, Y + self.sizeUu / 2
+      east
+        X + self.hw, Y + self.fw, 
+        X + self.sizeUu - self.fw, Y + self.sizeUu / 2,
+        X + self.hw, Y + self.sizeUu - self.fw,
+        X + self.hw, Y + self.fw
+  
+    x = [ 
+      X + self.fw,
+      X + self.hw,
+      X + self.sizeUu - self.hw,
+      X + self.sizeUu - self.fw, 
+      X + self.sizeUu / 2,
+      X + self.sizeUu / 2 + self.hw,
+      X + self.sizeUu / 2 - self.hw,
+    ]
+    y = [
+      Y + self.fw, 
+      Y + self.sizeUu / 2, 
+      Y + self.sizeUu - self.fw,
+      Y + self.sizeUu / 2 + self.hw, 
+      Y + self.sizeUu / 2 - self.hw
+    ]
+    all   points = [ x[0], y[1], x[4], y[0], x[3], y[1], x[4], y[2], x[0], y[1] ]
+    west  points = [ x[0], y[1], x[6], y[0], x[6], y[2], x[0], y[1] ]
+    east  points = [ x[5], y[0], x[3], y[1], x[5], y[2], x[5], y[0] ]
+    north points = [ x[0], y[4], x[4], y[0], x[3], y[4], x[0], y[4] ]
+    south points = [ x[0], y[3], x[4], y[2], x[2], y[3], x[0], y[3] ]
+
+    points = p.nw + p.e + p.sw + p.nw
+    #points = [ x[1], y[0], x[3], y[1], x[1], y[2], x[1], y[0] ]
+    hw = stroke_width / 2  # stroke width is halved to avoid overspill
+    fw = stroke_width      # full width
+    x = [ 
+    0 X + self.fw,
+    1 X + self.hw,
+    2 X + self.sizeUu - self.hw,
+    3 X + self.sizeUu - self.fw, 
+    4 X + self.sizeUu / 2,
+    5 X + self.sizeUu / 2 + self.hw,
+    6 X + self.sizeUu / 2 - self.hw,
+    ]
+    y = [
+    0 Y + self.fw, 
+    1 Y + self.sizeUu / 2, 
+    2 Y + self.sizeUu - self.fw,
+    3 Y + self.sizeUu / 2 + self.hw, 
+    4 Y + self.sizeUu / 2 - self.hw
+    ]
+  '''
+
