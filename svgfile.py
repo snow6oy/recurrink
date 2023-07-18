@@ -204,11 +204,19 @@ class Layout(Draw):
     self.c = Cells()
     self.model = model
     self.create(control)
+
+    self.width   = 1080  # px
+    self.height  = 1080
+    self.size    = (54 / self.factor)  
+    self.maxCols = int(20 * self.factor)
+    self.maxRows = int(20 * self.factor)  # num of row  
+    '''
     self.width   = 1122.5197  # px
     self.height  = 793.70081
     self.size    = (48 / self.factor)  
     self.maxCols = int(22 * self.factor)
     self.maxRows = int(15 * self.factor)  # num of row  
+    '''
     numOfMargins = 2
     self.xOffset = (self.width  - (self.maxCols * self.size)) / numOfMargins # 33.25985000000003
     self.yOffset = (self.height - (self.maxRows * self.size)) / numOfMargins # 36.85040500000002

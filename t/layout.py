@@ -11,9 +11,10 @@ class TestLayout(unittest.TestCase):
     self.l.create('95')
     self.assertEqual(self.l.factor, 2.0)
 
-  def test_scale(self):
-    l5 = Layout('soleares', '80')
-    self.assertEqual((l5.size, l5.width, l5.height), (96.0, 1122.5197, 793.70081))
+  def testScale(self):
+    l5 = Layout('soleares', '80') # 8 is the 8th scale which is 0.5. size / 0.5 = 108.0
+    expected = (108.0, 1080, 1080) # (96.0, 1122.5197, 793.70081)
+    self.assertEqual((l5.size, l5.width, l5.height), expected)
 
   def test_positions(self):
     rs = []
@@ -24,7 +25,7 @@ class TestLayout(unittest.TestCase):
     self.assertEqual(rs, ['a','b','a','c','d','c'])
 
   def test_sizeUu(self):
-    self.assertEqual(self.l.sizeUu, 48.0)
+    self.assertEqual(self.l.sizeUu, 54.0)
     
   '''
   the
