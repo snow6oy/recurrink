@@ -42,11 +42,18 @@ class TestStyles(unittest.TestCase):
     items = self.s.generate(1)
     self.assertEqual(len(items), 7)
 
-  def testRead(self):
+  def testReadWithSid(self):
     ''' items with sid
     '''
     items = self.s.read(sid=4)
     self.assertEqual(items[0], '#FFF')
+
+  def testReadWithItems(self):
+    ''' items with sid
+    '''
+    items = ['#FFF', '#CCC',  1.0, '#000',  0,  1,  0.5]
+    sid = self.s.read(style=items)[0]
+    self.assertEqual(sid, 1)
 
   def testMax(self):
     ''' max sid 
@@ -54,11 +61,12 @@ class TestStyles(unittest.TestCase):
     maxsid = self.s.read()
     self.assertTrue(type(int))
 
-  def testUpdate(self):
-    items = ['#FFF', '#32CD32', 1.0, '#000', 0, 0, 0.5]
-    sid = 4
-    error = self.s.update(sid, items)
-    self.assertFalse(error)
+  def testReadNotFound(self):
+    ''' will never find a stroke width: 100 
+    '''
+    items = ['#FFF', '#32CD32', 1.0, '#000', 100, 100, 0.5]
+    sid = self.s.read(style=items)
+    self.assertEqual(sid, None)
 
   # uncomment to spam the styles table
   def testSetStyleInsert(self):

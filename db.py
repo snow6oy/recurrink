@@ -34,6 +34,7 @@ FROM models;""", )
       records = [m[0] for m in self.cursor.fetchall()]
       return records
 
+  # TODO strip testcard out of the list
   def generate(self):
     models = self.read()
     return random.choice(models)
@@ -272,7 +273,7 @@ RETURNING sid;""", items)
     sid = self.cursor.fetchone()
     return sid
 
-  def read(self, sid=None):
+  def read(self, sid=None, style=list()):
     if sid:
       styles = list()
       self.cursor.execute("""
@@ -281,6 +282,19 @@ FROM styles
 WHERE sid = %s;""", [sid])
       styles = self.cursor.fetchone()
       return styles
+    elif style:
+      self.cursor.execute("""
+SELECT sid
+FROM styles
+WHERE fill = %s
+AND bg = %s
+AND fill_opacity = %s
+AND stroke = %s
+AND stroke_width = %s
+AND stroke_dasharray = %s
+AND stroke_opacity = %s;""", style)
+      sid = self.cursor.fetchone()
+      return sid
     else: # for example output=int() 
       self.cursor.execute("""
 SELECT sid
@@ -288,20 +302,23 @@ FROM styles;""", [])
       sids = self.cursor.fetchall()
       return sids
 
+  ''' perform crud and returns None as success 
   # TODO test the effect of not calling self.validate after TXT edit
   def update(self, sid, items):
-    ''' perform crud and returns None as success 
-    '''
     items.append(sid) # sql conditional logic needs sid as the last item
     self.cursor.execute("""
 UPDATE styles SET
 fill=%s, bg=%s, fill_opacity=%s, stroke=%s, stroke_width=%s, stroke_dasharray=%s, stroke_opacity=%s
 WHERE sid=%s;""", items)
+  '''
 
   def transform(self, control, cells):
     if control == 1:
       for c in cells:
-        cells[c]['stroke_width'] = 0
+        cells[c]['stroke_width'] = 0 
+    elif control == 2:
+      for c in cells:
+        cells[c]['stroke_width'] = 1 
     return cells
 
   def generate(self, control):
@@ -350,7 +367,7 @@ class Cells(Db):
     ok = True # used only by unit test
     cell = items.pop(0)
     gid = self.g.create(items=items[:4]) # ignore first item cell
-    sid = self.read(digest, cell)
+    sid = self.s.read(style=items[4:])
     if sid is None: # add new style
       sid = self.s.create(items[4:])[0] 
     try:
@@ -466,6 +483,9 @@ FROM geometry;""", [])
     if control == 1:
       for c in cells:
         cells[c]['shape'] = 'square' 
+    elif control == 2:
+      for c in cells:
+        cells[c]['shape'] = 'diamond' 
     return cells
 
   def validate(self, items):
