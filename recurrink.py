@@ -171,6 +171,7 @@ def info(model=None, digest=None):
   out = str()
   if model:
     posdata = m.positions(model)
+    # pp.pprint(posdata)
     for row in posdata:
       for col in row:
         out += col + ' '
