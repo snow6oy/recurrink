@@ -214,10 +214,18 @@ def update(model, control):
   print()
   return output
 
-# TODO think about the orphaned styles
-# and dont ferrget the rinks
+# TODO dont ferrget the rinks
 def delete(view):
-  return view if v.delete(view) else 'not deleted'
+  ''' both svg and view must exist for the delete to succeed
+  '''
+  viewdata = v.read(view)
+  if len(viewdata):
+    model = viewdata[0]
+    if os.path.isfile(f'rinks/{model}/{view}.svg'):
+      os.unlink(f'rinks/{model}/{view}.svg')
+      v.delete(view) 
+      return view
+  raise FileNotFoundError(f'not deleted {model}/{view}')
 
 def commit(model, control, author):
   ''' read config, write to database and return digest

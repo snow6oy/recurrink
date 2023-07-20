@@ -134,18 +134,18 @@ class Views(Db):
   def delete(self, digest):
     ''' no error checks, this is gonzo style !
         cascade the delete to avoid orphaned styles
-    '''
+    self.cursor.execute("""
+DELETE from styles
+WHERE sid >= %s and sid <= %s;""", minmax)
     self.cursor.execute("""
 SELECT min(sid), max(sid) 
 FROM cells where view = %s;""", [digest])
     minmax = self.cursor.fetchone()
     #print(f"minmax {[minmax]}")
+    '''
     self.cursor.execute("""
 DELETE FROM cells
 WHERE view = %s;""", [digest])
-    self.cursor.execute("""
-DELETE from styles
-WHERE sid >= %s and sid <= %s;""", minmax)
     self.cursor.execute("""
 DELETE FROM views
 WHERE view = %s;""", [digest])

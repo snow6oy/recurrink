@@ -120,7 +120,7 @@ class Draw:
       width  = str(self.sizeUu / 2 - self.fw)
       height = str(self.sizeUu / 3 - self.fw)
     else:
-      raise ValueError(f"Cannot set line to {size}")
+      raise ValueError(f"Cannot set line to {size} {facing}")
     rect = Rectangle(x=x, y=y, width=width, height=height)
     return rect
 
