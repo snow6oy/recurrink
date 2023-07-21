@@ -208,8 +208,8 @@ class Layout(Draw):
     self.width   = 1080  # px
     self.height  = 1080
     self.size    = (54 / self.factor)  
-    self.maxCols = int(5 * self.factor)
-    self.maxRows = int(5 * self.factor)  # num of row  
+    self.maxCols = int(20 * self.factor)
+    self.maxRows = int(20 * self.factor)  # num of row  
     ''' landscaep with border
     self.width   = 1122.5197  # px
     self.height  = 793.70081
