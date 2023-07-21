@@ -25,7 +25,17 @@ class TestModels(unittest.TestCase):
     self.assertEqual(name, 'soleares')
 
   def testGetCellByPosition(self):
-    ''' model with a line a, x, x a will appear in result as { a: { positions: [[0,0], [3,0] }}
+    ''' key value pair with position as the key
     '''
     positions = self.b.read()
     self.assertEqual(positions[(2, 0)], 'a')
+
+  def testGetTopByPosition(self):
+    ''' superimpose cell d over cell a using top
+        pos 1,1 is normally d but with top becomes a
+    '''
+    positions = self.b.read()
+    cells = tuple()
+    if type(positions[(1, 1)]) is tuple:
+      cells = positions[(1, 1)]
+    self.assertEqual(cells[1], 'a')

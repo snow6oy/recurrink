@@ -208,9 +208,9 @@ class Layout(Draw):
     self.width   = 1080  # px
     self.height  = 1080
     self.size    = (54 / self.factor)  
-    self.maxCols = int(20 * self.factor)
-    self.maxRows = int(20 * self.factor)  # num of row  
-    '''
+    self.maxCols = int(5 * self.factor)
+    self.maxRows = int(5 * self.factor)  # num of row  
+    ''' landscaep with border
     self.width   = 1122.5197  # px
     self.height  = 793.70081
     self.size    = (48 / self.factor)  
@@ -244,11 +244,9 @@ class Layout(Draw):
     2. then new counter = counter - blocknumber * blocksize
     '''
     x, y = pos[0], pos[1]
-    #b = Blocks(self.model)
     m = Models()
-    cell = None
+    #cell = None
     positions = self.b.read() 
-    #blocksize = m.get(model=self.model)[2]
     blocksize = m.read(model=self.model)[2]
     (x_blocksize, y_blocksize) = blocksize
     y_blocknum = int(y / y_blocksize)
@@ -257,6 +255,7 @@ class Layout(Draw):
     X = x - (x_blocknum * x_blocksize)
     #print(f'xy({x}, {y})  XY({X}, {Y})  blocknum({x_blocknum}, {y_blocknum})')
     current_posn = (X, Y) # tuples are immutable
+    #cell = positions[current_posn][1] if type(positions[current_posn]) is tuple else positions[current_posn]
     return positions[current_posn]
 
   # def blocknum_to_uu(self, xBlocknum, yBlocknum):
@@ -279,22 +278,33 @@ class Layout(Draw):
           pos = tuple([x, y])
           (xSizeMm, ySizeMm) = self.blocknum_to_uu(pos)
           cell = self.get_cell_by_position(pos)
+          # TODO GET BOTH CELLS and ADD Both of them using the GID
+          if type(cell) is tuple: # get the top cell
+            c = cell[0]  
+            data = self.cells[c]
+            gid = f"{c}1"
+            sid = f"{c}1-{x}-{y}"
+            print(f'{gid} ', end='', flush=True)
+            shape = self.shape(c, xSizeMm, ySizeMm, data)
+            shape.set_id(sid)    # calling an inkex method here
+            group[gid].add(shape) 
+            cell = cell[1]
           data = self.cells[cell]
           if not data:
             continue # checker-board background !
           gid = f"{cell}{paintOrder}"
           sid = f"{cell}{paintOrder}-{x}-{y}"
           if paintOrder:
-            #print(f'{gid} ', end='', flush=True)
+            print(f'{gid} ', end='', flush=True)
             shape = self.shape(cell, xSizeMm, ySizeMm, data)
             shape.set_id(sid)    # calling an inkex method here
             group[gid].add(shape) 
           else:
-            #print(f'{gid} ', end='', flush=True)
+            print(f'{gid} ', end='', flush=True)
             shape = self.backgrounds(cell, xSizeMm, ySizeMm)
             shape.set_id(sid)    # calling an inkex method
             group[gid].add(shape)
-        #print("")
+        print("")
     return None
 
   def build(self, svg, top_order):
@@ -328,92 +338,3 @@ class Layout(Draw):
       stroke_width[f'{g}1'] = sw1  # adjust cell dimension according to stroke width
       svg.add(fg)
     return group
-
-  '''
-  #def triangle(self, cell, X, Y, a):
-    x = [ 
-      X + self.fw,
-      X + self.hw,
-      X + self.sizeUu - self.hw,
-      X + self.sizeUu - self.fw, 
-      X + self.sizeUu / 2,
-      X + self.sizeUu / 2 + self.hw,
-      X + self.sizeUu / 2 - self.hw,
-    ]
-    y = [
-      Y + self.fw, 
-      Y + self.sizeUu / 2, 
-      Y + self.sizeUu - self.fw,
-      Y + self.sizeUu / 2 + self.hw, 
-      Y + self.sizeUu / 2 - self.hw,
-      Y + self.hw
-    ]
-      #points = [ x[0], y[1], x[2], y[0], x[2], y[2], x[0], y[1] ]
-      #points = [ x[1], y[0], x[3], y[1], x[1], y[2], x[1], y[0] ]
-      #points = [ x[0], y[2], x[4], y[0], x[3], y[2], x[0], y[2] ]
-      #points = [ x[1], y[5], x[4], y[2], x[2], y[5], x[1], y[5] ]
-        south
-        X + self.hw, Y + self.hw, 
-        X + self.sizeUu / 2, Y + self.sizeUu - self.fw, 
-        X + self.sizeUu - self.hw, Y + self.hw,
-        X + self.hw, Y + self.hw
-      north
-        X + self.fw, Y + self.sizeUu - self.hw,
-        X + self.sizeUu / 2, Y + self.fw,
-        X + self.sizeUu - self.fw, Y + self.sizeUu - self.hw,
-        X + self.fw, Y + self.sizeUu - self.hw
-      west
-        X + self.fw, Y + self.sizeUu / 2, 
-        X + self.sizeUu - self.hw, Y + self.fw, 
-        X + self.sizeUu - self.hw, Y + self.sizeUu - self.fw,
-        X + self.fw, Y + self.sizeUu / 2
-      east
-        X + self.hw, Y + self.fw, 
-        X + self.sizeUu - self.fw, Y + self.sizeUu / 2,
-        X + self.hw, Y + self.sizeUu - self.fw,
-        X + self.hw, Y + self.fw
-  
-    x = [ 
-      X + self.fw,
-      X + self.hw,
-      X + self.sizeUu - self.hw,
-      X + self.sizeUu - self.fw, 
-      X + self.sizeUu / 2,
-      X + self.sizeUu / 2 + self.hw,
-      X + self.sizeUu / 2 - self.hw,
-    ]
-    y = [
-      Y + self.fw, 
-      Y + self.sizeUu / 2, 
-      Y + self.sizeUu - self.fw,
-      Y + self.sizeUu / 2 + self.hw, 
-      Y + self.sizeUu / 2 - self.hw
-    ]
-    all   points = [ x[0], y[1], x[4], y[0], x[3], y[1], x[4], y[2], x[0], y[1] ]
-    west  points = [ x[0], y[1], x[6], y[0], x[6], y[2], x[0], y[1] ]
-    east  points = [ x[5], y[0], x[3], y[1], x[5], y[2], x[5], y[0] ]
-    north points = [ x[0], y[4], x[4], y[0], x[3], y[4], x[0], y[4] ]
-    south points = [ x[0], y[3], x[4], y[2], x[2], y[3], x[0], y[3] ]
-
-    points = p.nw + p.e + p.sw + p.nw
-    #points = [ x[1], y[0], x[3], y[1], x[1], y[2], x[1], y[0] ]
-    hw = stroke_width / 2  # stroke width is halved to avoid overspill
-    fw = stroke_width      # full width
-    x = [ 
-    0 X + self.fw,
-    1 X + self.hw,
-    2 X + self.sizeUu - self.hw,
-    3 X + self.sizeUu - self.fw, 
-    4 X + self.sizeUu / 2,
-    5 X + self.sizeUu / 2 + self.hw,
-    6 X + self.sizeUu / 2 - self.hw,
-    ]
-    y = [
-    0 Y + self.fw, 
-    1 Y + self.sizeUu / 2, 
-    2 Y + self.sizeUu - self.fw,
-    3 Y + self.sizeUu / 2 + self.hw, 
-    4 Y + self.sizeUu / 2 - self.hw
-    ]
-  '''
-

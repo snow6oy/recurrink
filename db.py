@@ -109,13 +109,13 @@ WHERE model = %s;""", [self.model])
     '''
     positions = dict()
     self.cursor.execute("""
-SELECT cell, position
+SELECT cell, top, position
 FROM blocks
 WHERE model = %s;""", [self.model])
     rows = self.cursor.fetchall()
     for r in rows:
-      (cell, pos) = (r[0], tuple(r[1]))
-      positions[pos] = cell
+      (cell, top, pos) = (r[0], r[1], tuple(r[2]))
+      positions[pos] = cell if top is None else (cell, top)
     return positions
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
@@ -365,8 +365,10 @@ class Cells(Db):
     ''' create a cell by joining a view with geometry and style entries
     '''
     ok = True # used only by unit test
-    cell = items.pop(0)
-    gid = self.g.create(items=items[:4]) # ignore first item cell
+    cell = items.pop(0) # ignore first item cell
+    gid = self.g.read(geom=items[:4]) 
+    if gid is None: # add new geometry
+      self.g.create(items=items[:4]) 
     sid = self.s.read(style=items[4:])
     if sid is None: # add new style
       sid = self.s.create(items[4:])[0] 
@@ -404,7 +406,6 @@ AND cell = %s;""", [digest, cell])
 class Geometry(Db):
   '''
     This class can
-      * update an existing geometry
       * randomly create new geometries and create a new GID
       * selecting existing geometries from a random GID
       * selecting existing geometries from a given GID
@@ -426,16 +427,14 @@ class Geometry(Db):
         because psycopg2.errors.UniqueViolation:  # 23505 consumes SERIAL
     '''
     items = self.validate(items)
-    gid = self.read(items=items)
-    if gid is None:
-      self.cursor.execute("""
+    self.cursor.execute("""
 INSERT INTO geometry (gid, shape, size, facing, top)
 VALUES (DEFAULT, %s, %s, %s, %s)
 RETURNING gid;""", items)
-      gid = self.cursor.fetchone()
+    gid = self.cursor.fetchone()
     return gid[0]
 
-  def read(self, items=[], gid=None):
+  def read(self, geom=[], gid=None):
     ''' always returns a list, even if only one member (gid)
     '''
     if gid:  # select entries
@@ -445,21 +444,22 @@ FROM geometry
 WHERE gid = %s;""", [gid])
       items = self.cursor.fetchone()
       return items
-    elif len(items): # attempt to select gid
+    elif len(geom): # attempt to select gid
       self.cursor.execute("""
 SELECT gid
 FROM geometry
 WHERE shape = %s
 AND size = %s
-AND facing = %s;""", items[:3])  # ignore top
+AND facing = %s
+AND top = %s;""", geom)  # items[:3])  # ignore top
       gid = self.cursor.fetchone()
       return gid
     else: # provide max to randomly generate a GID
       self.cursor.execute("""
-SELECT MAX(gid)
+SELECT gid
 FROM geometry;""", [])
-      maxgid = self.cursor.fetchone()[0]
-      return maxgid
+      gids = self.cursor.fetchall()
+      return gids
 
   def generate(self, control):
     items = list()
@@ -469,14 +469,12 @@ FROM geometry;""", [])
       items.append(random.choice(self.attributes['facing']))
       items.append(random.choice(self.attributes['top']))
       items = self.validate(items)
-      gid = self.read(items=items) # did we randomly make a new geometry ?
+      gid = self.read(geom=items) # did we randomly make a new geometry ?
       if gid is None:
         gid = self.create(items)
     else: # assume the postgres SERIAL ensures there are no gaps 
-      maxgid = self.read()
-      gids = list()
-      [gids.append(i) for i in range(1, maxgid + 1)]
-      items = self.read(gid=random.choice(gids))  # recursive recurrink :)
+      gids = self.read()
+      items = self.read(gid=random.choice(gids))
     return items 
 
   def transform(self, control, cells):
@@ -489,6 +487,10 @@ FROM geometry;""", [])
     return cells
 
   def validate(self, items):
+    if items[0] == 'south':
+      items[0] = 'north'
+    if items[0] == 'west':
+      items[0] = 'east'
     if items[0] in ['square', 'circle']:
       items[2] = 'all'
     elif items[2] == 'all': 

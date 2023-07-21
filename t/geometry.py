@@ -18,10 +18,13 @@ class TestGeometry(unittest.TestCase):
     self.assertTrue(len(items))
 
   def testCreate(self):
+    pass # avoid creating unwanted geometries
+
+  def testRead(self):
     ''' geometries are shared and have a 1:* relation with views and cells
-      geometries are never updated, only inserted when shape/size/facing combination is new
-      also it avoids side-effectof incrementing SERIAL by anticipating UniqueViolation '''
-    gid = self.g.create(['square', 'medium', 'north', False])
+      geometries are never updated, only inserted when shape/size/facing/top combination is new
+      immutable avoids side-effect of incrementing SERIAL by anticipating UniqueViolation '''
+    gid = self.g.read(geom=['square', 'medium', 'all', False])[0]
     self.assertTrue(int(gid))
 
   def testValidate1(self):

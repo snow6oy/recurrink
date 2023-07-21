@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-
-''' 
-set(self, items=[], sid=None):
-get(self, view=None, cell=None, rnd=False, sid=None):
-add(self, items):
-
-create(control, items=[]
-read(sid):  # view and cell move to cells
-update(control, items=[], sid=None):
-delete(self, sid)
-_validate(items):
-'''
 import os.path
 import unittest
 import pprint
@@ -54,12 +42,9 @@ class TestStyles(unittest.TestCase):
     items = ['#FFF', '#CCC',  1.0, '#000',  0,  1,  0.5]
     sid = self.s.read(style=items)[0]
     self.assertEqual(sid, 1)
-
-  def testMax(self):
-    ''' max sid 
-    '''
-    maxsid = self.s.read()
-    self.assertTrue(type(int))
+    items = ['#FFF', '#32CD32', 1.0, '#000', 0, 0, 1.5]
+    sid = self.s.read(style=items)[0]
+    self.assertEqual(sid, 5)
 
   def testReadNotFound(self):
     ''' will never find a stroke width: 100 
@@ -68,8 +53,22 @@ class TestStyles(unittest.TestCase):
     sid = self.s.read(style=items)
     self.assertEqual(sid, None)
 
+''' 
   # uncomment to spam the styles table
   def testSetStyleInsert(self):
-    # sid = self.s.set(['#FFF', '#32CD32', 1.0, '#000', 0, 0, 1.5])
     sid = True
     self.assertTrue(sid)
+
+  def testMax(self):
+    maxsid = self.s.read()
+    self.assertTrue(type(int))
+set(self, items=[], sid=None):
+get(self, view=None, cell=None, rnd=False, sid=None):
+add(self, items):
+
+create(control, items=[]
+read(sid):  # view and cell move to cells
+update(control, items=[], sid=None):
+delete(self, sid)
+_validate(items):
+'''
