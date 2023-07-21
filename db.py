@@ -368,7 +368,7 @@ class Cells(Db):
     cell = items.pop(0) # ignore first item cell
     gid = self.g.read(geom=items[:4]) 
     if gid is None: # add new geometry
-      self.g.create(items=items[:4]) 
+      gid = self.g.create(items=items[:4]) 
     sid = self.s.read(style=items[4:])
     if sid is None: # add new style
       sid = self.s.create(items[4:])[0] 
@@ -497,8 +497,8 @@ FROM geometry;""", [])
       items[2] = 'north'
     if items[0] in ['triangl', 'diamond'] and items[1] == 'large': 
       items[1] = 'medium' # triangles and diamonds cannot be large
-    if items[3] and items[1] != 'large': 
-      items[3] = False    # only large shapes can be on top
+    #if items[3] and items[1] != 'large': 
+    #  items[3] = False    # only large shapes can be on top
     # TODO items[2] = None
     # write validation test to understand why list comp fails when there is None value
     items = [self.defaults[a] if items[i] is None else items[i] for i, a in enumerate(items)]

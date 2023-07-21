@@ -208,9 +208,9 @@ class Layout(Draw):
     self.width   = 1080  # px
     self.height  = 1080
     self.size    = (54 / self.factor)  
-    self.maxCols = int(5 * self.factor)
-    self.maxRows = int(5 * self.factor)  # num of row  
-    ''' landscaep with border
+    self.maxCols = int(20 * self.factor)
+    self.maxRows = int(20 * self.factor)  # num of row  
+    ''' landscape with border
     self.width   = 1122.5197  # px
     self.height  = 793.70081
     self.size    = (48 / self.factor)  
@@ -270,41 +270,34 @@ class Layout(Draw):
   def render(self, group):
     ''' draw out a model by repeating blocks across the canvas
     '''
-    top = list()
-    for paintOrder in range(2): # background first then foreground
+    for paint_order in range(2): # background first then foreground
       for y in range(self.maxRows):
         print('.', end='', flush=True)
         for x in range(self.maxCols):
           pos = tuple([x, y])
-          (xSizeMm, ySizeMm) = self.blocknum_to_uu(pos)
+          (X, Y) = self.blocknum_to_uu(pos)
           cell = self.get_cell_by_position(pos)
-          # TODO GET BOTH CELLS and ADD Both of them using the GID
           if type(cell) is tuple: # get the top cell
-            c = cell[0]  
-            data = self.cells[c]
-            gid = f"{c}1"
-            sid = f"{c}1-{x}-{y}"
-            print(f'{gid} ', end='', flush=True)
-            shape = self.shape(c, xSizeMm, ySizeMm, data)
-            shape.set_id(sid)    # calling an inkex method here
-            group[gid].add(shape) 
+            top = cell[0]  
+            if self.cells[top]['top']:
+              gid = f"{top}1"
+              sid = f"{top}1-{x}-{y}"
+              #print(f'{gid} ', end='', flush=True)
+              shape = self.shape(top, X, Y, self.cells[top])
+              shape.set_id(sid)
+              group[gid].add(shape) 
             cell = cell[1]
-          data = self.cells[cell]
-          if not data:
-            continue # checker-board background !
-          gid = f"{cell}{paintOrder}"
-          sid = f"{cell}{paintOrder}-{x}-{y}"
-          if paintOrder:
-            print(f'{gid} ', end='', flush=True)
-            shape = self.shape(cell, xSizeMm, ySizeMm, data)
-            shape.set_id(sid)    # calling an inkex method here
-            group[gid].add(shape) 
+          gid = f"{cell}{paint_order}"
+          sid = f"{cell}{paint_order}-{x}-{y}"
+          if paint_order:
+            #print(f'{gid} ', end='', flush=True)
+            shape = self.shape(cell, X, Y, self.cells[cell])
           else:
-            print(f'{gid} ', end='', flush=True)
-            shape = self.backgrounds(cell, xSizeMm, ySizeMm)
-            shape.set_id(sid)    # calling an inkex method
-            group[gid].add(shape)
-        print("")
+            #print(f'{gid} ', end='', flush=True)
+            shape = self.backgrounds(cell, X, Y)
+          shape.set_id(sid)    # calling an inkex method
+          group[gid].add(shape)
+        #print("")
     return None
 
   def build(self, svg, top_order):
