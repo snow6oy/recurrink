@@ -487,13 +487,15 @@ FROM geometry;""", [])
     return cells
 
   def validate(self, items):
+    ''' shape/0 and facing/2 have dependencies
+    '''
     if items[0] == 'south':
       items[0] = 'north'
     if items[0] == 'west':
       items[0] = 'east'
     if items[0] in ['square', 'circle']:
       items[2] = 'all'
-    elif items[2] == 'all': 
+    elif items[0] != 'diamond' and items[2] == 'all': 
       items[2] = 'north'
     if items[0] in ['triangl', 'diamond'] and items[1] == 'large': 
       items[1] = 'medium' # triangles and diamonds cannot be large
