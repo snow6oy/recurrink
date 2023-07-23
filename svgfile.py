@@ -278,7 +278,7 @@ class Layout(Draw):
           (X, Y) = self.blocknum_to_uu(pos)
           cell = self.get_cell_by_position(pos)
           if type(cell) is tuple: # get the top cell
-            top = cell[0]  
+            top = cell[1]  
             if self.cells[top]['top']:
               gid = f"{top}1"
               sid = f"{top}1-{x}-{y}"
@@ -286,7 +286,7 @@ class Layout(Draw):
               shape = self.shape(top, X, Y, self.cells[top])
               shape.set_id(sid)
               group[gid].add(shape) 
-            cell = cell[1]
+            cell = cell[0]
           gid = f"{cell}{paint_order}"
           sid = f"{cell}{paint_order}-{x}-{y}"
           if paint_order:
