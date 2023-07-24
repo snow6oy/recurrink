@@ -67,6 +67,7 @@ class TestViews(unittest.TestCase):
 
   def testViewGenerate(self):
     cells = self.v.generate('soleares')
+    print(cells)
     #pp.pprint(cells)
     self.assertTrue(cells)
 
@@ -74,7 +75,7 @@ class TestViews(unittest.TestCase):
     ''' pass to avoid spamming styles table
     '''
     cells = self.v.generate('soleares', rnd=True)
-    pp.pprint(cells)
+    #pp.pprint(cells)
     self.assertTrue(cells)
   ''' 
   the 

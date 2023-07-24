@@ -16,7 +16,7 @@ class TestTmpFile(unittest.TestCase):
     b = Blocks(self.model)
     model, celldata = v.generate(self.model, rnd=False) 
     #print(celldata)
-    self.tf.write(self.model, b.cells(), celldata)
+    self.tf.write(self.model, celldata)
     self.assertTrue(os.path.isfile('/tmp/soleares.txt'))
 
   def testRead(self):
@@ -39,7 +39,8 @@ class TestTmpFile(unittest.TestCase):
       [ 'line','medium','west','False','#FFA500','#CCC','1.0','#000','1','0','1.0' ],
       [ 'circle','large','all','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ]
     ]
-    self.tf.write(self.model, ['a','b','c','d'], test)
+    #self.tf.write(self.model, ['a','b','c','d'], test)
+    self.tf.write(self.model, test)
     cells = self.tf.read(self.model)
     sorted_by_top = list(cells.keys())
     self.assertEqual(sorted_by_top, ['a', 'c', 'd', 'b'])

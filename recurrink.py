@@ -63,17 +63,19 @@ class TmpFile():
       'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
     ]
 
-  def write(self, model, keys, celldata, celltype=dict()):
+  #def write(self, model, keys, celldata, celltype=dict()):
+  def write(self, model, celldata):
     ''' accept cells as list or dict and write them to a tab separated text file
     '''
     expectedsize = len(self.header)
+    print(type(celldata) is dict)
     with open(f"/tmp/{model}.txt", 'w') as f:
       print("\t".join(self.colnam), file=f)
       for i, data in enumerate(celldata):
         vals = [str(d) for d in data] # convert everything to string
-        if isinstance(celltype, dict): 
-          print(celldata.keys()[i], vals)
-          vals.insert(0, keys[i])     # push the dict key into the list
+        #if isinstance(celltype, dict): # TODO why not test for celldata ?
+        if type(celldata) is dict: # does this ever happen ?
+          vals.insert(0, celldata.keys()[i])  # push the dict key into the list
         if len(vals) != expectedsize:
           raise ValueError(f"{model}.txt has {len(vals)} not {expectedsize}\n{vals}")
         line = "\t".join(vals)
