@@ -16,6 +16,18 @@ class Models(Db):
   def __init__(self):
     super().__init__()
 
+  def create(self, model, uniqcells, blocksizexy, scale):
+    ''' only used once during The Great Import from JSON
+    '''
+    success = True
+    try:
+      self.cursor.execute("""
+INSERT INTO models (model, uniqcells, blocksizexy, scale)
+VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      success = False
+    return success
+
   def read(self, model=None):
     ''' fetch a single entry indexed by model 
         return a tuple
@@ -90,33 +102,37 @@ VALUES (%s, %s, %s);""", [self.model, position, cell])
       success = False
     return success
 
-  def cells(self, cell_count=0):
-    self.cursor.execute("""
-SELECT DISTINCT(cell)
-FROM blocks
-WHERE model = %s;""", [self.model])
-    cells = [c[0] for c in self.cursor.fetchall()]
-    #print(f"len cells {len(cells)}")
-    if cell_count:
-      return (len(cells) != cell_count) # True means there is a mismatch
-    else: 
-      return cells
-
-  def read(self):
+  def read(self, output=dict()):
     ''' positions link the model and cell: for example 
         model with a line a, x, x a will be represented as positions[(3,0)] : a
-        note that lists from db have to be cast to tuples before hashing in a dict
     '''
-    positions = dict()
-    self.cursor.execute("""
+    if type(output) is dict:
+      self.cursor.execute("""
 SELECT cell, top, position
 FROM blocks
 WHERE model = %s;""", [self.model])
-    rows = self.cursor.fetchall()
-    for r in rows:
-      (cell, top, pos) = (r[0], r[1], tuple(r[2]))
-      positions[pos] = cell if top is None else (cell, top)
-    return positions
+      rows = self.cursor.fetchall()
+      for r in rows:
+        (cell, top, pos) = (r[0], r[1], tuple(r[2]))
+        output[pos] = cell if top is None else (cell, top)
+    else:  # must be a list
+      uniq = dict() # temporary dict to guarantee uniqueness across cell and top
+      self.cursor.execute("""
+SELECT DISTINCT(cell)
+FROM blocks
+WHERE model = %s;""", [self.model])
+      for cell in self.cursor.fetchall():
+        uniq[cell[0]] = 1
+      self.cursor.execute("""
+SELECT DISTINCT(top)
+FROM blocks
+WHERE model = %s
+AND top IS NOT null;""", [self.model])
+      for top in self.cursor.fetchall():
+        uniq[top[0]] = 1
+      output = list(uniq.keys())
+    return output
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
   ''' a View is a collection of Cells
@@ -134,14 +150,6 @@ class Views(Db):
   def delete(self, digest):
     ''' no error checks, this is gonzo style !
         cascade the delete to avoid orphaned styles
-    self.cursor.execute("""
-DELETE from styles
-WHERE sid >= %s and sid <= %s;""", minmax)
-    self.cursor.execute("""
-SELECT min(sid), max(sid) 
-FROM cells where view = %s;""", [digest])
-    minmax = self.cursor.fetchone()
-    #print(f"minmax {[minmax]}")
     '''
     self.cursor.execute("""
 DELETE FROM cells
@@ -151,7 +159,6 @@ DELETE FROM views
 WHERE view = %s;""", [digest])
     return True
 
-  # TODO create!
   def create(self, model, digest, author, control=0):
     ''' create views metadata and try Cells()
     '''
@@ -187,21 +194,22 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return view
 
-  def generate(self, model=None, rnd=False):
+  def generate(self, model=None):
     ''' generate a config as cell * values matrix
     '''
+    rnd=False
     if model is None:
+      rnd = True
       model = self.m.generate()
     b = Blocks(model)
     init = list()
-    for cell in b.cells(): 
-      row = list()
-      row.append(cell)
+    for cell in b.read(output=list()): 
+      celldata = [cell]
       if rnd:
-        vals = list(self.c.generate(1))
+        celldata += list(self.c.generate(1))
       else:
-        vals = list(self.c.generate(0))
-      init.append(vals)
+        celldata += list(self.c.generate(0))
+      init.append(celldata)
     return model, init
 
   def celldata(self, digest):
@@ -302,16 +310,6 @@ FROM styles;""", [])
       sids = self.cursor.fetchall()
       return sids
 
-  ''' perform crud and returns None as success 
-  # TODO test the effect of not calling self.validate after TXT edit
-  def update(self, sid, items):
-    items.append(sid) # sql conditional logic needs sid as the last item
-    self.cursor.execute("""
-UPDATE styles SET
-fill=%s, bg=%s, fill_opacity=%s, stroke=%s, stroke_width=%s, stroke_dasharray=%s, stroke_opacity=%s
-WHERE sid=%s;""", items)
-  '''
-
   def transform(self, control, cells):
     if control == 1:
       for c in cells:
@@ -368,7 +366,7 @@ class Cells(Db):
     cell = items.pop(0) # ignore first item cell
     gid = self.g.read(geom=items[:4]) 
     if gid is None: # add new geometry
-      self.g.create(items=items[:4]) 
+      gid = self.g.create(items=items[:4]) 
     sid = self.s.read(style=items[4:])
     if sid is None: # add new style
       sid = self.s.create(items[4:])[0] 
@@ -487,42 +485,22 @@ FROM geometry;""", [])
     return cells
 
   def validate(self, items):
+    ''' shape/0 and facing/2 have dependencies
+    '''
     if items[0] == 'south':
       items[0] = 'north'
     if items[0] == 'west':
       items[0] = 'east'
     if items[0] in ['square', 'circle']:
       items[2] = 'all'
-    elif items[2] == 'all': 
+    elif items[0] != 'diamond' and items[2] == 'all': 
       items[2] = 'north'
     if items[0] in ['triangl', 'diamond'] and items[1] == 'large': 
       items[1] = 'medium' # triangles and diamonds cannot be large
-    if items[3] and items[1] != 'large': 
-      items[3] = False    # only large shapes can be on top
+    #if items[3] and items[1] != 'large': 
+    #  items[3] = False    # only large shapes can be on top
     # TODO items[2] = None
     # write validation test to understand why list comp fails when there is None value
     items = [self.defaults[a] if items[i] is None else items[i] for i, a in enumerate(items)]
     return items
-  '''
-  def set(self, model, uniqcells, blocksizexy, scale):
-    success = True
-    try:
-      self.cursor.execute("""
-INSERT INTO models (model, uniqcells, blocksizexy, scale)
-VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      success = False
-    return success
 
-  def get(self, model=None, output='entry'):
-    if output == 'entry':
-      return self.entry(model)
-    elif output == 'matrix':
-      return self.matrix(model)
-    elif output == 'list':
-      return self.list()
-    elif output == 'stats':
-      return self.stats()
-    else:
-      raise ValueError("models only come in three flavours")
-  '''

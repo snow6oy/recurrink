@@ -12,11 +12,13 @@ class TestTmpFile(unittest.TestCase):
     self.model = 'soleares'
 
   def testWrite(self):
+    ''' soleares.txt in tmp might cause a false positive
+    '''
     v = Views()
     b = Blocks(self.model)
-    model, celldata = v.generate(self.model, rnd=False) 
+    model, celldata = v.generate(self.model)
     #print(celldata)
-    self.tf.write(self.model, b.cells(), celldata)
+    self.tf.write(self.model, celldata)
     self.assertTrue(os.path.isfile('/tmp/soleares.txt'))
 
   def testRead(self):
@@ -34,12 +36,13 @@ class TestTmpFile(unittest.TestCase):
         shape size facing top fill bg fo stroke sw sd so
     '''
     test = [
-      [ 'triangl','medium','west','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
-      [ 'circle','large','all','True','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
-      [ 'line','medium','west','False','#FFA500','#CCC','1.0','#000','1','0','1.0' ],
-      [ 'circle','large','all','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ]
+      [ 'a', 'triangl','medium','west','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
+      [ 'b', 'circle','large','all','True','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
+      [ 'c', 'line','medium','west','False','#FFA500','#CCC','1.0','#000','1','0','1.0' ],
+      [ 'd', 'circle','large','all','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ]
     ]
-    self.tf.write(self.model, ['a','b','c','d'], test)
+    #self.tf.write(self.model, ['a','b','c','d'], test)
+    self.tf.write(self.model, test)
     cells = self.tf.read(self.model)
     sorted_by_top = list(cells.keys())
     self.assertEqual(sorted_by_top, ['a', 'c', 'd', 'b'])

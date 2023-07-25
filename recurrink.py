@@ -8,7 +8,7 @@ import inkex
 import sys
 import random
 import hmac
-from db import Views, Models, Cells, Blocks
+from db import Views, Models, Cells
 from svgfile import Layout
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -63,20 +63,39 @@ class TmpFile():
       'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
     ]
 
-  def write(self, model, keys, celldata, celltype=dict()):
-    ''' accept cells as list or dict and write them to a space-separated text file
+  def __write(self, model, keys, celldata, celltype=dict()):
+    ''' accept cells as list or dict and write them to a tab separated text file
     '''
     expectedsize = len(self.header)
+    print(type(celldata) is dict)
     with open(f"/tmp/{model}.txt", 'w') as f:
       print("\t".join(self.colnam), file=f)
       for i, data in enumerate(celldata):
         vals = [str(d) for d in data] # convert everything to string
-        if isinstance(celltype, dict): 
-          vals.insert(0, keys[i])     # push the dict key into the list
+        #if isinstance(celltype, dict): # TODO why not test for celldata ?
+        if type(celldata) is dict: # does this ever happen ?
+          vals.insert(0, celldata.keys()[i])  # push the dict key into the list
         if len(vals) != expectedsize:
           raise ValueError(f"{model}.txt has {len(vals)} not {expectedsize}\n{vals}")
         line = "\t".join(vals)
-        #line = ' '.join(vals)
+        print(line, file=f)
+
+  def write(self, model, celldata):
+    ''' write celldata to a tab separated text file
+        data is a list of lists. the inner list must be formatted to match self.header
+    '''
+    expectedsize = len(self.header)
+    givensize = len(celldata[0])
+    if givensize != expectedsize:
+      raise ValueError(f"{model} celldata has {givensize} not {expectedsize}\n{celldata[0]}")
+    with open(f"/tmp/{model}.txt", 'w') as f:
+      print("\t".join(self.colnam), file=f)
+      for data in celldata:
+        vals = [str(d) for d in data] # convert everything to string
+        #if isinstance(celltype, dict): # TODO why not test for celldata ?
+        #if type(celldata) is dict: # does this ever happen ?
+        #  vals.insert(0, celldata.keys()[i])  # push the dict key into the list
+        line = "\t".join(vals)
         print(line, file=f)
 
   def read(self, model, txt=None, output=dict()):
@@ -183,23 +202,19 @@ def info(model=None, digest=None):
     pass # expected either a model or digest as input but whatever ..
   return out
 
-# TODO when model is none glob *.txt and source model from /tmp
 # TODO call update
 def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
   '''
-  ct = dict()
   control = 0
   if digest:
     celldata = v.read(digest=digest, celldata=True, output=list())
     model, _, control = v.read(digest=digest)
-    ct = list() # configure TmpFile to write from a list
   elif model:
     _, celldata = v.generate(model=model)
   else:
-    model, celldata = v.generate(rnd=True)
-  b = Blocks(model)
-  tf.write(model, b.cells(), celldata, celltype=ct)
+    model, celldata = v.generate()
+  tf.write(model, celldata)
   # update(model)
   return model if not control else f"{model} {control}"
  

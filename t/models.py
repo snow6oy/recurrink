@@ -30,6 +30,15 @@ class TestModels(unittest.TestCase):
     positions = self.b.read()
     self.assertEqual(positions[(2, 0)], 'a')
 
+  def testGetCellWithTop(self):
+    ''' can superimposed models list top cells as well?
+    '''
+    cells = self.b.read(output=list())
+    self.assertEqual(len(cells), 4)
+    bb = Blocks('spiral')
+    cells = bb.read(output=list())
+    self.assertEqual(len(cells), 24)
+
   def testGetTopByPosition(self):
     ''' superimpose cell d over cell a using top
         pos 1,1 is normally d but with top becomes a

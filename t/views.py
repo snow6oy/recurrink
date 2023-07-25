@@ -73,7 +73,7 @@ class TestViews(unittest.TestCase):
   def testViewGenerateRandom(self):
     ''' pass to avoid spamming styles table
     '''
-    cells = self.v.generate('soleares', rnd=True)
+    cells = self.v.generate()
     #pp.pprint(cells)
     self.assertTrue(cells)
   ''' 
