@@ -1,10 +1,10 @@
 # local stuff
-doc/*
+doc
 rinks/*
 pubq/*
 *.swp
 .DS_Store
-Archive/*
+Archive
 __pycache__/*
 t/__pycache__/*
 t/__init__.py
