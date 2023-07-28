@@ -1,5 +1,6 @@
 -- test data
 -- validate new schemas here
+-- TODO split into soleares.sql and koto.sql
 INSERT INTO models (model, uniqcells, blocksizeXY, scale) 
 VALUES 
   ('soleares', 4, '{3, 2}', 1.0),
