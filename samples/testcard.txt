@@ -1,7 +1,7 @@
 cell	shape	size	facing	top	fill	bg	fo	stroke	sw	sd	so
 a	square	medium	all	False	#FFF	#CCC	1.0	#000	1	0	1.0
 b	square	large	all	True 	#FFF	#CCC	1.0	#000	1	0	1.0
-c	square	small 	all	False	#FFF	#CCC	1.0	#000	1	0	1.0
+c	square	small 	all	False	#FFF	#CCC	1.0	#000	8	0	0.5
 d	triangl medium	north	False	#FFF	#CCC	1.0	#000	1	0	1.0
 e	triangl medium	east 	False	#FFF	#CCC	1.0	#000	1	0	1.0
 A	square	medium	all  	False	#FFF	#CCC	1.0	#000	0	0	1.0
@@ -35,10 +35,10 @@ r	line   	small 	north	False	#FFF	#CCC	1.0	#000	4	0	0.5
 s	line   	medium	east 	False	#FFF	#CCC	1.0	#000	4	0	0.5
 t	line   	large 	east 	True 	#FFF	#CCC	1.0	#000	4	0	0.5
 u	line   	small 	east 	False	#FFF	#CCC	1.0	#000	4	0	0.5
-P	line   	medium	north	False	#FFF	#CCC	1.0	#000	4	0	0.5
-Q	line   	large 	north	False	#FFF	#CCC	1.0	#000	4	0	0.5
-R	line   	small 	north	False	#FFF	#CCC	1.0	#000	4	0	0.5
-S	line   	medium	east 	False	#FFF	#CCC	1.0	#000	4	0	0.5
-T	line   	large 	east 	False	#FFF	#CCC	1.0	#000	4	0	0.5
-U	line   	small 	east 	False	#FFF	#CCC	1.0	#000	4	0	0.5
+P	line   	medium	north	False	#FFF	#CCC	1.0	#000	0	0	0
+Q	line   	large 	north	False	#FFF	#CCC	1.0	#000	0	0	0
+R	line   	small 	north	False	#FFF	#CCC	1.0	#000	0	0	0
+S	line   	medium	east 	False	#FFF	#CCC	1.0	#000	0	0	0
+T	line   	large 	east 	False	#FFF	#CCC	1.0	#000	0	0	0
+U	line   	small 	east 	False	#FFF	#CCC	1.0	#000	0	0	0
 x	square	medium	north	False	#CCC	#CCC	1.0	#CCC	0	0	1.0
