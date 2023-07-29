@@ -1,5 +1,14 @@
--- test data
--- validate new schemas here
+-- two spirals with parallel symmetry on North South axis
+-- spiral 1 starts NE towards W
+-- spiral 2 starts NW towards E
+-- a c d e b g
+-- i k h l n f
+-- m o q j r p
+
+-- > > v v < <
+-- > + v v + <
+-- ^ < < > > ^
+
 INSERT INTO models (model, uniqcells, blocksizeXY, scale) 
 VALUES ('spiral', 16, '{6, 3}', 1.0);
 
