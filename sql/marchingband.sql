@@ -1,7 +1,7 @@
 -- marchingband
 -- 2 way parallel, cell symmetry without sexagesimal
 INSERT INTO models (model, uniqcells, blocksizeXY, scale) 
-VALUES ('marchingband', 5, '{3, 3}', 1.0),
+VALUES ('marchingband', 6, '{3, 3}', 1.0);
 -- a b c d: facing n s e w
 -- e f: facing all
 -- f a f
