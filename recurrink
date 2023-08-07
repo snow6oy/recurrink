@@ -119,7 +119,7 @@ class TmpFile():
     sortdata = sorted(data, key=lambda x: x[4])
 
     if isinstance(output, list):
-      cells = data
+      cells = sortdata 
     elif isinstance(output, dict):
       cells = dict()
       for d in sortdata:
