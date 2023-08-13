@@ -235,7 +235,8 @@ class Layout(Draw):
     self.control = int(c)
 
   def transform(self, cells):
-    self.cells = self.c.transform(self.control, cells)
+    # TODO transform moved to init flow. No need to call here again!
+    self.cells = cells # self.c.transform(self.control, cells)
 
   def get_cell_by_position(self, pos):
     '''
