@@ -18,6 +18,7 @@ class TestTmpFile(unittest.TestCase):
     b = Blocks(self.model)
     model, celldata = v.generate(self.model)
     #print(celldata)
+    celldata = self.tf.convert_to_list(celldata)
     self.tf.write(self.model, celldata)
     self.assertTrue(os.path.isfile('/tmp/soleares.txt'))
 
@@ -58,6 +59,20 @@ class TestTmpFile(unittest.TestCase):
       self.assertTrue(isinstance(cells['a']['stroke_dasharray'], int))
     else:
       pass
+
+  def testConvertToList(self):
+    celldata = { 
+      'a': { 
+        'geom': { 
+           'facing': 'south', 'shape': 'line   ', 'size': 'medium', 'stroke_width': 0, 'top': False
+         },
+         'style': { 
+           'bg': '#FFA500', 'fill': '#FFF', 'fill_opacity': 1.0, 'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 1.0
+         }
+      }
+    }
+    #pp.pprint(self.tf.convert_to_list(celldata))
+    self.assertEqual(self.tf.convert_to_list(celldata)[0][0], 'a')
 
   def testReadText(self):
     soleares_txt = """cell shape size facing top fill bg fo stroke sw sd so

@@ -10,6 +10,49 @@ class Db:
     connection.autocommit = True  # Ensure data is added to the database immediately after write commands
     self.cursor = connection.cursor()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Recipe:
+  ''' recipes are hardcode here but when better defines will move to Postgres
+  '''
+  def __init__(self, model):
+    conf = {
+      'syncopated': {
+        'all': ['i', 'j'],
+        'east_NOT': [('a', 'c'), ('g', 'h'), ('b', 'd'), ('e', 'f')],
+        'north': [('a', 'b'), ('g', 'h'), ('c', 'd'), ('e', 'f')]
+      },
+      'marchingband': {
+        'all': ['e', 'f'],
+        'north': [('b', 'c')],
+        'east': [('a', 'd')]
+      },
+      'timpani': {
+        'all': ['e', 'f', 'k'],
+        'northeast': [ ('a', 'b'), ('c', 'd'), ('g', 'h'), ('i', 'j') ]
+      },
+      'soleares': {
+        'all': ['a', 'c'],
+        'east': [('b', 'd')]
+      }
+    }
+    if model in conf:
+      self.conf = conf[model]
+
+  def axis(self):
+    return list(self.conf.keys()) if self.conf else list()
+
+  def all(self):
+    ''' define the cells in the model that can face any direction
+    '''
+    return self.conf['all'] if self.conf else list()
+
+  def one(self, axis):
+    ''' define the cell pairs (tuples) that face each other
+    '''
+    if self.conf and axis in self.conf:
+      return self.conf[axis] 
+    else:
+      return list()
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Models(Db):
   ''' models give us the base template to draw a rink
   '''
@@ -85,6 +128,10 @@ FROM models;""",)
     for m in self.cursor.fetchall():
       output += f"{m[1]:>4} {m[2][0]:>4} {m[2][1]:>4} {m[0]}\n"
     return output
+ 
+  def recipe(self, model):
+    r = Recipe(model)
+    return r
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Blocks(Db):
 
@@ -149,7 +196,7 @@ class Views(Db):
 
   def delete(self, digest):
     ''' no error checks, this is gonzo style !
-        cascade the delete to avoid orphaned styles
+        cascade the delete to cells
     '''
     self.cursor.execute("""
 DELETE FROM cells
@@ -194,9 +241,8 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return view
 
+  ''' generate a config as cell * values matrix
   def generate(self, model=None):
-    ''' generate a config as cell * values matrix
-    '''
     rnd=False
     if model is None:
       rnd = True
@@ -211,6 +257,32 @@ WHERE view = %s;""", [digest])
         celldata += list(self.c.generate(0))
       init.append(celldata)
     return model, init
+  '''
+
+  def generate(self, model=None):
+    ''' generate a config as cell * values matrix
+    '''
+    recipe = None  # replace random with recipe
+    rnd = False
+    if model is None:
+      model = self.m.generate()
+      rnd = True
+    else: # load recipes for model
+      recipe = self.m.recipe(model)
+    b = Blocks(model)
+    init = dict()
+    #  'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
+    for cell in b.read(output=list()): 
+      init[cell] = dict()
+      cellrow = self.c.generate(rnd)
+      init[cell]['geom'] = dict(zip(self.header[1:5], cellrow[:4]))
+      init[cell]['style'] = dict(zip(self.header[5:9], cellrow[4:8]))
+      init[cell]['geom']['stroke_width'] = cellrow[8]
+      init[cell]['style']['stroke_dasharray'] = cellrow[9]
+      init[cell]['style']['stroke_opacity'] = cellrow[10]
+
+    celldata = self.c.transform(init, recipe)
+    return model, celldata
 
   def celldata(self, digest):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
@@ -236,6 +308,217 @@ WHERE view = %s;""", [digest])
     else:
       raise ValueError(f"not expecting this kinda view '{digest}'")
     return vcount
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Cells(Db):
+  ''' a cell data set can be initiated in one of three ways
+      1. randomly creating cell attributes
+      2. selecting existing shapes/syles from any view by given model
+      3. cloning attributes from a given view
+  '''
+  def __init__(self):
+    self.g = Geometry()
+    self.s = Styles()
+    super().__init__()
+
+  def create(self, digest, items):
+    ''' create a cell by joining a view with geometry and style entries
+    '''
+    ok = True # used only by unit test
+    cell = items.pop(0) # ignore first item cell
+    gid = self.g.read(geom=items[:4]) 
+    if gid is None: # add new geometry
+      gid = self.g.create(items=items[:4]) 
+    sid = self.s.read(style=items[4:])
+    if sid is None: # add new style
+      sid = self.s.create(items[4:])[0] 
+    try:
+      self.cursor.execute("""
+INSERT INTO cells (view, cell, sid, gid)
+VALUES (%s, %s, %s, %s);""", [digest, cell, sid, gid])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      ok = False
+    return ok
+
+  def read(self, digest, cell):
+    ''' return tuple or none
+    '''
+    self.cursor.execute("""
+SELECT sid
+FROM cells
+WHERE view = %s
+AND cell = %s;""", [digest, cell])
+    sid = self.cursor.fetchone()
+    return sid
+
+  def generate(self, rnd):
+    ''' varying degress of randomness
+        with control will select from existing entries
+        no control means that entries are randomly generated
+        return a tuple(shape .. top)
+    '''
+    return self.g.generate(rnd) + self.s.generate(rnd)
+
+  def transform(self, cells, recipe):
+    cells = self.g.transform(cells, recipe)
+    return cells
+    #TODO return self.s.transform(cells, recipe)
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Geometry(Db):
+  '''
+    This class can
+      * randomly create new geometries and create a new GID
+      * selecting existing geometries from a random GID
+      * selecting existing geometries from a given GID
+    data is handled as an ordered list (gid, shape, size, facing, top)
+    inputs are validated before create or update
+  '''
+  def __init__(self):
+    super().__init__()
+    self.defaults = { 'shape':'square', 'size':'medium', 'facing':None, 'top':False }
+    self.attributes = {
+      'shape': ['circle', 'line', 'square', 'triangl', 'diamond'],
+      'facing': ['all','north', 'south', 'east', 'west'],
+      'size': ['medium', 'large'],
+      'top': [True, False]
+    }
+
+  def create(self, items):
+    ''' before calling this attempt to find an existing record and then insert as fallback
+        because psycopg2.errors.UniqueViolation:  # 23505 consumes SERIAL
+    '''
+    items = self.validate(items)
+    self.cursor.execute("""
+INSERT INTO geometry (gid, shape, size, facing, top)
+VALUES (DEFAULT, %s, %s, %s, %s)
+RETURNING gid;""", items)
+    gid = self.cursor.fetchone()
+    return gid[0]
+
+  def read(self, geom=[], gid=None):
+    ''' always returns a list, even if only one member (gid)
+    '''
+    if gid:  # select entries
+      self.cursor.execute("""
+SELECT shape, size, facing, top
+FROM geometry
+WHERE gid = %s;""", [gid])
+      items = self.cursor.fetchone()
+      return items
+    elif len(geom): # attempt to select gid
+      self.cursor.execute("""
+SELECT gid
+FROM geometry
+WHERE shape = %s
+AND size = %s
+AND facing = %s
+AND top = %s;""", geom)  # items[:3])  # ignore top
+      gid = self.cursor.fetchone()
+      return gid
+    else: # provide max to randomly generate a GID
+      self.cursor.execute("""
+SELECT gid
+FROM geometry;""", [])
+      gids = self.cursor.fetchall()
+      return gids
+
+  def generate(self, rnd):
+    items = list()
+    if rnd: # randomly create new geometries and a new GID
+      items.append(random.choice(self.attributes['shape']))
+      items.append(random.choice(self.attributes['size']))
+      items.append(random.choice(self.attributes['facing']))
+      items.append(random.choice(self.attributes['top']))
+      items = self.validate(items)
+      gid = self.read(geom=items) # did we randomly make a new geometry ?
+      if gid is None:
+        gid = self.create(items) 
+    else: # without random then a model was given during init, in this case we use pre-defined gids
+      gids = self.read()
+      items = self.read(gid=random.choice(gids))
+    return items 
+
+  # TODO
+  # call validate during generate
+  # move transform into recipe, soleares square all 
+  def transform(self, celldata, recipe):
+    #axis = ['north', 'east', 'northeast', 'southwest']
+    self.celldata = celldata
+    for axis in recipe.axis():
+      if axis == 'all':
+        self.facing_all(recipe.all())
+      else:
+        self.facing_one(recipe.one(axis), axis)
+    return self.celldata
+    '''
+    if control == 1:
+      for c in cells:
+        cells[c]['shape'] = 'square' 
+    elif control == 2:
+      for c in cells:
+        cells[c]['shape'] = 'diamond' 
+    '''
+
+  def facing_all(self, cells):
+    ''' select distinct(shape) from geometry where facing = 'all';
+        if there are more cells than shapes there will be duplicates
+        but to reduce duplication we remove the option until only one remains
+    '''
+    shape = ['circle', 'diamond', 'square']
+    # [print(c) for c in cells]
+    for c in cells:
+      s = random.choice(shape)
+      self.celldata[c]['geom']['shape'] = s
+      self.celldata[c]['geom']['facing'] = 'all'
+      if len(shape) > 1:
+        shape.remove(s)
+
+  def facing_one(self, pairs, axis):
+    ''' TODO select distinct(shape) from geometry where facing = 'north';
+    '''
+    #print(axis)
+    #[print(p) for p in pairs]
+    shape = ['triangl', 'diamond', 'line']
+    if axis == 'east':
+      facing = { 'north': 'south', 'south': 'north' }
+    elif axis == 'northeast':
+      facing = { 'north': 'east', 'east': 'north' }
+    else:
+      facing = { 'west': 'east', 'east': 'west' }
+    for p in pairs:
+      s = random.choice(shape)
+      f1 = random.choice(list(facing.keys()))
+      if s == 'line' and f1 == 'west':  # lines cannot be south or west 
+        f1 = f2 = 'east'
+      elif s == 'line' and f1 == 'south':  # lines cannot be south or west 
+        f1 = f2 = 'north'
+      else:
+        f2 = facing[f1]
+      c1 = p[0]
+      c2 = p[1]
+      self.celldata[c1]['geom']['shape'] = s
+      self.celldata[c1]['geom']['facing'] = f1
+      self.celldata[c2]['geom']['shape'] = s
+      self.celldata[c2]['geom']['facing'] = f2
+
+  def validate(self, items):
+    ''' shape/0 and facing/2 have dependencies
+    '''
+    if items[0] == 'south':
+      items[0] = 'north'
+    if items[0] == 'west':
+      items[0] = 'east'
+    if items[0] in ['square', 'circle']:
+      items[2] = 'all'
+    elif items[0] != 'diamond' and items[2] == 'all': 
+      items[2] = 'north'
+    if items[0] in ['triangl', 'diamond'] and items[1] == 'large': 
+      items[1] = 'medium' # triangles and diamonds cannot be large
+    #if items[3] and items[1] != 'large': 
+    #  items[3] = False    # only large shapes can be on top
+    # TODO items[2] = None
+    # write validation test to understand why list comp fails when there is None value
+    items = [self.defaults[a] if items[i] is None else items[i] for i, a in enumerate(items)]
+    return items
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Styles(Db):
 
@@ -347,160 +630,3 @@ FROM styles;""", [])
       items[1] = items[1].replace(f, self.fill[f])
       items[3] = items[3].replace(f, self.fill[f])
     return items
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Cells(Db):
-  ''' a cell data set can be initiated in one of three ways
-      1. randomly creating cell attributes
-      2. selecting existing shapes/syles from any view by given model
-      3. cloning attributes from a given view
-  '''
-  def __init__(self):
-    self.g = Geometry()
-    self.s = Styles()
-    super().__init__()
-
-  def create(self, digest, items):
-    ''' create a cell by joining a view with geometry and style entries
-    '''
-    ok = True # used only by unit test
-    cell = items.pop(0) # ignore first item cell
-    gid = self.g.read(geom=items[:4]) 
-    if gid is None: # add new geometry
-      gid = self.g.create(items=items[:4]) 
-    sid = self.s.read(style=items[4:])
-    if sid is None: # add new style
-      sid = self.s.create(items[4:])[0] 
-    try:
-      self.cursor.execute("""
-INSERT INTO cells (view, cell, sid, gid)
-VALUES (%s, %s, %s, %s);""", [digest, cell, sid, gid])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      ok = False
-    return ok
-
-  def read(self, digest, cell):
-    ''' return tuple or none
-    '''
-    self.cursor.execute("""
-SELECT sid
-FROM cells
-WHERE view = %s
-AND cell = %s;""", [digest, cell])
-    sid = self.cursor.fetchone()
-    return sid
-
-  def generate(self, control):
-    ''' varying degress of randomness
-        with control will select from existing entries
-        no control means that entries are randomly generated
-        return a tuple(shape .. top)
-    '''
-    return self.g.generate(control) + self.s.generate(control)
-
-  def transform(self, control, cells):
-    cells = self.g.transform(control, cells)
-    return self.s.transform(control, cells)
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Geometry(Db):
-  '''
-    This class can
-      * randomly create new geometries and create a new GID
-      * selecting existing geometries from a random GID
-      * selecting existing geometries from a given GID
-    data is handled as an ordered list (gid, shape, size, facing, top)
-    inputs are validated before create or update
-  '''
-  def __init__(self):
-    super().__init__()
-    self.defaults = { 'shape':'square', 'size':'medium', 'facing':None, 'top':False }
-    self.attributes = {
-      'shape': ['circle', 'line', 'square', 'triangl', 'diamond'],
-      'facing': ['all','north', 'south', 'east', 'west'],
-      'size': ['medium', 'large'],
-      'top': [True, False]
-    }
-
-  def create(self, items):
-    ''' before calling this attempt to find an existing record and then insert as fallback
-        because psycopg2.errors.UniqueViolation:  # 23505 consumes SERIAL
-    '''
-    items = self.validate(items)
-    self.cursor.execute("""
-INSERT INTO geometry (gid, shape, size, facing, top)
-VALUES (DEFAULT, %s, %s, %s, %s)
-RETURNING gid;""", items)
-    gid = self.cursor.fetchone()
-    return gid[0]
-
-  def read(self, geom=[], gid=None):
-    ''' always returns a list, even if only one member (gid)
-    '''
-    if gid:  # select entries
-      self.cursor.execute("""
-SELECT shape, size, facing, top
-FROM geometry
-WHERE gid = %s;""", [gid])
-      items = self.cursor.fetchone()
-      return items
-    elif len(geom): # attempt to select gid
-      self.cursor.execute("""
-SELECT gid
-FROM geometry
-WHERE shape = %s
-AND size = %s
-AND facing = %s
-AND top = %s;""", geom)  # items[:3])  # ignore top
-      gid = self.cursor.fetchone()
-      return gid
-    else: # provide max to randomly generate a GID
-      self.cursor.execute("""
-SELECT gid
-FROM geometry;""", [])
-      gids = self.cursor.fetchall()
-      return gids
-
-  def generate(self, control):
-    items = list()
-    if control == 1: # randomly create new geometries and a new GID
-      items.append(random.choice(self.attributes['shape']))
-      items.append(random.choice(self.attributes['size']))
-      items.append(random.choice(self.attributes['facing']))
-      items.append(random.choice(self.attributes['top']))
-      items = self.validate(items)
-      gid = self.read(geom=items) # did we randomly make a new geometry ?
-      if gid is None:
-        gid = self.create(items)
-    else: # assume the postgres SERIAL ensures there are no gaps 
-      gids = self.read()
-      items = self.read(gid=random.choice(gids))
-    return items 
-
-  def transform(self, control, cells):
-    if control == 1:
-      for c in cells:
-        cells[c]['shape'] = 'square' 
-    elif control == 2:
-      for c in cells:
-        cells[c]['shape'] = 'diamond' 
-    return cells
-
-  def validate(self, items):
-    ''' shape/0 and facing/2 have dependencies
-    '''
-    if items[0] == 'south':
-      items[0] = 'north'
-    if items[0] == 'west':
-      items[0] = 'east'
-    if items[0] in ['square', 'circle']:
-      items[2] = 'all'
-    elif items[0] != 'diamond' and items[2] == 'all': 
-      items[2] = 'north'
-    if items[0] in ['triangl', 'diamond'] and items[1] == 'large': 
-      items[1] = 'medium' # triangles and diamonds cannot be large
-    #if items[3] and items[1] != 'large': 
-    #  items[3] = False    # only large shapes can be on top
-    # TODO items[2] = None
-    # write validation test to understand why list comp fails when there is None value
-    items = [self.defaults[a] if items[i] is None else items[i] for i, a in enumerate(items)]
-    return items
-

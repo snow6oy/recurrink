@@ -5,7 +5,7 @@
 import os.path
 import unittest
 import pprint
-from db import Geometry
+from db import Geometry, Recipe
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestGeometry(unittest.TestCase):
@@ -13,9 +13,26 @@ class TestGeometry(unittest.TestCase):
   def setUp(self):
     self.g = Geometry()
 
-  def testGenerate0(self):
-    items = self.g.generate(0)
+  def testGenerateNotRandom(self):
+    items = self.g.generate(False)  
     self.assertTrue(len(items))
+
+  def testTransform(self):
+    ''' after recipe is applied cells b and d should be symmetrical on east-west axis
+    '''
+    cells = { 
+      'a': { 'geom': { 
+          'facing': 'south', 'shape': 'triangle', 'size': 'medium', 'stroke_width': 0, 'top': False }},
+      'b': { 'geom': { 
+          'facing': 'east', 'shape': 'line', 'size': 'large', 'stroke_width': 0, 'top': False}},
+      'c': { 'geom': { 
+          'facing': 'south', 'shape': 'diamond', 'size': 'medium', 'stroke_width': 6, 'top': False}},
+      'd': { 'geom': { 
+          'facing': 'south', 'shape': 'line', 'size': 'large', 'stroke_width': 0, 'top': False}}
+    }
+    recipe = Recipe('soleares')
+    data = self.g.transform(cells, recipe)
+    pp.pprint(data)
 
   def testCreate(self):
     pass # avoid creating unwanted geometries

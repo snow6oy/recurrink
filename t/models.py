@@ -48,3 +48,9 @@ class TestModels(unittest.TestCase):
     if type(positions[(1, 1)]) is tuple:
       cells = positions[(1, 1)]
     self.assertEqual(cells[1], 'a')
+
+  def testGetRecipe(self):
+    ''' lookup recipe for mirroring from model or None
+    '''
+    r = self.m.recipe('timpani')
+    self.assertEqual(r.all()[2], 'k')
