@@ -32,6 +32,10 @@ class Recipe:
       'soleares': {
         'all': ['a', 'c'],
         'east': [('b', 'd')]
+      },
+      'fourfour': {
+        'all': ['a', 'd', 'h', 'a'],
+        'northeast': [ ('b', 'c'), ('f', 'g'), ('i', 'k'), ('j', 'l') ]
       }
     }
     self.conf = conf[model] if model in conf else None
