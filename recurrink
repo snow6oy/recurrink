@@ -244,10 +244,10 @@ def delete(view):
   '''
   viewdata = v.read(view)
   if len(viewdata):
+    v.delete(view) 
     model = viewdata[0]
     if os.path.isfile(f'rinks/{model}/{view}.svg'):
       os.unlink(f'rinks/{model}/{view}.svg')
-      v.delete(view) 
       return view
   raise FileNotFoundError(f'not deleted {model}/{view}')
 
