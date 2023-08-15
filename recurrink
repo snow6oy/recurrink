@@ -19,8 +19,6 @@ c = Cells()
 class Input(inkex.InputExtension):
   ''' create a model SVG from a txt file /tmp/MODEL.txt
       model, and scale SHOULD be written in SVG metadata
-      
-      NICE to have would be add portrait as input options
   '''
   def load(self, stream):
     ''' inkscape passes in a stream from io.BufferedReader
@@ -29,18 +27,17 @@ class Input(inkex.InputExtension):
     doc = None
     fn = re.findall(r"([^\/]*)\.", self.options.input_file) # filename without ext 
     model = fn[0]
-    # print(model, CONTROL)
+    #print(model, SCALE)
     s = stream.read() # slurp the stream 
     data = s.decode() # convert to string
     cells = tf.read(model, txt=data) # convert string to dict
     top_order = list(cells.keys())
-    l = Layout(model, CONTROL)
+    l = Layout(model, SCALE)
     # prepare A4 document but with pixels for units
     doc = self.get_template(width=l.width, height=l.height, unit='px')
     svg = self.add_metadata(doc, model, l.factor)
-    print(f"factor {l.factor} control {l.control}")
-    l.transform(cells)
-    group = l.build(svg, top_order)
+    print(f"scale {l.factor}")
+    group = l.build(svg, top_order, cells)
     l.render(group)
     return doc
 
@@ -181,18 +178,17 @@ def inputs():
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_c.add_argument('-m', '--model', help='name of base model')
   parser_c.add_argument("-a", "--author", choices=['human', 'machine'])
-  parser_c.add_argument("-c", "--control",  default='00', help="Control is a two digest code 00-99")
+  parser_c.add_argument("-s", "--scale",  default=1.0, help="zoom control 0.5 - 2.0")
   parser_d = subparsers.add_parser('delete')
   parser_d.add_argument("-v", "--view", help='view to remove from db')
   parser_u = subparsers.add_parser('update', help='update svg from config')
   parser_u.add_argument('-m', '--model', help='name of model to update', required=True)
-  parser_u.add_argument("-c", "--control",  default='00', help="Control is a two digest code 00-99")
+  parser_u.add_argument("-s", "--scale",  default=1.0, help="zoom control 0.5 - 2.0")
   return parser.parse_args()
 
 def stats():
   ''' pretty list of models
   '''
-  #return m.get(output='stats')              
   return m.stats()
 
 def info(model=None, digest=None):
@@ -218,10 +214,10 @@ def info(model=None, digest=None):
 def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
   '''
-  control = 0
+  scale = None
   if digest:
     celldata = v.read(digest=digest, celldata=True, output=list())
-    model, _, control = v.read(digest=digest)
+    model, _, scale = v.read(digest=digest)
   elif model:
     _, celldata = v.generate(model=model)
     celldata = tf.convert_to_list(celldata) # dict becomes a list before writing
@@ -229,14 +225,14 @@ def init(model=None, digest=None):
     model, celldata = v.generate()
   tf.write(model, celldata)
   # update(model)
-  return model if not control else f"{model} {control}"
+  return model if not scale else f"{model} {scale}"
  
-def update(model, control):
+def update(model, scale):
   ''' send inputs from to inkex with argparse and Layout() as a global
       inkex creates an SVG file and its name is printed to screen
   '''
-  global CONTROL
-  CONTROL = control
+  global SCALE
+  SCALE = scale
   output, input_file = f'/tmp/{model}.svg', f'/tmp/{model}.txt'
   Input().run(['--output', output, input_file]) # inkex argparse
   print()
@@ -255,14 +251,14 @@ def delete(view):
       return view
   raise FileNotFoundError(f'not deleted {model}/{view}')
 
-def commit(model, control, author):
+def commit(model, scale, author):
   ''' read config, write to database and return digest
   '''
   workdir = 'rinks'
   pubdir = 'pubq'
   celldata = tf.read(model, output=list())
   response = 'unknown error'
-  if v.create(model, tf.digest, author, control=control):
+  if v.create(model, tf.digest, author, scale=scale):
     [c.create(tf.digest, row) for row in celldata]
     if os.path.isfile(f"/tmp/{model}.svg"):
       svgname = f"{workdir}/{model}/{tf.digest}.svg"
@@ -284,11 +280,11 @@ if __name__ == '__main__':
   elif (args.keyword == 'init'):
     print(init(model=args.model, digest=args.view))
   elif (args.keyword == 'commit'):
-    print(commit(args.model, args.control, args.author))
+    print(commit(args.model, args.scale, args.author))
   elif (args.keyword == 'delete'):
     print(delete(args.view))
   elif (args.keyword == 'update'):
-    print(update(args.model, args.control))
+    print(update(args.model, args.scale))
   '''
   the 
   end

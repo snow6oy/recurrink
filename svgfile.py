@@ -190,7 +190,7 @@ class Draw:
 class Layout(Draw):
   ''' expand cells provided by Draw across a canvas
   '''
-  def __init__(self, model, control):
+  def __init__(self, model, factor):
     ''' 
     original calculation was page size 210 x 297 mm (A4 portrait)
     since unit are not millimeters this table is inaccurate
@@ -200,16 +200,16 @@ class Layout(Draw):
       1.0     12.0    15   22   15.0   16.5  do nothing
       2.0      6.0    30   44   15.0   16.5  half size
     '''
+    self.factor = float(factor) if factor else 1.0
     self.b = Blocks(model)
     self.c = Cells()
     self.model = model
-    self.create(control)
-
     self.width   = 1080  # px
     self.height  = 1080
-    self.size    = (54 / self.factor)  
+    self.size    = (54 / self.factor)
     self.maxCols = int(20 * self.factor)
     self.maxRows = int(20 * self.factor)  # num of row  
+    self.control = 'DEPRECATED'
     ''' landscape with border
     self.width   = 1122.5197  # px
     self.height  = 793.70081
@@ -222,12 +222,11 @@ class Layout(Draw):
     self.yOffset = (self.height - (self.maxRows * self.size)) / numOfMargins # 36.85040500000002
     super().__init__([self.size, self.xOffset, self.yOffset])
 
+  ''' convert a two digit control code into a float for scaling
   def create(self, control):
-    ''' convert a two digit control code into a float for scaling
         0 is default
         odd numbers zoom out
         even numbers zoom in
-    '''
     # = int(list(control)[0])
     f, c = list(control)
     scale = [1.0, 1.1, 0.9, 1.3, 0.8, 1.5, 0.7, 1.8, 0.5, 2.0]
@@ -237,6 +236,7 @@ class Layout(Draw):
   def transform(self, cells):
     # TODO transform moved to init flow. No need to call here again!
     self.cells = cells # self.c.transform(self.control, cells)
+  '''
 
   def get_cell_by_position(self, pos):
     '''
@@ -301,7 +301,7 @@ class Layout(Draw):
         #print("")
     return None
 
-  def build(self, svg, top_order):
+  def build(self, svg, top_order, cells):
     ''' Generate inkex groups for the svg renderer to use  
     '''
     #print(top_order) Large cells should be last
@@ -312,23 +312,24 @@ class Layout(Draw):
       # draw background  cells
       bg = Group()
       bg.set_id(f'{g}0')
-      bg.style = { 'fill' : self.cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#FFF' }
+      bg.style = { 'fill' : cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#FFF' }
       group[f'{g}0'] = bg # local copy
       svg.add(bg)
       # draw foreground cells
       fg = Group()
-      sw1 = svg.unittouu(self.cells[g]['stroke_width'])
+      sw1 = svg.unittouu(cells[g]['stroke_width'])
       fg.set_id(f'{g}1') 
       fg.style = {
-        'fill'            : self.cells[g]['fill'],
-        'fill-opacity'    : self.cells[g]['fill_opacity'],
-        'stroke'          : self.cells[g]['stroke'],
+        'fill'            : cells[g]['fill'],
+        'fill-opacity'    : cells[g]['fill_opacity'],
+        'stroke'          : cells[g]['stroke'],
         'stroke-width'    : sw1,
-        'stroke-dasharray': self.cells[g]['stroke_dasharray'],
-        'stroke-opacity'  : self.cells[g]['stroke_opacity']
+        'stroke-dasharray': cells[g]['stroke_dasharray'],
+        'stroke-opacity'  : cells[g]['stroke_opacity']
       }
       group[f'{g}1'] = fg
       # TODO what is stroke width used for ?
       stroke_width[f'{g}1'] = sw1  # adjust cell dimension according to stroke width
       svg.add(fg)
+      self.cells = cells
     return group

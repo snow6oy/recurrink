@@ -34,8 +34,7 @@ class Recipe:
         'east': [('b', 'd')]
       }
     }
-    if model in conf:
-      self.conf = conf[model]
+    self.conf = conf[model] if model in conf else None
 
   def axis(self):
     return list(self.conf.keys()) if self.conf else list()
@@ -206,13 +205,13 @@ DELETE FROM views
 WHERE view = %s;""", [digest])
     return True
 
-  def create(self, model, digest, author, control=0):
+  def create(self, model, digest, author, scale=1.0):
     ''' create views metadata and try Cells()
     '''
     if not self.count(digest):
       self.cursor.execute("""
-INSERT INTO views (view, model, author, control)
-VALUES (%s, %s, %s, %s);""", [digest, model, author, control])
+INSERT INTO views (view, model, author, scale)
+VALUES (%s, %s, %s, %s);""", [digest, model, author, scale])
     return digest
 
   def read(self, digest, celldata=False, output=dict()):
@@ -236,7 +235,7 @@ SELECT *
 FROM views
 WHERE view = %s;""", [digest])
       row = self.cursor.fetchone()
-      view = row[1:4] if row else list() # only need model and author
+      view = row[1:4] if row else list() # return model author scale
     else:
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return view
@@ -286,7 +285,7 @@ WHERE view = %s;""", [digest])
 
   def celldata(self, digest):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
-      ./recurrink.py -m soleares --output RINK --view e4681aa9b7aef66efc6290f320b43e55 '''
+      ./recurrink read -v e4681aa9b7aef66efc6290f320b43e55 '''
     data = list()
     self.cursor.execute("""
 SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
@@ -439,9 +438,7 @@ FROM geometry;""", [])
 
   # TODO
   # call validate during generate
-  # move transform into recipe, soleares square all 
   def transform(self, celldata, recipe):
-    #axis = ['north', 'east', 'northeast', 'southwest']
     self.celldata = celldata
     for axis in recipe.axis():
       if axis == 'all':
@@ -450,6 +447,7 @@ FROM geometry;""", [])
         self.facing_one(recipe.one(axis), axis)
     return self.celldata
     '''
+    move transform into recipe, soleares square all 
     if control == 1:
       for c in cells:
         cells[c]['shape'] = 'square' 
@@ -593,6 +591,7 @@ FROM styles;""", [])
       sids = self.cursor.fetchall()
       return sids
 
+  '''
   def transform(self, control, cells):
     if control == 1:
       for c in cells:
@@ -601,6 +600,7 @@ FROM styles;""", [])
       for c in cells:
         cells[c]['stroke_width'] = 1 
     return cells
+  '''
 
   def generate(self, control):
     ''' generate and return a list of 7 values without SID
