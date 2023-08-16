@@ -1,0 +1,13 @@
+cell	shape	size	facing	top	fill	bg	fo	stroke	sw	sd	so
+a	square 	medium	all	False	#DC143C	#32CD32	1.0	#FFF	1	0	1.0
+b	square	medium	all	False	#DC143C	#000	0.7	#FFF	1	0	1.0
+c	square 	medium	all	False	#DC143C	#CD5C5C	0.7	#FFF	1	0	1.0
+d	square	medium	all	False	#DC143C	#9ACD32	0.7	#FFF	1	0	1.0
+e	square 	medium	all	False	#DC143C	#FFF	0.4	#FFF	1	0	1.0
+f	square 	medium	all	False	#DC143C	#000	0.4	#FFF	1	0	1.0
+g	square 	medium	all	False	#DC143C	#CD5C5C	0.4	#FFF	1	0	1.0
+h	square 	medium	all	False	#DC143C	#9ACD32	0.4	#FFF	1	0	1.0
+i	square 	medium	all	False	#DC143C	#FFF	0.0	#FFF	1	0	1.0
+j	square	medium	all	False	#DC143C	#000	0.0	#FFF	1	0	1.0
+k	square	medium	all	False	#DC143C	#CD5C5C	0.0	#FFF	1	0	1.0
+l	square	medium	all	False	#DC143C	#9ACD32	0.0	#FFF	1	0	1.0
