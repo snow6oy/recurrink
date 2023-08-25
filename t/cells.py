@@ -41,16 +41,18 @@ class TestCells(unittest.TestCase):
     self.assertEqual(len(self.c.generate(1)), 11)
 
   def testTransform(self):
-    ''' first transform control makes everything square and zaps strokes
+    pass
+
+  def testValidate(self):
+    ''' before writing SVG check TmpFile for human error
+        (stroke opacity should not be 100)
     '''
     cells = { 
       'a': { 
         'bg': '#DC143C', 'facing': 'east', 'fill': '#4B0082', 'fill_opacity': '1.0',
         'shape': 'line', 'size': 'large', 'stroke': '#DC143C', 'stroke_dasharray': 0,
-        'stroke_opacity': '1.0', 'stroke_width': 6, 'top': True
+        'stroke_opacity': '100', 'stroke_width': 6, 'top': True
       }
     }
-    tx = self.c.transform(1, cells)
-    #pp.pprint(tx)
-    self.assertEqual(tx['a']['shape'], 'square')
-    self.assertEqual(tx['a']['stroke_width'], 0)
+    #self.c.validate(cells) # does it raise an error
+    self.assertRaises(ValueError, self.c.validate, cells)

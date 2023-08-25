@@ -232,11 +232,12 @@ class Layout(Draw):
     scale = [1.0, 1.1, 0.9, 1.3, 0.8, 1.5, 0.7, 1.8, 0.5, 2.0]
     self.factor = scale[int(f)]
     self.control = int(c)
-
-  def transform(self, cells):
     # TODO transform moved to init flow. No need to call here again!
-    self.cells = cells # self.c.transform(self.control, cells)
   '''
+  def validate(self, cells):
+    ''' test data read from TmpFile against business logic. Will throw ValueErrors
+    '''
+    self.c.validate(cells)
 
   def get_cell_by_position(self, pos):
     '''

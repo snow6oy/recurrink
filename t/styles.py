@@ -53,6 +53,18 @@ class TestStyles(unittest.TestCase):
     sid = self.s.read(style=items)
     self.assertEqual(sid, None)
 
+  ''' both validation tests assume cellrow format
+      ALSO ver changes test but not palette
+  '''
+  def testValidateVer0(self):
+    items = ['#FFF', '#32CD32', 1.0, '#000', 100, 100, 0.5]
+    self.assertRaises(ValueError, self.s.validate, items)
+
+  def testValidateVer1(self):
+    items = ['#FFF', '#32CD32', 1.0, '#000', 100, 100, 0.5]
+    validated = self.s.validate(items, ver=1)
+    print(validated)
+
 ''' 
   # uncomment to spam the styles table
   def testSetStyleInsert(self):

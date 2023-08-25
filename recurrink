@@ -37,6 +37,7 @@ class Input(inkex.InputExtension):
     doc = self.get_template(width=l.width, height=l.height, unit='px')
     svg = self.add_metadata(doc, model, l.factor)
     print(f"scale {l.factor}")
+    l.validate(cells)
     group = l.build(svg, top_order, cells)
     l.render(group)
     return doc
@@ -222,7 +223,8 @@ def init(model=None, digest=None):
     _, celldata = v.generate(model=model)
     celldata = tf.convert_to_list(celldata) # dict becomes a list before writing
   else:
-    model, celldata = v.generate()
+    model, cellrows = v.generate()
+    celldata = tf.convert_to_list(cellrows) 
   tf.write(model, celldata)
   # update(model)
   return model if not scale else f"{model} {scale}"

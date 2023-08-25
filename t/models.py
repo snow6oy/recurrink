@@ -28,7 +28,7 @@ class TestModels(unittest.TestCase):
     ''' key value pair with position as the key
     '''
     positions = self.b.read()
-    self.assertEqual(positions[(2, 0)], 'a')
+    self.assertEqual(positions[(1, 1)], 'd')
 
   def testGetCellWithTop(self):
     ''' can superimposed models list top cells as well?
@@ -45,12 +45,20 @@ class TestModels(unittest.TestCase):
     '''
     positions = self.b.read()
     cells = tuple()
-    if type(positions[(1, 1)]) is tuple:
-      cells = positions[(1, 1)]
-    self.assertEqual(cells[1], 'a')
+    if type(positions[(2, 0)]) is tuple:
+      cells = positions[(2, 0)]
+    self.assertEqual(cells[1], 'c')
 
-  def testGetRecipe(self):
+  def testGetRecipeAll(self):
     ''' lookup recipe for mirroring from model or None
     '''
     r = self.m.recipe('timpani')
     self.assertEqual(r.all()[2], 'k')
+
+  def testGetRecipeOne(self):
+    ''' lookup recipe for mirroring from model or None
+    '''
+    r = self.m.recipe('timpani')
+    pairs, flip = r.one('northeast')
+    self.assertEqual(pairs[3][1], 'j')
+    self.assertEqual(flip['north'], 'east')
