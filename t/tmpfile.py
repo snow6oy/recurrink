@@ -17,7 +17,7 @@ class TestTmpFile(unittest.TestCase):
     v = Views()
     b = Blocks(self.model)
     model, celldata = v.generate(self.model)
-    #print(celldata)
+    print(celldata)
     celldata = self.tf.convert_to_list(celldata)
     self.tf.write(self.model, celldata)
     self.assertTrue(os.path.isfile('/tmp/soleares.txt'))

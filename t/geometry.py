@@ -15,6 +15,7 @@ class TestGeometry(unittest.TestCase):
 
   def testGenerateNotRandom(self):
     items = self.g.generate(False)  
+    pp.pprint(items)
     self.assertTrue(len(items))
 
   def testReadAll(self):

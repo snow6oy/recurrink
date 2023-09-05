@@ -34,6 +34,7 @@ class TestModels(unittest.TestCase):
     ''' can superimposed models list top cells as well?
     '''
     cells = self.b.read(output=list())
+    print(cells)
     self.assertEqual(len(cells), 4)
     bb = Blocks('spiral')
     cells = bb.read(output=list())

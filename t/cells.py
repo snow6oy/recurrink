@@ -5,13 +5,29 @@
 import os.path
 import unittest
 import pprint
-from db import Cells, Geometry, Styles
+from db import Cells, Recipe
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestCells(unittest.TestCase):
 
   def setUp(self):
     self.c = Cells() # inherit Db() class
+
+  def testInitCellsWithRecipe(self):
+    r = Recipe('soleares')
+    topcells = { 'b': None, 'c': 'a', 'c': 'a', 'd': None, 'a': 'c', 'a': 'c' }
+    celldata, mesg = self.c.initCells(r, False, topcells=topcells)
+    pp.pprint(celldata)
+    print(mesg)
+    self.assertEqual(len(celldata.keys()), 4)
+
+  def testInitCells(self):
+    r = Recipe('zz')
+    topcells = { 'a': None, 'b': None, 'c': None, 'd': None, 'e': None, 'f': None }
+    celldata, mesg = self.c.initCells(r, False, topcells=topcells)
+    pp.pprint(celldata)
+    print(mesg)
+    self.assertEqual(len(celldata.keys()), 6)
 
   def testRead(self):
     ''' styles are not shareable. styles have 1:1 relation view/cell <> style
