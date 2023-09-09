@@ -14,12 +14,19 @@ class TestGeometry(unittest.TestCase):
     self.g = Geometry()
 
   def testGenerateNotRandom(self):
-    items = self.g.generate(False)  
-    pp.pprint(items)
-    self.assertTrue(len(items))
+    self.g.generate('a', False)  
+    items = list(self.g.geom['a'].keys())
+    self.assertEqual(len(items), 4)
+
+  def testGenerateRandom(self):
+    self.g.generate('a', True)  
+    items = list(self.g.geom['a'].keys())
+    #print(items)
+    self.assertEqual(len(items), 4)
 
   def testReadAll(self):
     items = self.g.read()
+    #pp.pprint(items)
     facing_all = [i for i in items if i[2] == 'all']
     #pp.pprint(facing_all)
     self.assertEqual(len(facing_all), 14)
@@ -30,6 +37,12 @@ class TestGeometry(unittest.TestCase):
       immutable avoids side-effect of incrementing SERIAL by anticipating UniqueViolation '''
     gid = self.g.read(geom=['square', 'medium', 'all', False])[0]
     self.assertTrue(int(gid))
+
+  def testReadLine(self):
+    ''' test a geom that can be randomly generated but does not exist in db
+    '''
+    gid = self.g.read(geom=['line', 'medium', 'west', True])
+    self.assertFalse(gid)
 
   ''' force top to False unless shape is large
   def testValidate1(self):
@@ -49,15 +62,14 @@ class TestGeometry(unittest.TestCase):
     self.assertRaises(ValueError, self.g.validate, 'a', data)
 
   def testFacingAll(self):
-    ''' after recipe is applied cells b and d should be symmetrical on east-west axis
+    ''' after recipe is applied cells a and c should face all directions
     '''
     self.g.celldata = { 
       'a': { 'facing': 'south', 'shape': 'triangle', 'size': 'medium', 'top': False },
       'c': { 'facing': 'south', 'shape': 'diamond', 'size': 'medium', 'top': False}
     }
     self.g.facing_all(['a', 'c'])  # send soleares recipe
-    self.assertEqual(self.g.celldata['a']['facing'], 'all')
-    self.assertEqual(self.g.celldata['c']['facing'], 'all')
+    self.assertEqual(self.g.geom['a']['facing'], 'all')
 
   def testFacingOne(self):
     ''' after recipe is applied cells b and d should be symmetrical on east-west axis
@@ -68,5 +80,7 @@ class TestGeometry(unittest.TestCase):
     }
     recipe = [('b', 'd')]  # soleares recipe
     self.g.facing_one(recipe, { 'north': 'south', 'south': 'north' })
-    #pp.pprint(self.g.celldata)
-    self.assertTrue(self.g.celldata['b']['facing'] in ['north', 'south'])
+    b_facing = self.g.geom['b']['facing']
+    d_facing = self.g.geom['d']['facing']
+    self.assertTrue(b_facing in ['north', 'south'])
+    self.assertTrue(b_facing != d_facing)

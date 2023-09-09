@@ -16,8 +16,8 @@ class TestTmpFile(unittest.TestCase):
     '''
     v = Views()
     b = Blocks(self.model)
-    model, celldata = v.generate(self.model)
-    print(celldata)
+    model, src, celldata = v.generate(self.model)
+    #pp.pprint(celldata)
     celldata = self.tf.convert_to_list(celldata)
     self.tf.write(self.model, celldata)
     self.assertTrue(os.path.isfile('/tmp/soleares.txt'))
@@ -63,12 +63,8 @@ class TestTmpFile(unittest.TestCase):
   def testConvertToList(self):
     celldata = { 
       'a': { 
-        'geom': { 
-           'facing': 'south', 'shape': 'line   ', 'size': 'medium', 'stroke_width': 0, 'top': False
-         },
-         'style': { 
-           'bg': '#FFA500', 'fill': '#FFF', 'fill_opacity': 1.0, 'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 1.0
-         }
+         'facing': 'south', 'shape': 'line   ', 'size': 'medium', 'stroke_width': 0, 'top': False,
+         'bg': '#FFA500', 'fill': '#FFF', 'fill_opacity': 1.0, 'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 1.0
       }
     }
     #pp.pprint(self.tf.convert_to_list(celldata))

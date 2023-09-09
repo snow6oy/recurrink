@@ -66,12 +66,15 @@ class TmpFile():
     '''   
     cells = list()
     for c in celldata:
-      cellrow = [c] 
+      cellrow = [c]
       for h in self.header:
         if h == 'cell': # already primed
           continue
         else:
-          cellrow.append(celldata[c][h])
+          try: 
+            cellrow.append(celldata[c][h])
+          except:
+            print(f"error missing cell:{c} key:{h}")
       cells.append(cellrow)
     return cells
 
@@ -197,18 +200,21 @@ def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
   '''
   scale = None
+  src = ""
   if digest:
     celldata = v.read(digest=digest, celldata=True, output=list())
     model, _, scale = v.read(digest=digest)
   elif model:
-    _, celldata = v.generate(model=model)
+    _, src, celldata = v.generate(model=model)
     celldata = tf.convert_to_list(celldata) # dict becomes a list before writing
   else:
-    model, cellrows = v.generate()
+    model, src, cellrows = v.generate()
     celldata = tf.convert_to_list(cellrows) 
   tf.write(model, celldata)
-  # update(model)
-  return model if not scale else f"{model} {scale}"
+  mesg = f"initialising {model} with {len(celldata)} cells from {src}"
+  if scale:
+    mesg += " scale at {scale}"
+  return mesg
  
 def update(model, scale):
   ''' send inputs from to inkex with argparse and Layout() as a global

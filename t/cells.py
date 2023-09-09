@@ -13,20 +13,22 @@ class TestCells(unittest.TestCase):
   def setUp(self):
     self.c = Cells() # inherit Db() class
 
-  def testInitCellsWithRecipe(self):
-    r = Recipe('soleares')
-    topcells = { 'b': None, 'c': 'a', 'c': 'a', 'd': None, 'a': 'c', 'a': 'c' }
-    celldata, mesg = self.c.initCells(r, False, topcells=topcells)
-    pp.pprint(celldata)
-    print(mesg)
-    self.assertEqual(len(celldata.keys()), 4)
+  def testGenerateWithRecipe(self):
+    ''' marchingband has Virtual Top
+    '''
+    r = Recipe('marchingband')
+    topcells = { 'b': None, 'c': None, 'a': None, 'd': None, 'e': 'h', 'f': 'g' }
+    celldata, mesg = self.c.generate(r, False, topcells=topcells)
+    #pp.pprint(celldata)
+    #print(mesg)
+    self.assertEqual(len(celldata.keys()), 8)
 
-  def testInitCells(self):
+  def testGenerateRandom(self):
     r = Recipe('zz')
     topcells = { 'a': None, 'b': None, 'c': None, 'd': None, 'e': None, 'f': None }
-    celldata, mesg = self.c.initCells(r, False, topcells=topcells)
-    pp.pprint(celldata)
-    print(mesg)
+    celldata, mesg = self.c.generate(r, True, topcells=topcells)
+    #pp.pprint(celldata)
+    #print(mesg)
     self.assertEqual(len(celldata.keys()), 6)
 
   def testRead(self):
@@ -44,17 +46,6 @@ class TestCells(unittest.TestCase):
       'e4681aa9b7aef66efc6290f320b43e55',
       ['a','triangl','medium','west',False,'#FFF','#CCC',1.0,'#000',0,1,0.5]
     ))
-
-  def testGenerate0(self):
-    ''' Geometry and Styles got from existing entries with default control 0
-    '''
-    #pp.pprint(self.c.generate(0))
-    self.assertEqual(len(self.c.generate(0)), 11)
-
-  def testGenerate1(self):
-    ''' Geometry and Styles set with randomly created entries control 1
-    '''
-    self.assertEqual(len(self.c.generate(1)), 11)
 
   def testTransform(self):
     pass

@@ -34,11 +34,31 @@ class TestModels(unittest.TestCase):
     ''' can superimposed models list top cells as well?
     '''
     cells = self.b.read(output=list())
-    print(cells)
     self.assertEqual(len(cells), 4)
     bb = Blocks('spiral')
     cells = bb.read(output=list())
     self.assertEqual(len(cells), 24)
+
+  def testGetTopCells(self):
+    ''' key value pair with cells as the key and top as value
+    '''
+    topcells = self.b.get_topcells()
+    self.assertFalse(topcells['b']) # b has no top in soleares
+
+  def testVirtualTop(self):
+    ''' cell model 
+           g marching band
+           j syncopated 
+           g timpani
+        see above for examples of Virtual Top. A special cell that exist only as a top cell
+    '''
+    b = Blocks('marchingband')
+    uniqcells = b.read(output=list())
+    topcells = b.get_topcells()
+    for tc in topcells:
+      top = topcells[tc]
+      if top:
+        self.assertTrue(top in uniqcells)
 
   def testGetTopByPosition(self):
     ''' superimpose cell d over cell a using top

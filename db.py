@@ -19,8 +19,8 @@ class Recipe:
     conf = {
       'syncopated': {
         'all': ['i', 'j'],
-        'east_NOT': [('a', 'c'), ('g', 'h'), ('b', 'd'), ('e', 'f')],
         'north': [('a', 'b'), ('g', 'h'), ('c', 'd'), ('e', 'f')]
+        # 'east_NOT': [('a', 'c'), ('g', 'h'), ('b', 'd'), ('e', 'f')],
       },
       'marchingband': {
         'all': ['e', 'f'],
@@ -153,6 +153,7 @@ FROM models;""",)
     return output
  
   def recipe(self, model):
+    # TODO is this needed?
     r = Recipe(model)
     return r
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -185,6 +186,7 @@ WHERE model = %s;""", [self.model])
       for r in rows:
         (cell, top, pos) = (r[0], r[1], tuple(r[2]))
         output[pos] = cell if top is None else (cell, top)
+    # TODO is uniq still needed, see Cells.generate()
     else:  # must be a list
       uniq = dict() # temporary dict to guarantee uniqueness across cell and top
       self.cursor.execute("""
@@ -202,6 +204,17 @@ AND top IS NOT null;""", [self.model])
         uniq[top[0]] = 1
       output = list(uniq.keys())
     return output
+
+  def get_topcells(self):
+    self.cursor.execute("""
+SELECT cell, top
+FROM blocks
+WHERE model = %s;""", [self.model])
+    rows = self.cursor.fetchall()
+    tc = dict()
+    for k, v in rows:
+      tc.setdefault(k, v)
+    return tc
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
@@ -264,49 +277,16 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return view
 
-  ''' generate a config as cell * values matrix
   def generate(self, model=None):
-    rnd=False
-    if model is None:
-      rnd = True
-      model = self.m.generate()
-    b = Blocks(model)
-    init = list()
-    for cell in b.read(output=list()): 
-      celldata = [cell]
-      if rnd:
-        celldata += list(self.c.generate(1))
-      else:
-        celldata += list(self.c.generate(0))
-      init.append(celldata)
-    return model, init
-  '''
-
-  def generate(self, model=None):
-    ''' generate a config as cell * values matrix
-    '''
-    recipe = None  # replace random with recipe
     rnd = False
     if model is None:
       model = self.m.generate()
       rnd = True
-    else: # load recipes for model
-      recipe = self.m.recipe(model)
+    recipe = self.m.recipe(model) # recipe.conf will be None for unknown models
     b = Blocks(model)
-    init = dict()
-    #  'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
-    # TODO include top in cell so that g.generate(cell, top) can set True or False
-    for cell in b.read(output=list()): 
-      init[cell] = dict()
-      cellrow = self.c.generate(rnd)
-      init[cell]['geom'] = dict(zip(self.header[1:5], cellrow[:4]))
-      init[cell]['style'] = dict(zip(self.header[5:9], cellrow[4:8]))
-      init[cell]['geom']['stroke_width'] = cellrow[8]
-      init[cell]['style']['stroke_dasharray'] = cellrow[9]
-      init[cell]['style']['stroke_opacity'] = cellrow[10]
-
-    celldata = self.c.transform(init, recipe=recipe)
-    return model, celldata
+    topcells = b.get_topcells()
+    celldata, mesg = self.c.generate(recipe, rnd=rnd, topcells=topcells)
+    return model, mesg, celldata
 
   def celldata(self, digest):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
@@ -371,19 +351,17 @@ AND cell = %s;""", [digest, cell])
     sid = self.cursor.fetchone()
     return sid
 
-  def initCells(self, recipe, rnd=False, topcells=dict()):
+  def generate(self, recipe, rnd=False, topcells=dict()):
     ''' inputs recipe=Recipe(), top=True, 
       topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
     '''
-    cells = list(topcells.keys()) # models vary but we risk orphaning top.values
-    mesg = str()
+    #print(topcells)
     if recipe.conf:
       self.s.set_spectrum(ver='colour45')
-      mesg = f"initialising with {len(topcells.keys())} cells from recipe"
+      src = 'recipe'
     else:
       self.s.set_spectrum(ver='universal')
-      source = 'random' if rnd else 'database'
-      mesg = f"initialising with {len(cells)} cells from {source}"
+      src = 'random' if rnd else 'database'
     for axis in recipe.axis():  # without recipe.conf being set this will be a null loop
       if axis == 'all':
         self.g.facing_all(recipe.all())
@@ -392,30 +370,22 @@ AND cell = %s;""", [digest, cell])
         pairs, flip = recipe.one(axis)
         self.g.facing_one(pairs, flip)
         self.s.facing_one(pairs, flip)
-    # generate cell data for models without recipe OR cells not defined in recipe
-    for c in cells:
-      if c in self.s.styles: # arbitary, could be g.geom 
-        continue
-      self.g.generate(c, rnd) 
-      self.s.generate(c, rnd)
+    for c in topcells: # generate data for models without recipe OR cells not defined in recipe
+      #print(c, self.g.geom[c]['shape'], self.g.geom[c]['facing'])
+      top = topcells[c] # models vary but we cannot risk orphaning top.values
+      if c not in self.g.geom: # arbitary test, could be styles
+        self.g.generate(c, rnd) 
+        self.s.generate(c, rnd)
+      if top and top not in self.g.geom: 
+        self.g.generate(top, rnd, top=True) 
+        self.s.generate(top, rnd)
     celldata = dict()
-    for c in cells:
-      self.g.geom[c]['top'] = True if topcells[c] else False
+    for c in self.g.geom: # now that all cells and topcells have vals we ..
+      self.g.geom[c]['top'] = True if c in topcells else False
       for a in ['stroke_width', 'stroke_dasharray']:
         self.s.styles[c][a] = self.s.defaults[a] 
-      celldata[c] = self.g.geom[c] | self.s.styles[c] # finally merge
-    return celldata, mesg
-
-  def ____generate(self, rnd):
-    ''' varying degress of randomness
-        with control will select from existing entries
-        no control means that entries are randomly generated
-        return a tuple(shape .. top)
-    '''
-    #geom = self.g.generate(rnd) + self.s.generate(rnd)
-    #print(f"geom {geom}")
-    #return geom + self.s.generate(rnd)
-    return self.g.generate(rnd) + self.s.generate(rnd)
+      celldata[c] = self.g.geom[c] | self.s.styles[c] # .. finally merge
+    return celldata, src
 
   def transform(self, cells, recipe):
     ''' apply optional symmetry and palette recipes before writing TmpFile
@@ -477,32 +447,27 @@ SELECT gid
 FROM geometry
 WHERE shape = %s
 AND size = %s
-AND facing = %s;""", geom)  # ignore top cos it will drop :-D
+AND facing = %s
+AND top = %s;""", geom)
       gid = self.cursor.fetchone()
       return gid
-    else: # get the lot
+    else: # get the lot 
       self.cursor.execute("""
 SELECT shape, size, facing, top
 FROM geometry;""", [])
       items = self.cursor.fetchall()
-      # correct the line data in DB as a stopgap for data cleaning
-      # TODO make a unit test
-      for i in items:
-        if i[0] == 'line':
-          if i[2] == 'west':  # lines cannot be south or west 
-            i[2] = 'east'
-          elif i[2] == 'south':
-            i[2] = 'north'
-      return items
+    return items
 
-  def generate(self, c, rnd):
+  def generate(self, c, rnd, top=False):
     ''' top should not be random. It is set in Cells() for superimposed cells from Blocks()
     '''
     if rnd: # randomly create new geometries and a new GID
+      self.geom[c] = dict()
       shape = random.choice(self.attributes['shape'])
       size = random.choice(self.attributes['size'])
+      facing = random.choice(self.attributes['facing'])
       if shape == 'triangl' or shape == 'diamond':
-        facing = 'medium' # triangles and diamonds cannot be large
+        size = 'medium' # triangles and diamonds cannot be large
       if shape in ['square', 'circle']:
         facing = 'all'
       elif shape == 'line' and facing == 'south':
@@ -512,13 +477,13 @@ FROM geometry;""", [])
       elif shape != 'diamond' and facing == 'all': 
         facing = 'north'
       # TODO this check ignore top
-      # did we randomly make a new geometry ?
-      gid = self.read(geom=[shape, size, facing]) 
+      gid = self.read(geom=[shape, size, facing, top]) 
       self.geom[c]['shape'] = shape
       self.geom[c]['size'] = size
       self.geom[c]['facing'] = facing
-      if gid is None:
-        raise ValueError(f"found new geom {items}")
+      self.geom[c]['top'] = top # top is generated here but should be overwritten by Block() later
+      if gid is None: # did we randomly make a new geometry ?
+        raise ValueError(f"found new geom {self.geom[c]}")
         #gid = self.create(items) 
     else: # without random then a model was given during init, in this case we use pre-defined gids
       all_items = self.read()
@@ -526,19 +491,6 @@ FROM geometry;""", [])
       z = zip(['shape','size','facing','top'], items) # TODO top is overwritten in Cells() so drop it here
       self.geom[c] = dict(z)
     return None
-
-  # TODO move this to Cells and keep celldata in Cells.geom.dict() 
-  # call validate during generate
-  def ___transform(self, celldata, recipe=None):
-    self.celldata = celldata
-    if recipe:
-      for axis in recipe.axis():
-        if axis == 'all':
-          self.facing_all(recipe.all())  # keep this in Geom
-        else:
-          pairs, flip = recipe.one(axis)
-          self.facing_one(pairs, flip)
-    return self.celldata
 
   def facing_all(self, cells):
     ''' select distinct(shape) from geometry where facing = 'all';
@@ -561,39 +513,27 @@ FROM geometry;""", [])
     ''' use the recipe and pair cells along the axis
     '''
     items = self.read()
-    one = [i for i in items if i[2] in list(flip.keys())]
+    one = [i for i in items if i[2] in list(flip.keys())] # filter on axis
 
     for p in pairs:
       i = random.choice(range(0, len(one)))
       geom = one.pop(i) if len(one) > 1 else one[0]
-      shape, f1 = geom[0], geom[2]
-      f2 = flip[f1]
-      c1, c2 = p[0], p[1]
-      self.geom[c1] = self.geom[c2] = dict()
-      self.geom[c1]['shape'] = shape
-      self.geom[c1]['facing'] = f1
-      self.geom[c2]['shape'] = shape
-      self.geom[c2]['facing'] = f2
+      f = geom[2]
+      faces = list([f, flip[f]])
+      for i in range(0, 2):
+        c = p[i]
+        self.geom[c] = dict()
+        self.geom[c]['shape'] = geom[0]
+        self.geom[c]['size'] = geom[1]
+        self.geom[c]['facing'] = faces[i] # this makes western line and IT IS FINE
 
   def validate(self, cell, data):
-    ''' shape/0 and facing/2 have dependencies
-    '''
-    if data['facing'] == 'south' and data['shape'] == 'line':
-      raise ValueError(f"validation error: southern line {cell}")
-    if data['facing'] == 'west' and data['shape'] == 'line':
-      raise ValueError(f"validation error: western line {cell}")
     if data['shape'] in ['square', 'circle'] and data['facing'] != 'all':
       raise ValueError(f"validation error: circle and square must face all {cell}")
     if data['shape'] in ['triangl', 'line'] and data['facing'] == 'all': 
       raise ValueError(f"validation error: triangles and lines cannot face all {cell}")
     if data['shape'] in ['triangl', 'diamond'] and data['size'] == 'large': 
       raise ValueError(f"validation error: triangle or diamond wrong size {cell}")
-    #if items[3] and items[1] != 'large': 
-    #  items[3] = False    # only large shapes can be on top
-    # TODO items[2] = None
-    # write validation test to understand why list comp fails when there is None value
-    #items = [self.defaults[a] if items[i] is None else items[i] for i, a in enumerate(items)]
-
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Styles(Db):
 
@@ -612,6 +552,7 @@ class Styles(Db):
     self.opacity = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1 ] 
     self.strokes = [n for n in range(0, 11)]
     self.styles = dict()
+    self.palette = list()
 
   def set_spectrum(self, ver=None):
     # TODO winsor newton is a better name?
@@ -634,7 +575,6 @@ class Styles(Db):
     backgrounds = ['#FFF', '#9ACD32', '#CD5C5C', '#000']
     for colour in ['#C71585', '#DC143C', '#FFA500', '#32CD32', '#4B0082']:
       fill[colour] = [opacity for opacity in ["1.0", "0.7", "0.4"]]
-    self.palette = list()
     for colour in fill:
       for opacity in fill[colour]:
         for bg in backgrounds:
@@ -724,7 +664,6 @@ class Styles(Db):
       cell['stroke'] = fill
       cell['stroke_opacity'] = opacity
       self.styles[p1] = cell
-      #self.cells.remove(p1)
       # secondary
       cell['bg'] = bg
       cell['fill'] = secondary
@@ -732,7 +671,6 @@ class Styles(Db):
       cell['stroke'] = bg
       cell['stroke_opacity'] = '1.0'
       self.styles[p2] = cell
-      #self.cells.remove(p2)
 
   def colour_counter(self):
     # TODO move this to Cells

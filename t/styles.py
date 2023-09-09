@@ -62,19 +62,21 @@ class TestStyles(unittest.TestCase):
     data['fill'] = '#FFF'
     self.assertRaises(ValueError, self.s.validate, 'a', data)
 
-  def testGenerate0(self):
+  def testGenerate(self):
     ''' select randomly from style database
     '''
-    self.s.set_spectrum(cells=['a', 'b', 'c', 'd'], ver='universal')
-    self.s.generate('a', False)
+    self.s.set_spectrum(ver='universal')
+    for cell in ['a', 'b', 'c', 'd']:
+      self.s.generate(cell, False)
     self.assertTrue('bg' in self.s.styles['a'])
 
-  def testGenerate1(self):
+  def testGenerateRandom(self):
     ''' randomly generate new attributes
     '''
-    self.s.set_spectrum(cells=['a', 'b', 'c', 'd'], ver='universal')
-    self.s.generate('a', True) # lose control
-    self.assertEqual(len(self.s.cells), 3) # 4 minus 1 is 3
+    self.s.set_spectrum(ver='universal')
+    for cell in ['a', 'b', 'c', 'd']:
+      self.s.generate(cell, True) # lose control
+    self.assertEqual(len(self.s.styles), 4) 
 
   ''' test cases
           recipe top
@@ -87,28 +89,26 @@ soleares  x      x
     ''' facing all for soleares
     '''
     # mock of what b.read() will return once top is in values() for soleares
-    topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
-    self.s.set_spectrum(topcells=topcells, ver='colour45')
+    #topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
+    self.s.set_spectrum(ver='colour45')
     self.s.facing_all(['a', 'c'])  # recipe.all()
     self.assertTrue('bg' in self.s.styles['a'])
-    self.assertTrue('a' not in self.s.cells)
 
   def testGenerateRecipeAndTopOne(self):
     ''' facing one for soleares
     '''
-    topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
-    self.s.set_spectrum(topcells=topcells, ver='colour45')
+    #topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
+    self.s.set_spectrum(ver='colour45')
     pairs = [('b', 'd')]       # recipe.one(axis)
     flip = {'north': 'south', 'south': 'north'}
     self.s.facing_one(pairs, flip)
     self.assertTrue('bg' in self.s.styles['b'])
-    self.assertEqual(self.s.cells, ['c', 'a'])
 
-  def testGenerateTop(self):
+  def testGenerateUniversal(self):
     ''' spiral has no recipe but does have top
         expect it to use default palette but still work
     '''
-    cells=['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p' ,'q', 'r']
-    self.s.set_spectrum(cells=cells, ver='universal')
-    self.s.generate('a', False)
-    self.assertFalse('a' in self.s.cells)
+    self.s.set_spectrum(ver='universal')
+    for cell in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p' ,'q', 'r']:
+      self.s.generate(cell, False)
+    self.assertTrue('a' in self.s.styles)
