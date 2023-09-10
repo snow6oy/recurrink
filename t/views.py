@@ -66,14 +66,14 @@ class TestViews(unittest.TestCase):
     self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
 
   def testViewGenerate(self):
-    _, cells = self.v.generate('soleares')
-    pp.pprint(cells)
+    _, _, cells = self.v.generate('soleares')
+    #pp.pprint(cells)
     self.assertTrue(isinstance(cells, dict))
 
   def testViewGenerateRandom(self):
     ''' pass to avoid spamming styles table
     '''
-    cells = self.v.generate()
+    _,_,  cells = self.v.generate()
     #pp.pprint(cells)
     self.assertTrue(cells)
   ''' 

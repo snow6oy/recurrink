@@ -37,6 +37,7 @@ class Input(inkex.InputExtension):
     doc = self.get_template(width=l.width, height=l.height, unit='px')
     svg = self.add_metadata(doc, model, l.factor)
     print(f"scale {l.factor}")
+    l.validate(cells)
     group = l.build(svg, top_order, cells)
     l.render(group)
     return doc
@@ -60,36 +61,20 @@ class TmpFile():
       'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
     ]
 
-  def __write(self, model, keys, celldata, celltype=dict()):
-    ''' accept cells as list or dict and write them to a tab separated text file
-    '''
-    expectedsize = len(self.header)
-    print(type(celldata) is dict)
-    with open(f"/tmp/{model}.txt", 'w') as f:
-      print("\t".join(self.colnam), file=f)
-      for i, data in enumerate(celldata):
-        vals = [str(d) for d in data] # convert everything to string
-        #if isinstance(celltype, dict): # TODO why not test for celldata ?
-        if type(celldata) is dict: # does this ever happen ?
-          vals.insert(0, celldata.keys()[i])  # push the dict key into the list
-        if len(vals) != expectedsize:
-          raise ValueError(f"{model}.txt has {len(vals)} not {expectedsize}\n{vals}")
-        line = "\t".join(vals)
-        print(line, file=f)
-
   def convert_to_list(self, celldata):
     ''' when celldata is in hash format, call this before writing a list 
     '''   
     cells = list()
     for c in celldata:
-      cellrow = [c] 
+      cellrow = [c]
       for h in self.header:
         if h == 'cell': # already primed
           continue
-        elif h in ['shape','size','facing','top','stroke_width']:
-          cellrow.append(celldata[c]['geom'][h])
         else:
-          cellrow.append(celldata[c]['style'][h])
+          try: 
+            cellrow.append(celldata[c][h])
+          except:
+            print(f"error missing cell:{c} key:{h}")
       cells.append(cellrow)
     return cells
 
@@ -215,17 +200,21 @@ def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
   '''
   scale = None
+  src = ""
   if digest:
     celldata = v.read(digest=digest, celldata=True, output=list())
     model, _, scale = v.read(digest=digest)
   elif model:
-    _, celldata = v.generate(model=model)
+    _, src, celldata = v.generate(model=model)
     celldata = tf.convert_to_list(celldata) # dict becomes a list before writing
   else:
-    model, celldata = v.generate()
+    model, src, cellrows = v.generate()
+    celldata = tf.convert_to_list(cellrows) 
   tf.write(model, celldata)
-  # update(model)
-  return model if not scale else f"{model} {scale}"
+  mesg = f"initialising {model} with {len(celldata)} cells from {src}"
+  if scale:
+    mesg += " scale at {scale}"
+  return mesg
  
 def update(model, scale):
   ''' send inputs from to inkex with argparse and Layout() as a global
