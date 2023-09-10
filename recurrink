@@ -253,9 +253,10 @@ def delete(view):
 
 def commit(model, scale, author):
   ''' read config, write to database and return digest
+      clean file system except for /tmp/model.txt
   '''
-  workdir = 'rinks'
-  pubdir = 'pubq'
+  workdir = '/home/gavin/Dropbox/familia/rinks'
+  pubdir = '/home/gavin/Pictures/pubq'
   celldata = tf.read(model, output=list())
   response = 'unknown error'
   if v.create(model, tf.digest, author, scale=scale):
@@ -263,8 +264,7 @@ def commit(model, scale, author):
     if os.path.isfile(f"/tmp/{model}.svg"):
       svgname = f"{workdir}/{model}/{tf.digest}.svg"
       os.rename(f"/tmp/{model}.svg", svgname)
-      os.symlink(f"../{svgname}", f"{pubdir}/{tf.digest}.svg")
-      # TODO rm /tmp/model.txt
+      os.symlink(f"{svgname}", f"{pubdir}/{tf.digest}.svg")
       response = svgname
     else:
       raise FileNotFoundError(f"{model}.svg not found in /tmp")

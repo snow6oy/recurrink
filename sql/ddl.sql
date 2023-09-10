@@ -12,11 +12,11 @@ CREATE TYPE direction as ENUM ('all', 'north', 'south', 'east', 'west');
 -- Geometry ID +:1 one Geom many positions
 CREATE TABLE geometry (
   GID serial PRIMARY KEY,
-  shape shapes NOT NULL,
+  shape CHAR(7) NOT NULL,
   size sizes DEFAULT 'medium',
   facing direction NOT NULL,
   top BOOLEAN DEFAULT FALSE,
-  UNIQUE (shape, size, facing)
+  UNIQUE (shape, size, facing, top)
 );
 
 DROP TABLE styles CASCADE;
@@ -52,6 +52,7 @@ CREATE TABLE blocks (
   model VARCHAR(50) NOT NULL,
   position INT [] NOT NULL,
   cell CHAR(1) NOT NULL,
+  top CHAR(1),
   FOREIGN KEY (model) REFERENCES models (model),
   UNIQUE (model, position)
 );
