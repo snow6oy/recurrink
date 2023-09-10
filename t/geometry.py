@@ -39,10 +39,10 @@ class TestGeometry(unittest.TestCase):
     self.assertTrue(int(gid))
 
   def testReadLine(self):
-    ''' test a geom that can be randomly generated but does not exist in db
+    ''' test the newest geom that was randomly generated and added to the db
     '''
     gid = self.g.read(geom=['line', 'medium', 'west', True])
-    self.assertFalse(gid)
+    self.assertTrue(gid)
 
   ''' force top to False unless shape is large
   def testValidate1(self):

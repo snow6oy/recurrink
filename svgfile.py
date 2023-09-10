@@ -9,7 +9,6 @@ from inkex import Group, Circle, Rectangle, Polygon, TextElement
 from db import Cells, Blocks, Models
 pp = pprint.PrettyPrinter(indent=2)
 
-
 class Points:
   ''' nw n ne    do the maths to render a cell
       w  c  e    points are calculated and called as p.ne p.nne p.s
@@ -222,18 +221,6 @@ class Layout(Draw):
     self.yOffset = (self.height - (self.maxRows * self.size)) / numOfMargins # 36.85040500000002
     super().__init__([self.size, self.xOffset, self.yOffset])
 
-  ''' convert a two digit control code into a float for scaling
-  def create(self, control):
-        0 is default
-        odd numbers zoom out
-        even numbers zoom in
-    # = int(list(control)[0])
-    f, c = list(control)
-    scale = [1.0, 1.1, 0.9, 1.3, 0.8, 1.5, 0.7, 1.8, 0.5, 2.0]
-    self.factor = scale[int(f)]
-    self.control = int(c)
-    # TODO transform moved to init flow. No need to call here again!
-  '''
   def validate(self, cells):
     ''' test data read from TmpFile against business logic. Will throw ValueErrors
     '''

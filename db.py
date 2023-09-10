@@ -387,12 +387,12 @@ AND cell = %s;""", [digest, cell])
       celldata[c] = self.g.geom[c] | self.s.styles[c] # .. finally merge
     return celldata, src
 
+  ''' apply optional symmetry and palette recipes before writing TmpFile
   def transform(self, cells, recipe):
-    ''' apply optional symmetry and palette recipes before writing TmpFile
-    '''
     cells = self.g.transform(cells, recipe)
     return cells
     #TODO return self.s.transform(cells, recipe)
+  '''
 
   def validate(self, celldata, recipe=None):
     # TODO extract a version from recipe and update Styles

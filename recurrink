@@ -6,7 +6,7 @@ import re
 import pprint
 import inkex
 import sys
-import random
+#import random
 import hmac
 from db import Views, Models, Cells
 from svgfile import Layout
