@@ -326,9 +326,10 @@ class Cells(Db):
     '''
     ok = True # used only by unit test
     cell = items.pop(0) # ignore first item cell
-    gid = self.g.read(geom=items[:4]) 
+    gid = self.g.read(item=items[:4]) 
     if gid is None: # add new geometry
-      gid = self.g.create(items=items[:4]) 
+      raise ValueError(f"not expecting to find a new geom {items[:4]}")
+      #gid = self.g.create(items=items[:4]) 
     sid = self.s.read(style=items[4:])
     if sid is None: # add new style
       sid = self.s.create(items[4:])[0] 
@@ -364,11 +365,11 @@ AND cell = %s;""", [digest, cell])
       src = 'random' if rnd else 'database'
     for axis in recipe.axis():  # without recipe.conf being set this will be a null loop
       if axis == 'all':
-        self.g.facing_all(recipe.all())
+        self.g.generate_facing_all(recipe.all())
         self.s.facing_all(recipe.all())
       else:
         pairs, flip = recipe.one(axis)
-        self.g.facing_one(pairs, flip)
+        self.g.generate_facing_pairs(pairs, flip)
         self.s.facing_one(pairs, flip)
     for c in topcells: # generate data for models without recipe OR cells not defined in recipe
       #print(c, self.g.geom[c]['shape'], self.g.geom[c]['facing'])
@@ -377,7 +378,7 @@ AND cell = %s;""", [digest, cell])
         self.g.generate(c, rnd) 
         self.s.generate(c, rnd)
       if top and top not in self.g.geom: 
-        self.g.generate(top, rnd, top=True) 
+        self.g.generate(top, top=True) 
         self.s.generate(top, rnd)
     celldata = dict()
     for c in self.g.geom: # now that all cells and topcells have vals we ..
@@ -420,9 +421,9 @@ class Geometry(Db):
     self.geom = dict()
 
   def create(self, items):
+    pass
     ''' before calling this attempt to find an existing record and then insert as fallback
         because psycopg2.errors.UniqueViolation:  # 23505 consumes SERIAL
-    '''
     #items = self.validate(items)
     self.cursor.execute("""
 INSERT INTO geometry (gid, shape, size, facing, top)
@@ -430,27 +431,33 @@ VALUES (DEFAULT, %s, %s, %s, %s)
 RETURNING gid;""", items)
     gid = self.cursor.fetchone()
     return gid[0]
+    '''
 
-  def read(self, geom=[], gid=None):
+  def read(self, top=None, gid=None, item=list()):
     ''' always returns a list, even if only one member (gid)
     '''
-    if gid:  # select entries
+    items = list()
+    if gid:  
       self.cursor.execute("""
 SELECT shape, size, facing, top
 FROM geometry
 WHERE gid = %s;""", [gid])
       items = self.cursor.fetchone()
-      return items
-    elif len(geom): # attempt to select gid
+    elif len(item): # in order to commit the item must be converted to a gid
       self.cursor.execute("""
 SELECT gid
 FROM geometry
 WHERE shape = %s
 AND size = %s
 AND facing = %s
-AND top = %s;""", geom)
-      gid = self.cursor.fetchone()
-      return gid
+AND top = %s;""", item)
+      items = self.cursor.fetchone()
+    elif isinstance(top, bool):
+      self.cursor.execute("""
+SELECT shape, size, facing, top
+FROM geometry
+WHERE top = %s;""", [top])
+      items = self.cursor.fetchall()
     else: # get the lot 
       self.cursor.execute("""
 SELECT shape, size, facing, top
@@ -458,7 +465,7 @@ FROM geometry;""", [])
       items = self.cursor.fetchall()
     return items
 
-  def generate(self, c, rnd, top=False):
+  def __generate(self, c, rnd, top=False):
     ''' top should not be random. It is set in Cells() for superimposed cells from Blocks()
     '''
     if rnd: # randomly create new geometries and a new GID
@@ -486,13 +493,18 @@ FROM geometry;""", [])
         raise ValueError(f"found new geom {self.geom[c]}")
         #gid = self.create(items) 
     else: # without random then a model was given during init, in this case we use pre-defined gids
-      all_items = self.read()
-      items = random.choice(all_items)
-      z = zip(['shape','size','facing','top'], items) # TODO top is overwritten in Cells() so drop it here
-      self.geom[c] = dict(z)
+      pass
+
+  def generate(self, c, top=False):
+    ''' given a cell and whether it is top or not randomly select a db entry
+    '''
+    top_items = self.read(top=top)
+    item = random.choice(top_items)
+    z = zip(['shape','size','facing','top'], item) 
+    self.geom[c] = dict(z)
     return None
 
-  def facing_all(self, cells):
+  def generate_facing_all(self, cells):
     ''' select distinct(shape) from geometry where facing = 'all';
         if there are more cells than shapes there will be duplicates THATS OK
         to reduce duplication we subtract until only one remains
@@ -509,7 +521,7 @@ FROM geometry;""", [])
       self.geom[c]['size'] = geom[1]
       self.geom[c]['facing'] = 'all'
 
-  def facing_one(self, pairs, flip):
+  def generate_facing_pairs(self, pairs, flip):
     ''' use the recipe and pair cells along the axis
     '''
     items = self.read()

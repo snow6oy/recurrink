@@ -31,18 +31,19 @@ class TestGeometry(unittest.TestCase):
     #pp.pprint(facing_all)
     self.assertEqual(len(facing_all), 14)
 
-  def testRead(self):
+  def testReadTop(self):
     ''' geometries are shared and have a 1:* relation with views and cells
       geometries are never updated, only inserted when shape/size/facing/top combination is new
       immutable avoids side-effect of incrementing SERIAL by anticipating UniqueViolation '''
-    gid = self.g.read(geom=['square', 'medium', 'all', False])[0]
-    self.assertTrue(int(gid))
+    cells = self.g.read(top=False)
+    #pp.pprint(cells)
+    self.assertTrue(len(cells))
 
-  def testReadLine(self):
+  def testReadGid(self):
     ''' test the newest geom that was randomly generated and added to the db
     '''
-    gid = self.g.read(geom=['line', 'medium', 'west', True])
-    self.assertTrue(gid)
+    geom = self.g.read(gid=70)
+    self.assertEqual(geom, ('line   ', 'medium', 'west', True))
 
   ''' force top to False unless shape is large
   def testValidate1(self):
@@ -68,7 +69,7 @@ class TestGeometry(unittest.TestCase):
       'a': { 'facing': 'south', 'shape': 'triangle', 'size': 'medium', 'top': False },
       'c': { 'facing': 'south', 'shape': 'diamond', 'size': 'medium', 'top': False}
     }
-    self.g.facing_all(['a', 'c'])  # send soleares recipe
+    self.g.generate_facing_all(['a', 'c'])  # send soleares recipe
     self.assertEqual(self.g.geom['a']['facing'], 'all')
 
   def testFacingOne(self):
@@ -79,7 +80,7 @@ class TestGeometry(unittest.TestCase):
       'd': { 'facing': 'south', 'shape': 'line', 'size': 'large', 'stroke_width': 0, 'top': False}
     }
     recipe = [('b', 'd')]  # soleares recipe
-    self.g.facing_one(recipe, { 'north': 'south', 'south': 'north' })
+    self.g.generate_facing_pairs(recipe, { 'north': 'south', 'south': 'north' })
     b_facing = self.g.geom['b']['facing']
     d_facing = self.g.geom['d']['facing']
     self.assertTrue(b_facing in ['north', 'south'])
