@@ -48,6 +48,17 @@ class Recipe:
         'all': ['b', 'e', 'h'],
         'north': [('c', 'd'), ('j', 'g')],
         'east': [('a', 'f')]
+      },
+      'spiral': {
+        'all': ['k', 'n'],
+        'northeast': [ ('a', 'q'), ('e', 'p') ],
+        'southwest': [ ('d', 'm'), ('g', 'j') ],
+        'east': [ ('c', 'o'), ('b', 'r') ],
+        'north': [ ('i', 'h'), ('l', 'f') ]
+      },
+      'eflat': {
+        'all': ['c'],
+        'northeast': [ ('a', 'b'), ('d', 'e'), ('f', 'g') ]
       }
     }
     self.conf = conf[model] if model in conf else None

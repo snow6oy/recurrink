@@ -43,7 +43,7 @@ class TestGeometry(unittest.TestCase):
     ''' test the newest geom that was randomly generated and added to the db
     '''
     geom = self.g.read(gid=70)
-    self.assertEqual(geom, ('line   ', 'medium', 'west', True))
+    self.assertEqual(geom, ('line', 'medium', 'west', True))
 
   ''' force top to False unless shape is large
   def testValidate1(self):
