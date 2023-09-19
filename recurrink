@@ -161,8 +161,8 @@ def inputs():
   parser_i.add_argument('-m', '--model', help='name of base model')
   parser_i.add_argument("-v", "--view", help='view to clone')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
-  parser_c.add_argument('-m', '--model', help='name of base model')
-  parser_c.add_argument("-a", "--author", choices=['human', 'machine'])
+  parser_c.add_argument('-m', '--model', help='name of base model', required=True)
+  parser_c.add_argument("-a", "--author", choices=['human', 'machine'], required=True)
   parser_c.add_argument("-s", "--scale",  default=1.0, help="zoom control 0.5 - 2.0")
   parser_d = subparsers.add_parser('delete')
   parser_d.add_argument("-v", "--view", help='view to remove from db')
@@ -202,6 +202,7 @@ def init(model=None, digest=None):
   scale = None
   src = ""
   if digest:
+    src = digest
     celldata = v.read(digest=digest, celldata=True, output=list())
     model, _, scale = v.read(digest=digest)
   elif model:
@@ -213,7 +214,7 @@ def init(model=None, digest=None):
   tf.write(model, celldata)
   mesg = f"initialising {model} with {len(celldata)} cells from {src}"
   if scale:
-    mesg += " scale at {scale}"
+    mesg += f" scale at {scale}"
   return mesg
  
 def update(model, scale):

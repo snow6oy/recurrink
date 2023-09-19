@@ -6,13 +6,13 @@ DROP TYPE sizes;
 DROP TYPE direction;
 CREATE TYPE sizes as ENUM ('large', 'medium', 'small');
 CREATE TYPE direction as ENUM ('all', 'north', 'south', 'east', 'west');
--- dropped shapes in favor CHAR(7) and NOT NULL
+-- dropped shapes in favor VARCHAR(7) and NOT NULL
 -- CREATE TYPE shapes as ENUM ('circle', 'line', 'square', 'triangle', 'diamond');
 
 -- Geometry ID +:1 one Geom many positions
 CREATE TABLE geometry (
   GID serial PRIMARY KEY,
-  shape CHAR(7) NOT NULL,
+  shape VARCHAR(7) NOT NULL,
   size sizes DEFAULT 'medium',
   facing direction NOT NULL,
   top BOOLEAN DEFAULT FALSE,

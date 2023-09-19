@@ -10,7 +10,70 @@ class Db:
     connection.autocommit = True  # Ensure data is added to the database immediately after write commands
     self.cursor = connection.cursor()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Recipe:
+class Compass(Db):
+  ''' recipes are hardcode here but when better defines will move to Postgres
+      models with recipes have top, except koto, pitch and fourfour
+      models with top have recipes, except spiral
+  '''
+  def __init__(self, model):
+    super().__init__()
+    conf = dict()
+    self.cursor.execute("""
+SELECT *
+FROM recipe
+WHERE model = %s;""", [model])
+    recipe = self.cursor.fetchall()
+    if len(recipe):
+      for r in recipe:
+        _, cell, pair, facing = r
+        if facing not in conf:
+          conf[facing] = list()
+        if facing == 'all':
+          conf[facing].append(cell)
+        else:
+          conf[facing].append((cell, pair))
+      self.conf = conf
+    else:
+      self.conf = None
+    '''
+    print(confnew)
+    print()
+    print(conf[model])
+    self.conf = conf[model] if model in conf else None
+    '''
+
+  def axis(self):
+    return list(self.conf.keys()) if self.conf else list()
+
+  def all(self, cell):
+    ''' test if the given cell is in the model and can face all directions
+    '''
+    return True if self.conf and cell in self.conf['all'] else False
+
+  def one(self, cell):
+    ''' define the cell pairs (tuples) that face each other
+        pairs, flip = recipe.one(axis)
+        self.g.generate_facing_pairs(pairs, flip)
+    '''
+    flip = {
+      'east': { 'north': 'south', 'south': 'north' },
+      'north': { 'west': 'east', 'east': 'west' },
+      'northeast': { 'north': 'east', 'east': 'north' },
+      'southwest': { 'south': 'west', 'west': 'south' }
+    }
+    pair, facing = tuple(), dict()
+    if self.conf:
+      for axis in self.axis():
+        if axis in flip:
+          facing = flip[axis]
+        if axis == 'all':
+          continue
+        for p in self.conf[axis]:
+          if cell in p:
+            pair = p
+    return pair, facing
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Recipe():
   ''' recipes are hardcode here but when better defines will move to Postgres
       models with recipes have top, except koto, pitch and fourfour
       models with top have recipes, except spiral
@@ -86,7 +149,6 @@ class Recipe:
       return self.conf[axis], flip[axis]
     else:
       return list(), dict()
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Models(Db):
   ''' models give us the base template to draw a rink
   '''
@@ -163,10 +225,12 @@ FROM models;""",)
       output += f"{m[1]:>4} {m[2][0]:>4} {m[2][1]:>4} {m[0]}\n"
     return output
  
+  # TODO is this needed?
+  '''
   def recipe(self, model):
-    # TODO is this needed?
     r = Recipe(model)
     return r
+  '''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Blocks(Db):
 
@@ -293,7 +357,7 @@ WHERE view = %s;""", [digest])
     if model is None:
       model = self.m.generate()
       rnd = True
-    recipe = self.m.recipe(model) # recipe.conf will be None for unknown models
+    recipe = Recipe(model) # recipe.conf will be None for unknown models
     b = Blocks(model)
     topcells = b.get_topcells()
     celldata, mesg = self.c.generate(recipe, rnd=rnd, topcells=topcells)

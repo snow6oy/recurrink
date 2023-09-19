@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from db import Models, Blocks
+from db import Models, Blocks, Compass, Recipe
 import unittest
 
 class TestModels(unittest.TestCase):
@@ -73,13 +73,29 @@ class TestModels(unittest.TestCase):
   def testGetRecipeAll(self):
     ''' lookup recipe for mirroring from model or None
     '''
-    r = self.m.recipe('timpani')
+    r = Recipe('timpani')
     self.assertEqual(r.all()[2], 'k')
 
   def testGetRecipeOne(self):
     ''' lookup recipe for mirroring from model or None
     '''
-    r = self.m.recipe('timpani')
+    r = Recipe('timpani')
     pairs, flip = r.one('northeast')
     self.assertEqual(pairs[3][1], 'j')
     self.assertEqual(flip['north'], 'east')
+
+  def testGetCompassOne(self):
+    ''' lookup recipe for mirroring from model or None
+    '''
+    compass = Compass('timpani')
+    pairs, flip = compass.one('j')  # j is on the northeast axis
+    #print(pairs, flip)
+    self.assertEqual(pairs[1], 'j')
+    self.assertEqual(flip['north'], 'east')
+
+  def testGetCompassAll(self):
+    ''' lookup recipe for mirroring from model or None
+    '''
+    compass = Compass('timpani')
+    self.assertTrue(compass.all('k'))
+
