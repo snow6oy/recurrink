@@ -11,20 +11,18 @@ class Db:
     self.cursor = connection.cursor()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Compass(Db):
-  ''' recipes are hardcode here but when better defines will move to Postgres
-      models with recipes have top, except koto, pitch and fourfour
-      models with top have recipes, except spiral
+  ''' compass gives direction to models 
   '''
   def __init__(self, model):
     super().__init__()
     conf = dict()
     self.cursor.execute("""
 SELECT *
-FROM recipe
+FROM compass
 WHERE model = %s;""", [model])
-    recipe = self.cursor.fetchall()
-    if len(recipe):
-      for r in recipe:
+    compass = self.cursor.fetchall()
+    if len(compass):
+      for r in compass:
         _, cell, pair, facing = r
         if facing not in conf:
           conf[facing] = list()
@@ -347,7 +345,7 @@ AND cell = %s;""", [digest, cell])
     sid = self.cursor.fetchone()
     return sid
 
-  def validate(self, celldata, recipe=None):
+  def validate(self, celldata):
     [self.g.validate(c, celldata[c]) for c in celldata]
     [self.s.validate(c, celldata[c]) for c in celldata]
 
@@ -475,7 +473,7 @@ FROM geometry;""", [])
     }
 
   def generate_one(self, pair, axis, top):
-    ''' use the recipe and pair cells along the axis
+    ''' use the compass and pair cells along the axis
     '''
     items = self.read()
     flip = self.flip[axis]
