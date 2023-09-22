@@ -5,31 +5,29 @@
 import os.path
 import unittest
 import pprint
-from db import Cells, Recipe
+from db import Cell, Recipe
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestCells(unittest.TestCase):
 
   def setUp(self):
-    self.c = Cells() # inherit Db() class
+    self.c = Cell('colours45') # inherit Db() class
 
-  def testGenerateWithRecipe(self):
-    ''' marchingband has Virtual Top
+  def testGenerate(self):
+    ''' default generate selects from db
     '''
-    r = Recipe('marchingband')
-    topcells = { 'b': None, 'c': None, 'a': None, 'd': None, 'e': 'h', 'f': 'g' }
-    celldata, mesg = self.c.generate(r, False, topcells=topcells)
-    #pp.pprint(celldata)
-    #print(mesg)
-    self.assertEqual(len(celldata.keys()), 8)
+    self.c.generate('a', top=False)
+    cell_a = self.c.g.geom['a'] | self.c.s.styles['a']
+    #pp.pprint(cell_a)
+    self.assertEqual(len(cell_a.keys()), 11)
 
   def testGenerateRandom(self):
-    r = Recipe('zz')
-    topcells = { 'a': None, 'b': None, 'c': None, 'd': None, 'e': None, 'f': None }
-    celldata, mesg = self.c.generate(r, True, topcells=topcells)
-    #pp.pprint(celldata)
-    #print(mesg)
-    self.assertEqual(len(celldata.keys()), 6)
+    ''' only styles are random 
+    '''
+    self.c.generate_any('z', top=True)
+    #pp.pprint(self.c.s.styles)
+    s = self.c.s.styles['z']
+    self.assertEqual(len(s.keys()), 7)
 
   def testRead(self):
     ''' styles are not shareable. styles have 1:1 relation view/cell <> style

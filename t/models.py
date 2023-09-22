@@ -88,10 +88,10 @@ class TestModels(unittest.TestCase):
     ''' lookup recipe for mirroring from model or None
     '''
     compass = Compass('timpani')
-    pairs, flip = compass.one('j')  # j is on the northeast axis
-    #print(pairs, flip)
+    pairs, axis = compass.one('j')  # j is on the northeast axis
+    #print(pairs, axis)
     self.assertEqual(pairs[1], 'j')
-    self.assertEqual(flip['north'], 'east')
+    self.assertEqual(axis, 'northeast')
 
   def testGetCompassAll(self):
     ''' lookup recipe for mirroring from model or None

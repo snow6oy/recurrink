@@ -67,7 +67,7 @@ class TestStyles(unittest.TestCase):
     '''
     self.s.set_spectrum(ver='universal')
     for cell in ['a', 'b', 'c', 'd']:
-      self.s.generate(cell, False)
+      self.s.generate(cell)
     self.assertTrue('bg' in self.s.styles['a'])
 
   def testGenerateRandom(self):
@@ -75,7 +75,7 @@ class TestStyles(unittest.TestCase):
     '''
     self.s.set_spectrum(ver='universal')
     for cell in ['a', 'b', 'c', 'd']:
-      self.s.generate(cell, True) # lose control
+      self.s.generate_any(cell) # lose control
     self.assertEqual(len(self.s.styles), 4) 
 
   ''' test cases
@@ -88,20 +88,20 @@ soleares  x      x
   def testGenerateRecipeAndTopAll(self):
     ''' facing all for soleares
     '''
-    # mock of what b.read() will return once top is in values() for soleares
-    #topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
     self.s.set_spectrum(ver='colour45')
-    self.s.facing_all(['a', 'c'])  # recipe.all()
-    self.assertTrue('bg' in self.s.styles['a'])
+    topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
+    for c in topcells.keys(): # mock of what b.read() will return 
+      self.s.generate_all(c)
+      self.assertTrue('bg' in self.s.styles[c])
 
   def testGenerateRecipeAndTopOne(self):
     ''' facing one for soleares
     '''
     #topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
     self.s.set_spectrum(ver='colour45')
-    pairs = [('b', 'd')]       # recipe.one(axis)
+    pairs = ('b', 'd')       # compass.one(axis)
     flip = {'north': 'south', 'south': 'north'}
-    self.s.facing_one(pairs, flip)
+    self.s.generate_one(pairs, flip)
     self.assertTrue('bg' in self.s.styles['b'])
 
   def testGenerateUniversal(self):
@@ -110,5 +110,5 @@ soleares  x      x
     '''
     self.s.set_spectrum(ver='universal')
     for cell in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p' ,'q', 'r']:
-      self.s.generate(cell, False)
+      self.s.generate(cell)
     self.assertTrue('a' in self.s.styles)

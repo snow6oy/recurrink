@@ -69,7 +69,7 @@ class TestGeometry(unittest.TestCase):
       'a': { 'facing': 'south', 'shape': 'triangle', 'size': 'medium', 'top': False },
       'c': { 'facing': 'south', 'shape': 'diamond', 'size': 'medium', 'top': False}
     }
-    self.g.generate_facing_all(['a', 'c'])  # send soleares recipe
+    self.g.generate_all('a', False)  # send soleares compass
     self.assertEqual(self.g.geom['a']['facing'], 'all')
 
   def testFacingOne(self):
@@ -79,8 +79,8 @@ class TestGeometry(unittest.TestCase):
       'b': { 'facing': 'east', 'shape': 'line', 'size': 'large', 'stroke_width': 0, 'top': False},
       'd': { 'facing': 'south', 'shape': 'line', 'size': 'large', 'stroke_width': 0, 'top': False}
     }
-    recipe = [('b', 'd')]  # soleares recipe
-    self.g.generate_facing_pairs(recipe, { 'north': 'south', 'south': 'north' })
+    pair = ('b', 'd')  # soleares compass
+    self.g.generate_one(pair, 'east', False)
     b_facing = self.g.geom['b']['facing']
     d_facing = self.g.geom['d']['facing']
     self.assertTrue(b_facing in ['north', 'south'])

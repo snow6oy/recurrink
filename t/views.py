@@ -12,9 +12,7 @@ class TestViews(unittest.TestCase):
 
   def setUp(self):
     self.v = Views()
-    #self.r = Recurrink('soleares')
     self.view = 'e4681aa9b7aef66efc6290f320b43e55'
-    #550d193efe80f67e92d5a0c59ad9d354'
 
   def testGetViewDigest(self):
     ''' get a view from db as a dictionary
@@ -65,17 +63,20 @@ class TestViews(unittest.TestCase):
     view.create('koto', 'abcdefghijklmnopqrstuvwxyz012345', 'human', 5)
     self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
 
-  def testViewGenerate(self):
-    _, _, cells = self.v.generate('soleares')
-    #pp.pprint(cells)
-    self.assertTrue(isinstance(cells, dict))
+  def testViewGenerat2(self):
+    self.v.generate('timpani')
+    pp.pprint(self.v.view)
+    self.assertEqual(self.v.view['e']['facing'], 'all')
 
-  def testViewGenerateRandom(self):
-    ''' pass to avoid spamming styles table
-    '''
-    _,_,  cells = self.v.generate()
-    #pp.pprint(cells)
-    self.assertTrue(cells)
+  def testViewGenerat2Random(self):
+    self.v.generate('arpeggio')
+    #pp.pprint(self.v.view)
+    self.assertEqual(len(self.v.view.keys()), 6)
+
+  def testViewGenerate(self):
+    self.v.generate('soleares')
+    #pp.pprint(self.v.view)
+    self.assertTrue(isinstance(self.v.view['d'], dict))
   ''' 
   the 
   end
