@@ -40,7 +40,7 @@ WHERE model = %s;""", [model])
   def all(self, cell):
     ''' test if the given cell is in the model and can face all directions
     '''
-    return True if self.conf and cell in self.conf['all'] else False
+    return True if self.conf and 'all' in self.conf and cell in self.conf['all'] else False
 
   def one(self, cell):
     ''' define the cell pairs (tuples) that face each other

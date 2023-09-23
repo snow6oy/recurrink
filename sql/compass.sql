@@ -52,4 +52,13 @@ VALUES
   ('pitch', 'h', null, 'all'),
   ('pitch', 'c', 'd', 'north'),
   ('pitch', 'j', 'g', 'north'),
-  ('pitch', 'a', 'f', 'east');
+  ('pitch', 'a', 'f', 'east'),
+  ('waltz', 'a', 'b', 'north'),
+  ('waltz', 'c', 'd', 'north'),
+  ('eflat', 'c', 'f', 'northeast'),
+  ('eflat', 'b', 'g', 'northeast'),
+  ('eflat', 'e', 'd', 'east'),
+  ('eflat', 'a', null, 'all'),
+  ('mambo', 'x', null, 'all'),
+  ('mambo', 'e', 'o', 'east'),
+  ('mambo', 'a', 'b', 'north');
