@@ -13,15 +13,15 @@ class TestGeometry(unittest.TestCase):
   def setUp(self):
     self.g = Geometry()
 
-  def testGenerateNotRandom(self):
-    self.g.generate('a', False)  
+  def testGenerate(self):
+    items = [
+      ('diamond', 'medium', 'north', False),
+      ('diamond', 'medium', 'south', False),
+      ('diamond', 'medium', 'east', False),
+      ('diamond', 'medium', 'west', False)
+    ]
+    self.g.generate('a', items)  
     items = list(self.g.geom['a'].keys())
-    self.assertEqual(len(items), 4)
-
-  def testGenerateRandom(self):
-    self.g.generate('a', True)  
-    items = list(self.g.geom['a'].keys())
-    #print(items)
     self.assertEqual(len(items), 4)
 
   def testReadAll(self):
@@ -63,24 +63,28 @@ class TestGeometry(unittest.TestCase):
     self.assertRaises(ValueError, self.g.validate, 'a', data)
 
   def testFacingAll(self):
-    ''' after recipe is applied cells a and c should face all directions
+    ''' cells must face all directions for allocation pool to generate output
     '''
-    self.g.celldata = { 
-      'a': { 'facing': 'south', 'shape': 'triangle', 'size': 'medium', 'top': False },
-      'c': { 'facing': 'south', 'shape': 'diamond', 'size': 'medium', 'top': False}
-    }
-    self.g.generate_all('a', False)  # send soleares compass
+    items = [
+      ('square', 'medium', 'all', False),
+      ('diamond',  'medium', 'all', False)
+    ]
+    items = self.g.generate_all('a', False, items)  # send soleares compass
+    self.g.generate_all('c', False, items)  # send soleares compass
     self.assertEqual(self.g.geom['a']['facing'], 'all')
+    self.assertEqual(self.g.geom['c']['facing'], 'all')
 
   def testFacingOne(self):
     ''' after recipe is applied cells b and d should be symmetrical on east-west axis
     '''
-    self.g.celldata = { 
-      'b': { 'facing': 'east', 'shape': 'line', 'size': 'large', 'stroke_width': 0, 'top': False},
-      'd': { 'facing': 'south', 'shape': 'line', 'size': 'large', 'stroke_width': 0, 'top': False}
-    }
+    items = [
+      ('diamond', 'medium', 'north', False),
+      ('diamond', 'medium', 'south', False),
+      ('diamond', 'medium', 'east', False),
+      ('diamond', 'medium', 'west', False)
+    ]
     pair = ('b', 'd')  # soleares compass
-    self.g.generate_one(pair, 'east', False)
+    self.g.generate_one(pair, 'east', False, items)
     b_facing = self.g.geom['b']['facing']
     d_facing = self.g.geom['d']['facing']
     self.assertTrue(b_facing in ['north', 'south'])

@@ -300,7 +300,7 @@ WHERE view = %s;""", [digest])
           pair, axis = compass.one(cell)
           c.generate_one(pair, axis, topYN)
       else:
-        # print(f"model {model} has no direction")
+        #print(f"model {model} has no direction")
         source = 'database'
         c.generate(cell, topYN)
       self.view[cell] = c.g.geom[cell] | c.s.styles[cell] # .. finally merge
@@ -310,40 +310,38 @@ class Cells(Views):
   ''' inherit from View and check that self.pool is mutable in both classes
   '''
   def __init__(self, palette=None):
-    self.palette = palette if palette else 'colour45'
     self.g = Geometry()
     self.s = Styles()
+    self.palette = palette if palette else 'colour45'
     self.s.set_spectrum(ver=palette)
+    self.g.items = { True: list(), False: list() } # stash geoms by top
     super().__init__()
 
   def generate(self, cell, top):
     ''' default is to select from db 
     '''
-    self.g.generate(cell, top) 
+    if not len(self.g.items[top]):
+      self.g.items[top] = self.g.read(top=top)
+    self.g.items[top] = self.g.generate(cell, self.g.items[top]) 
     self.s.generate(cell) 
 
   def generate_any(self, cell, top):
-    self.g.generate(cell, top) 
+    if not len(self.g.items[top]):
+      self.g.items[top] = self.g.read(top=top)
+    self.g.items[top] = self.g.generate(cell, self.g.items[top]) 
     self.s.generate_any(cell) 
 
   def generate_one(self, pair, axis, top):
-    self.g.generate_one(pair, axis, top)
+    if not len(self.g.items[top]):
+      self.g.items[top] = self.g.read(top=top)
+    self.g.items[top] = self.g.generate_one(pair, axis, top, self.g.items[top])
     self.s.generate_one(pair, axis)
 
   def generate_all(self, cell, top):
-    self.g.generate_all(cell, top)
+    if not len(self.g.items[top]):
+      self.g.items[top] = self.g.read(top=top)
+    self.g.items[top] = self.g.generate_all(cell, top, self.g.items[top]) 
     self.s.generate_all(cell) 
-
-  def read(self, digest, cell):
-    ''' return tuple or none
-    '''
-    self.cursor.execute("""
-SELECT sid
-FROM cells
-WHERE view = %s
-AND cell = %s;""", [digest, cell])
-    sid = self.cursor.fetchone()
-    return sid
 
   def validate(self, celldata):
     [self.g.validate(c, celldata[c]) for c in celldata]
@@ -369,6 +367,7 @@ VALUES (%s, %s, %s, %s);""", [digest, cell, sid, gid])
       ok = False
     return ok
 
+  # TODO who calls here?
   def read(self, digest, cell):
     ''' return tuple or none
     '''
@@ -388,21 +387,20 @@ class Geometry(Db):
   '''
   def __init__(self):
     super().__init__()
-    self.defaults = { 'shape':'square', 'size':'medium', 'facing':None, 'top':False }
     self.attributes = {
       'shape': ['circle', 'line', 'square', 'triangl', 'diamond'],
       'facing': ['all','north', 'south', 'east', 'west'],
       'size': ['medium', 'large'],
       'top': [True, False]
     }
-    self.geom = dict()
     self.flip = {
       'east': { 'north': 'south', 'south': 'north' },
       'north': { 'west': 'east', 'east': 'west' },
       'northeast': { 'north': 'east', 'east': 'north' },
       'southwest': { 'south': 'west', 'west': 'south' }
     }
-    self.facing_all = list()
+    self.defaults = { 'shape':'square', 'size':'medium', 'facing':None, 'top':False }
+    self.geom = dict()
 
   def create(self, items):
     ''' there are finite permutation of geometries so stopped random creation
@@ -442,25 +440,24 @@ FROM geometry;""", [])
       items = self.cursor.fetchall()
     return items
 
-  def generate(self, c, top=False):
-    ''' given a cell and whether it is top or not randomly select a db entry
+  def generate(self, c, items):
+    ''' given a cell and items previously filtered on top randomly select a db entry
     '''
-    top_items = self.read(top=top)
-    item = random.choice(top_items)
+    #print(f"geom {c} items {len(items)}")
+    itemsize = len(items) # number of db items to select from
+    i = random.choice(range(0, itemsize))
+    item = items.pop(i) if itemsize > 1 else items[0]
     z = zip(['shape','size','facing','top'], item) 
     self.geom[c] = dict(z)
-    return None
+    return items
 
-  # TODO optimise by testing when db is read
-  # want to prime the Class with result from first query
-  # but cannot find a way to persist between instances
-  def generate_all(self, c, top):
+  def generate_all(self, c, top, items):
     ''' if there are more cells than shapes there will be duplicates THATS OK
         to reduce duplication we subtract until only one remains
         there is no random selection because a curated list of geoms avoids weird combinations
         e.g. large diamond
+        items with zero ALL entries will throw errors
     '''
-    items = self.read()
     facing_all = [i for i in items if i[2] == 'all'] # i/2 is facing
     poolsize = len(facing_all) # number of db items to select from
     i = random.choice(range(0, poolsize))
@@ -471,11 +468,11 @@ FROM geometry;""", [])
       'facing': 'all',
       'top': top
     }
+    return items
 
-  def generate_one(self, pair, axis, top):
+  def generate_one(self, pair, axis, top, items):
     ''' use the compass and pair cells along the axis
     '''
-    items = self.read()
     flip = self.flip[axis]
     one = [i for i in items if i[2] in list(flip.keys())] # filter on axis
     i = random.choice(range(0, len(one)))
@@ -490,6 +487,7 @@ FROM geometry;""", [])
         'facing': faces[i], # this makes western line and IT IS FINE
         'top': top
       }
+    return items
 
   def validate(self, cell, data):
     if data['shape'] in ['square', 'circle'] and data['facing'] != 'all':
@@ -648,7 +646,6 @@ class Styles(Db):
         seen[k] += 1 
       else:
         seen[k] = 1
-    #pp.pprint(seen)
     return(len(seen.keys()))
 
   def create(self, items):

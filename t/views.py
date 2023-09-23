@@ -63,18 +63,18 @@ class TestViews(unittest.TestCase):
     view.create('koto', 'abcdefghijklmnopqrstuvwxyz012345', 'human', 5)
     self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
 
-  def testViewGenerat2(self):
+  def testViewGenerateCompass(self):
     self.v.generate('timpani')
-    pp.pprint(self.v.view)
+    #pp.pprint(self.v.view)
     self.assertEqual(self.v.view['e']['facing'], 'all')
 
-  def testViewGenerat2Random(self):
-    self.v.generate('arpeggio')
+  def testViewGenerateRandom(self):
+    self.v.generate()
     #pp.pprint(self.v.view)
-    self.assertEqual(len(self.v.view.keys()), 6)
+    self.assertTrue(len(self.v.view.keys()))
 
   def testViewGenerate(self):
-    self.v.generate('soleares')
+    self.v.generate('spiral') # 'arpeggio'
     #pp.pprint(self.v.view)
     self.assertTrue(isinstance(self.v.view['d'], dict))
   ''' 

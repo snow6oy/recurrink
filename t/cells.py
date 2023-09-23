@@ -5,13 +5,13 @@
 import os.path
 import unittest
 import pprint
-from db import Cell, Recipe
+from db import Cells
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestCells(unittest.TestCase):
 
   def setUp(self):
-    self.c = Cell('colours45') # inherit Db() class
+    self.c = Cells('colours45') # inherit Db() class
 
   def testGenerate(self):
     ''' default generate selects from db
