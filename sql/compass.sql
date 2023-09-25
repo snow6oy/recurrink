@@ -61,4 +61,11 @@ VALUES
   ('eflat', 'a', null, 'all'),
   ('mambo', 'x', null, 'all'),
   ('mambo', 'e', 'o', 'east'),
-  ('mambo', 'a', 'b', 'north');
+  ('mambo', 'a', 'b', 'north'),
+  ('tumbao', 'a', 'f', 'northeast'),
+  ('tumbao', 'b', null, 'all'),
+  ('tumbao', 'c', 'e', 'northeast'),
+  ('tumbao', 'd', null, 'all'),
+  ('tumbao', 'e', 'c', 'northeast'),
+  ('tumbao', 'f', 'a', 'northeast');
+
