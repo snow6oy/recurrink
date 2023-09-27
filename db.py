@@ -124,12 +124,35 @@ WHERE model = %s;""", [model])
   def stats(self):
     ''' display uniq cells, blocksize and model names
     '''
-    output = f"uniq    x    y model\n" + ('-' * 80) + "\n"
+    stats = dict()
     self.cursor.execute("""
 SELECT model, uniqcells, blocksizexy
 FROM models;""",)
-    for m in self.cursor.fetchall():
-      output += f"{m[1]:>4} {m[2][0]:>4} {m[2][1]:>4} {m[0]}\n"
+    for row in self.cursor.fetchall():
+      model, uniq, size = row
+      stats[model] = list()
+      stats[model].append(uniq)
+      stats[model].append(size)
+    self.cursor.execute("""
+SELECT model, count(top) 
+FROM blocks
+GROUP BY model;""",)
+    top = self.cursor.fetchall()
+    model = 'soleares'
+    self.cursor.execute("""
+SELECT model, count(cell) 
+FROM compass
+GROUP BY model;""",)
+    compass = self.cursor.fetchall()
+    for m in stats:
+      n = [t for t in top if t[0] == m]
+      stats[m].append(n[0][1]) # assume blocks always have model
+      i = [c for c in compass if c[0] == m] # but compass does not, so set a default
+      counter = i[0][1] if len(i) else 0
+      stats[m].append(counter)
+    output = f"uniq\t   x\t   y\t top\tcompass\t model\n" + ('-' * 80) + "\n"
+    for m in stats:
+      output += f"{stats[m][0]:>4}\t{stats[m][1][0]:>4}\t{stats[m][1][1]:>4}\t{stats[m][2]:>4}\t{stats[m][3]:>4}\t{m}\n"
     return output
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Blocks(Db):
@@ -315,6 +338,7 @@ class Cells(Views):
     self.palette = palette if palette else 'colour45'
     self.s.set_spectrum(ver=palette)
     self.g.items = { True: list(), False: list() } # stash geoms by top
+    self.s.sids = list() # stash styles selected from db
     super().__init__()
 
   def generate(self, cell, top):
@@ -323,7 +347,9 @@ class Cells(Views):
     if not len(self.g.items[top]):
       self.g.items[top] = self.g.read(top=top)
     self.g.items[top] = self.g.generate(cell, self.g.items[top]) 
-    self.s.generate(cell) 
+    if not len(self.s.sids):
+      self.s.sids = self.s.read()
+    self.s.sids = self.s.generate(cell, self.s.sids) 
 
   def generate_any(self, cell, top):
     if not len(self.g.items[top]):
@@ -580,16 +606,18 @@ class Styles(Db):
     }
     return None
 
-  def generate(self, c):
-    sids = self.read()
-    items = self.read(sid=random.choice(sids))
-    z = zip(['fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'], items)
+  def generate(self, c, sids):
+    i = random.choice(range(0, len(self.sids)))
+    sid = self.sids.pop(i) if len(self.sids) > 1 else self.sids[0]
+    item = self.read(sid)
+    z = zip(['fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'], item)
     self.styles[c] = dict(z)
-    return None
+    return sids
 
   def generate_all(self, cell):
     i = random.choice(range(0, len(self.palette)))
     style = self.palette.pop(i) if len(self.palette) > 1 else self.palette[0]
+    #print(f"cell {cell} items {len(self.palette)}")
     fill, opacity, bg = style
     self.styles[cell] = {
       'fill': fill,
@@ -608,6 +636,7 @@ class Styles(Db):
     secondary = self.complimentary[fill]
     for i in range(0, 2):
       p = pair[i]
+      #print(f"cell {p} items {len(self.palette)}")
       cell = dict()
       cell['bg'] = bg
       cell['fill_opacity'] = opacity
