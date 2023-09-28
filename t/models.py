@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from db import Models, Blocks, Compass, Recipe
+from db import Models, Blocks, Compass
 import unittest
 
 class TestModels(unittest.TestCase):
@@ -98,4 +98,8 @@ class TestModels(unittest.TestCase):
     '''
     compass = Compass('timpani')
     self.assertTrue(compass.all('k'))
+
+  def testGetScale(self):
+    scale = self.m.scale('koto') 
+    self.assertTrue(scale, 0.75)
 
