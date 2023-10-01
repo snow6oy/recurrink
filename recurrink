@@ -15,6 +15,8 @@ pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
 c = Cells()
+WORKDIR = '/home/gavin/Dropbox/familia/rinks'
+PUBDIR = '/home/gavin/Pictures/pubq'
 
 class Input(inkex.InputExtension):
   ''' create a model SVG from a txt file /tmp/MODEL.txt
@@ -229,7 +231,6 @@ def update(model, scale):
   print()
   return output
 
-# TODO dont ferrget the rinks
 def delete(view):
   ''' both svg and view must exist for the delete to succeed
   '''
@@ -237,26 +238,28 @@ def delete(view):
   if len(viewdata):
     v.delete(view) 
     model = viewdata[0]
-    if os.path.isfile(f'rinks/{model}/{view}.svg'):
-      os.unlink(f'rinks/{model}/{view}.svg')
-      return view
-  raise FileNotFoundError(f'not deleted {model}/{view}')
+    if os.path.isfile(f'{PUBDIR}/{view}.svg'):
+      os.unlink(f'{PUBDIR}/{view}.svg')
+    if os.path.isfile(f'{WORKDIR}/{model}/{view}.svg'):
+      os.unlink(f'{WORKDIR}/{model}/{view}.svg')
+      return view # success
+    raise FileNotFoundError(f'SVG not deleted {model}/{view}')
+  raise ValueError(f'nothing named {view} in database')
+  return None
 
 def commit(model, scale, author):
   ''' read config, write to database and return digest
       clean file system except for /tmp/model.txt
   '''
   scale = scale if scale else m.get_scale(model)
-  workdir = '/home/gavin/Dropbox/familia/rinks'
-  pubdir = '/home/gavin/Pictures/pubq'
   celldata = tf.read(model, output=list())
   response = 'unknown error'
   if v.create(model, tf.digest, author, scale=scale):
     [c.create(tf.digest, row) for row in celldata]
     if os.path.isfile(f"/tmp/{model}.svg"):
-      svgname = f"{workdir}/{model}/{tf.digest}.svg"
+      svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
       os.rename(f"/tmp/{model}.svg", svgname)
-      os.symlink(f"{svgname}", f"{pubdir}/{tf.digest}.svg")
+      os.symlink(f"{svgname}", f"{PUBDIR}/{tf.digest}.svg")
       response = svgname
     else:
       raise FileNotFoundError(f"{model}.svg not found in /tmp")
