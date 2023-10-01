@@ -100,6 +100,6 @@ class TestModels(unittest.TestCase):
     self.assertTrue(compass.all('k'))
 
   def testGetScale(self):
-    scale = self.m.scale('koto') 
+    scale = self.m.get_scale('koto') 
     self.assertTrue(scale, 0.75)
 

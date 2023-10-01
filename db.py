@@ -154,6 +154,9 @@ GROUP BY model;""",)
     for m in stats:
       output += f"{stats[m][0]:>4}\t{stats[m][1][0]:>4}\t{stats[m][1][1]:>4}\t{stats[m][2]:>4}\t{stats[m][3]:>4}\t{m}\n"
     return output
+
+  def get_scale(self, model):
+    return self.read(model=model)[3]
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Blocks(Db):
 
