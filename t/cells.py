@@ -16,7 +16,7 @@ class TestCells(unittest.TestCase):
   def testGenerate(self):
     ''' default generate selects from db
     '''
-    self.c.generate('a', top=False)
+    self.c.generate('a', top=True)
     cell_a = self.c.g.geom['a'] | self.c.s.styles['a']
     #pp.pprint(cell_a)
     self.assertEqual(len(cell_a.keys()), 11)

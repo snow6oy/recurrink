@@ -74,7 +74,7 @@ class TestViews(unittest.TestCase):
     self.assertTrue(len(self.v.view.keys()))
 
   def testViewGenerate(self):
-    self.v.generate('spiral') # 'arpeggio'
+    self.v.generate('fourfour') # 'arpeggio'
     #pp.pprint(self.v.view)
     self.assertTrue(isinstance(self.v.view['d'], dict))
   ''' 

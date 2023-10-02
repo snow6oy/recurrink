@@ -312,9 +312,11 @@ WHERE view = %s;""", [digest])
     b = Blocks(model)
     uniqcells = b.read(output=list())
     topcells = b.get_topcells()
+    print(topcells)
     c = Cells(palette=palette) 
     for cell in uniqcells:
       topYN = False if cell in topcells else True
+      print(cell, topYN)
       if rnd:
         c.generate_any(cell, topYN)
         source = 'random'
@@ -322,7 +324,7 @@ WHERE view = %s;""", [digest])
         source = 'compass'
         if compass.all(cell):
           c.generate_all(cell, topYN)
-        else:
+        else: # this means that cells must have a compass entry
           pair, axis = compass.one(cell)
           c.generate_one(pair, axis, topYN)
       else:

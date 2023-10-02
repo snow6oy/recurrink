@@ -9,20 +9,12 @@ from db import Geometry
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestGeometry(unittest.TestCase):
-
+  ''' geometries are shared and have a 1:* relation with views and cells
+      geometries are never updated, only inserted when shape/size/facing/top combination is new
+      immutable avoids side-effect of incrementing SERIAL by anticipating UniqueViolation 
+  '''
   def setUp(self):
     self.g = Geometry()
-
-  def testGenerate(self):
-    items = [
-      ('diamond', 'medium', 'north', False),
-      ('diamond', 'medium', 'south', False),
-      ('diamond', 'medium', 'east', False),
-      ('diamond', 'medium', 'west', False)
-    ]
-    self.g.generate('a', items)  
-    items = list(self.g.geom['a'].keys())
-    self.assertEqual(len(items), 4)
 
   def testReadAll(self):
     items = self.g.read()
@@ -32,12 +24,12 @@ class TestGeometry(unittest.TestCase):
     self.assertEqual(len(facing_all), 14)
 
   def testReadTop(self):
-    ''' geometries are shared and have a 1:* relation with views and cells
-      geometries are never updated, only inserted when shape/size/facing/top combination is new
-      immutable avoids side-effect of incrementing SERIAL by anticipating UniqueViolation '''
+    ''' number of top entries should be even
+    '''
     cells = self.g.read(top=False)
-    #pp.pprint(cells)
-    self.assertTrue(len(cells))
+    top = self.g.read(top=True)
+    #pp.pprint(top)
+    self.assertEqual(len(cells), len(top))
 
   def testReadGid(self):
     ''' test the newest geom that was randomly generated and added to the db
@@ -89,3 +81,14 @@ class TestGeometry(unittest.TestCase):
     d_facing = self.g.geom['d']['facing']
     self.assertTrue(b_facing in ['north', 'south'])
     self.assertTrue(b_facing != d_facing)
+
+  def testGenerate(self):
+    items = [
+      ('diamond', 'medium', 'north', False),
+      ('diamond', 'medium', 'south', False),
+      ('diamond', 'medium', 'east', False),
+      ('diamond', 'medium', 'west', False)
+    ]
+    self.g.generate('a', items)  
+    items = list(self.g.geom['a'].keys())
+    self.assertEqual(len(items), 4)
