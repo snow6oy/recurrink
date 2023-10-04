@@ -67,7 +67,7 @@ class TestStyles(unittest.TestCase):
     '''
     self.s.set_spectrum(ver='universal')
     for cell in ['a', 'b', 'c', 'd']:
-      self.s.generate(cell)
+      self.s.generate(cell, [1, 2, 3, 4])
     self.assertTrue('bg' in self.s.styles['a'])
 
   def testGenerateRandom(self):
@@ -110,5 +110,5 @@ soleares  x      x
     '''
     self.s.set_spectrum(ver='universal')
     for cell in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p' ,'q', 'r']:
-      self.s.generate(cell)
+      self.s.generate(cell, [1])
     self.assertTrue('a' in self.s.styles)

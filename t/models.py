@@ -70,19 +70,16 @@ class TestModels(unittest.TestCase):
       cells = positions[(2, 0)]
     self.assertEqual(cells[1], 'c')
 
-  def testGetRecipeAll(self):
-    ''' lookup recipe for mirroring from model or None
-    '''
-    r = Recipe('timpani')
-    self.assertEqual(r.all()[2], 'k')
+  def testTopOrNot1(self):
+    uniqcells = self.b.read(output=list())
+    topcells = self.b.topcells()
+    self.assertEqual(topcells, ['a', 'c'])
 
-  def testGetRecipeOne(self):
-    ''' lookup recipe for mirroring from model or None
-    '''
-    r = Recipe('timpani')
-    pairs, flip = r.one('northeast')
-    self.assertEqual(pairs[3][1], 'j')
-    self.assertEqual(flip['north'], 'east')
+  def testTopOrNot2(self):
+    ff = Blocks('fourfour')
+    uniqcells = ff.read(output=list())
+    topcells = ff.topcells()
+    self.assertEqual(topcells[0], 'd')
 
   def testGetCompassOne(self):
     ''' lookup recipe for mirroring from model or None
@@ -102,4 +99,3 @@ class TestModels(unittest.TestCase):
   def testGetScale(self):
     scale = self.m.get_scale('koto') 
     self.assertTrue(scale, 0.75)
-

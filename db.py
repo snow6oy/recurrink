@@ -215,6 +215,18 @@ WHERE model = %s;""", [self.model])
     for k, v in rows:
       tc.setdefault(k, v)
     return tc
+
+  def topcells(self):
+    ''' unique list of top cells 
+    '''
+    self.cursor.execute("""
+SELECT distinct(top)
+FROM blocks
+WHERE top IS NOT null
+AND model = %s;""", [self.model])
+    rows = self.cursor.fetchall()
+    tc = [a[0] for a in rows]
+    return tc
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
   ''' a View is a collection of Cells
@@ -311,12 +323,10 @@ WHERE view = %s;""", [digest])
     compass = Compass(model) # compass.conf will be None for unknown models
     b = Blocks(model)
     uniqcells = b.read(output=list())
-    topcells = b.get_topcells()
-    print(topcells)
+    topcells = b.topcells()
     c = Cells(palette=palette) 
     for cell in uniqcells:
-      topYN = False if cell in topcells else True
-      print(cell, topYN)
+      topYN = True if cell in topcells else False
       if rnd:
         c.generate_any(cell, topYN)
         source = 'random'
@@ -612,8 +622,10 @@ class Styles(Db):
     return None
 
   def generate(self, c, sids):
-    i = random.choice(range(0, len(self.sids)))
-    sid = self.sids.pop(i) if len(self.sids) > 1 else self.sids[0]
+    #i = random.choice(range(0, len(self.sids)))
+    #sid = self.sids.pop(i) if len(self.sids) > 1 else self.sids[0]
+    i = random.choice(range(0, len(sids)))
+    sid = sids.pop(i) if len(sids) > 1 else sids[0]
     item = self.read(sid)
     z = zip(['fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'], item)
     self.styles[c] = dict(z)
@@ -718,7 +730,8 @@ AND stroke_opacity = %s;""", style)
     else: # for example output=int() 
       self.cursor.execute("""
 SELECT sid
-FROM styles;""", [])
+FROM styles
+WHERE stroke_opacity > 0;""", [])
       sids = self.cursor.fetchall()
       return sids
 
