@@ -240,6 +240,46 @@ class Views(Db):
     ]
     super().__init__()
 
+  def colours(self, d):
+    ''' colour counter depends on shape
+    '''
+    seen = dict()
+    keys = list()
+    cells = self.read(digest=d, celldata=True)
+    for c in cells:
+      fo = str(cells[c]['fill_opacity'])
+      if cells[c]['fill_opacity'] >= 1:
+        if cells[c]['shape'] == 'square' or cells[c]['shape'] == 'circle' and cells[c]['size'] == 'large':
+          keys.append(tuple([c, cells[c]['fill'], 'fill']))
+        else:
+          keys.append(tuple([c, cells[c]['fill'], 'fill']))
+          keys.append(tuple([c, cells[c]['bg'], 'bg']))
+      else:
+        keys.append(tuple([c, cells[c]['fill'] + fo + cells[c]['bg'], 'fill']))
+        keys.append(tuple([c, cells[c]['bg'], 'bg']))
+      if cells[c]['stroke_width']:
+        keys.append(tuple([c, cells[c]['stroke'], 'stroke']))
+
+    self.colmap = keys # helps build a stencil later
+    for k in keys:
+      uniqcol = k[1]
+      if uniqcol in seen:
+        seen[uniqcol] += 1 
+      else:
+        seen[uniqcol] = 1
+    return seen
+ 
+  def stencil(self, digest, colour):
+    ''' use the colmap to return a view with black areas where a colour matched
+        everything else is white
+    '''
+    data = self.read(digest, celldata=True, output=dict())
+    for cell in data: 
+      for area in ['fill', 'bg', 'stroke']:
+        found = [cm[2] for cm in self.colmap if cm[0] == cell and cm[1] == colour and cm[2] == area]
+        data[cell][area] = '#000' if len(found) else '#FFF'
+    self.view = data
+
   def delete(self, digest):
     ''' no error checks, this is gonzo style !
         cascade the delete to cells
@@ -267,7 +307,7 @@ VALUES (%s, %s, %s, %s);""", [digest, model, author, scale])
     view = None
     if digest and celldata and isinstance(output, list):
       view = self.celldata(digest)
-    elif digest and celldata:
+    elif digest and celldata: # convert list to dict
       view = dict()
       data = self.celldata(digest)
       for cellvals in data:
@@ -668,31 +708,6 @@ class Styles(Db):
         cell['stroke_opacity'] = opacity
         cell['stroke'] = fill
       self.styles[p] = cell
-
-  def colour_counter(self):
-    # TODO move this to Views
-    ''' colour counter depends on shape
-    '''
-    seen = dict()
-    keys = list()
-    for c in self.cells:
-      g =self.celldata[c]['geom']
-      s =self.celldata[c]['style']
-      fo = float(s['fill_opacity'])
-      if g['shape'] == 'square' and fo >= 1:
-        keys.append(s['fill'])
-      else:
-        keys.append(s['fill'] + s['fill_opacity'] + s['bg'])
-        keys.append(s['bg'])
-      if g['stroke_width']:
-        keys.append(s['stroke'])
-
-    for k in keys:
-      if k in seen:
-        seen[k] += 1 
-      else:
-        seen[k] = 1
-    return(len(seen.keys()))
 
   def create(self, items):
     ''' each view has its own style

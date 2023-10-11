@@ -18,7 +18,7 @@ class TestViews(unittest.TestCase):
     ''' get a view from db as a dictionary
     '''
     view = self.v.read(digest=self.view, celldata=True)
-    # pp.pprint(view)
+    #pp.pprint(view)
     self.assertEqual(len(list(view.keys())), 4)
 
   def testGetViewDigestList(self):
@@ -77,6 +77,28 @@ class TestViews(unittest.TestCase):
     self.v.generate('fourfour') # 'arpeggio'
     #pp.pprint(self.v.view)
     self.assertTrue(isinstance(self.v.view['d'], dict))
+
+  def testColourMap(self):
+    d = '1d79457b1dc14203a1eefcf469181072'
+    uniq = self.v.colours(d)
+    #pp.pprint(uniq)
+    #pp.pprint(self.v.colmap)
+    n_bg = self.v.colmap[1]
+    self.assertEqual(n_bg, ('n', '#DC143C', 'bg'))
+
+  def testCountColour(self):
+    digest = [self.view, '0a09ac4a43c8dfa2926f6ba1282906af', '1d79457b1dc14203a1eefcf469181072']
+    counts = [2, 3, 12]
+    for i, d in enumerate(digest):
+      uniq = self.v.colours(d)
+      self.assertEqual(counts[i], len(uniq.keys()))
+ 
+  def testStencil(self):
+    uniq = self.v.colours(self.view)
+    #pp.pprint(self.v.colmap)
+    #[print(colour) for colour in list(uniq.keys())]
+    self.v.stencil(self.view, '#CCC') # make a stencil for grey only
+    pp.pprint(self.v.view)
   ''' 
   the 
   end
