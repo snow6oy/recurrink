@@ -261,6 +261,19 @@ INSERT INTO views (view, model, author, scale, colournum)
 VALUES (%s, %s, %s, %s, %s);""", [digest, model, author, scale, colournum])
     return digest
 
+  def colournum(self, digest=None, count=0):
+    if digest and count:
+      pass
+    else:
+      data = dict()
+      self.cursor.execute("""
+SELECT view, colournum
+FROM views;""", [])
+      for row in self.cursor.fetchall():
+        view, colournum = row
+        data[view] = colournum
+      return data
+
   def read(self, digest, celldata=False, output=dict()):
     ''' returns either meta data for a view or cell data 
     '''
@@ -301,6 +314,7 @@ AND view = %s;""", [digest])
     return data
 
   # TODO this check is for what? Because there is no unique constraint on views table
+  # it enforces immutability
   def count(self, digest):
     vcount = 0
     if len(digest) == 32:
