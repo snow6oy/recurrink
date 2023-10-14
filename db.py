@@ -240,46 +240,6 @@ class Views(Db):
     ]
     super().__init__()
 
-  def colours(self, d):
-    ''' colour counter depends on shape
-    '''
-    seen = dict()
-    keys = list()
-    cells = self.read(digest=d, celldata=True)
-    for c in cells:
-      fo = str(cells[c]['fill_opacity'])
-      if cells[c]['fill_opacity'] >= 1:
-        if cells[c]['shape'] == 'square' or cells[c]['shape'] == 'circle' and cells[c]['size'] == 'large':
-          keys.append(tuple([c, cells[c]['fill'], 'fill']))
-        else:
-          keys.append(tuple([c, cells[c]['fill'], 'fill']))
-          keys.append(tuple([c, cells[c]['bg'], 'bg']))
-      else:
-        keys.append(tuple([c, cells[c]['fill'] + fo + cells[c]['bg'], 'fill']))
-        keys.append(tuple([c, cells[c]['bg'], 'bg']))
-      if cells[c]['stroke_width']:
-        keys.append(tuple([c, cells[c]['stroke'], 'stroke']))
-
-    self.colmap = keys # helps build a stencil later
-    for k in keys:
-      uniqcol = k[1]
-      if uniqcol in seen:
-        seen[uniqcol] += 1 
-      else:
-        seen[uniqcol] = 1
-    return seen
- 
-  def stencil(self, digest, colour):
-    ''' use the colmap to return a view with black areas where a colour matched
-        everything else is white
-    '''
-    data = self.read(digest, celldata=True, output=dict())
-    for cell in data: 
-      for area in ['fill', 'bg', 'stroke']:
-        found = [cm[2] for cm in self.colmap if cm[0] == cell and cm[1] == colour and cm[2] == area]
-        data[cell][area] = '#000' if len(found) else '#FFF'
-    self.view = data
-
   def delete(self, digest):
     ''' no error checks, this is gonzo style !
         cascade the delete to cells
@@ -292,13 +252,13 @@ DELETE FROM views
 WHERE view = %s;""", [digest])
     return True
 
-  def create(self, model, digest, author, scale=1.0):
+  def create(self, model, digest, author, scale=1.0, colournum=0):
     ''' create views metadata and try Cells()
     '''
     if not self.count(digest):
       self.cursor.execute("""
-INSERT INTO views (view, model, author, scale)
-VALUES (%s, %s, %s, %s);""", [digest, model, author, scale])
+INSERT INTO views (view, model, author, scale, colournum)
+VALUES (%s, %s, %s, %s, %s);""", [digest, model, author, scale, colournum])
     return digest
 
   def read(self, digest, celldata=False, output=dict()):
@@ -340,6 +300,7 @@ AND view = %s;""", [digest])
     data = self.cursor.fetchall()
     return data
 
+  # TODO this check is for what? Because there is no unique constraint on views table
   def count(self, digest):
     vcount = 0
     if len(digest) == 32:

@@ -24,6 +24,7 @@ class TestTmpFile(unittest.TestCase):
 
   def testRead(self):
     celldata = self.tf.read(self.model)
+    #pp.pprint(celldata)
     self.assertEqual(len(celldata.keys()), 4)
     self.assertEqual(len(self.tf.digest), 32)
 

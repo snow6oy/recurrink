@@ -321,3 +321,65 @@ class Layout(Draw):
       svg.add(fg)
       self.cells = cells
     return group
+
+class Stencil:
+  ''' accept a cell dictionary and for each unique colour
+      create a new view as a black white negative
+      return a set of views
+  ''' 
+  def __init__(self, model, data):
+    self.model = model
+    self.data = data # read-only copy for generating colmap
+
+  def colours(self):
+    ''' colour counter depends on shape
+    '''
+    seen = dict()
+    keys = list()
+    for cell in self.data:
+      c = self.data[cell]
+      fo = float(c['fill_opacity'])
+      if fo >= 1:  # background is irrelevant when foreground is opaque
+        if c['shape'] == 'square' or c['shape'] == 'circle' and c['size'] == 'large':
+          keys.append(tuple([cell, self.composite(c['fill']), 'fill']))
+        else:
+          keys.append(tuple([cell, self.composite(c['fill']), 'fill']))
+          keys.append(tuple([cell, self.composite(c['bg']), 'bg']))
+      else:
+        #name = self.composite(c['fill'], c['bg'], c['fill_opacity'])
+        name = self.composite(c['fill'], c['bg'], fo)
+        keys.append(tuple([cell, name, 'fill']))
+        keys.append(tuple([cell, self.composite(c['bg']), 'bg']))
+      if c['stroke_width']:
+        #name = self.composite(c['stroke'], c['bg'], c['fill_opacity'])
+        so = float(c['stroke_opacity'])
+        name = self.composite(c['stroke'], c['bg'], so)
+        keys.append(tuple([cell, name, 'stroke']))
+
+    self.colmap = keys # helps build a stencil later
+    for k in keys:
+      uniqcol = k[1]
+      if uniqcol in seen:
+        seen[uniqcol] += 1 
+      else:
+        seen[uniqcol] = 1
+    return list(seen.keys())
+ 
+  def monochrome(self, colour, celldata): # send a copy
+    ''' use the colmap to return a view with black areas where a colour matched
+        everything else is white
+    '''
+    for cell in celldata:
+      for area in ['fill', 'bg', 'stroke']:
+        found = [cm[2] for cm in self.colmap if cm[0] == cell and cm[1] == colour and cm[2] == area]
+        celldata[cell][area] = '#000' if len(found) else '#FFF'
+        celldata[cell]['fill_opacity'] = celldata[cell]['stroke_opacity'] = 1
+    return celldata
+
+  def composite(self, fill, bg=None, fo=None):
+    ''' dinky likkle method to make nice filenames
+    '''
+    fo = str(round(fo * 10)) if fo else '' # 0.7 > 7
+    bg = bg[1:] if bg else '' # remove the leading #
+    fn = ''.join([fill[1:], bg[1:], fo])
+    return fn.lower()

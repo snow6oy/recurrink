@@ -67,6 +67,7 @@ CREATE TABLE views (
   model VARCHAR(50) NOT NULL,
   author authors DEFAULT 'human',
   scale NUMERIC(3,2) NOT NULL,
+  colournum SMALLINT,
   created timestamp DEFAULT current_timestamp,
   FOREIGN KEY (model) REFERENCES models (model)
 );
