@@ -1,17 +1,10 @@
-import os
 import unittest
-import inkex
-from inkex import Group
-from svgfile import Draw
+from svgfile import Svg
 
-class TestDraw(unittest.TestCase):
+class TestSvg(unittest.TestCase):
 
   def setUp(self):
-    self.d = Draw([
-      48,                       # size
-      33.25985000000003,        # xOffset
-      36.85040500000002         # yOffset
-    ])
+    self.svg = Svg(scale=1, cellsize=60)
     self.geometry = {
       'shape':'square',
       'size':'medium',
@@ -19,32 +12,29 @@ class TestDraw(unittest.TestCase):
       'stroke_width': 0
     }
 
-  def test_triangle(self):
+  def testTriangle(self):
+    group = self.svg.group(gid='a')
     self.geometry['shape'] = 'triangl'
-    s = self.d.shape('a', 0, 0, self.geometry)
-    self.assertTrue(s.tag_name == 'polygon')
+    self.svg.foreground(x=0, y=0, sid='a1', cell=self.geometry, g=group)
+    self.assertTrue(list(self.svg.root.iter(tag=f"{self.svg.ns}polygon")))
 
   def testDiamond(self):
     ''' are diamonds drawn correctly, excepting formatting differences ?
     '''
+    group = self.svg.group(gid='a')
     self.geometry['shape'] = 'diamond'
-    s = self.d.shape('a', 0, 0, self.geometry)
-    p = s.get("points").split(',')
+    self.svg.foreground(x=0, y=0, sid='a1', cell=self.geometry, g=group)
+    el = list(self.svg.root.iter(tag=f"{self.svg.ns}polygon"))[0]
+    p = el.get("points").split(',')
     points = list(map(float, p))
-    self.assertEqual(points, [0.0,24.0,24.0,0.0,48.0,24.0,0.0,24.0])
+    self.assertEqual(points, [0.0, 30.0, 30.0, 0.0, 60.0, 30.0, 0.0, 30.0])
 
-  def test_bad_facing(self):
+  def testBadFacing(self):
+    group = self.svg.group(gid='a')
     self.geometry['size'] = 'very tiny'
     with self.assertRaises(ValueError):
-      self.d.shape('a', 0, 0, self.geometry)
-
-  def testLabel(self):
-    ''' upper case Cells display metadata
-    '''
-    s = self.d.shape('A', 0, 0, self.geometry)
-    self.assertEqual(s.tag_name, 'text')
+      self.svg.foreground(x=0, y=0, sid='a1', cell=self.geometry, g=group)
   '''
-    the end
+  the
+  end
   '''
-if __name__ == '__main__':
-  unittest.main()

@@ -61,7 +61,7 @@ class TestStencil(unittest.TestCase):
 
   def testColourMap(self):
     uniq = self.s.colours()
-    [print(colour) for colour in uniq]
+    #[print(colour) for colour in uniq]
     #pp.pprint(self.s.colmap)
     a_bg = self.s.colmap[1]
     self.assertEqual(a_bg, ('a', 'ccc', 'bg'))

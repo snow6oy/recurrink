@@ -6,9 +6,8 @@ import re
 import pprint
 import inkex
 import sys
-#import random
 import hmac
-from db import Views, Models, Cells
+from db import Views, Models, Blocks, Cells
 from svgfile import Layout, Stencil
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -17,41 +16,6 @@ v = Views()
 c = Cells()
 WORKDIR = '/home/gavin/Dropbox/familia/rinks'
 PUBDIR = '/home/gavin/Pictures/pubq'
-
-class Input(inkex.InputExtension):
-  ''' create a model SVG from a txt file /tmp/MODEL.txt
-      model, and scale SHOULD be written in SVG metadata
-  '''
-  def load(self, stream):
-    ''' inkscape passes in a stream from io.BufferedReader
-        self.options.input_file is immutable and must exist or FileNotFoundError is raised
-    '''
-    doc = None
-    fn = re.findall(r"([^\/._]*)[\._]", self.options.input_file) # filename without ext or stencil colour
-    model = fn[0]
-    #print(model, SCALE)
-    s = stream.read() # slurp the stream 
-    data = s.decode() # convert to string
-    cells = tf.read(model, txt=data) # convert string to dict
-    top_order = list(cells.keys())
-    l = Layout(model, SCALE)
-    # prepare A4 document but with pixels for units
-    doc = self.get_template(width=l.width, height=l.height, unit='px')
-    svg = self.add_metadata(doc, model, l.factor)
-    print(f"scale {l.factor}")
-    l.validate(cells)
-    group = l.build(svg, top_order, cells)
-    l.render(group)
-    return doc
-
-  def add_metadata(self, doc, model, factor):
-    ''' namspeces work when they feel like it so we avoid them like the plague
-    '''
-    svg = doc.getroot()
-    svg.namedview.set('inkscape:document-units', 'px')
-    svg.set('recurrink-id', model)
-    svg.set('recurrink-factor', factor)
-    return svg
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class TmpFile():
   ''' read and write data to /tmp
@@ -221,7 +185,7 @@ def init(model=None, digest=None):
     mesg += f" scale at {scale}"
   return mesg
  
-def update(model, scale):
+def __update(model, scale):
   ''' send inputs from to inkex with argparse and Layout() as a global
       inkex creates an SVG file and its name is printed to screen
   '''
@@ -231,6 +195,22 @@ def update(model, scale):
   Input().run(['--output', output, input_file]) # inkex argparse
   print()
   return output
+
+def update(model, scale):
+  ''' generate an SVG using ElementTree
+  '''
+  m = Models()
+  s = float(scale) if scale else m.get_scale(model)
+  blocksize = m.read(model=model)[2] # can get scale too
+  b = Blocks(model)
+  svgfile = f'/tmp/{model}.svg'
+  positions = b.read()
+  lt = Layout(scale=s)
+  #print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
+  cells = tf.read(model, output=dict())
+  lt.gridwalk(blocksize, positions, cells)
+  lt.write(svgfile)
+  return svgfile
 
 def delete(view):
   ''' both svg and view must exist for the delete to succeed
