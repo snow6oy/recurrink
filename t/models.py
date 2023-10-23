@@ -2,6 +2,8 @@
 
 from db import Models, Blocks, Compass
 import unittest
+import pprint
+pp = pprint.PrettyPrinter(indent=2)
 
 class TestModels(unittest.TestCase):
 
@@ -28,6 +30,7 @@ class TestModels(unittest.TestCase):
     ''' key value pair with position as the key
     '''
     positions = self.b.read()
+    pp.pprint(positions)
     self.assertEqual(positions[(1, 1)], 'd')
 
   def testGetCellWithTop(self):

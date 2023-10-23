@@ -1,326 +1,9 @@
-#!/usr/bin/env python3
-
-import re
+import xml.etree.ElementTree as ET
 import pprint
-import inkex
 import math
-import os.path
-from inkex import Group, Circle, Rectangle, Polygon, TextElement
-from db import Cells, Blocks, Models
-pp = pprint.PrettyPrinter(indent=2)
-
-class Points:
-  ''' nw n ne    do the maths to render a cell
-      w  c  e    points are calculated and called as p.ne p.nne p.s
-      sw s se
-  '''
-  def __init__(self, x, y, stroke_width, size):
-    self.n  = [x + size / 2,              y + stroke_width]
-    self.e  = [x + size - stroke_width,   y + size / 2]
-    self.s  = [x + size / 2,              y + size - stroke_width]
-    self.w  = [x + stroke_width,          y + size / 2]
-    self.ne = [x + size - stroke_width,   y + stroke_width] 
-    self.se = [x + size - stroke_width,   y + size - stroke_width]
-    self.nw = [x + stroke_width,          y + stroke_width]
-    self.sw = [x + stroke_width,          y + size - stroke_width]
-    self.mid= [x + size / 2,              y + size / 2]
-
-class Draw:
-  ''' create a shape for the required position
-  '''
-  def __init__(self, baseUnit):
-    ''' units must be in sync with Layout.sizeUu 
-    '''
-    self.sizeUu  = baseUnit[0] # size
-    self.x_offset = baseUnit[1] # x offset
-    self.y_offset = baseUnit[2] # y offset
-
-  def backgrounds(self, cell, x, y):
-    ''' the first cell painted onto the grid is a filled rectangle
-        see Builder for a list of the available colours
-    '''
-    w = str(self.sizeUu)
-    h = str(self.sizeUu)
-    bg = Rectangle(x=str(x), y=str(y), width=w, height=h)
-    return bg
-
-  def shape(self, cell, X, Y, a):
-    ''' create a shape from a cell for adding to a group
-    '''
-    self.hw = a['stroke_width'] / 2  # stroke width is halved for repositioning
-    self.fw = a['stroke_width']      # full width
-    p = Points(X, Y, a['stroke_width'], self.sizeUu)
-
-    if ord(cell) < 97:  # upper case
-      s = self.set_text(a['shape'], X, Y)
-    elif a['shape'] == 'circle':
-      s = self.circle(a['size'], a['stroke_width'], p)
-    elif a['shape'] == 'line':
-      s = self.line(X, Y, a['size'], a['facing'])
-    elif a['shape'] == 'square':
-      s = self.square(X, Y, a['size'])
-    elif a['shape'] == 'triangl':
-      s = self.triangle(a['facing'], p)
-    elif a['shape'] == 'diamond':
-      s = self.diamond(a['facing'], p)
-    else:
-      s = self.set_text(a['shape'], X, Y)
-    return s
-
-  def circle(self, size, stroke_width, p):
-    if size == 'large': 
-      size = self.sizeUu / 2
-      sum_two_sides = (size**2 + size**2) # pythagoras was a pythonista :)
-      r = math.sqrt(sum_two_sides) - stroke_width
-    elif size == 'medium':
-      r = (self.sizeUu / 2 - stroke_width) # normal size
-    elif size == 'small':
-      r = (self.sizeUu / 3 - stroke_width) 
-    else:
-      raise ValueError(f"Cannot set circle to {size} size")
-    circle = Circle(cx=str(p.mid[0]), cy=str(p.mid[1]), r=str(r))
-    return circle
-
-  def line(self, X, Y, size, facing):
-    ''' lines can be orientated along a north-south axis or east-west axis
-        but the user can choose any of the four cardinal directions
-        here we silently collapse the non-sensical directions
-    '''
-    facing = 'north' if facing == 'south' else facing
-    facing = 'east' if facing == 'west' else facing
-    if size == 'large' and facing == 'north':
-      x      = str(X + self.sizeUu / 3 + self.hw)
-      y      = str(Y - self.sizeUu / 3 + self.hw)
-      width  = str(self.sizeUu / 3 - self.fw)
-      height = str((self.sizeUu / 3 * 2 + self.sizeUu) - self.fw)
-    elif size == 'large' and facing == 'east':
-      x      = str(X - self.sizeUu / 3 + self.hw)
-      y      = str(Y + self.sizeUu / 3 + self.hw)
-      width  = str((self.sizeUu / 3 * 2 + self.sizeUu) - self.fw)
-      height = str(self.sizeUu / 3 - self.fw)
-    elif size == 'medium' and facing == 'north':
-      x      = str(X + self.sizeUu / 3 + self.hw)
-      y      = str(Y + self.hw)
-      width  = str(self.sizeUu / 3 - self.fw)
-      height = str(self.sizeUu - self.fw)
-    elif size == 'medium' and facing == 'east':
-      x      = str(X + self.hw)
-      y      = str(Y + self.sizeUu / 3 + self.hw)
-      width  = str(self.sizeUu - self.fw)
-      height = str(self.sizeUu / 3 - self.fw)
-    elif size == 'small' and facing == 'north':
-      x      = str(X + self.sizeUu / 3 + self.hw)
-      y      = str(Y + self.sizeUu / 4 + self.hw)
-      width  = str(self.sizeUu / 3 - self.fw)
-      height = str(self.sizeUu / 2 - self.fw)
-    elif size == 'small' and facing == 'east':
-      x      = str(X + self.sizeUu / 4 + self.hw)
-      y      = str(Y + self.sizeUu / 3 + self.hw)
-      width  = str(self.sizeUu / 2 - self.fw)
-      height = str(self.sizeUu / 3 - self.fw)
-    else:
-      raise ValueError(f"Cannot set line to {size} {facing}")
-    rect = Rectangle(x=x, y=y, width=width, height=height)
-    return rect
-
-  def square(self, X, Y, size):
-    if size == 'medium':
-      x      = str(X + self.hw)
-      y      = str(Y + self.hw)
-      width  = str(self.sizeUu - self.fw)
-      height = str(self.sizeUu - self.fw)
-    elif size == 'large':
-      third  = self.sizeUu / 3
-      x      = str(X - third / 2 + self.hw)
-      y      = str(Y - third / 2 + self.hw)
-      width  = str(self.sizeUu + third - self.fw)
-      height = str(self.sizeUu + third - self.fw)
-    elif size == 'small':
-      third  = self.sizeUu / 3
-      x      = str(X + self.fw + third)
-      y      = str(Y + self.fw + third)
-      width  = str(third - self.fw)
-      height = str(third - self.fw)
-    else:
-      raise ValueError(f"Cannot make square with {size}")
-    rect = Rectangle(x=x, y=y, width=width, height=height)
-    return rect
-
-  def triangle(self, facing, p):
-    if facing == 'west': 
-      points = p.w + p.ne + p.se + p.w
-    elif facing == 'east': 
-      points = p.nw + p.e + p.sw + p.nw
-    elif facing == 'north': 
-      points = p.sw + p.n + p.se + p.sw
-    elif facing == 'south':
-      points = p.nw + p.ne + p.s + p.nw
-    else:
-      raise ValueError("Cannot face triangle {}".format(facing))
-    polyg = Polygon(points=",".join(map(str, points)))
-    return polyg
-
-  def diamond(self, facing, p):
-    if facing == 'all': 
-      points = p.w + p.n + p.e + p.s + p.w
-    elif facing == 'west': 
-      points = p.w + p.n + p.s + p.w
-    elif facing == 'east': 
-      points = p.n + p.e + p.s + p.n
-    elif facing == 'north': 
-      points = p.w + p.n + p.e + p.w
-    elif facing == 'south':
-      points = p.w + p.e + p.s + p.w
-    else:
-      raise ValueError(f"Cannot face diamond {facing}")
-    polyg = Polygon(points=",".join(map(str, points)))
-    return polyg
-  
-  def set_text(self, shape, X, Y):
-    ''' when the shape is unknown print as text in the cell
-    '''
-    x = str(X + 3)
-    y = str(Y + 40)
-    textElement = TextElement(x=x, y=y)
-    textElement.text = shape
-    # self.debug(textElement)
-    return textElement
-
-class Layout(Draw):
-  ''' expand cells provided by Draw across a canvas
-  '''
-  def __init__(self, model, factor):
-    ''' 
-    original calculation was page size 210 x 297 mm (A4 portrait)
-    since unit are not millimeters this table is inaccurate
-
-    factor    size   col  row   x os   y os
-      0.5     24.0     7   11   21.0   16.5  twice as big
-      1.0     12.0    15   22   15.0   16.5  do nothing
-      2.0      6.0    30   44   15.0   16.5  half size
-    '''
-    self.factor = float(factor) if factor else 1.0
-    self.b = Blocks(model)
-    self.c = Cells()
-    self.model = model
-    self.width   = 1080  # px
-    self.height  = 1080
-    self.size    = (54 / self.factor)
-    self.maxCols = int(20 * self.factor)
-    self.maxRows = int(20 * self.factor)  # num of row  
-    self.control = 'DEPRECATED'
-    ''' landscape with border
-    self.width   = 1122.5197  # px
-    self.height  = 793.70081
-    self.size    = (48 / self.factor)  
-    self.maxCols = int(22 * self.factor)
-    self.maxRows = int(15 * self.factor)  # num of row  
-    '''
-    numOfMargins = 2
-    self.xOffset = (self.width  - (self.maxCols * self.size)) / numOfMargins # 33.25985000000003
-    self.yOffset = (self.height - (self.maxRows * self.size)) / numOfMargins # 36.85040500000002
-    super().__init__([self.size, self.xOffset, self.yOffset])
-
-  def validate(self, cells):
-    ''' test data read from TmpFile against business logic. Will throw ValueErrors
-    '''
-    self.c.validate(cells)
-
-  def get_cell_by_position(self, pos):
-    '''
-    repeat the block to fit the canvas
-    1. calculate the block number using integer division, blocksize and counter
-    2. then new counter = counter - blocknumber * blocksize
-    '''
-    x, y = pos[0], pos[1]
-    m = Models()
-    #cell = None
-    positions = self.b.read() 
-    blocksize = m.read(model=self.model)[2]
-    (x_blocksize, y_blocksize) = blocksize
-    y_blocknum = int(y / y_blocksize)
-    Y = y - (y_blocknum * y_blocksize)
-    x_blocknum = int(x / x_blocksize)
-    X = x - (x_blocknum * x_blocksize)
-    #print(f'xy({x}, {y})  XY({X}, {Y})  blocknum({x_blocknum}, {y_blocknum})')
-    current_posn = (X, Y) # tuples are immutable
-    #cell = positions[current_posn][1] if type(positions[current_posn]) is tuple else positions[current_posn]
-    return positions[current_posn]
-
-  # def blocknum_to_uu(self, xBlocknum, yBlocknum):
-  def blocknum_to_uu(self, pos):
-    ''' convert a position in the grid to pixels 
-    '''
-    xBlocknum, yBlocknum = pos[0], pos[1]
-    xUu = self.xOffset + (xBlocknum * self.size)
-    yUu = self.yOffset + (yBlocknum * self.size)
-    return xUu, yUu
-
-  def render(self, group):
-    ''' draw out a model by repeating blocks across the canvas
-    '''
-    for paint_order in range(2): # background first then foreground
-      for y in range(self.maxRows):
-        print('.', end='', flush=True)
-        for x in range(self.maxCols):
-          pos = tuple([x, y])
-          (X, Y) = self.blocknum_to_uu(pos)
-          cell = self.get_cell_by_position(pos)
-          if type(cell) is tuple: # get the top cell
-            top = cell[1]  
-            if self.cells[top]['top']:
-              gid = f"{top}1"
-              sid = f"{top}1-{x}-{y}"
-              #print(f'{gid} ', end='', flush=True)
-              shape = self.shape(top, X, Y, self.cells[top])
-              shape.set_id(sid)
-              group[gid].add(shape) 
-            cell = cell[0]
-          gid = f"{cell}{paint_order}"
-          sid = f"{cell}{paint_order}-{x}-{y}"
-          if paint_order:
-            #print(f'{gid} ', end='', flush=True)
-            shape = self.shape(cell, X, Y, self.cells[cell])
-          else:
-            #print(f'{gid} ', end='', flush=True)
-            shape = self.backgrounds(cell, X, Y)
-          shape.set_id(sid)    # calling an inkex method
-          group[gid].add(shape)
-        #print("")
-    return None
-
-  def build(self, svg, top_order, cells):
-    ''' Generate inkex groups for the svg renderer to use  
-    '''
-    #print(top_order) Large cells should be last
-    group = {}  # hold a local reference to groups created in svg doc
-    stroke_width = {}
-    sw0 = svg.unittouu(0) # hide the cracks between the background tiles
-    for g in top_order:
-      # draw background  cells
-      bg = Group()
-      bg.set_id(f'{g}0')
-      bg.style = { 'fill' : cells[g]['bg'], 'stroke-width': sw0, 'stroke':'#FFF' }
-      group[f'{g}0'] = bg # local copy
-      svg.add(bg)
-      # draw foreground cells
-      fg = Group()
-      sw1 = svg.unittouu(cells[g]['stroke_width'])
-      fg.set_id(f'{g}1') 
-      fg.style = {
-        'fill'            : cells[g]['fill'],
-        'fill-opacity'    : cells[g]['fill_opacity'],
-        'stroke'          : cells[g]['stroke'],
-        'stroke-width'    : sw1,
-        'stroke-dasharray': cells[g]['stroke_dasharray'],
-        'stroke-opacity'  : cells[g]['stroke_opacity']
-      }
-      group[f'{g}1'] = fg
-      # TODO what is stroke width used for ?
-      stroke_width[f'{g}1'] = sw1  # adjust cell dimension according to stroke width
-      svg.add(fg)
-      self.cells = cells
-    return group
+#from recurrink import TmpFile
+from db import Models, Blocks
+pp = pprint.PrettyPrinter(indent = 2)
 
 class Stencil:
   ''' accept a cell dictionary and for each unique colour
@@ -383,3 +66,282 @@ class Stencil:
     bg = bg[1:] if bg else '' # remove the leading #
     fn = ''.join([fill[1:], bg[1:], fo])
     return fn.lower()
+
+class Points:
+  ''' nw n ne    do the maths to render a cell
+      w  c  e    points are calculated and called as p.ne p.nne p.s
+      sw s se
+  '''
+  def __init__(self, x, y, stroke_width, size):
+    self.n  = [x + size / 2,              y + stroke_width]
+    self.e  = [x + size - stroke_width,   y + size / 2]
+    self.s  = [x + size / 2,              y + size - stroke_width]
+    self.w  = [x + stroke_width,          y + size / 2]
+    self.ne = [x + size - stroke_width,   y + stroke_width] 
+    self.se = [x + size - stroke_width,   y + size - stroke_width]
+    self.nw = [x + stroke_width,          y + stroke_width]
+    self.sw = [x + stroke_width,          y + size - stroke_width]
+    self.mid= [x + size / 2,              y + size / 2]
+
+class Svg:
+  def __init__(self, scale, cellsize):
+    ns = '{http://www.w3.org/2000/svg}'
+    ET.register_namespace('',"http://www.w3.org/2000/svg")
+    root = ET.fromstring(f'''
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      xmlns:svg="http://www.w3.org/2000/svg" 
+      viewBox="0 0 1080 1080" width="1080px" height="1080px"
+      transform="scale({scale})"></svg>
+    ''')
+    #ET.dump(root)
+    self.ns = ns
+    self.root = root
+    self.cellsize = cellsize
+
+  def group(self, gid):
+    return ET.SubElement(self.root, f"{self.ns}g", id=gid)
+
+  def foreground(self, x, y, sid, cell, g):
+    ''' create a shape from a cell for adding to a group
+    '''
+    facing = cell['facing']
+    shape = cell['shape']
+    size = cell['size']
+    hsw = cell['stroke_width'] / 2  
+    sw = cell['stroke_width']
+    p = Points(x, y, sw, self.cellsize)
+
+    if shape == 'circle':
+      self.circle(sid, size, sw, p, g)
+    elif shape == 'line':
+      self.line(x, y, sid, facing, size, hsw, sw, g)
+    elif shape == 'square':
+      self.square(x, y, sid, size, hsw, sw, g)
+    elif shape == 'triangl':
+      self.triangle(sid, facing, p, g)
+    elif shape == 'diamond':
+      self.diamond(sid, facing, p, g)
+    else:
+      self.default(x, y, sid, shape, g)
+  
+  def circle(self, sid, size, stroke_width, p, g):
+    cs = self.cellsize
+    if size == 'large': 
+      cs /= 2
+      sum_two_sides = (cs**2 + cs**2) # pythagoras was a pythonista :)
+      r = math.sqrt(sum_two_sides) - stroke_width
+    elif size == 'medium':
+      r = (cs / 2 - stroke_width) # normal cs
+    elif size == 'small':
+      r = (cs / 3 - stroke_width) 
+    else:
+      raise ValueError(f"Cannot set circle to {size} size")
+    circle = ET.SubElement(g, f"{self.ns}circle", id=sid)
+    circle.set('cx', str(p.mid[0]))
+    circle.set('cy', str(p.mid[1]))
+    circle.set('r', str(r))
+
+
+  def line(self, x, y, sid, facing, size, hsw, sw, g):
+    ''' lines can be orientated along a north-south axis or east-west axis
+        but the user can choose any of the four cardinal directions
+        here we silently collapse the non-sensical directions
+    '''
+    cs = self.cellsize
+    facing = 'north' if facing == 'south' else facing
+    facing = 'east' if facing == 'west' else facing
+    if size == 'large' and facing == 'north':
+      x      = str(x + cs / 3 + hsw)
+      y      = str(y - cs / 3 + hsw)
+      width  = str(cs / 3 - sw)
+      height = str((cs / 3 * 2 + cs) - sw)
+    elif size == 'large' and facing == 'east':
+      x      = str(x - cs / 3 + hsw)
+      y      = str(y + cs / 3 + hsw)
+      width  = str((cs / 3 * 2 + cs) - sw)
+      height = str(cs / 3 - sw)
+    elif size == 'medium' and facing == 'north':
+      x      = str(x + cs / 3 + hsw)
+      y      = str(y + hsw)
+      width  = str(cs / 3 - sw)
+      height = str(cs - sw)
+    elif size == 'medium' and facing == 'east':
+      x      = str(x + hsw)
+      y      = str(y + cs / 3 + hsw)
+      width  = str(cs - sw)
+      height = str(cs / 3 - sw)
+    elif size == 'small' and facing == 'north':
+      x      = str(x + cs / 3 + hsw)
+      y      = str(y + cs / 4 + hsw)
+      width  = str(cs / 3 - sw)
+      height = str(cs / 2 - sw)
+    elif size == 'small' and facing == 'east':
+      x      = str(x + cs / 4 + hsw)
+      y      = str(y + cs / 3 + hsw)
+      width  = str(cs / 2 - sw)
+      height = str(cs / 3 - sw)
+    else:
+      raise ValueError(f"Cannot set line to {size} {facing}")
+    rect = ET.SubElement(g, f"{self.ns}rect", id=sid)
+    rect.set("x", str(x))
+    rect.set("y", str(y))
+    rect.set("width", width)
+    rect.set("height", height)
+
+  def square(self, x, y, sid, size, hsw, sw, g):
+    cs = self.cellsize
+    if size == 'medium':
+      x      = str(x + hsw)
+      y      = str(y + hsw)
+      width  = str(cs - sw)
+      height = str(cs - sw)
+    elif size == 'large':
+      third  = cs / 3
+      x      = str(x - third / 2 + hsw)
+      y      = str(y - third / 2 + hsw)
+      width  = str(cs + third - sw)
+      height = str(cs + third - sw)
+    elif size == 'small':
+      third  = cs / 3
+      x      = str(x + sw + third)
+      y      = str(y + sw + third)
+      width  = str(third - sw)
+      height = str(third - sw)
+    else:
+      raise ValueError(f"Cannot make square with {size}")
+    rect = ET.SubElement(g, f"{self.ns}rect", id=sid)
+    rect.set("x", str(x))
+    rect.set("y", str(y))
+    rect.set("width", width)
+    rect.set("height", height)
+
+  def diamond(self, sid, facing, p, g):
+    if facing == 'all': 
+      points = p.w + p.n + p.e + p.s + p.w
+    elif facing == 'west': 
+      points = p.w + p.n + p.s + p.w
+    elif facing == 'east': 
+      points = p.n + p.e + p.s + p.n
+    elif facing == 'north': 
+      points = p.w + p.n + p.e + p.w
+    elif facing == 'south':
+      points = p.w + p.e + p.s + p.w
+    else:
+      raise ValueError(f"Cannot face diamond {facing}")
+    polyg = ET.SubElement(g, f"{self.ns}polygon", id=sid)
+    polyg.set("points", ','.join(map(str, points)))
+
+  def triangle(self, sid, facing, p, g):
+    if facing == 'west': 
+      points = p.w + p.ne + p.se + p.w
+    elif facing == 'east': 
+      points = p.nw + p.e + p.sw + p.nw
+    elif facing == 'north': 
+      points = p.sw + p.n + p.se + p.sw
+    elif facing == 'south':
+      points = p.nw + p.ne + p.s + p.nw
+    else:
+      raise ValueError(f"Cannot face triangle {facing}")
+    polyg = ET.SubElement(g, f"{self.ns}polygon", id=sid)
+    polyg.set("points", ','.join(map(str, points)))
+
+  def default(self, x, y, sid, words, g):
+    t = ET.SubElement(g, f"{self.ns}text", id=sid)
+    t.text = words
+    tx = x + 10
+    ty = y + 30
+    t.set("x", str(tx))
+    t.set("y", str(ty))
+    t.set("class", "{fill:#000;fill-opacity:1.0}")
+
+  def write(self, svgfile):
+    tree = ET.ElementTree(self.root)
+    tree.write(svgfile)
+
+class Layout(Svg):
+  ''' expand cells provided by Draw across a canvas
+  '''
+  def __init__(self, scale=1.0):
+    ''' scale expected to be one of [0.5, 1.0, 1.5, 2.0]
+        in another universe they would all be integers 1 2 3 4
+    '''
+    self.scale = scale
+    #self.cellsize = round(60 / scale)
+    self.cellsize = 60
+    self.grid = round(1080 / (60 * scale))
+    if False: # run with scale 0.5 to get a demo
+      for col in range(self.grid):
+        for row in range(self.grid):
+          xy = tuple([row, col])
+          print(xy, end=' ', flush=True)
+        print()
+    super().__init__(scale, self.cellsize)
+
+  def style(self, c, cell):
+    ''' makes an svg group for each style
+    '''
+    bg = self.group(f"{c}0") # draw background  cells
+    bg.set("style", f"fill:{cell['bg']};stroke-width:0") # hide the cracks between the background tiles
+    fg = self.group(f"{c}1") # draw foreground cells
+    fg.set("style", f"fill:{cell['fill']};fill-opacity:{cell['fill_opacity']};stroke:{cell['stroke']};" +
+      f"stroke-width:{cell['stroke_width']};stroke-dasharray:{cell['stroke_dasharray']};" +
+      f"stroke-opacity:{cell['stroke_opacity']}"
+    )
+    return bg, fg
+
+  def gridwalk(self, blocksize, positions, cells):
+    ''' traverse the grid once for each block
+    '''
+    for c in cells: # top cells must be last
+      print(c, end=' ',flush=True) 
+      cell = cells[c]
+      bg, fg = self.style(c, cell)
+      for y in range(0, self.grid, blocksize[1]):
+        for x in range(0, self.grid, blocksize[0]):
+          grid = tuple([x, y])
+          self.renderblock(grid, blocksize, positions, c, cell, bg, fg)
+    print()
+
+  def renderblock(self, grid, blocksize, positions, c, cell, bg, fg):
+    ''' scan a block, match cell to position
+    '''
+    for y in range(blocksize[1]):
+      for x in range(blocksize[0]):
+        pos = tuple([x, y])
+        ct = positions[pos] # cell, top
+        c0 = ct[0] if type(ct) is tuple else ct
+        c1 = ct[1] if type(ct) is tuple else None
+        if c == c0:
+          self.rendercell(grid, x, y, c0, c1, cell, bg, fg)
+    return None
+
+  def rendercell(self, grid, x, y, c0, c1, cell, bg, fg):
+    ''' render a cell by adding shape elements to the style group
+    '''
+    X = (grid[0] + x) * self.cellsize # this logic is the base for Points
+    Y = (grid[1] + y) * self.cellsize
+    #print(grid, X, Y, c0, c1, cell['shape'])
+    self.square(X, Y, f"{c0}0-{x}-{y}", 'medium', 0, 0, bg) 
+    if cell['top']:
+      self.foreground(X, Y, f"{c1}1-{x}-{y}", cell, fg) 
+    if ord(c0) < 97:  # upper case
+      cell['shape'] = ' '.join([c0, cell['shape']])
+    self.foreground(X, Y, f"{c0}1-{x}-{y}", cell, fg) 
+
+if __name__ == '__main__':
+  #tf = TmpFile()
+  model = 'mambo'
+  m = Models()
+  blocksize = m.read(model=model)[2] # can get scale too
+  b = Blocks(model)
+  positions = b.read()
+  #pp.pprint(blocksize)
+  #pp.pprint(positions)
+  s = 1.5
+  lt = Layout(scale=s)
+  #print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
+  #cells = lt.testdata()
+  cells = tf.read(model, output=dict())
+  lt.gridwalk(blocksize, positions, cells)
+  lt.write(model)
