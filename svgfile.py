@@ -92,7 +92,7 @@ class Svg:
       xmlns="http://www.w3.org/2000/svg" 
       xmlns:svg="http://www.w3.org/2000/svg" 
       viewBox="0 0 1080 1080" width="1080px" height="1080px"
-      transform="scale({scale})"></svg>
+      transform="scale(1)"><!-- scale({scale}) --></svg>
     ''')
     #ET.dump(root)
     self.ns = ns
@@ -260,15 +260,19 @@ class Svg:
     tree.write(svgfile)
 
 class Layout(Svg):
-  ''' expand cells provided by Draw across a canvas
+  ''' expand cells and draw across grid
+     9 * 60 = 540  * 2.0 = 1080
+    12 * 60 = 720  * 1.5 = 1080
+    18 * 60 = 1080 * 1.0 = 1080
+    36 * 60 = 2160 * 0.5 = 1080
   '''
   def __init__(self, scale=1.0):
     ''' scale expected to be one of [0.5, 1.0, 1.5, 2.0]
         in another universe they would all be integers 1 2 3 4
     '''
     self.scale = scale
-    #self.cellsize = round(60 / scale)
-    self.cellsize = 60
+    # svg:transform(scale) does the same but is lost when converting to raster. Instagram !!!
+    self.cellsize = round(60 * scale) 
     self.grid = round(1080 / (60 * scale))
     if False: # run with scale 0.5 to get a demo
       for col in range(self.grid):
@@ -294,8 +298,8 @@ class Layout(Svg):
     ''' traverse the grid once for each block
     '''
     for c in cells: # top cells must be last
-      print(c, end=' ',flush=True) 
       cell = cells[c]
+      print(c, end=' ',flush=True) 
       bg, fg = self.style(c, cell)
       for y in range(0, self.grid, blocksize[1]):
         for x in range(0, self.grid, blocksize[0]):
@@ -319,15 +323,19 @@ class Layout(Svg):
   def rendercell(self, grid, x, y, c0, c1, cell, bg, fg):
     ''' render a cell by adding shape elements to the style group
     '''
-    X = (grid[0] + x) * self.cellsize # this logic is the base for Points
-    Y = (grid[1] + y) * self.cellsize
+    gx = grid[0] + x
+    gy = grid[1] + y
+    X = gx * self.cellsize # this logic is the base for Points
+    Y = gy * self.cellsize
     #print(grid, X, Y, c0, c1, cell['shape'])
-    self.square(X, Y, f"{c0}0-{x}-{y}", 'medium', 0, 0, bg) 
-    if cell['top']:
-      self.foreground(X, Y, f"{c1}1-{x}-{y}", cell, fg) 
+    self.square(X, Y, f"{c0}0-{gx}-{gy}", 'medium', 0, 0, bg) 
+    if cell['top'] and c1:
+      self.foreground(X, Y, f"{c1}1-{gx}-{gy}", cell, fg) 
+    elif cell['top']:
+      raise ValueError(f"{c0} has top without a value?")
     if ord(c0) < 97:  # upper case
       cell['shape'] = ' '.join([c0, cell['shape']])
-    self.foreground(X, Y, f"{c0}1-{x}-{y}", cell, fg) 
+    self.foreground(X, Y, f"{c0}1-{gx}-{gy}", cell, fg) 
 
 if __name__ == '__main__':
   #tf = TmpFile()

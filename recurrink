@@ -210,7 +210,7 @@ def update(model, scale):
   cells = tf.read(model, output=dict())
   lt.gridwalk(blocksize, positions, cells)
   lt.write(svgfile)
-  return svgfile
+  return f"{svgfile} {s}"
 
 def delete(view):
   ''' both svg and view must exist for the delete to succeed
