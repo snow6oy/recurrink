@@ -84,14 +84,14 @@ class Points:
     self.mid= [x + size / 2,              y + size / 2]
 
 class Svg:
-  def __init__(self, scale, cellsize):
+  def __init__(self, scale, cellsize, gridsize):
     ns = '{http://www.w3.org/2000/svg}'
     ET.register_namespace('',"http://www.w3.org/2000/svg")
     root = ET.fromstring(f'''
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
       xmlns:svg="http://www.w3.org/2000/svg" 
-      viewBox="0 0 1080 1080" width="1080px" height="1080px"
+      viewBox="0 0 {gridsize} {gridsize}" width="{gridsize}px" height="{gridsize}px"
       transform="scale(1)"><!-- scale({scale}) --></svg>
     ''')
     #ET.dump(root)
@@ -259,6 +259,7 @@ class Svg:
     tree = ET.ElementTree(self.root)
     tree.write(svgfile)
 
+# TODO for testing make 1080 an init param, e.g. gridpx=180
 class Layout(Svg):
   ''' expand cells and draw across grid
      9 * 60 = 540  * 2.0 = 1080
@@ -266,23 +267,24 @@ class Layout(Svg):
     18 * 60 = 1080 * 1.0 = 1080
     36 * 60 = 2160 * 0.5 = 1080
   '''
-  def __init__(self, scale=1.0):
+  def __init__(self, scale=1.0, gridpx=1080):
     ''' scale expected to be one of [0.5, 1.0, 1.5, 2.0]
-        in another universe they would all be integers 1 2 3 4
     '''
     self.scale = scale
     # svg:transform(scale) does the same but is lost when converting to raster. Instagram !!!
     self.cellsize = round(60 * scale) 
-    self.grid = round(1080 / (60 * scale))
+    self.grid = round(gridpx / (60 * scale))
+    self.styles = dict() 
+    self.groups = dict() # retrieve an ET elem by cell
     if False: # run with scale 0.5 to get a demo
       for col in range(self.grid):
         for row in range(self.grid):
           xy = tuple([row, col])
           print(xy, end=' ', flush=True)
         print()
-    super().__init__(scale, self.cellsize)
+    super().__init__(scale, self.cellsize, gridpx)
 
-  def style(self, c, cell):
+  def _style(self, c, cell):
     ''' makes an svg group for each style
     '''
     bg = self.group(f"{c}0") # draw background  cells
@@ -294,62 +296,67 @@ class Layout(Svg):
     )
     return bg, fg
 
+  def uniqstyle(self, cell, layer, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
+    ''' convert styles into a hash key to test uniqness
+    '''
+    if layer == 'bg':
+      style=bg
+      g = self.group(f"{layer}-{style}") # draw background  cells
+      g.set("style", f"fill:{bg};stroke-width:0") # hide the cracks between the background tiles
+    elif layer == 'fg' or layer == 'top':
+      style = ''.join([fill, stroke, str(fo), str(sw), str(sd), str(so)])
+      g = self.group(f"{layer}-{style}") # draw foreground cells
+      g.set(
+        "style", 
+        f"fill:{fill};fill-opacity:{fo};stroke:{stroke};stroke-width:{sw};stroke-dasharray:{sd};stroke-opacity:{so}"
+      )
+    if style in self.styles:
+      self.groups[cell] = self.styles[style]
+    else:
+      self.styles[style] = g # save for later
+      self.groups[cell] = g  # grab the new one
+
   def gridwalk(self, blocksize, positions, cells):
-    ''' traverse the grid once for each block
+    ''' traverse the grid once for each block, populating ET elems as we go
     '''
-    for c in cells: # top cells must be last
-      cell = cells[c]
-      print(c, end=' ',flush=True) 
-      bg, fg = self.style(c, cell)
-      for y in range(0, self.grid, blocksize[1]):
-        for x in range(0, self.grid, blocksize[0]):
-          grid = tuple([x, y])
-          self.renderblock(grid, blocksize, positions, c, cell, bg, fg)
-    print()
+    self.cells = cells
+    for layer in ['bg', 'fg', 'top']:
+      for cell in self.cells:
+        self.uniqstyle(cell, layer,
+          bg=self.cells[cell]['bg'],
+          fill=self.cells[cell]['fill'],
+          fo=self.cells[cell]['fill_opacity'],
+          stroke=self.cells[cell]['stroke'],
+          sd=self.cells[cell]['stroke_dasharray'],
+          so=self.cells[cell]['stroke_opacity'],
+          sw=self.cells[cell]['stroke_width']
+        )
+      for cell in self.cells:
+        for gy in range(0, self.grid, blocksize[1]):
+          for gx in range(0, self.grid, blocksize[0]):
+            for y in range(blocksize[1]):
+              for x in range(blocksize[0]):
+                pos = tuple([x, y])
+                c, t = positions[pos] # cell, top
+                self.rendercell(layer, cell, c, t, gx, x, gy, y)
+      self.styles.clear() # empty self.styles before next layer
 
-  def renderblock(self, grid, blocksize, positions, c, cell, bg, fg):
-    ''' scan a block, match cell to position
-    '''
-    for y in range(blocksize[1]):
-      for x in range(blocksize[0]):
-        pos = tuple([x, y])
-        ct = positions[pos] # cell, top
-        c0 = ct[0] if type(ct) is tuple else ct
-        c1 = ct[1] if type(ct) is tuple else None
-        if c == c0:
-          self.rendercell(grid, x, y, c0, c1, cell, bg, fg)
-    return None
-
-  def rendercell(self, grid, x, y, c0, c1, cell, bg, fg):
-    ''' render a cell by adding shape elements to the style group
-    '''
-    gx = grid[0] + x
-    gy = grid[1] + y
-    X = gx * self.cellsize # this logic is the base for Points
-    Y = gy * self.cellsize
-    #print(grid, X, Y, c0, c1, cell['shape'])
-    self.square(X, Y, f"{c0}0-{gx}-{gy}", 'medium', 0, 0, bg) 
-    if cell['top'] and c1:
-      self.foreground(X, Y, f"{c1}1-{gx}-{gy}", cell, fg) 
-    elif cell['top']:
-      raise ValueError(f"{c0} has top without a value?")
-    if ord(c0) < 97:  # upper case
-      cell['shape'] = ' '.join([c0, cell['shape']])
-    self.foreground(X, Y, f"{c0}1-{gx}-{gy}", cell, fg) 
-
-if __name__ == '__main__':
-  #tf = TmpFile()
-  model = 'mambo'
-  m = Models()
-  blocksize = m.read(model=model)[2] # can get scale too
-  b = Blocks(model)
-  positions = b.read()
-  #pp.pprint(blocksize)
-  #pp.pprint(positions)
-  s = 1.5
-  lt = Layout(scale=s)
-  #print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
-  #cells = lt.testdata()
-  cells = tf.read(model, output=dict())
-  lt.gridwalk(blocksize, positions, cells)
-  lt.write(model)
+  def rendercell(self, layer, cell, c, t, gx, x, gy, y):
+    g = self.groups[cell]
+    offsetx = gx + x
+    offsety = gy + y
+    X = offsetx * self.cellsize # this logic is the base for Points
+    Y = offsety * self.cellsize
+    #print(g.get('id'), cell, offsetx, offsety)
+    if layer == 'bg' and cell == c:
+      self.square(X, Y, f"{cell}0-{offsetx}-{offsety}", 'medium', 0, 0, g) 
+    if layer == 'fg' and cell == c:
+      if ord(cell) < 97:  # upper case
+        self.cells[cell]['shape'] = ' '.join([c, self.cells[cell]['shape']]) # testcard hack
+      self.foreground(X, Y, f"{cell}1-{offsetx}-{offsety}", self.cells[cell], g) 
+    if layer == 'top' and cell == t and self.cells[cell]['top']:
+      self.foreground(X, Y, f"{cell}2-{offsetx}-{offsety}", self.cells[cell], g) 
+  '''
+  the
+  end
+  '''

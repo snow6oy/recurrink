@@ -30,8 +30,8 @@ class TestModels(unittest.TestCase):
     ''' key value pair with position as the key
     '''
     positions = self.b.read()
-    pp.pprint(positions)
-    self.assertEqual(positions[(1, 1)], 'd')
+    #pp.pprint(positions)
+    self.assertEqual(positions[(1, 1)][0], 'd')
 
   def testGetCellWithTop(self):
     ''' can superimposed models list top cells as well?
@@ -46,6 +46,7 @@ class TestModels(unittest.TestCase):
     ''' key value pair with cells as the key and top as value
     '''
     topcells = self.b.get_topcells()
+    #pp.pprint(topcells)
     self.assertFalse(topcells['b']) # b has no top in soleares
 
   def testVirtualTop(self):

@@ -186,7 +186,8 @@ WHERE model = %s;""", [self.model])
       rows = self.cursor.fetchall()
       for r in rows:
         (cell, top, pos) = (r[0], r[1], tuple(r[2]))
-        output[pos] = cell if top is None else (cell, top)
+        #output[pos] = cell if top is None else (cell, top)
+        output[pos] = (cell, top)
     else:  # must be a list
       uniq = dict() # temporary dict to guarantee uniqueness across cell and top
       self.cursor.execute("""
