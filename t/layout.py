@@ -28,7 +28,7 @@ class TestLayout(unittest.TestCase):
       },
       'd': {
         'bg': '#CCC', 'fill': '#FFF', 'fill_opacity': 1.0,
-        'shape': 'line', 'facing': 'east', 'size': 'large', 'top': False,
+        'shape': 'line', 'facing': 'east', 'size': 'large', 'top': True,
         'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
       }
     }
@@ -50,6 +50,7 @@ class TestLayout(unittest.TestCase):
 
   def testGridWalk(self):
     self.lt.gridwalk((3, 1), self.positions, self.cells)
+    self.lt.write('/tmp/minkscape.svg')
     numof_bg = 0
     for r in list(self.lt.root.iter(tag=f"{self.lt.ns}rect")):
       sid, x, y = r.get('id').split('-')
