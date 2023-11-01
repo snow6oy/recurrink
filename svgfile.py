@@ -92,8 +92,10 @@ class Svg:
       xmlns="http://www.w3.org/2000/svg" 
       xmlns:svg="http://www.w3.org/2000/svg" 
       viewBox="0 0 {gridsize} {gridsize}" width="{gridsize}px" height="{gridsize}px"
-      transform="scale(1)"><!-- scale({scale}) --></svg>
+      transform="scale(1)"></svg>
     ''')
+    comment = ET.Comment(f' scale:{scale} cellpx:{cellsize} ')
+    root.insert(0, comment)  # 0 is the index where comment is inserted
     #ET.dump(root)
     self.ns = ns
     self.root = root
@@ -101,6 +103,12 @@ class Svg:
 
   def group(self, gid):
     return ET.SubElement(self.root, f"{self.ns}g", id=gid)
+
+  def write(self, svgfile):
+    tree = ET.ElementTree(self.root)
+    ET.indent(tree, level=0)
+    tree.write(svgfile)
+
 
   def foreground(self, x, y, sid, cell, g):
     ''' create a shape from a cell for adding to a group
@@ -254,10 +262,6 @@ class Svg:
     t.set("x", str(tx))
     t.set("y", str(ty))
     t.set("class", "{fill:#000;fill-opacity:1.0}")
-
-  def write(self, svgfile):
-    tree = ET.ElementTree(self.root)
-    tree.write(svgfile)
 
 # TODO for testing make 1080 an init param, e.g. gridpx=180
 class Layout(Svg):
