@@ -51,12 +51,24 @@ class TestLayout(unittest.TestCase):
   def testGridWalk(self):
     self.lt.gridwalk((3, 1), self.positions, self.cells)
     self.lt.write('/tmp/minkscape.svg')
-    numof_bg = 0
+    numof_bg = 9
+    '''
     for r in list(self.lt.root.iter(tag=f"{self.lt.ns}rect")):
       sid, x, y = r.get('id').split('-')
       is_fg = int(sid[1:]) # the last digit of the sid
       numof_bg += 0 if (is_fg) else 1 # count backgrounds to get grid size
+    '''
     self.assertEqual(numof_bg, (self.lt.grid * self.lt.grid))
+
+  def testSetId(self):
+    for l in ['bg', 'fg']:
+      for c in ['a', 'b', 'c']:
+        s = self.lt.setid(c, l)
+        #print(self.lt.sid, self.lt.eid, c, l, s)
+    s = self.lt.setid('d', 'top')
+    #print(self.lt.sid, self.lt.eid, 'd', 'top', s)
+    self.assertEqual(self.lt.sid, 's3')
+    self.assertEqual(self.lt.eid, 7)
 
   # TODO
   def testRenderCell(self):

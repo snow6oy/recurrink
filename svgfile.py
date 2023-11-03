@@ -102,7 +102,7 @@ class Svg:
     self.cellsize = cellsize
 
   def group(self, gid):
-    return ET.SubElement(self.root, f"{self.ns}g", id=gid)
+    return ET.SubElement(self.root, f"{self.ns}g", id=str(gid))
 
   def write(self, svgfile):
     tree = ET.ElementTree(self.root)
@@ -279,6 +279,8 @@ class Layout(Svg):
     self.cellsize = round(60 * scale) 
     self.grid = round(gridpx / (60 * scale))
     self.styles = dict() 
+    self.seen = str()
+    self.counter = 0 # increment elem id 
     self.groups = dict() # retrieve an ET elem by cell
     if False: # run with scale 0.5 to get a demo
       for col in range(self.grid):
@@ -288,19 +290,14 @@ class Layout(Svg):
         print()
     super().__init__(scale, self.cellsize, gridpx)
 
-  def _style(self, c, cell):
-    ''' makes an svg group for each style
-    '''
-    bg = self.group(f"{c}0") # draw background  cells
-    bg.set("style", f"fill:{cell['bg']};stroke-width:0") # hide the cracks between the background tiles
-    fg = self.group(f"{c}1") # draw foreground cells
-    fg.set("style", f"fill:{cell['fill']};fill-opacity:{cell['fill_opacity']};stroke:{cell['stroke']};" +
-      f"stroke-width:{cell['stroke_width']};stroke-dasharray:{cell['stroke_dasharray']};" +
-      f"stroke-opacity:{cell['stroke_opacity']}"
-    )
-    return bg, fg
+  '''
+  fill:#CCC;stroke-width:0 : cells [ a b c ] layer [ bg ] id : 1
+  #FFF#0001.0000 :           cells [ a ]     layer [ fg ] id : 2
 
-  def uniqstyle(self, cell, layer, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
+  id, stylestr = self.groups(cell, layer)
+  '''
+
+  def _uniqstyle(self, cell, layer, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
     ''' convert styles into a hash key to test uniqness
     '''
     if layer == 'bg':
@@ -345,21 +342,63 @@ class Layout(Svg):
                 self.rendercell(layer, cell, c, t, gx, x, gy, y)
       self.styles.clear() # empty self.styles before next layer
 
+  def uniqid(self):
+    self.counter += 1
+    return self.counter
+
+  def getgroup(self, layer, cell):
+    style = self.uniqstyle(cell, layer) # update self.sid
+    #print(self.counter, cell, layer)
+    if style == self.seen:
+      g = list(self.root.iter(tag=f"{self.ns}g"))[-1]
+    else: 
+      g = self.group(self.uniqid()) # draw background  cells
+      self.seen = style
+    g.set("style", style) # hide the cracks between the background tiles
+    return g
+
   def rendercell(self, layer, cell, c, t, gx, x, gy, y):
-    g = self.groups[cell]
     offsetx = gx + x
     offsety = gy + y
     X = offsetx * self.cellsize # this logic is the base for Points
     Y = offsety * self.cellsize
-    #print(g.get('id'), cell, offsetx, offsety)
     if layer == 'bg' and cell == c:
-      self.square(X, Y, f"{cell}0-{offsetx}-{offsety}", 'medium', 0, 0, g) 
+      g = self.getgroup('bg', cell)
+      self.square(X, Y, str(self.uniqid()), 'medium', 0, 0, g) 
     if layer == 'fg' and cell == c:
       if ord(cell) < 97:  # upper case
         self.cells[cell]['shape'] = ' '.join([c, self.cells[cell]['shape']]) # testcard hack
-      self.foreground(X, Y, f"{cell}1-{offsetx}-{offsety}", self.cells[cell], g) 
+      g = self.getgroup('fg', cell)
+      self.foreground(X, Y, str(self.uniqid()), self.cells[cell], g) 
     if layer == 'top' and cell == t and self.cells[cell]['top']:
-      self.foreground(X, Y, f"{cell}2-{offsetx}-{offsety}", self.cells[cell], g) 
+      g = self.getgroup('top', cell)
+      self.foreground(X, Y, str(self.uniqid()), self.cells[cell], g) 
+
+  def uniqstyle(self, cell, layer, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
+    ''' what style to use for this cell and that layer
+    '''
+    found = str()
+    if layer == 'bg' and bg:
+      pass # create new entry in self.layers.bg
+    elif (layer == 'fg' or layer == 'top') and fill:
+      pass
+    else: # read
+      layers = { 
+        'bg': {
+           "fill:#CCC;stroke-width:0": [ 'a', 'b', 'c' ]
+        },
+        'fg': {
+          "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'a' ],
+          "fill:#000;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'b', 'c' ]
+        },
+        'top': { 
+           "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'd' ]
+        }
+      }
+      for s in layers[layer]:
+        if cell in layers[layer][s]:
+          found = s
+    return found
   '''
   the
   end
