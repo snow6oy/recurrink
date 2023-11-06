@@ -109,7 +109,6 @@ class Svg:
     ET.indent(tree, level=0)
     tree.write(svgfile)
 
-
   def foreground(self, x, y, sid, cell, g):
     ''' create a shape from a cell for adding to a group
     '''
@@ -263,7 +262,6 @@ class Svg:
     t.set("y", str(ty))
     t.set("class", "{fill:#000;fill-opacity:1.0}")
 
-# TODO for testing make 1080 an init param, e.g. gridpx=180
 class Layout(Svg):
   ''' expand cells and draw across grid
      9 * 60 = 540  * 2.0 = 1080
@@ -278,11 +276,10 @@ class Layout(Svg):
     # svg:transform(scale) does the same but is lost when converting to raster. Instagram !!!
     self.cellsize = round(60 * scale) 
     self.grid = round(gridpx / (60 * scale))
-    self.styles = dict() 
-    self.seen = str()
-    self.counter = 0 # increment elem id 
-    self.groups = dict() # retrieve an ET elem by cell
-    if False: # run with scale 0.5 to get a demo
+    self.styles = dict() # unique style associated with many cells
+    self.seen = str()    # have we seen this style before
+    self.counter = 0     # increment elem id 
+    if False:            # run with gridpx=180 to get a demo
       for col in range(self.grid):
         for row in range(self.grid):
           xy = tuple([row, col])
@@ -290,40 +287,13 @@ class Layout(Svg):
         print()
     super().__init__(scale, self.cellsize, gridpx)
 
-  '''
-  fill:#CCC;stroke-width:0 : cells [ a b c ] layer [ bg ] id : 1
-  #FFF#0001.0000 :           cells [ a ]     layer [ fg ] id : 2
-
-  id, stylestr = self.groups(cell, layer)
-  '''
-
-  def _uniqstyle(self, cell, layer, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
-    ''' convert styles into a hash key to test uniqness
-    '''
-    if layer == 'bg':
-      style=bg
-      g = self.group(f"{layer}-{style}") # draw background  cells
-      g.set("style", f"fill:{bg};stroke-width:0") # hide the cracks between the background tiles
-    elif layer == 'fg' or layer == 'top':
-      style = ''.join([fill, stroke, str(fo), str(sw), str(sd), str(so)])
-      g = self.group(f"{layer}-{style}") # draw foreground cells
-      g.set(
-        "style", 
-        f"fill:{fill};fill-opacity:{fo};stroke:{stroke};stroke-width:{sw};stroke-dasharray:{sd};stroke-opacity:{so}"
-      )
-    if style in self.styles:
-      self.groups[cell] = self.styles[style]
-    else:
-      self.styles[style] = g # save for later
-      self.groups[cell] = g  # grab the new one
-
   def gridwalk(self, blocksize, positions, cells):
     ''' traverse the grid once for each block, populating ET elems as we go
     '''
     self.cells = cells
     for layer in ['bg', 'fg', 'top']:
       for cell in self.cells:
-        self.uniqstyle(cell, layer,
+        self.uniqstyle(cell, layer, self.cells[cell]['top'],
           bg=self.cells[cell]['bg'],
           fill=self.cells[cell]['fill'],
           fo=self.cells[cell]['fill_opacity'],
@@ -343,25 +313,29 @@ class Layout(Svg):
       self.styles.clear() # empty self.styles before next layer
 
   def uniqid(self):
+    ''' xml must have unique IDs
+    '''
     self.counter += 1
     return self.counter
 
   def getgroup(self, layer, cell):
-    style = self.uniqstyle(cell, layer) # update self.sid
-    #print(self.counter, cell, layer)
+    ''' combine style and counter to make a group
+    '''
+    style = self.findstyle(cell) 
+    #print(self.counter, cell, layer, style)
     if style == self.seen:
       g = list(self.root.iter(tag=f"{self.ns}g"))[-1]
     else: 
       g = self.group(self.uniqid()) # draw background  cells
       self.seen = style
-    g.set("style", style) # hide the cracks between the background tiles
+    g.set("style", style) 
     return g
 
   def rendercell(self, layer, cell, c, t, gx, x, gy, y):
-    offsetx = gx + x
-    offsety = gy + y
-    X = offsetx * self.cellsize # this logic is the base for Points
-    Y = offsety * self.cellsize
+    ''' gather inputs and call Svg()
+    '''
+    X = (gx + x) * self.cellsize # this logic is the base for Points
+    Y = (gy + y) * self.cellsize
     if layer == 'bg' and cell == c:
       g = self.getgroup('bg', cell)
       self.square(X, Y, str(self.uniqid()), 'medium', 0, 0, g) 
@@ -374,30 +348,33 @@ class Layout(Svg):
       g = self.getgroup('top', cell)
       self.foreground(X, Y, str(self.uniqid()), self.cells[cell], g) 
 
-  def uniqstyle(self, cell, layer, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
-    ''' what style to use for this cell and that layer
+  def uniqstyle(self, cell, layer, top, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
+    ''' remember what style to use for this cell and that layer
     '''
-    found = str()
-    if layer == 'bg' and bg:
-      pass # create new entry in self.layers.bg
-    elif (layer == 'fg' or layer == 'top') and fill:
-      pass
-    else: # read
-      layers = { 
-        'bg': {
-           "fill:#CCC;stroke-width:0": [ 'a', 'b', 'c' ]
-        },
-        'fg': {
-          "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'a' ],
-          "fill:#000;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'b', 'c' ]
-        },
-        'top': { 
-           "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'd' ]
-        }
-      }
-      for s in layers[layer]:
-        if cell in layers[layer][s]:
-          found = s
+    style = str()
+    if layer == 'bg': # create new entry in self.layers.bg
+      style = f"fill:{bg};stroke-width:0" # hide the cracks between the background tiles
+    elif layer == 'fg': # and not top:
+      style = f"fill:{fill};fill-opacity:{fo};stroke:{stroke};stroke-width:{sw};stroke-dasharray:{sd};stroke-opacity:{so}"
+    elif layer == 'top' and top:
+      style = f"fill:{fill};fill-opacity:{fo};stroke:{stroke};stroke-width:{sw};stroke-dasharray:{sd};stroke-opacity:{so}"
+
+    if style and style in self.styles:
+      self.styles[style].append(cell)
+    elif style:
+      self.styles[style] = list()
+      self.styles[style].append(cell)
+
+  def findstyle(self, cell):
+    ''' find a style saved in uniqstyle
+    '''
+    found = None
+    for s in self.styles:
+      if cell in self.styles[s]:
+        found = s
+        break
+    if not found: 
+      raise ValueError(f"{cell} aint got no style (hint: cannot make bg for topcell?)")
     return found
   '''
   the

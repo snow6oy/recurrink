@@ -1,13 +1,15 @@
 import unittest
+import pprint
 from svgfile import Layout
+pp = pprint.PrettyPrinter(indent = 2)
 
 class TestLayout(unittest.TestCase):
 
   def setUp(self):
     self.lt = Layout(scale=1.0, gridpx=180)
     self.positions = { 
-      (0, 0): ('a', None),
-      (1, 0): ('b', 'd'),
+      (0, 0): ('a', 'c'),  # c is both cell and top
+      (1, 0): ('b', 'd'),  # d is only top
       (2, 0): ('c',None)
     }
     self.cells = {
@@ -23,7 +25,7 @@ class TestLayout(unittest.TestCase):
       },
       'c': {
         'bg': '#CCC', 'fill': '#000', 'fill_opacity': 1.0,
-        'shape': 'square', 'facing': 'all', 'size': 'small', 'top': False,
+        'shape': 'square', 'facing': 'all', 'size': 'small', 'top': True,
         'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
       },
       'd': {
@@ -34,7 +36,7 @@ class TestLayout(unittest.TestCase):
     }
 
   def testSize(self):
-    ''' size is 54 divided by factor 
+    ''' size will be divided by scale
     '''
     self.assertEqual(self.lt.cellsize, 60)
 
@@ -45,34 +47,63 @@ class TestLayout(unittest.TestCase):
       self.assertEqual(l5.grid, expected[i])
 
   def testUniqStyle(self):
-    [self.lt.uniqstyle(cell, 'bg', bg='#CCC') for cell in self.cells]
-    self.assertEqual(len(self.lt.groups), 4)
+    ''' copy from cells into styles and check they arrived ok
+    '''
+    for layer in ['bg', 'fg', 'top']:
+      for cell in self.cells:
+        self.lt.uniqstyle(cell, layer, self.cells[cell]['top'],
+          bg=self.cells[cell]['bg'],
+          fill=self.cells[cell]['fill'],
+          fo=self.cells[cell]['fill_opacity'],
+          stroke=self.cells[cell]['stroke'],
+          sd=self.cells[cell]['stroke_dasharray'],
+          so=self.cells[cell]['stroke_opacity'],
+          sw=self.cells[cell]['stroke_width']
+        )
+      if layer == 'bg':
+        self.assertTrue("fill:#CCC;stroke-width:0" in self.lt.styles)
+        self.assertEqual(self.lt.styles["fill:#CCC;stroke-width:0"], [ 'a', 'b', 'c', 'd' ])
+      elif layer ==  'fg':
+        self.assertTrue(
+          "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0" in self.lt.styles
+        )
+        self.assertEqual(
+          self.lt.styles[
+            "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0"
+          ], [ 'a', 'd' ]
+        )
+      #  "fill:#000;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'b', 'c' ]
+      elif layer == 'top':
+        self.assertEqual(
+          self.lt.styles[
+            "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0"
+          ], [ 'd' ]
+        )
+      self.lt.styles.clear()
+
+  def testFindStyle(self):
+    [self.lt.uniqstyle(c, 'bg', self.cells[c]['top']) for c in self.cells]
+    #pp.pprint(self.lt.styles)
+    style = self.lt.findstyle('a')
+    self.assertTrue("fill:#CCC;stroke-width:0", style)
 
   def testGridWalk(self):
     self.lt.gridwalk((3, 1), self.positions, self.cells)
     self.lt.write('/tmp/minkscape.svg')
-    numof_bg = 9
-    '''
-    for r in list(self.lt.root.iter(tag=f"{self.lt.ns}rect")):
-      sid, x, y = r.get('id').split('-')
-      is_fg = int(sid[1:]) # the last digit of the sid
-      numof_bg += 0 if (is_fg) else 1 # count backgrounds to get grid size
-    '''
+    numof_bg = 0
+    for g in list(self.lt.root.iter(tag=f"{self.lt.ns}g")):
+      gid = g.get('id')
+      if int(gid) == 1:
+        numof_bg = len(list(g.iter())[1:]) # the first item is g so ignore it
     self.assertEqual(numof_bg, (self.lt.grid * self.lt.grid))
-
-  def testSetId(self):
-    for l in ['bg', 'fg']:
-      for c in ['a', 'b', 'c']:
-        s = self.lt.setid(c, l)
-        #print(self.lt.sid, self.lt.eid, c, l, s)
-    s = self.lt.setid('d', 'top')
-    #print(self.lt.sid, self.lt.eid, 'd', 'top', s)
-    self.assertEqual(self.lt.sid, 's3')
-    self.assertEqual(self.lt.eid, 7)
 
   # TODO
   def testRenderCell(self):
-    pass
+    self.lt.uniqstyle('a', 'bg', False) 
+    self.lt.rendercell('bg', 'a', 'a', False, 0, 0, 0, 0) # layer, cell, c, t, gx, x, gy, y
+    bg = self.lt.root[1][0]
+    self.assertEqual(bg.get('id'), '2')
+
   '''
   the
   end
