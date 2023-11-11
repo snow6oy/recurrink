@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import os
-import argparse
-import re
-import pprint
-import inkex
 import sys
+import re
 import hmac
+import argparse
+import pprint
+#import inkex
 from db import Views, Models, Blocks, Cells
 from svgfile import Layout, Stencil
 
@@ -162,7 +162,7 @@ def info(model=None, digest=None):
     out = " ".join(view[:2])
   else:
     pass # expected either a model or digest as input but whatever ..
-  return out
+  return out or sys.exit(1)
 
 def init(model=None, digest=None):
   ''' after init create SVG by calling svgfile
@@ -232,22 +232,25 @@ def commit(model, scale, author):
   ''' read config, write to database and return digest
       clean file system except for /tmp/model.txt
   '''
-  response = 'unknown error'
   scale = scale if scale else m.get_scale(model)
   celldata = tf.read(model, output=list())
   cellhash = tf.read(model, output=dict()) # read the data again, but as a dictionary
   s = Stencil(model, cellhash)
   lc = len(s.colours())
-  #if v.create(model, tf.digest, author, scale=scale):
-  if v.create(model, tf.digest, author, scale=scale, colournum=lc):
-    [c.create(tf.digest, row) for row in celldata]
-    if os.path.isfile(f"/tmp/{model}.svg"):
-      svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
-      os.rename(f"/tmp/{model}.svg", svgname)
-      os.symlink(f"{svgname}", f"{PUBDIR}/{tf.digest}.svg")
-      response = svgname
+  if os.path.isdir(f"{WORKDIR}/{model}"):
+    if v.create(model, tf.digest, author, scale=scale, colournum=lc):
+      [c.create(tf.digest, row) for row in celldata]
+      if os.path.isfile(f"/tmp/{model}.svg"):
+        svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
+        os.rename(f"/tmp/{model}.svg", svgname)
+        os.symlink(f"{svgname}", f"{PUBDIR}/{tf.digest}.svg")
+        response = svgname
+      else:
+        raise FileNotFoundError(f"{model}.svg not found in /tmp")
     else:
-      raise FileNotFoundError(f"{model}.svg not found in /tmp")
+      response = 'unknown error'
+  else:
+    raise FileNotFoundError(f"{model} not found in {WORKDIR}")
   return response
 
 def stencil(d):
