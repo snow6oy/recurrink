@@ -4,7 +4,7 @@ from svgfile import Svg
 class TestSvg(unittest.TestCase):
 
   def setUp(self):
-    self.svg = Svg(scale=1, cellsize=60)
+    self.svg = Svg(scale=1, cellsize=60, gridsize=180)
     self.geometry = {
       'shape':'square',
       'size':'medium',

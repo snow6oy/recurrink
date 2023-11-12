@@ -1,10 +1,6 @@
-## rink palette
-### Implementation plan
-
-- Emulate mirror.py by initialising models already mirrored and adding colour symmetry
-- Convert palette.py into an in-memory lookup table. E.g model.reverse(fg) -> bg
-- Limit the number of colour per model
-- Use the 'all' cells to define the primary palette, and pair 'one' cells with complimentary colours
+# recurrink palettes
+## ver:colour45
+Based on Winsor Newton ink set.
 ### Foreground colours
 - `#DC143C` crimson
 - `#C71585` mediumvioletred
@@ -34,9 +30,7 @@ An overlay is when the foreground and background occupy the same co-ordinates. I
 
 The opposite is also a special case. When the foreground is opaque, then the background is hidden. These colours are shown in the first column below.
 
-
-
-![](palette.svg)
+![](palette_colour45.svg)
 
 ### Colour table
 ```
@@ -86,3 +80,20 @@ The opposite is also a special case. When the foreground is opaque, then the bac
 44 fill: #4B0082 opacity: 0.4 bg: #CD5C5C
 45 fill: #4B0082 opacity: 0.4 bg: #000
 ```
+## ver:htmstarter
+Hunt The Moon starter kit  
+![](palette_htmstarter.svg)  
+### Colour table
+```
+01 fill: #FFF opacity: 1.0 bg: #FFF
+02 fill: #000 opacity: 1.0 bg: #FFF
+03 fill: #F00 opacity: 1.0 bg: #FFF
+04 fill: #00F opacity: 1.0 bg: #FFF
+05 fill: #FF0 opacity: 1.0 bg: #FFF
+```
+### Implementation plan
+
+- Emulate mirror.py by initialising models already mirrored and adding colour symmetry
+- Convert palette.py into an in-memory lookup table. E.g model.reverse(fg) -> bg
+- Limit the number of colour per model
+- Use the 'all' cells to define the primary palette, and pair 'one' cells with complimentary colours
