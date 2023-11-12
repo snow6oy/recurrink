@@ -574,12 +574,40 @@ class Styles(Db):
     self.palette = list()
 
   def set_spectrum(self, ver=None):
-    # TODO winsor newton is a better name?
-    if ver == 'colour45':
-      self.spectrum_45()
-  
-  def spectrum_45(self):
-    ''' 
+    if ver == 'colour45': # also known as winsor newton 
+      #self.spectrum_45()
+      backgrounds = ['#FFF', '#9ACD32', '#CD5C5C', '#000']
+      foregrounds = ['#C71585', '#DC143C', '#FFA500', '#32CD32', '#4B0082']
+      opacity = ["1.0", "0.7", "0.4"]
+      ''' complimentary is not exact to colour theory!
+          the exact compliment is commented
+      '''
+      complimentary = {
+        '#DC143C': '#32CD32',  #14dcb4
+        '#C71585': '#4B0082',  #15c756
+        '#FFA500': '#DC143C',  #005aff
+        '#32CD32': '#C71585',  #cd32cd
+        '#4B0082': '#FFA500'   #378200
+      }
+      self.spectrum(backgrounds, foregrounds, opacity, complimentary)
+    elif ver == 'htmstarter':
+      backgrounds = [ '#FFF', '#000', '#F00', '#00F', '#FF0' ]
+      foregrounds = [ '#FFF', '#000', '#F00', '#00F', '#FF0' ]
+      opacity = ["1.0"]
+      complimentary = {
+        '#FFF': '#000', 
+        '#000': '#FFF', 
+        '#FF0': '#00F', 
+        '#00F': '#FF0' 
+      }
+      self.spectrum(backgrounds, foregrounds, opacity, complimentary)
+    elif ver is None:
+      pass # universal pallette
+    else:
+      raise ValueError("what version are you on about {ver}")
+
+  def spectrum(self, backgrounds, foregrounds, opacity, complimentary):
+    ''' organise spectrum in self.palette
     fill: {
       ffa500: [0.4 0.7 1.0]
       32cd32: [0.4 0.7 1.0]
@@ -590,9 +618,8 @@ class Styles(Db):
     background: [ FFF, 000, CCC ]
     '''
     fill = dict()
-    backgrounds = ['#FFF', '#9ACD32', '#CD5C5C', '#000']
-    for colour in ['#C71585', '#DC143C', '#FFA500', '#32CD32', '#4B0082']:
-      fill[colour] = [opacity for opacity in ["1.0", "0.7", "0.4"]]
+    for colour in foregrounds:
+      fill[colour] = [o for o in opacity]
     for colour in fill:
       for opacity in fill[colour]:
         for bg in backgrounds:
@@ -602,25 +629,10 @@ class Styles(Db):
             break
     self.fill = fill  # useful for testing validity
     self.backgrounds = backgrounds
-    ''' complimentary is not exact to colour theory!
-        the exact compliment is commented
-    '''
-    self.complimentary = {
-      '#DC143C': '#32CD32',  #14dcb4
-      '#C71585': '#4B0082',  #15c756
-      '#FFA500': '#DC143C',  #005aff
-      '#32CD32': '#C71585',  #cd32cd
-      '#4B0082': '#FFA500'   #378200
-    }
-    return None
+    self.complimentary = complimentary
 
   def table(self):
-    ''' make document source for palette.pdf
-    '''
-    xid = 0
-    for p in self.palette:
-      xid += 1
-      print(f'{xid:02} fill: {p[0]} opacity: {p[1]} bg: {p[2]}')
+    pass # see palette.py
 
   # TODO if width is 0 then all stroke attributes should be null
   def generate_any(self, c):
