@@ -122,10 +122,3 @@ soleares  x      x
     for cell in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p' ,'q', 'r']:
       self.s.generate(cell, [1])
     self.assertTrue('a' in self.s.styles)
-
-  def testTable(self):
-    ''' generate data to update tutorial/palette.md
-    '''
-    self.s.set_spectrum(ver='htmstarter') # 'colour45' 
-    self.s.table()
-

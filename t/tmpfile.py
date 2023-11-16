@@ -81,6 +81,16 @@ d diamond medium south False #CCC #32CD32 1.0 #000 0 0 1.0
     celldata = self.tf.read('soleares', txt=soleares_txt)
     self.assertEqual(len(celldata.keys()), 4)
     self.assertEqual(len(self.tf.digest), 32)
+
+  def testConf(self):
+    self.tf.conf('mambo', 'htmstarter') # set conf
+    model, ver = self.tf.conf() # read conf
+    self.assertEqual(model, 'mambo')
+    self.assertEqual(ver, 'htmstarter')
+    self.tf.conf('waltz', 'colour45') # set conf to something different
+    model, ver = self.tf.conf() # read conf again
+    self.assertEqual(model, 'waltz')
+    self.assertEqual(ver, 'colour45')
   '''
   the
   end

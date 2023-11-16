@@ -12,7 +12,7 @@ from tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
-c = Cells()
+c = Cells() # ver=None implies palette will be colour45
 WORKDIR = '/home/gavin/Dropbox/familia/rinks'
 PUBDIR = '/home/gavin/Pictures/pubq'
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -76,7 +76,7 @@ def init(model=None, digest=None):
     celldata = v.read(digest=digest, celldata=True, output=list())
     model, _, scale = v.read(digest=digest)
   elif model:
-    _, src, celldata = v.generate(model=model)
+    _, src, celldata = v.generate(model=model, ver='htmstarter')
     celldata = tf.convert_to_list(celldata) # dict becomes a list before writing
   else:
     model, src, cellrows = v.generate()
@@ -99,6 +99,7 @@ def update(model, scale):
   lt = Layout(scale=s)
   #print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
   cells = tf.read(model, output=dict())
+  c = Cells(ver='htmstarter')
   c.validate(cells)
   lt.gridwalk(blocksize, positions, cells)
   lt.write(svgfile)

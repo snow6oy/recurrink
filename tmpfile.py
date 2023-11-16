@@ -1,3 +1,5 @@
+import os.path
+import re
 import hmac
 
 class TmpFile():
@@ -96,3 +98,35 @@ class TmpFile():
     secret = b'recurrink'
     digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
     self.digest = digest_maker.hexdigest()
+
+  def conf(self, model=None, ver=None):
+    '''reads all symlinks
+       when there is exactly one, continue but 0 or > 1 throw error
+
+       when given a ver and a model
+       removes old link and create new
+       else read and return
+    '''
+  def conf(self, model=None, ver=None):
+    links = self.tmplinks()
+    if len(links) == 1:
+      link = links[0]
+      path = f'/tmp/{link}'
+      if model and ver: # swap old and new
+        os.unlink(path)
+        os.symlink(f'/tmp/{model}.txt', f'/tmp/{ver}')
+        return None
+      else: # read link
+        path = os.readlink(path)
+        model = re.findall(r"[a-z]+", path)[1]
+        return model, link
+    else:
+      raise ValueError(f'unexpected number of links {len(links)}')
+
+  def tmplinks(self):
+    links = list()
+    for _, _, files in os.walk('/tmp/'):
+      for f in files:
+        if os.path.islink(f'/tmp/{f}'):
+          links.append(f)
+    return links

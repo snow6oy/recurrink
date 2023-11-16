@@ -328,19 +328,18 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda view '{digest}'")
     return vcount
 
-  def generate(self, model=None):
-    palette = 'colour45'
+  def generate(self, model=None, ver='colour45'):
     rnd = False
     if model is None:
       m = Models()
       model = m.generate()
       rnd = True  
-      palette = 'universal'
+      ver = 'universal'
     compass = Compass(model) # compass.conf will be None for unknown models
     b = Blocks(model)
     uniqcells = b.read(output=list())
     topcells = b.topcells()
-    c = Cells(palette=palette) 
+    c = Cells(ver=ver) 
     for cell in uniqcells:
       topYN = True if cell in topcells else False
       if rnd:
@@ -363,11 +362,11 @@ WHERE view = %s;""", [digest])
 class Cells(Views):
   ''' inherit from View and check that self.pool is mutable in both classes
   '''
-  def __init__(self, palette=None):
+  def __init__(self, ver=None):
     self.g = Geometry()
     self.s = Styles()
-    self.palette = palette if palette else 'colour45'
-    self.s.set_spectrum(ver=palette)
+    self.palette = ver if ver else 'universal'
+    self.s.set_spectrum(ver=self.palette)
     self.g.items = { True: list(), False: list() } # stash geoms by top
     self.s.sids = list() # stash styles selected from db
     super().__init__()
@@ -597,14 +596,15 @@ class Styles(Db):
       complimentary = {
         '#FFF': '#000', 
         '#000': '#FFF', 
+        '#F00': '#FFF', 
         '#FF0': '#00F', 
         '#00F': '#FF0' 
       }
       self.spectrum(backgrounds, foregrounds, opacity, complimentary)
-    elif ver is None:
-      pass # universal pallette
+    elif ver == 'universal':
+      pass
     else:
-      raise ValueError("what version are you on about {ver}")
+      raise ValueError(f"what version are you on about {ver}")
 
   def spectrum(self, backgrounds, foregrounds, opacity, complimentary):
     ''' organise spectrum in self.palette
@@ -630,9 +630,6 @@ class Styles(Db):
     self.fill = fill  # useful for testing validity
     self.backgrounds = backgrounds
     self.complimentary = complimentary
-
-  def table(self):
-    pass # see palette.py
 
   # TODO if width is 0 then all stroke attributes should be null
   def generate_any(self, c):
@@ -748,20 +745,20 @@ WHERE stroke_opacity > 0;""", [])
     if so not in self.opacity: 
       raise ValueError(f"validation error: opacity {cell}")
     if sw < min(self.strokes) or sw > max(self.strokes):
-      raise ValueError(f"validation error: stroke width {cell}")
+      raise ValueError(f"validation error: stroke width >{cell}<")
     if data['stroke'] not in self.colours:
-      raise ValueError(f"validation error: stroke {cell}")
+      raise ValueError(f"validation error: stroke >{cell}<")
     if self.palette: # palette indicates that spectrum was set to winsor newton
       if data['fill'] not in self.fill: 
         raise ValueError(f"validation error: fill {cell}")
       if data['bg'] not in self.backgrounds: 
-        raise ValueError(f"validation error: background {cell}")
+        raise ValueError(f"validation error: background >{cell}<")
     else:
       #print(self.colours)
       if data['fill'] not in self.colours: 
-        raise ValueError(f"validation error: fill {cell}")
+        raise ValueError(f"validation error: fill >{cell}<")
       if data['bg'] not in self.colours: 
-        raise ValueError(f"validation error: background {cell}")
+        raise ValueError(f"validation error: background >{cell}<")
     return None
   '''
   the
