@@ -80,7 +80,16 @@ class TestStyles(unittest.TestCase):
       self.s.generate(cell, [1, 2, 3, 4])
     self.assertTrue('bg' in self.s.styles['a'])
 
-  def testGenerateRandom(self):
+  def testGenerateUniversal(self):
+    ''' spiral has no recipe but does have top
+        expect it to use default palette but still work
+    '''
+    self.s.set_spectrum(ver='universal')
+    for cell in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p' ,'q', 'r']:
+      self.s.generate(cell, [1])
+    self.assertTrue('a' in self.s.styles)
+
+  def testGenerateAny(self):
     ''' randomly generate new attributes
     '''
     self.s.set_spectrum(ver='universal')
@@ -95,7 +104,7 @@ arpeggio  -      -
   spiral  -      x
 soleares  x      x
   '''
-  def testGenerateRecipeAndTopAll(self):
+  def testGenerateAll(self):
     ''' facing all for soleares
     '''
     self.s.set_spectrum(ver='colour45')
@@ -104,7 +113,7 @@ soleares  x      x
       self.s.generate_all(c)
       self.assertTrue('bg' in self.s.styles[c])
 
-  def testGenerateRecipeAndTopOne(self):
+  def testGenerateOne(self):
     ''' facing one for soleares
     '''
     #topcells={ 'b': None, 'c': 'a', 'b': 'a', 'd': None, 'a': 'c', 'a': 'c' }
@@ -113,12 +122,3 @@ soleares  x      x
     flip = {'north': 'south', 'south': 'north'}
     self.s.generate_one(pairs, flip)
     self.assertTrue('bg' in self.s.styles['b'])
-
-  def testGenerateUniversal(self):
-    ''' spiral has no recipe but does have top
-        expect it to use default palette but still work
-    '''
-    self.s.set_spectrum(ver='universal')
-    for cell in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p' ,'q', 'r']:
-      self.s.generate(cell, [1])
-    self.assertTrue('a' in self.s.styles)
