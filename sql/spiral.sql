@@ -9,6 +9,27 @@
 -- > + v v + <
 -- ^ < < > > ^
 
+INSERT INTO compass (model, cell, pair, facing)
+VALUES
+  ('spiral', 'a', 'g', 'north'),
+  ('spiral', 'c', 'b', 'north'),
+  ('spiral', 'i', 'f', 'north'),
+  ('spiral', 'r', 'o', 'north'),
+  ('spiral', 'j', 'q', 'north'),
+-- repitition of cell is experimental 
+  ('spiral', 'd', 'm', 'east'),
+  ('spiral', 'h', 'm', 'east'),
+  ('spiral', 'e', 'p', 'east'),
+  ('spiral', 'l', 'p', 'east'),
+  ('spiral', 'k', null, 'all'),
+  ('spiral', 'n', null, 'all'),
+  ('spiral', 's', null, 'all'),
+  ('spiral', 't', null, 'all'),
+  ('spiral', 'u', null, 'all'),
+  ('spiral', 'v', null, 'all'),
+  ('spiral', 'w', null, 'all'),
+  ('spiral', 'x', null, 'all');
+
 INSERT INTO models (model, uniqcells, blocksizeXY, scale) 
 VALUES ('spiral', 16, '{6, 3}', 1.0);
 
@@ -32,3 +53,4 @@ VALUES
   ('spiral', '{ 3, 2 }', 'j', 'x'),
   ('spiral', '{ 4, 2 }', 'r', 't'),
   ('spiral', '{ 5, 2 }', 'p', 'w');
+

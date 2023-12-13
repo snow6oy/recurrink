@@ -120,6 +120,8 @@ class TmpFile():
         path = os.readlink(path)
         model = re.findall(r"[a-z]+", path)[1]
         return model, link
+    elif len(links) == 0 and model and ver: # first time
+      os.symlink(f'/tmp/{model}.txt', f'/tmp/{ver}')
     else:
       raise ValueError(f'unexpected number of links {len(links)}')
 

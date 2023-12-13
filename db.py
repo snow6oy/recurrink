@@ -382,18 +382,24 @@ class Cells(Views):
     self.s.sids = self.s.generate(cell, self.s.sids) 
 
   def generate_any(self, cell, top):
+    ''' same as generate except new styles are generated
+    '''
     if not len(self.g.items[top]):
       self.g.items[top] = self.g.read(top=top)
     self.g.items[top] = self.g.generate(cell, self.g.items[top]) 
     self.s.generate_any(cell) 
 
   def generate_one(self, pair, axis, top):
+    ''' generate one side of a pair that faces a direction
+    '''
     if not len(self.g.items[top]):
       self.g.items[top] = self.g.read(top=top)
     self.g.items[top] = self.g.generate_one(pair, axis, top, self.g.items[top])
     self.s.generate_one(pair, axis)
 
   def generate_all(self, cell, top):
+    ''' facing all directions
+    '''
     if not len(self.g.items[top]):
       self.g.items[top] = self.g.read(top=top)
     self.g.items[top] = self.g.generate_all(cell, top, self.g.items[top]) 
@@ -566,7 +572,10 @@ class Styles(Db):
       'stroke_dasharray': 0,
       'stroke_opacity':1.0
     }
-    self.colours = ['#FFF','#CCC','#CD5C5C','#000','#FFA500','#DC143C','#C71585','#4B0082','#32CD32','#9ACD32']
+    self.colours = [
+      '#FFF','#CCC', '#000', '#F00', '#FF0', '#00F', 
+      '#CD5C5C', '#FFA500','#DC143C','#C71585','#4B0082','#32CD32','#9ACD32'
+    ]
     self.opacity = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1 ] 
     self.strokes = [n for n in range(0, 11)]
     self.styles = dict()
@@ -623,10 +632,11 @@ class Styles(Db):
     for colour in fill:
       for opacity in fill[colour]:
         for bg in backgrounds:
-          self.palette.append([colour, opacity, bg])
+          if colour != bg:
+            self.palette.append([colour, opacity, bg])
           # avoid useless permutations (when opacity is 1.0 the background cannot be seen)
-          if opacity == '1.0':
-            break
+          #if opacity == '1.0':
+          #  break
     self.fill = fill  # useful for testing validity
     self.backgrounds = backgrounds
     self.complimentary = complimentary

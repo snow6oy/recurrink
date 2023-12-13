@@ -1,9 +1,10 @@
 import xml.etree.ElementTree as ET
 import pprint
 from db import Styles
+from cells import Strokes
 pp = pprint.PrettyPrinter(indent = 2)
 
-class Palette:
+class PaletteMaker:
   ''' tool for updating tutorial/palette.pdf
   '''
   def __init__(self, w, h):
@@ -74,15 +75,40 @@ class Palette:
     for p in palette:
       xid += 1
       print(f'{xid:02} fill: {p[0]} opacity: {p[1]} bg: {p[2]}')
+ 
+  def create_colour_table(self, colours):
+    sql = "'),\n('".join(colours)
+    print(f"INSERT INTO colours (fill) VALUES \n('{sql}');")
+
+  def create_palette_table(self, palette, complimentary, ver):
+    vals = str()
+    for p in palette:
+      fill, o, bg = p
+      vals += f"({ver}, '{fill}', '{bg}', '{complimentary[fill]}', {o}),\n"
+    print(f"INSERT INTO palette (ver, fill, bg, complimentary, opacity) VALUES \n{vals};")
+
+  def create_strokes_table(self):
+    ''' oneoff creation made 300 unique strokes from 1171 Styles()
+    '''
+    sk = Strokes()
+    with open('sql/strokes.txt') as f:
+      data = [line.rstrip() for line in f] # read and strip newlines
+    data = [d.split() for d in data[1:]] # ignore header and split on space
+    for stroke in data:
+      sid = sk.create(stroke)
+      print(sid)
 
 if __name__ == '__main__':
   s = Styles()
-  # ver='htmstarter'
-  ver='colour45'
+  ver = 'htmstarter'
+  #ver='colour45'
   s.set_spectrum(ver=ver)
-  #xml = Palette(300, 60)
-  xml = Palette(540, 300)
+  #xml = PaletteMaker(300, 60)
+  xml = PaletteMaker(540, 300)
+  #xml.create_colour_table(s.colours)
+  #xml.create_palette_table(s.palette, s.complimentary, 2)
+  #xml.create_strokes_table()
   #pp.pprint(s.palette)
-  xml.make(s.palette)
-  xml.write(ver)
-  xml.table(s.palette)
+  #xml.make(s.palette)
+  #xml.write(ver)
+  #xml.table(s.palette)
