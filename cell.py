@@ -1,5 +1,4 @@
 import random
-import psycopg2
 from db import Db
 
 class Geometry(Db):

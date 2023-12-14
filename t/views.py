@@ -3,7 +3,7 @@
 ''' see recurrink-ddl and recurrink-dml sql
 '''
 import unittest
-from db import Views
+from views import Views
 
 import pprint
 pp = pprint.PrettyPrinter(indent=2)
@@ -73,9 +73,9 @@ class TestViews(unittest.TestCase):
     #pp.pprint(self.v.view)
     self.assertTrue(len(self.v.view.keys()))
 
-  def testViewGenerate(self):
+  def testGenerate(self):
     self.v.generate('fourfour', ver='htmstarter') # 'arpeggio'
-    pp.pprint(self.v.view)
+    #pp.pprint(self.v.view)
     self.assertTrue(isinstance(self.v.view['d'], dict))
   ''' 
   the 
