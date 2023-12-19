@@ -21,11 +21,13 @@ class TmpFile():
       for h in self.header:
         if h == 'cell': # already primed
           continue
-        else:
-          try: 
-            cellrow.append(celldata[c][h])
-          except:
-            print(f"error missing cell:{c} key:{h}")
+        if h in ['stroke', 'stroke_width', 'stroke_dasharray', 'stroke_opacity']:
+          if celldata[c][h] is None:
+            celldata[c][h] = str() # TODO remove or delete to empty a dictionary entry?
+        try: 
+          cellrow.append(celldata[c][h])
+        except:
+          print(f"error missing cell:{c} key:{h}")
       cells.append(cellrow)
     return cells
 
@@ -33,10 +35,8 @@ class TmpFile():
     ''' write celldata to a tab separated text file
         data is a list of lists. the inner list must be formatted to match self.header
     '''
-    expectedsize = len(self.header)
-    givensize = len(celldata[0])
-    if givensize != expectedsize:
-      raise ValueError(f"{model} celldata has {givensize} not {expectedsize}\n{celldata[0]}")
+    if len(celldata) == 0:
+      raise ValueError(f"{model} celldata is empty")
     with open(f"/tmp/{model}.txt", 'w') as f:
       print("\t".join(self.colnam), file=f)
       for data in celldata:
@@ -58,9 +58,12 @@ class TmpFile():
     for d in data:
       to_hash += ''.join(d)
       d[4] = (d[4] in ['True', 'true'])
-      d[9] = int(d[9])
-      d[10] = int(d[10])
-    self.set(to_hash)
+      if len(d) > 8: # has stroke entries
+        d[9] = int(d[9])
+        d[10] = int(d[10])
+      else:
+        d += [None, 0, None, None]
+    self.set(to_hash) # make digest
     # sort them so that top:true will be rendered last
     sortdata = sorted(data, key=lambda x: x[4])
 
@@ -107,7 +110,6 @@ class TmpFile():
        removes old link and create new
        else read and return
     '''
-  def conf(self, model=None, ver=None):
     links = self.tmplinks()
     if len(links) == 1:
       link = links[0]

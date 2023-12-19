@@ -11,11 +11,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class TestCell(unittest.TestCase):
 
   def setUp(self):
-    self.c = Cell('colour45') # inherit Stroke() class
-
-  def testBadVer(self):
-    self.assertRaises(TypeError, Cell, 1)
-    self.assertRaises(TypeError, Cell, 'a')
+    self.c = Cell(2) # colour45 inherit Stroke() class
 
   def testGenerateOne(self):
     ''' called with axis cell generate along ONE axis
@@ -50,7 +46,7 @@ class TestCell(unittest.TestCase):
     ''' send line from /tmp/MODEL.txt to update an existing view
         cell shape size facing top fill bg fo stroke sw sd so
     '''
-    c = Cell('htmstarter')
+    c = Cell(ver=2)  # htmstarter
     self.assertFalse(c.create(
       'e4681aa9b7aef66efc6290f320b43e55',
       ['a','triangl','medium','west',False,'#FFF','#000',1.0,'#000',1,0,1]

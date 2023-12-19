@@ -8,7 +8,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class TestPalette(unittest.TestCase):
 
   def setUp(self):
-    self.p = Palette(ver='colour45') # default
+    self.p = Palette(ver=1)  # colour45 is default
     self.defaults = {
       'fill': '#FFF',
       'bg': '#CCC',
@@ -27,15 +27,15 @@ class TestPalette(unittest.TestCase):
   def testReadWithItems(self):
     ''' get pid from items for ver: htmstarter 
     '''
-    self.p = Palette(ver='htmstarter')
-    items = ['#FFF', '#FF0',  1.0, 2]
+    self.p = Palette(ver=2)
+    items = ['#FFF', '#FF0',  1.0]
     pid = self.p.read_pid(palette=items)
     self.assertEqual(pid, 49)
 
   def testReadNotFound(self):
     ''' will never find a bg ZZZ
     '''
-    items = ['#FFF', '#ZZZ', 1.0, 0]
+    items = ['#FFF', '#ZZZ', 1.0]
     pid = self.p.read_pid(palette=items)
     self.assertEqual(pid, None)
 
@@ -50,7 +50,7 @@ class TestPalette(unittest.TestCase):
   def testLoadPaletteError(self):
     ''' bad palette
     '''
-    self.p = Palette(ver='universal')
+    self.p = Palette(ver=0) # universal not done yet
     self.assertRaises(ValueError, self.p.load_palette)
 
   def testValidateVer0(self):
@@ -86,7 +86,7 @@ class TestPalette(unittest.TestCase):
   def testGenerateAny(self):
     ''' selfect randomly to generate new palette
     '''
-    self.p = Palette(ver='htmstarter')
+    self.p = Palette(ver=2) # htmstarter
     self.p.load_palette()
     cell = self.p.generate_any()
     self.assertEqual(len(cell.keys()), 3)

@@ -7,7 +7,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class TestStrokes(unittest.TestCase):
 
   def setUp(self):
-    self.s = Strokes(ver='colour45')
+    self.s = Strokes(ver=2) # colour45
     self.defaults = {
       'fill': '#FFF',
       'width': 0,
@@ -37,18 +37,25 @@ class TestStrokes(unittest.TestCase):
     items = self.s.read(sid=4)
     self.assertEqual(items[0], '#FFF')
 
-  def testReadWithItems1(self):
+  def testReadWithItems(self):
     ''' items with sid
     '''
-    items = ['#FFF', 1.0, 0,  0.4]
-    sid = self.s.read(strokes=items)
-    self.assertEqual(sid, 20)
+    items = [
+      ['#FFF', 1.0, 0,  0.4],
+      [None, 0, None, None],
+      ['#000',8,1,1.0],
+      ['#000',8,1,1.0],
+      ['#FFF',9,0,1.0]]
+
+    for i, expected in enumerate([20, None, 122, 122, 16]):
+      sid = self.s.read_sid(strokes=items[i])
+      self.assertEqual(sid, expected)
 
   def testReadNotFound(self):
     ''' will never find a stroke width: 100 
     '''
     items = ['#000', 100, 100, 0.5]
-    sid = self.s.read(strokes=items)
+    sid = self.s.read_sid(strokes=items)
     self.assertEqual(sid, None)
 
   def testValidateVer(self):
@@ -64,7 +71,7 @@ class TestStrokes(unittest.TestCase):
   def testGenerateOne(self):
     ''' select stroke using complimentary palette
     '''
-    self.s.load_palette()
+    self.s.load_palette(ver=1)
     cell = self.s.generate_one(stroke={ 
       'stroke': '#C71585', 'stroke_width': 1, 'stroke_dasharray': 1, 'stroke_opacity': 1.0 
     })
@@ -84,7 +91,7 @@ class TestStrokes(unittest.TestCase):
   def testGenerateNew(self):
     ''' select randomly from stroke attributes
     '''
-    s = Strokes(ver='htmstarter')
+    s = Strokes(ver=2) 
     s.load_palette()
     #pp.pprint(s.palette)
     for cell in ['a', 'b', 'c', 'd']:

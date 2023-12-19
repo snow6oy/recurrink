@@ -5,14 +5,15 @@ import sys
 import re
 import argparse
 import pprint
-from db import Views, Models, Blocks, Cells
+from views import Views, Models, Blocks
 from svgfile import Layout, Stencil
 from tmpfile import TmpFile
 
 pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
-c = Cells() # ver=None implies palette will be colour45
+#c = Cells() # ver=None implies palette will be colour45
+friendly_name = [ 'universal', 'colour45', 'htmstarter']
 WORKDIR = '/home/gavin/Dropbox/familia/rinks'
 PUBDIR = '/home/gavin/Pictures/pubq'
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -27,7 +28,7 @@ def inputs():
   parser_r.add_argument("-v", "--view", help='hex name with 32 char')
   parser_i = subparsers.add_parser('init', help='set config for new image')
   parser_i.add_argument('-m', '--model', help='name of base model')
-  parser_i.add_argument("-p", "--palette", help='palette version', required=True)
+  parser_i.add_argument("-p", "--palette", help='palette version', choices=['0', '1', '2'])
   parser_i.add_argument("-v", "--view", help='view to clone')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_c.add_argument('-m', '--model', help='name of base model', required=True)
@@ -72,6 +73,8 @@ def init(model=None, ver=None, digest=None):
   '''
   scale = None
   src = ""
+  ver = int(ver) if ver else 1 # colour45 is the default palette
+  palette = friendly_name[ver]
   if digest:
     src = digest
     celldata = v.read(digest=digest, celldata=True, output=list())
@@ -79,10 +82,10 @@ def init(model=None, ver=None, digest=None):
   elif model:
     _, src, celldata = v.generate(model=model, ver=ver) # 'htmstarter')
     celldata = tf.convert_to_list(celldata) # dict becomes a list before writing
-    tf.conf(model, ver) # conf state is a symlink
   else:
     model, src, cellrows = v.generate()
     celldata = tf.convert_to_list(cellrows) 
+  tf.conf(model, palette) # conf state is a symlink
   tf.write(model, celldata)
   mesg = f"initialising {model} with {len(celldata)} cells from {src}"
   if scale:
@@ -103,8 +106,8 @@ def update(model, scale):
   lt = Layout(scale=s)
   #print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
   cells = tf.read(model, output=dict())
-  c = Cells(ver=ver)  # 'htmstarter')
-  c.validate(cells)
+  #c = Cells(ver=ver)  # 'htmstarter')
+  v.validate(cells, ver=ver)
   lt.gridwalk(blocksize, positions, cells)
   lt.write(svgfile)
   return f"{svgfile} {s}"
@@ -129,14 +132,17 @@ def commit(model, scale, author):
   ''' read config, write to database and return digest
       clean file system except for /tmp/model.txt
   '''
+  model_conf, palette = tf.conf()
+  model = model_conf if model is None else model
+  ver = friendly_name.index(palette)
   scale = scale if scale else m.get_scale(model)
   celldata = tf.read(model, output=list())
   cellhash = tf.read(model, output=dict()) # read the data again, but as a dictionary
   s = Stencil(model, cellhash)
   lc = len(s.colours())
   if os.path.isdir(f"{WORKDIR}/{model}"):
-    if v.create(model, tf.digest, author, scale=scale, colournum=lc):
-      [c.create(tf.digest, row) for row in celldata]
+    if v.create(tf.digest, celldata, model=model, author=author, ver=ver, scale=scale, colournum=lc):
+      #[c.create(tf.digest, row) for row in celldata]
       if os.path.isfile(f"/tmp/{model}.svg"):
         svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
         os.rename(f"/tmp/{model}.svg", svgname)

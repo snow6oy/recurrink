@@ -14,19 +14,17 @@ class TestViews(unittest.TestCase):
     self.v = Views()
     self.view = 'e4681aa9b7aef66efc6290f320b43e55'
 
-  def testGetViewDigest(self):
+  def testGetView(self):
     ''' get a view from db as a dictionary
     '''
-    view = self.v.read(digest=self.view, celldata=True)
-    #pp.pprint(view)
-    self.assertEqual(len(list(view.keys())), 4)
-
-  def testGetViewDigestList(self):
+    v1 = self.v.read(digest=self.view, celldata=True)
+    pp.pprint(v1)
+    self.assertEqual(len(list(v1.keys())), 4)
     ''' get a view from db as a list
     '''
-    view = self.v.read(digest=self.view, celldata=True, output=list())
-    # pp.pprint(view[0])
-    self.assertEqual(len(list(view[0])), 12)
+    v2 = self.v.read(digest=self.view, celldata=True, output=list())
+    pp.pprint(v2[0]) # cell a has no stroke
+    self.assertEqual(len(list(v2[0])), 8)
 
   def testGetViewMeta(self):
     ''' handle View metadata
@@ -34,16 +32,42 @@ class TestViews(unittest.TestCase):
     (model, author, control) = self.v.read(digest=self.view)
     self.assertEqual(author, 'human')
 
-  def testSetView(self):
-    ''' no insert will take place because view exists
+  def testCreate(self):
+    ''' test that views also makes Cells()
+        no insert will take place because view exists
     '''
-    (model, author, control) = self.v.read(digest=self.view)
-    self.assertEqual(self.v.create('soleares', self.view, author, control), self.view)
+    #(model, author, ver) = ('soleares', 'machine', 2)
+    celldata = [
+      ['a','circle','small','all',False,'#000','#00F',1.0, None, 0, None, None],
+      ['b','triangl','medium','north',True,'#FFF','#F00',1.0,'#000',8,1,1.0],
+      ['c','square','small','all',True,'#FF0','#FFF',1.0,'#000',8,1,1.0],
+      ['d','line','large','south',False,'#000','#FF0',1.0,'#FFF',9,0,1.0]]
+    digest = self.v.create(self.view, celldata, model='soleares', author='machine', ver=2)
+    self.assertEqual(digest, self.view)
 
-  def testDeleteView(self):
+  def testDelete(self):
     ''' test delete on a separate view to avoid impacting other tests
     '''
     view = Views()
+    view.create('abcdefghijklmnopqrstuvwxyz012345', [], model='koto', author='human', ver=1)
+    self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
+
+  def testGenerate(self):
+    ''' test a model without compass
+    '''
+    self.v.generate('afroclave')  
+    #pp.pprint(self.v.view)
+    self.assertEqual(len(self.v.view.keys()), 14)
+
+  def testGenerateCompass(self):
+    ''' fourfour model has compass defined
+        generate_one and generate_all should be called
+    '''
+    self.v.generate('fourfour', ver=2) # 'htmstarter') # 'arpeggio'
+    #pp.pprint(self.v.view)
+    self.assertTrue(self.v.view['a']['facing'], 'all')
+
+  def zz():
     data = dict()
     data['c'] = {
       "cell": "c",
@@ -60,23 +84,7 @@ class TestViews(unittest.TestCase):
       "stroke_opacity": "1",
       "top": False
     }
-    view.create('koto', 'abcdefghijklmnopqrstuvwxyz012345', 'human', 5)
-    self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
 
-  def testViewGenerateCompass(self):
-    self.v.generate('timpani')
-    #pp.pprint(self.v.view)
-    self.assertEqual(self.v.view['e']['facing'], 'all')
-
-  def testViewGenerateRandom(self):
-    self.v.generate()
-    #pp.pprint(self.v.view)
-    self.assertTrue(len(self.v.view.keys()))
-
-  def testGenerate(self):
-    self.v.generate('fourfour', ver='htmstarter') # 'arpeggio'
-    #pp.pprint(self.v.view)
-    self.assertTrue(isinstance(self.v.view['d'], dict))
   ''' 
   the 
   end

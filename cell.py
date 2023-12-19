@@ -1,4 +1,5 @@
 import random
+import psycopg2
 from db import Db
 
 class Geometry(Db):
@@ -116,11 +117,7 @@ class Palette(Geometry):
 
   def __init__(self, ver):
     super().__init__()
-    friendly_name = { 'universal': 0, 'colour45': 1, 'htmstarter': 2 }
-    if isinstance(ver, str) and ver in friendly_name:
-      self.ver = friendly_name[ver]
-    else:
-      raise TypeError(f'Palettes that are known: {friendly_name.keys()}')
+    self.ver = ver # colour45 is set as default by recurrink
     self.zeroten = [n for n in range(1, 11)]
 
   def create(self, items):
@@ -147,8 +144,10 @@ AND bg = %s
 AND opacity = %s
 AND ver = %s;""", palette)
     pid = self.cursor.fetchone()
-    pid = pid[0] if pid else None
-    return pid
+    if pid:
+      return pid[0]
+    else:
+      raise ValueError(f"unable to find pid for {palette}")
 
   def read_any(self, ver):
     self.cursor.execute("""
@@ -211,6 +210,7 @@ WHERE ver = %s;""", [ver])
       one = Palette.read_any(self, ver=ver)
     return dict(zip(['fill','bg','fill_opacity'], one))
 
+  # TODO edge case where all values are valid but their combined value does not exit in palette
   def validate(self, cell, data):
     ''' apply rules for defined palette
     '''
@@ -235,7 +235,7 @@ class Strokes(Palette):
     ''' each geometry in a cell has an optional stroke
     '''
     if len(items) == 4:
-      sid = self.read(strokes=items)
+      sid = self.read_sid(strokes=items)
       if sid is None:
         self.cursor.execute("""
 INSERT INTO strokes (sid, fill, width, dasharray, opacity)
@@ -246,7 +246,7 @@ RETURNING sid;""", items)
       raise ValueError('need 4 items to create a stroke')
     return sid
 
-  def read(self, sid=None, strokes=list()):
+  def read(self, sid):
     if sid:
       strokes = list()
       self.cursor.execute("""
@@ -256,7 +256,7 @@ WHERE sid = %s;""", [sid])
       strokes = self.cursor.fetchone()
       return strokes
     else:
-      pass # why did you send me an empty list ?
+      raise ValueError("need a sid to find a stroke")
 
   def read_sid(self, strokes):
     self.cursor.execute("""
@@ -331,7 +331,7 @@ class Cell(Strokes):
     gid = Geometry.read_gid(self, item=items[:4]) 
     pid = Palette.read_pid(self, palette=items[4:7])
     sid = Strokes.read_sid(self, strokes=items[7:])
-    #print(digest, cell, gid, pid, sid)
+    # print(digest, cell, gid, pid, sid)
     try:
       self.cursor.execute("""
 INSERT INTO cells_new (view, cell, gid, pid, sid)

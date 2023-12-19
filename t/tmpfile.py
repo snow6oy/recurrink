@@ -1,4 +1,4 @@
-from db import Views, Blocks
+from views import Views, Blocks
 from tmpfile import TmpFile
 import unittest
 import pprint
@@ -57,19 +57,43 @@ class TestTmpFile(unittest.TestCase):
     if os.path.isfile('/tmp/soleares.txt'):
       cells = self.tf.read('soleares')
       # pp.pprint(cells['a'])
-      self.assertTrue(isinstance(cells['a']['stroke_dasharray'], int))
+      self.assertTrue(isinstance(cells['a']['shape'], str))
     else:
       pass
 
   def testConvertToList(self):
     celldata = { 
       'a': { 
-         'facing': 'south', 'shape': 'line   ', 'size': 'medium', 'stroke_width': 0, 'top': False,
-         'bg': '#FFA500', 'fill': '#FFF', 'fill_opacity': 1.0, 'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 1.0
+         'facing': 'south', 
+         'shape': 'line', 
+         'size': 'medium', 
+         'top': False,
+         'bg': '#FFA500', 
+         'fill': '#FFF', 
+         'fill_opacity': 1.0, 
+         'stroke_width': 0, 
+         'stroke': '#000', 
+         'stroke_dasharray': 0, 
+         'stroke_opacity': 1.0
+      }, 
+      'b': {
+         'shape': 'circle',
+         'size': 'medium',
+         'facing': 'all',
+         'top':	True,
+         'fill': '#32CD32',
+         'bg': '#CD5C5C',
+         'fill_opacity': 0.4,
+         'stroke_width': None, 
+         'stroke': None, 
+         'stroke_dasharray': None, 
+         'stroke_opacity': None
       }
     }
-    #pp.pprint(self.tf.convert_to_list(celldata))
-    self.assertEqual(self.tf.convert_to_list(celldata)[0][0], 'a')
+    celllist = self.tf.convert_to_list(celldata)
+    #pp.pprint(celllist)
+    self.assertEqual(celllist[0][0], 'a')
+    self.assertEqual(celllist[1][8], '') # sw is empty
 
   def testReadText(self):
     soleares_txt = """cell shape size facing top fill bg fo stroke sw sd so

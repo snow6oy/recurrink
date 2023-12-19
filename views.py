@@ -1,6 +1,7 @@
 import random
-from cell import Cell
+import psycopg2
 from db import Db
+from cell import Cell
 
 class Compass(Db):
   ''' compass gives direction to models 
@@ -245,13 +246,17 @@ DELETE FROM views
 WHERE view = %s;""", [digest])
     return True
 
-  def create(self, model, digest, author, scale=1.0, colournum=0):
+  def create(self, digest, celldata, model=str, author=str, ver=int, scale=1.0, colournum=0):
     ''' create views metadata and try Cells()
     '''
-    if not self.count(digest):
+    try:
       self.cursor.execute("""
 INSERT INTO views (view, model, author, scale, colournum)
 VALUES (%s, %s, %s, %s, %s);""", [digest, model, author, scale, colournum])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      print(f"WARNING {model} {digest} already exists")
+    c = Cell(ver=ver)
+    [c.create(digest, row) for row in celldata]
     return digest
 
   def colournum(self, digest=None, count=0):
@@ -298,17 +303,23 @@ WHERE view = %s;""", [digest])
       ./recurrink read -v e4681aa9b7aef66efc6290f320b43e55 '''
     data = list()
     self.cursor.execute("""
-SELECT cell, shape, size, facing, top, fill, bg, fill_opacity, stroke, stroke_width, stroke_dasharray, stroke_opacity
-FROM cells, styles, geometry
-WHERE cells.sid = styles.sid
-AND cells.gid = geometry.gid
-AND view = %s;""", [digest])
-    data = self.cursor.fetchall()
+SELECT cell, shape, size, facing, top, p.fill, bg, p.opacity, s.fill, s.width, s.dasharray, s.opacity
+FROM cells_new AS c
+JOIN geometry AS g ON c.gid = g.gid
+JOIN palette AS p ON c.pid = p.pid
+LEFT JOIN strokes AS s ON c.sid = s.sid
+WHERE view = %s
+ORDER BY cell;""", [digest])
+    for row in self.cursor.fetchall():
+      if row[8]: # cell has stroke
+        data.append(list(row))
+      else:
+        data.append(list(row[:8]))
     return data
 
   # TODO this check is for what? Because there is no unique constraint on views table
   # it enforces immutability
-  def count(self, digest):
+  def __count(self, digest):
     vcount = 0
     if len(digest) == 32:
       self.cursor.execute("""
@@ -320,13 +331,12 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda view '{digest}'")
     return vcount
 
-  def generate(self, model=None, ver='colour45'):
+  def generate(self, model=None, ver=1):  # colour45
     rnd = False
     if model is None:
       m = Models()
       model = m.generate()
-      rnd = True  
-      ver = 'universal'
+      # TODO ver = 'universal'
     compass = Compass(model) # compass.conf will be None for unknown models
     b = Blocks(model)
     uniqcells = b.read(output=list())
@@ -334,10 +344,7 @@ WHERE view = %s;""", [digest])
     c = Cell(ver=ver) 
     for cell in uniqcells:
       topYN = True if cell in topcells else False
-      if rnd:
-        c.generate_any(cell, topYN)
-        source = 'random'
-      elif compass.conf:
+      if compass.conf:
         source = 'compass'
         if compass.all(cell):
           c.generate(topYN, facing_all=True)
@@ -352,46 +359,15 @@ WHERE view = %s;""", [digest])
       else:
         #print(f"model {model} has no direction")
         source = 'database'
-        c.generate(cell, topYN)
+        c.generate(topYN)
       self.view[cell] = c.data
     return model, source, self.view
 
-  def _generate(self, model=None, ver='colour45'):
-    rnd = False
-    if model is None:
-      m = Models()
-      model = m.generate()
-      rnd = True  
-      ver = 'universal'
-    compass = Compass(model) # compass.conf will be None for unknown models
-    b = Blocks(model)
-    uniqcells = b.read(output=list())
-    topcells = b.topcells()
-    c = Cells(ver=ver) 
-    for cell in uniqcells:
-      topYN = True if cell in topcells else False
-      if rnd:
-        c.generate_any(cell, topYN)
-        source = 'random'
-      elif compass.conf:
-        source = 'compass'
-        if compass.all(cell):
-          c.generate_all(cell, topYN)
-        else: # this means that cells must have a compass entry
-          pair, axis = compass.one(cell)
-          c.generate_one(pair, axis, topYN)
-      else:
-        #print(f"model {model} has no direction")
-        source = 'database'
-        c.generate(cell, topYN)
-      self.view[cell] = c.g.geom[cell] | c.s.styles[cell] # .. finally merge
-    return model, source, self.view
-
-  # TODO
-  def validate(self):
+  def validate(self, cells, ver=str):
     ''' expose Cell.validate here and pass thru so recurrink.update can call
     '''
-    pass 
+    c = Cells(ver=ver) 
+    c.validate(cells)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Cells(Views):
   ''' inherit from View and check that self.pool is mutable in both classes
@@ -783,6 +759,8 @@ WHERE stroke_opacity > 0;""", [])
     # TODO how does this change by version?
     ''' rules for default palette and rules for palette v1 not same
     '''
+    if data['stroke'] is None:
+      return None
     sw = int(data['stroke_width'])
     #print(sw, self.strokes)
     so = float(data['stroke_opacity'])
@@ -801,6 +779,7 @@ WHERE stroke_opacity > 0;""", [])
       #print(self.colours)
       if data['fill'] not in self.colours: 
         raise ValueError(f"validation error: fill >{cell}<")
+      # TODO check bg in Palette not stroke
       if data['bg'] not in self.colours: 
         raise ValueError(f"validation error: background >{cell}<")
     return None
