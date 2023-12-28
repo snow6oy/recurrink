@@ -77,7 +77,10 @@ SELECT *
 FROM models
 WHERE model = %s;""", [model])
       entry = self.cursor.fetchone()
-      return entry
+      if entry:
+        return entry
+      else:
+        raise ValueError(f"nothing found for {model}")
     else:
       self.cursor.execute("""
 SELECT model
@@ -251,8 +254,8 @@ WHERE view = %s;""", [digest])
     '''
     try:
       self.cursor.execute("""
-INSERT INTO views (view, model, author, scale, colournum)
-VALUES (%s, %s, %s, %s, %s);""", [digest, model, author, scale, colournum])
+INSERT INTO views (view, model, author, scale, colournum, ver)
+VALUES (%s, %s, %s, %s, %s, %s);""", [digest, model, author, scale, colournum, ver])
     except psycopg2.errors.UniqueViolation:  # 23505 
       print(f"WARNING {model} {digest} already exists")
     c = Cell(ver=ver)
@@ -272,35 +275,10 @@ FROM views;""", [])
         data[view] = colournum
       return data
 
-  def read(self, digest, celldata=False, output=dict()):
-    ''' returns either meta data for a view or cell data 
-    '''
-    view = None
-    if digest and celldata and isinstance(output, list):
-      view = self.celldata(digest)
-    elif digest and celldata: # convert list to dict
-      view = dict()
-      data = self.celldata(digest)
-      for cellvals in data:
-        z = zip(self.header, cellvals)
-        d = dict(z)
-        cell = d['cell']
-        del d['cell']         # bit of a tongue twister that one :-D
-        view[cell] = d
-    elif digest:
-      self.cursor.execute("""
-SELECT *
-FROM views
-WHERE view = %s;""", [digest])
-      row = self.cursor.fetchone()
-      view = row[1:4] if row else list() # return model author scale
-    else:
-      raise ValueError(f"not expecting this kinda digest '{digest}'")
-    return view
-
-  def celldata(self, digest):
+  def read_celldata(self, digest):
     ''' view is currently /tmp/MODEL.json but here we expect view to be a digest. e.g.
-      ./recurrink read -v e4681aa9b7aef66efc6290f320b43e55 '''
+          ./recurrink read -v e4681aa9b7aef66efc6290f320b43e55
+    '''
     data = list()
     self.cursor.execute("""
 SELECT cell, shape, size, facing, top, p.fill, bg, p.opacity, s.fill, s.width, s.dasharray, s.opacity
@@ -316,6 +294,38 @@ ORDER BY cell;""", [digest])
       else:
         data.append(list(row[:8]))
     return data
+
+  def read(self, digest, output=dict()):
+    ''' returns a view as cell data in either list or dictionary format
+    '''
+    view = None
+    if isinstance(output, list):
+      view = self.read_celldata(digest)
+    else: # convert list to dict
+      view = dict()
+      data = self.read_celldata(digest)
+      for cellvals in data:
+        z = zip(self.header, cellvals)
+        d = dict(z)
+        cell = d['cell']
+        del d['cell']         # bit of a tongue twister that one :-D
+        view[cell] = d
+    return view
+
+  def read_meta(self, digest):
+    ''' returns meta data for a view
+    '''
+    meta = list()
+    if digest:
+      self.cursor.execute("""
+SELECT model, author, scale, ver
+FROM views
+WHERE view = %s;""", [digest])
+      row = self.cursor.fetchone()
+      meta = row if row else list() # return model author scale
+    else:
+      raise ValueError(f"not expecting this kinda digest '{digest}'")
+    return meta
 
   # TODO this check is for what? Because there is no unique constraint on views table
   # it enforces immutability
@@ -366,7 +376,7 @@ WHERE view = %s;""", [digest])
   def validate(self, cells, ver=str):
     ''' expose Cell.validate here and pass thru so recurrink.update can call
     '''
-    c = Cells(ver=ver) 
+    c = Cell(ver=ver) 
     c.validate(cells)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Cells(Views):

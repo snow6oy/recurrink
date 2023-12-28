@@ -28,7 +28,8 @@ class Geometry(Db):
     '''
     pass
 
-  def read(self, top=None, gid=None, item=list()):
+  #def read(self, top=None, gid=None, item=list()):
+  def read(self, top=None, gid=None):
     ''' always returns a list, even if only one member (gid)
     '''
     items = list()
@@ -181,7 +182,7 @@ WHERE ver = %s;""", [ver])
 SELECT DISTINCT(bg)
 FROM palette
 WHERE ver = %s;""", [ver])
-    self.backgrounds = self.cursor.fetchall()
+    self.backgrounds = [bg[0] for bg in self.cursor.fetchall()]
     self.cursor.execute("""
 SELECT distinct(opacity)
 FROM palette
@@ -192,10 +193,10 @@ WHERE ver = %s;""", [ver])
     ''' used to validate inputs from tmpfile
     '''
     ver = ver if ver else self.ver  # override for tester
-    if ver:
+    if ver is not None:  # universal is zero
       self.read_palette(ver)
-    else:  # TODO ver == 'universal':
-      raise ValueError(f"what version are you on about {ver}")
+      if len(self.palette) == 0:
+        raise ValueError(f"what version are you on about {ver}")
 
   def generate_any(self, ver=None):
     ver = ver if ver else self.ver
@@ -216,15 +217,15 @@ WHERE ver = %s;""", [ver])
     '''
     Geometry.validate(self, cell, data) 
     fo = float(data['fill_opacity'])
-    so = float(data['stroke_opacity'])
+    so = float(data['stroke_opacity']) if data['stroke_opacity'] else None
     if fo not in self.opacity: 
       raise ValueError(f"validation error: fill opacity >{cell}<")
-    if so not in self.opacity: 
-      raise ValueError(f"validation error: stroke opacity >{cell}<")
+    if so and so not in self.opacity: 
+      raise ValueError(f"validation error: stroke opacity >{cell}< {so}: {self.opacity}")
     if data['fill'] not in self.fill: 
       raise ValueError(f"validation error: fill >{cell}<")
     if data['bg'] not in self.backgrounds: 
-      raise ValueError(f"validation error: background >{cell}<")
+      raise ValueError(f"validation error: background >{cell}< ver: {self.ver}")
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Strokes(Palette):
 
@@ -313,9 +314,10 @@ ORDER BY random() LIMIT 1;""", [ver])
     ''' apply rules for defined palette and then these for stroke
     '''
     Palette.validate(self, cell, data)
-    sw = int(data['width'])
-    if sw < min(self.zeroten) or sw > max(self.zeroten):
-      raise ValueError(f"validation error: stroke width >{cell}<")
+    if 'width' in data:
+      sw = int(data['width'])
+      if sw < min(self.zeroten) or sw > max(self.zeroten):
+        raise ValueError(f"validation error: stroke width >{cell}<")
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Cell(Strokes):
   ''' a cell is a member of a block and contains geometries, shapes and strokes
@@ -357,6 +359,7 @@ VALUES (%s, %s, %s, %s, %s);""", [digest, cell, gid, pid, sid])
 
   def validate(self, celldata):
     #[self.validate(c, celldata[c]) for c in celldata]
+    self.load_palette()
     [Strokes.validate(self, c, celldata[c]) for c in celldata]
   '''
   the
