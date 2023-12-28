@@ -50,8 +50,16 @@ class TestPalette(unittest.TestCase):
   def testLoadPaletteError(self):
     ''' bad palette
     '''
-    self.p = Palette(ver=0) # universal not done yet
+    self.p = Palette(ver=999) # not done .. yet (:
     self.assertRaises(ValueError, self.p.load_palette)
+
+  def testUniversal(self):
+    ''' universal palette
+    '''
+    self.p = Palette(ver=0) # universal not done yet
+    self.p.load_palette()
+    pp.pprint(self.p.opacity)
+    pp.pprint(self.p.palette)
 
   def testValidateVer0(self):
     ''' validate fake bg value 

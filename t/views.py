@@ -14,23 +14,26 @@ class TestViews(unittest.TestCase):
     self.v = Views()
     self.view = 'e4681aa9b7aef66efc6290f320b43e55'
 
-  def testGetView(self):
+  def testRead(self):
     ''' get a view from db as a dictionary
     '''
-    v1 = self.v.read(digest=self.view, celldata=True)
+    v1 = self.v.read(digest=self.view)
     pp.pprint(v1)
     self.assertEqual(len(list(v1.keys())), 4)
     ''' get a view from db as a list
     '''
-    v2 = self.v.read(digest=self.view, celldata=True, output=list())
+    v2 = self.v.read(digest=self.view, output=list())
     pp.pprint(v2[0]) # cell a has no stroke
     self.assertEqual(len(list(v2[0])), 8)
 
-  def testGetViewMeta(self):
+  def testReadMeta(self):
     ''' handle View metadata
     '''
-    (model, author, control) = self.v.read(digest=self.view)
-    self.assertEqual(author, 'human')
+    (model, author, scale, ver) = self.v.read_meta(digest=self.view)
+    self.assertEqual(author, 'machine')
+    self.assertEqual(model, 'soleares')
+    self.assertEqual(scale, 1.0)
+    self.assertEqual(ver, 2)
 
   def testCreate(self):
     ''' test that views also makes Cells()
