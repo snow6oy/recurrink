@@ -41,4 +41,4 @@ R	line   	small 	north	False	#FFF	#CCC	1.0	#000	0	0	0
 S	line   	medium	east 	False	#FFF	#CCC	1.0	#000	0	0	0
 T	line   	large 	east 	False	#FFF	#CCC	1.0	#000	0	0	0
 U	line   	small 	east 	False	#FFF	#CCC	1.0	#000	0	0	0
-x	square	medium	north	False	#CCC	#CCC	1.0	#CCC	0	0	1.0
+x	square	medium	all	False	#CCC	#CCC	1.0	#CCC	0	0	1.0
