@@ -47,20 +47,31 @@ class TestPalette(unittest.TestCase):
     self.assertEqual(self.p.opacity, [1.0])
     self.assertEqual(self.p.complimentary['#FFF'], '#00F')
 
+  def testLoadPaletteOk(self):
+    self.p = Palette(ver=0) # universal not done yet
+    self.p.load_palette()
+    #pp.pprint(self.p.palette)
+    self.assertTrue(len(self.p.palette))
+
   def testLoadPaletteError(self):
     ''' bad palette
     '''
     self.p = Palette(ver=999) # not done .. yet (:
     self.assertRaises(ValueError, self.p.load_palette)
 
-  def testUniversal(self):
-    ''' universal palette
+  def testOpacity(self):
+    ''' palette should have opacity greather than 0
     '''
     self.p = Palette(ver=0) # universal not done yet
     self.p.load_palette()
-    pp.pprint(self.p.opacity)
-    pp.pprint(self.p.palette)
+    for o in self.p.opacity:
+      #print(f"opacity {o}")
+      self.assertTrue((o >= 0.1))
 
+
+  ''' opaque palettes are valid because non-square shapes display background
+      all fg/bg combinations are also valid even when fg and bg are the same
+  '''
   def testValidateVer0(self):
     ''' validate fake bg value 
     '''

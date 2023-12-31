@@ -151,10 +151,11 @@ AND bg = %s
 AND opacity = %s
 AND ver = %s;""", palette)
     pid = self.cursor.fetchone()
-    if pid:
-      return pid[0]
-    else:
-      raise ValueError(f"unable to find pid for {palette}")
+    return pid[0] if pid else None
+#    if pid:
+#      return pid[0]
+#    else:
+#      raise ValueError(f"unable to find pid for {palette}")
 
   def read_any(self, ver):
     self.cursor.execute("""
@@ -232,6 +233,8 @@ WHERE ver = %s;""", [ver])
       raise ValueError(f"validation error: fill >{cell}<")
     if data['bg'] not in self.backgrounds: 
       raise ValueError(f"validation error: background >{cell}< ver: {self.ver}")
+    if fo == 1 and data['fill'] == data['bg']:
+      print(f"WARNING: opaque fill on same background >{cell}< ver: {self.ver}")
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Strokes(Palette):
 

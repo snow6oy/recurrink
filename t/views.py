@@ -18,12 +18,12 @@ class TestViews(unittest.TestCase):
     ''' get a view from db as a dictionary
     '''
     v1 = self.v.read(digest=self.view)
-    pp.pprint(v1)
+    #pp.pprint(v1)
     self.assertEqual(len(list(v1.keys())), 4)
     ''' get a view from db as a list
     '''
     v2 = self.v.read(digest=self.view, output=list())
-    pp.pprint(v2[0]) # cell a has no stroke
+    #pp.pprint(v2[0]) # cell a has no stroke
     self.assertEqual(len(list(v2[0])), 8)
 
   def testReadMeta(self):
