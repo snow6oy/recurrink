@@ -119,6 +119,12 @@ class Palette(Geometry):
   def __init__(self, ver):
     super().__init__()
     self.ver = ver # colour45 is set as default by recurrink
+    if ver == 2:
+      self.opacity = 1
+    elif ver == 1:
+      self.opacity = random.choice([0.4, 0.7, 1])
+    else:
+      self.opacity = random.choice([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1])
     self.zeroten = [n for n in range(1, 11)]
 
   def create(self, items):
@@ -270,14 +276,15 @@ AND opacity = %s;""", strokes)
     sid = self.cursor.fetchone()
     return sid[0] if sid else None
 
-  def read_any(self, ver):
+  def read_any(self, ver, opacity):
     self.cursor.execute("""
 SELECT s.fill, width, dasharray, s.opacity
 FROM palette as p
 LEFT OUTER JOIN strokes as s ON p.fill = s.fill OR p.bg = s.fill
 WHERE ver = %s
+AND s.opacity = %s
 GROUP BY sid
-ORDER BY random() LIMIT 1;""", [ver])
+ORDER BY random() LIMIT 1;""", [ver, opacity])
     return list(self.cursor.fetchone())
 
   def generate_one(self, stroke=None):
@@ -289,14 +296,15 @@ ORDER BY random() LIMIT 1;""", [ver])
       fill = stroke['stroke']
       data['stroke'] = self.complimentary[fill]
     else:
-      data = dict(zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(self.ver)))
+      data = dict(zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(self.ver, self.opacity)))
     return data
 
   def generate_any(self, ver=None):
-    ver = ver if ver else self.ver
+    ver = ver if ver else self.ver # override for tester
     empty = { 'stroke': None, 'stroke_width': None, 'stroke_dasharray': None, 'stroke_opacity': None }
+    # TODO stroke or not should be consistent across all cells in view ?
     YN = random.choice([True, False]) # fifty fifty chance to get a stroke
-    return dict(zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(ver))) if YN else empty
+    return dict(zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(ver, self.opacity))) if YN else empty
 
   # TODO if width is 0 then all stroke attributes should be null
   def generate_new(self):

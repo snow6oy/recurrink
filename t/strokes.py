@@ -80,13 +80,21 @@ class TestStrokes(unittest.TestCase):
   def testGenerateAny(self):
     ''' randomly generate new attributes
     '''
-    self.s.load_palette()
     ver1 = ['#DC143C','#4B0082','#FFA500','#32CD32','#C71585','#9ACD32','#FFF','#000','#CD5C5C']
     for cell in ['a', 'b', 'c', 'd']:
       data = self.s.generate_any(ver=1) 
       if data['stroke']: # can be None
         self.assertTrue(data['stroke'] in ver1)  # multiple tests to avoid random good luck
     #pp.pprint(data)
+
+  def testGenerateAnyV2(self):
+    ''' opacity for v2 must equal 1
+    '''
+    for cell in ['a', 'b', 'c', 'd']:
+      data = self.s.generate_any(ver=2) 
+      #pp.pprint(data)
+      if data['stroke']: # can be None
+        self.assertEqual(data['stroke_opacity'], 1)  
 
   def testGenerateNew(self):
     ''' select randomly from stroke attributes
