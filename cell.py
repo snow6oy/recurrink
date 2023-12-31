@@ -347,7 +347,7 @@ class Cell(Strokes):
     # print(digest, cell, gid, pid, sid)
     try:
       self.cursor.execute("""
-INSERT INTO cells_new (view, cell, gid, pid, sid)
+INSERT INTO cells (view, cell, gid, pid, sid)
 VALUES (%s, %s, %s, %s, %s);""", [digest, cell, gid, pid, sid])
     except psycopg2.errors.UniqueViolation:  # 23505 
       ok = False
