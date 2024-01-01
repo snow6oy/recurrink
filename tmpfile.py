@@ -22,9 +22,9 @@ class TmpFile():
         if h == 'cell': # already primed
           continue
         # not needed because read will convert empties correctly
-        #if h in ['stroke', 'stroke_width', 'stroke_dasharray', 'stroke_opacity']:
-        #  if celldata[c][h] is None:
-        #    celldata[c][h] = str() # TODO remove or delete to empty a dictionary entry?
+        if h in ['stroke', 'stroke_width', 'stroke_dasharray', 'stroke_opacity']:
+          if celldata[c][h] is None:
+            celldata[c][h] = str() # TODO remove or delete to empty a dictionary entry?
         try: 
           cellrow.append(celldata[c][h])
         except:

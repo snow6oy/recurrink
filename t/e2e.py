@@ -59,17 +59,20 @@ class TestE2E(unittest.TestCase):
     '''
     v = Views()
     tf = TmpFile()
-    # in case recovery from /tmp fails hard-code here instead
     model, author, scale, ver = ('soleares', 'machine', 1, 2)
-    txt = """cell shape size facing top fill bg fo stroke sw sd so
+    celldata = tf.read(model, output=list())
+    #pp.pprint(celldata[0])
+    self.assertEqual(len(celldata), 4)
+    v.create(self.digest, celldata, model=model, author=author, ver=ver)
+
+
+# in case recovery from /tmp fails hard-code here instead
+txt = """cell shape size facing top fill bg fo stroke sw sd so
 a       circle  small   all     False   #000    #00F    1.0
 b       triangl medium  north   True    #FFF    #F00    1.0     #000    8       1       1.0
 c       square  small   all     True    #FF0    #FFF    1.0     #000    8       1       1.0
 d       line    large   south   False   #000    #FF0    1.0     #FFF    9       0       1.0
 """
-    cellhash = tf.read(model, txt=txt)
-    #pp.pprint(cellhash['a'])
-    celldata = tf.convert_to_list(cellhash)
-    #pp.pprint(celldata[0])
-    self.assertEqual(len(celldata), 4)
-    v.create(self.digest, celldata, model=model, author=author, ver=ver)
+#cellhash = tf.read(model, txt=txt)
+#pp.pprint(cellhash['a'])
+#celldata = tf.convert_to_list(cellhash)
