@@ -1,0 +1,5 @@
+cell	shape	size	facing	top	fill	bg	fo	stroke	sw	sd	so
+a	circle	small	all	False	#000	#00F	1.0
+b	triangl	medium	north	True	#FFF	#F00	1.0	#000	8	1	1.0
+c	square	small	all	True	#FF0	#FFF	1.0	#000	8	1	1.0
+d	line	large	south	False	#000	#FF0	1.0	#FFF	9	0	1.0
