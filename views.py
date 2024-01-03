@@ -342,10 +342,12 @@ WHERE view = %s;""", [digest])
       topYN = True if cell in topcells else False
       if compass.conf:
         source = 'compass'
+        pair, axis = compass.one(cell)
         if compass.all(cell):
           c.generate(topYN, facing_all=True)
-        else: # this means that cells must have a compass entry
-          pair, axis = compass.one(cell)
+        elif len(pair):
+        #else: # this means that cells must have a compass entry
+          #pair, axis = compass.one(cell)
           for i in range(2):
             other = pair[i]
             if other in self.view: # already seen
