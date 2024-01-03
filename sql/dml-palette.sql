@@ -79,3 +79,11 @@ INSERT INTO palette (ver, fill, bg, complimentary, opacity) VALUES
 (2, '#FF0', '#000', '#00F', 1.0),
 (2, '#FF0', '#F00', '#00F', 1.0),
 (2, '#FF0', '#00F', '#00F', 1.0);
+
+INSERT INTO palette (pid, ver, fill, bg, complimentary, opacity)
+VALUES
+  (DEFAULT, 2, '#000', '#000', '#FFF', 1.0),
+  (DEFAULT, 2, '#FF0', '#FF0', '#000', 1.0),
+  (DEFAULT, 2, '#00F', '#00F', '#FF0', 1.0),
+  (DEFAULT, 2, '#F00', '#F00', '#FFF', 1.0),
+  (DEFAULT, 2, '#FFF', '#FFF', '#000', 1.0);
