@@ -45,7 +45,7 @@ class TestPalette(unittest.TestCase):
     for fill in [ '#FFF', '#000', '#F00', '#00F', '#FF0' ]:
       self.assertTrue(fill in self.p.fill)
     self.assertEqual(self.p.opacity, [1.0])
-    self.assertEqual(self.p.complimentary['#FFF'], '#00F')
+    self.assertEqual(self.p.complimentary['#FFF'], '#000')
 
   def testLoadPaletteOk(self):
     self.p = Palette(ver=0) # universal not done yet
@@ -62,7 +62,7 @@ class TestPalette(unittest.TestCase):
   def testOpacity(self):
     ''' palette should have opacity greather than 0
     '''
-    self.p = Palette(ver=0) # universal not done yet
+    self.p = Palette(ver=0) 
     self.p.load_palette()
     for o in self.p.opacity:
       #print(f"opacity {o}")
@@ -105,10 +105,14 @@ class TestPalette(unittest.TestCase):
   def testGenerateAny(self):
     ''' selfect randomly to generate new palette
     '''
-    self.p = Palette(ver=2) # htmstarter
+    self.p = Palette(ver=0) # universal
     self.p.load_palette()
     cell = self.p.generate_any()
+    pp.pprint(f"c {cell}")
     self.assertEqual(len(cell.keys()), 3)
+    self.assertTrue(cell['fill'] in self.p.fill)
+    self.assertTrue(cell['bg'] in self.p.backgrounds)
+    self.assertTrue(cell['fill_opacity'] in self.p.opacity)
 
   def testGenerateOne(self):
     ''' randomly generate first cell of pair and then allocate complimentary to the second cell 

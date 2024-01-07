@@ -58,10 +58,10 @@ WHERE shape = %s
 AND size = %s
 AND facing = %s
 AND top = %s;""", item)
-    gid = self.cursor.fetchone()[0]
+    gid = self.cursor.fetchone()
     if gid is None: # add new geometry
       raise ValueError(f"not expecting to find a new geom {item}")
-    return gid
+    return gid[0]
 
   def read_one(self, flip):
     self.cursor.execute("""
@@ -107,11 +107,12 @@ ORDER BY random() LIMIT 1;""", [top])
     return dict(zip(['shape','size','facing','top'], geom))
 
   def validate(self, cell, data):
+    print(f"{cell}\tshape {data['shape']} size {data['size']} facing {data['facing']} top {data['top']}")
     if data['shape'] in ['square', 'circle'] and data['facing'] != 'all':
       raise ValueError(f"validation error: circle and square must face all {cell}")
     if data['shape'] in ['triangl', 'line'] and data['facing'] == 'all': 
       raise ValueError(f"validation error: triangles and lines cannot face all {cell}")
-    if data['shape'] in ['triangl', 'diamond'] and data['size'] == 'large': 
+    if data['shape'] in ['triangl', 'diamond'] and data['size'] in ['large', 'small']: 
       raise ValueError(f"validation error: triangle or diamond wrong size {cell}")
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Palette(Geometry):
@@ -133,6 +134,8 @@ class Palette(Geometry):
     pass
 
   def read_item(self, pid):
+    ''' not called and may no longer be needed 
+    '''
     palette = list()
     self.cursor.execute("""
 SELECT fill, bg, opacity
@@ -151,11 +154,11 @@ AND bg = %s
 AND opacity = %s
 AND ver = %s;""", palette)
     pid = self.cursor.fetchone()
-    return pid[0] if pid else None
-#    if pid:
-#      return pid[0]
-#    else:
-#      raise ValueError(f"unable to find pid for {palette}")
+#    return pid[0] if pid else None
+    if pid:
+      return pid[0]
+    else:
+      raise ValueError(f"unable to find pid for {palette}")
 
   def read_any(self, ver):
     self.cursor.execute("""
@@ -190,6 +193,7 @@ SELECT DISTINCT(bg)
 FROM palette
 WHERE ver = %s;""", [ver])
     self.backgrounds = [bg[0] for bg in self.cursor.fetchall()]
+    # TODO compare these values with opacity set in __init__
     self.cursor.execute("""
 SELECT distinct(opacity)
 FROM palette
@@ -225,6 +229,7 @@ WHERE ver = %s;""", [ver])
     Geometry.validate(self, cell, data) 
     fo = float(data['fill_opacity'])
     so = float(data['stroke_opacity']) if data['stroke_opacity'] else None
+    #print(f"{cell}\tfo {fo} stroke {data['fill']} {data['bg']} {so}")
     if fo not in self.opacity: 
       raise ValueError(f"validation error: fill opacity >{cell}<")
     if so and so not in self.opacity: 
@@ -233,7 +238,7 @@ WHERE ver = %s;""", [ver])
       raise ValueError(f"validation error: fill >{cell}<")
     if data['bg'] not in self.backgrounds: 
       raise ValueError(f"validation error: background >{cell}< ver: {self.ver}")
-    if fo == 1 and data['fill'] == data['bg']:
+    if fo == 1 and data['fill'] == data['bg'] and data['stroke_width'] is None:
       print(f"WARNING: opaque fill on same background >{cell}< ver: {self.ver}")
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Strokes(Palette):

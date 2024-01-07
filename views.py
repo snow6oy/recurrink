@@ -327,12 +327,11 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return meta
 
-  def generate(self, model=None, ver=1):  # colour45
+  def generate(self, model=None, ver=0):  # universal by default
     rnd = False
     if model is None:
       m = Models()
       model = m.generate()
-      # TODO ver = 'universal'
     compass = Compass(model) # compass.conf will be None for unknown models
     b = Blocks(model)
     uniqcells = b.read(output=list())

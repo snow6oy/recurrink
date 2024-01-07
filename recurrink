@@ -73,7 +73,7 @@ def init(model=None, ver=None, digest=None):
   '''
   scale = None
   src = ""
-  ver = int(ver) if ver else 1 # colour45 is the default palette
+  ver = int(ver) if ver else 0 # universal is the default palette
   if digest:
     src = digest
     celldata = v.read(digest=digest, output=list())
@@ -87,7 +87,7 @@ def init(model=None, ver=None, digest=None):
   palette = friendly_name[ver]
   tf.conf(model, palette) # conf state is a symlink
   tf.write(model, celldata)
-  mesg = f"initialising {model} with {len(celldata)} cells from {src}"
+  mesg = f"initialising {model} with {len(celldata)} cells from {src} and palette {friendly_name[ver]}"
   if scale:
     mesg += f" scale at {scale}"
   return mesg
