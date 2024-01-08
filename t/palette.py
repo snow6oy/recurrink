@@ -36,16 +36,16 @@ class TestPalette(unittest.TestCase):
     ''' will never find a bg ZZZ
     '''
     items = ['#FFF', '#ZZZ', 1.0]
-    pid = self.p.read_pid(palette=items)
-    self.assertEqual(pid, None)
+    self.assertRaises(ValueError, self.p.read_pid, items)
 
   def testLoadPalette(self):
-    self.p.load_palette(ver=2)
-    #pp.pprint(self.p.palette)
+    p = Palette(ver=2)
+    p.load_palette(ver=2)
+    #pp.pprint(p.palette)
     for fill in [ '#FFF', '#000', '#F00', '#00F', '#FF0' ]:
-      self.assertTrue(fill in self.p.fill)
-    self.assertEqual(self.p.opacity, [1.0])
-    self.assertEqual(self.p.complimentary['#FFF'], '#000')
+      self.assertTrue(fill in p.fill)
+    self.assertEqual(p.opacity, [1.0])
+    self.assertEqual(p.complimentary['#FFF'], '#000')
 
   def testLoadPaletteOk(self):
     self.p = Palette(ver=0) # universal not done yet
@@ -62,11 +62,17 @@ class TestPalette(unittest.TestCase):
   def testOpacity(self):
     ''' palette should have opacity greather than 0
     '''
-    self.p = Palette(ver=0) 
-    self.p.load_palette()
-    for o in self.p.opacity:
-      #print(f"opacity {o}")
-      self.assertTrue((o >= 0.1))
+    p0 = Palette(ver=0) 
+    p0.load_palette()
+    [self.assertTrue((o >= 0.1 and o <= 1.0)) for o in p0.opacity]
+    #pp.pprint(p0.opacity)
+    p1 = Palette(ver=1)
+    p1.load_palette()
+    #pp.pprint(p1.opacity)
+    self.assertEqual(len(p1.opacity), 3)
+    p2 = Palette(ver=2)
+    p2.load_palette()
+    self.assertEqual(len(p2.opacity), 1)
 
 
   ''' opaque palettes are valid because non-square shapes display background
@@ -108,7 +114,7 @@ class TestPalette(unittest.TestCase):
     self.p = Palette(ver=0) # universal
     self.p.load_palette()
     cell = self.p.generate_any()
-    pp.pprint(f"c {cell}")
+    #pp.pprint(f"c {cell}")
     self.assertEqual(len(cell.keys()), 3)
     self.assertTrue(cell['fill'] in self.p.fill)
     self.assertTrue(cell['bg'] in self.p.backgrounds)

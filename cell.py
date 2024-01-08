@@ -107,7 +107,7 @@ ORDER BY random() LIMIT 1;""", [top])
     return dict(zip(['shape','size','facing','top'], geom))
 
   def validate(self, cell, data):
-    print(f"{cell}\tshape {data['shape']} size {data['size']} facing {data['facing']} top {data['top']}")
+    #print(f"{cell}\tshape {data['shape']} size {data['size']} facing {data['facing']} top {data['top']}")
     if data['shape'] in ['square', 'circle'] and data['facing'] != 'all':
       raise ValueError(f"validation error: circle and square must face all {cell}")
     if data['shape'] in ['triangl', 'line'] and data['facing'] == 'all': 
@@ -119,13 +119,8 @@ class Palette(Geometry):
 
   def __init__(self, ver):
     super().__init__()
-    self.ver = ver # colour45 is set as default by recurrink
-    if ver == 2:
-      self.opacity = 1
-    elif ver == 1:
-      self.opacity = random.choice([0.4, 0.7, 1])
-    else:
-      self.opacity = random.choice([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1])
+    self.ver = ver # universal is set as default by recurrink
+    self.opacity = self.read_opacity(ver)
     self.zeroten = [n for n in range(1, 11)]
 
   def create(self, items):
@@ -193,12 +188,15 @@ SELECT DISTINCT(bg)
 FROM palette
 WHERE ver = %s;""", [ver])
     self.backgrounds = [bg[0] for bg in self.cursor.fetchall()]
+
+  def read_opacity(self, ver):
     # TODO compare these values with opacity set in __init__
     self.cursor.execute("""
-SELECT distinct(opacity)
+SELECT DISTINCT(opacity)
 FROM palette
 WHERE ver = %s;""", [ver])
-    self.opacity = [o[0] for o in self.cursor.fetchall()]
+    opacity = [o[0] for o in self.cursor.fetchall()]
+    return opacity
 
   def load_palette(self, ver=None):
     ''' used to validate inputs from tmpfile
@@ -304,7 +302,7 @@ ORDER BY random() LIMIT 1;""", [ver, opacity])
       fill = stroke['stroke']
       data['stroke'] = self.complimentary[fill]
     else:
-      data = dict(zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(self.ver, self.opacity)))
+      data = dict(zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(self.ver, random.choice(self.opacity))))
     return data
 
   def generate_any(self, ver=None):
@@ -312,7 +310,9 @@ ORDER BY random() LIMIT 1;""", [ver, opacity])
     empty = { 'stroke': None, 'stroke_width': None, 'stroke_dasharray': None, 'stroke_opacity': None }
     # TODO stroke or not should be consistent across all cells in view ?
     YN = random.choice([True, False]) # fifty fifty chance to get a stroke
-    return dict(zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(ver, self.opacity))) if YN else empty
+    return dict(
+      zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(ver, random.choice(self.opacity)))
+    ) if YN else empty
 
   # TODO if width is 0 then all stroke attributes should be null
   def generate_new(self):
