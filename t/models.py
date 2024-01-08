@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from db import Models, Blocks, Compass
+from views import Models, Blocks, Compass
 import unittest
 import pprint
 pp = pprint.PrettyPrinter(indent=2)
@@ -19,7 +19,9 @@ class TestModels(unittest.TestCase):
     self.assertTrue('soleares' in self.m.read())
 
   def testLoadModel(self):
-    cell_1_1 = self.m.positions(model='soleares')[1][1]
+    pos = self.m.positions(model='soleares')
+    #pp.pprint(pos)
+    cell_1_1 = pos[1][1]
     self.assertEqual(cell_1_1, 'd')
 
   def testModelEntry(self):
@@ -29,7 +31,10 @@ class TestModels(unittest.TestCase):
   def testGetCellByPosition(self):
     ''' key value pair with position as the key
     '''
-    positions = self.b.read()
+    m = 'soleares'
+    b = Blocks(m)
+    xy = self.m.read(model=m)[2]
+    positions = b.read()
     #pp.pprint(positions)
     self.assertEqual(positions[(1, 1)][0], 'd')
 
@@ -69,6 +74,7 @@ class TestModels(unittest.TestCase):
         pos 1,1 is normally d but with top becomes a
     '''
     positions = self.b.read()
+    #pp.pprint(positions)
     cells = tuple()
     if type(positions[(2, 0)]) is tuple:
       cells = positions[(2, 0)]

@@ -55,12 +55,23 @@ def info(model=None, digest=None):
   '''
   out = str()
   if model:
+    b = Blocks(model)
+    xy = m.read(model=model)[2]
+    positions = b.read()
+    for y in range(xy[1]):
+      for x in range(xy[0]):
+        p = tuple([x, y])
+        cell = positions[p][0]
+        top = positions[p][1] if positions[p][1] else '-'
+        print(cell + top, end=' ')
+      print()
+    '''
     posdata = m.positions(model)
-    # pp.pprint(posdata)
     for row in posdata:
       for col in row:
         out += col + ' '
       out += "\n"
+    '''
   elif digest:
     view = v.read_meta(digest=digest)
     out = " ".join(view[:2])
