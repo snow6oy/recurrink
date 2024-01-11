@@ -1,7 +1,6 @@
 import xml.etree.ElementTree as ET
 import pprint
-from db import Styles
-from cells import Strokes
+from cell import Palette, Strokes
 pp = pprint.PrettyPrinter(indent = 2)
 
 class PaletteMaker:
@@ -87,6 +86,15 @@ class PaletteMaker:
       vals += f"({ver}, '{fill}', '{bg}', '{complimentary[fill]}', {o}),\n"
     print(f"INSERT INTO palette (ver, fill, bg, complimentary, opacity) VALUES \n{vals};")
 
+  def extra_palette_table(self, fill):
+    ''' add missing backgrounds with 1.0 opacity
+    '''
+    missing = list()
+    for bg in ['#9ACD32','#CD5C5C','#000']:
+      for f in fill:
+        missing.append([f, 1.0, bg])
+    return missing
+
   def create_strokes_table(self):
     ''' oneoff creation made 300 unique strokes from 1171 Styles()
     '''
@@ -99,14 +107,17 @@ class PaletteMaker:
       print(sid)
 
 if __name__ == '__main__':
-  s = Styles()
-  ver = 'htmstarter'
-  #ver='colour45'
-  s.set_spectrum(ver=ver)
+  #ver = 'htmstarter'
+  friendly_name='colour45'
+  ver = 1
+  p = Palette(ver=ver)
+  p.load_palette(ver=ver)
   #xml = PaletteMaker(300, 60)
   xml = PaletteMaker(540, 300)
   #xml.create_colour_table(s.colours)
-  #xml.create_palette_table(s.palette, s.complimentary, 2)
+  extra = xml.extra_palette_table(p.fill)
+  #pp.pprint(extra)
+  xml.create_palette_table(extra, p.complimentary, 1)
   #xml.create_strokes_table()
   #pp.pprint(s.palette)
   #xml.make(s.palette)
