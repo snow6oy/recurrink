@@ -26,7 +26,7 @@ class TestLayout(unittest.TestCase):
       'c': {
         'bg': '#CCC', 'fill': '#000', 'fill_opacity': 1.0,
         'shape': 'square', 'facing': 'all', 'size': 'small', 'top': True,
-        'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
+        'stroke': '#000', 'stroke_dasharray': 3, 'stroke_opacity': 1.0, 'stroke_width': 9, 
       },
       'd': {
         'bg': '#CCC', 'fill': '#FFF', 'fill_opacity': 1.0,
@@ -46,7 +46,7 @@ class TestLayout(unittest.TestCase):
       l5 = Layout(scale=s) # 8 is the 8th scale which is 0.5. size / 0.5 = 108.0
       self.assertEqual(l5.grid, expected[i])
 
-  def testUniqStyle(self):
+  def test_3(self):
     ''' copy from cells into styles and check they arrived ok
     '''
     for layer in ['bg', 'fg', 'top']:
@@ -63,7 +63,7 @@ class TestLayout(unittest.TestCase):
       if layer == 'bg':
         self.assertTrue("fill:#CCC;stroke-width:0" in self.lt.styles)
         self.assertEqual(self.lt.styles["fill:#CCC;stroke-width:0"], [ 'a', 'b', 'c', 'd' ])
-      elif layer ==  'fg':
+      elif layer ==  'fg' and self.cells[cell]['stroke_width']:
         self.assertTrue(
           "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0" in self.lt.styles
         )
@@ -72,13 +72,17 @@ class TestLayout(unittest.TestCase):
             "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0"
           ], [ 'a', 'd' ]
         )
+      elif layer ==  'fg':
+        self.assertTrue("fill:#FFF;fill-opacity:1.0" in self.lt.styles)
       #  "fill:#000;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'b', 'c' ]
-      elif layer == 'top':
+      elif layer == 'top' and self.cells[cell]['stroke_width']:
         self.assertEqual(
           self.lt.styles[
             "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0"
           ], [ 'd' ]
         )
+      elif layer == 'top':
+        self.assertTrue("fill:#FFF;fill-opacity:1.0" in self.lt.styles)
       self.lt.styles.clear()
 
   def testFindStyle(self):

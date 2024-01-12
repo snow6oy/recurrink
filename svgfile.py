@@ -353,10 +353,14 @@ class Layout(Svg):
     style = str()
     if layer == 'bg': # create new entry in self.layers.bg
       style = f"fill:{bg};stroke-width:0" # hide the cracks between the background tiles
+    elif layer == 'fg' and sw: # and not top:
+      style = f"fill:{fill};fill-opacity:{fo};stroke:{stroke};stroke-width:{sw};stroke-dasharray:{sd};stroke-opacity:{so}"
     elif layer == 'fg': # and not top:
+      style = f"fill:{fill};fill-opacity:{fo}"
+    elif layer == 'top' and top and sw:
       style = f"fill:{fill};fill-opacity:{fo};stroke:{stroke};stroke-width:{sw};stroke-dasharray:{sd};stroke-opacity:{so}"
     elif layer == 'top' and top:
-      style = f"fill:{fill};fill-opacity:{fo};stroke:{stroke};stroke-width:{sw};stroke-dasharray:{sd};stroke-opacity:{so}"
+      style = f"fill:{fill};fill-opacity:{fo}"
 
     if style and style in self.styles:
       self.styles[style].append(cell)
