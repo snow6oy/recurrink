@@ -88,7 +88,7 @@ class TestPalette(unittest.TestCase):
     self.assertRaises(ValueError, self.p.validate, 'a', data)
 
   def testValidateVer1(self):
-    ''' ver changes test to check palette matches
+    ''' validdate ver 1 changes test to check palette matches
     '''
     self.p.load_palette()
     data = self.defaults
@@ -107,6 +107,18 @@ class TestPalette(unittest.TestCase):
     data['fill'] = '#DC143C'
     self.assertRaises(ValueError, self.p.validate, 'a', data)
     #pp.pprint(self.p.palette)
+
+  def test_0(self):
+    p0 = Palette(ver=0)
+    p0.load_palette()
+    data = self.defaults
+    data['shape'] = 'circle'  # pass geom
+    data['fill'] = '#4B0082' 
+    data['bg'] = '#CCC'
+    data['stroke_opacity'] = None  # skip stroke
+    data['fill_opacity'] = 0.7     # fail palette
+    #pp.pprint(data)
+    self.assertRaises(ValueError, p0.validate, 'a', data)
 
   def testGenerateAny(self):
     ''' selfect randomly to generate new palette

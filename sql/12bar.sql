@@ -174,5 +174,5 @@ VALUES
   ('12bar', 'e', null, 'all'),
   ('12bar', 'g', 'j', 'east'),
   ('12bar', 'h', 'i', 'north'),
-  ('12bar', 'b', 'd', 'southwest');
+  ('12bar', 'd', 'b', 'southwest');
 

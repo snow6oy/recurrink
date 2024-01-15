@@ -120,7 +120,7 @@ class Palette(Geometry):
   def __init__(self, ver):
     super().__init__()
     self.ver = ver # universal is set as default by recurrink
-    self.opacity = self.read_opacity(ver)
+    self.opacity = self.read_opacity()
     self.zeroten = [n for n in range(1, 11)]
 
   def create(self, items):
@@ -189,12 +189,19 @@ FROM palette
 WHERE ver = %s;""", [ver])
     self.backgrounds = [bg[0] for bg in self.cursor.fetchall()]
 
-  def read_opacity(self, ver):
-    # TODO compare these values with opacity set in __init__
-    self.cursor.execute("""
+  def read_opacity(self, fill=None, bg=None):
+    if fill and bg: # opacity varies according to fill when ver is universal
+      self.cursor.execute("""
 SELECT DISTINCT(opacity)
 FROM palette
-WHERE ver = %s;""", [ver])
+WHERE fill = %s
+AND bg = %s
+AND ver = %s;""", [fill, bg, self.ver])
+    else:
+      self.cursor.execute("""
+SELECT DISTINCT(opacity)
+FROM palette
+WHERE ver = %s;""", [self.ver])
     opacity = [o[0] for o in self.cursor.fetchall()]
     return opacity
 
@@ -227,7 +234,9 @@ WHERE ver = %s;""", [ver])
     Geometry.validate(self, cell, data) 
     fo = float(data['fill_opacity'])
     so = float(data['stroke_opacity']) if data['stroke_opacity'] else None
-    #print(f"{cell}\tfo {fo} stroke {data['fill']} {data['bg']} {so}")
+    # print(f"{cell} v{self.ver}\tfo {fo} stroke {data['fill']} {data['bg']} {so}")
+    if self.ver == 0: # override opacity because universal palette is a bit random
+      self.opacity = self.read_opacity(fill=data['fill'], bg=data['bg'])
     if fo not in self.opacity: 
       raise ValueError(f"validation error: fill opacity >{cell}<")
     if so and so not in self.opacity: 
