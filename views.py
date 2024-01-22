@@ -202,6 +202,7 @@ AND top IS NOT null;""", [self.model])
       output = list(uniq.keys())
     return output
 
+  '''
   def get_topcells(self):
     self.cursor.execute("""
 SELECT cell, top
@@ -212,6 +213,7 @@ WHERE model = %s;""", [self.model])
     for k, v in rows:
       tc.setdefault(k, v)
     return tc
+  '''
 
   def topcells(self):
     ''' unique list of top cells 

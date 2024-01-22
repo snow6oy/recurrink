@@ -47,27 +47,24 @@ class TestModels(unittest.TestCase):
     cells = bb.read(output=list())
     self.assertEqual(len(cells), 24)
 
-  def testGetTopCells(self):
+  def test_1(self):
     ''' key value pair with cells as the key and top as value
     '''
-    topcells = self.b.get_topcells()
-    #pp.pprint(topcells)
-    self.assertFalse(topcells['b']) # b has no top in soleares
+    positions = self.b.read()
+    for p in positions:
+      cell, top = positions[p]
+      if cell == 'b':
+        self.assertFalse(top) # b has no top in soleares
 
-  def testVirtualTop(self):
-    ''' cell model 
-           g marching band
-           j syncopated 
-           g timpani
-        see above for examples of Virtual Top. A special cell that exist only as a top cell
+  def test_0(self):
+    ''' virtual top 
+        cell: g model: marching band
+        example of Virtual Top. A special cell that exist only as a top cell
     '''
     b = Blocks('marchingband')
     uniqcells = b.read(output=list())
-    topcells = b.get_topcells()
-    for tc in topcells:
-      top = topcells[tc]
-      if top:
-        self.assertTrue(top in uniqcells)
+    topcells = b.topcells()
+    [self.assertTrue(tc in uniqcells) for tc in topcells]
 
   def testGetTopByPosition(self):
     ''' superimpose cell d over cell a using top
