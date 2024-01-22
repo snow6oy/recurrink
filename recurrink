@@ -5,14 +5,12 @@ import sys
 import re
 import argparse
 import pprint
-from views import Views, Models, Blocks
+from views import Views, Models
 from svgfile import Layout, Stencil
 from tmpfile import TmpFile
-
-pp = pprint.PrettyPrinter(indent=2)
+#pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
-#c = Cells() # ver=None implies palette will be colour45
 friendly_name = [ 'universal', 'colour45', 'htmstarter']
 WORKDIR = '/home/gavin/Dropbox/familia/rinks'
 PUBDIR = '/home/gavin/Pictures/pubq'
@@ -55,9 +53,8 @@ def info(model=None, digest=None):
   '''
   out = str()
   if model:
-    b = Blocks(model)
     xy = m.read(model=model)[2]
-    positions = b.read()
+    positions = m.read_positions(model)
     for y in range(xy[1]):
       for x in range(xy[0]):
         p = tuple([x, y])
@@ -65,13 +62,6 @@ def info(model=None, digest=None):
         top = positions[p][1] if positions[p][1] else '-'
         print(cell + top, end=' ')
       print()
-    '''
-    posdata = m.positions(model)
-    for row in posdata:
-      for col in row:
-        out += col + ' '
-      out += "\n"
-    '''
   elif digest:
     view = v.read_meta(digest=digest)
     out = " ".join(view[:2])
@@ -112,13 +102,11 @@ def update(model, scale):
   ver = friendly_name.index(palette)
   s = float(scale) if scale else m.get_scale(model)
   blocksize = m.read(model=model)[2] # can get scale too
-  b = Blocks(model)
   svgfile = f'/tmp/{model}.svg'
-  positions = b.read()
+  positions = m.read_positions(model)
   lt = Layout(scale=s)
   #print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
   cells = tf.read(model, output=dict())
-  #c = Cells(ver=ver)  # 'htmstarter')
   v.validate(cells, ver=ver)
   lt.gridwalk(blocksize, positions, cells)
   lt.write(svgfile)
@@ -172,8 +160,7 @@ def stencil(d):
   model, _, scale = v.read(digest=d)
   cells = v.read(digest=d, celldata=True)
   blocksize = m.read(model=model)[2] # can get scale too
-  b = Blocks(model)
-  positions = b.read()
+  positions = m.read_positions(model)
   scale = float(scale) if scale else m.get_scale(model)
   lt = Layout(scale=scale)
   s = Stencil(model, cells)

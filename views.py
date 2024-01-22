@@ -3,233 +3,8 @@ import psycopg2
 from db import Db
 from cell import Cell
 
-class Compass(Db):
-  ''' compass gives direction to models 
-  '''
-  def __init__(self, model):
-    super().__init__()
-    conf = dict()
-    self.cursor.execute("""
-SELECT *
-FROM compass
-WHERE model = %s;""", [model])
-    compass = self.cursor.fetchall()
-    if len(compass):
-      for r in compass:
-        _, cell, pair, facing = r
-        if facing not in conf:
-          conf[facing] = list()
-        if facing == 'all':
-          conf[facing].append(cell)
-        else:
-          conf[facing].append((cell, pair))
-      self.conf = conf
-    else:
-      self.conf = None
-
-  def axis(self):
-    return list(self.conf.keys()) if self.conf else list()
-
-  def all(self, cell):
-    ''' test if the given cell is in the model and can face all directions
-    '''
-    return True if self.conf and 'all' in self.conf and cell in self.conf['all'] else False
-
-  def one(self, cell):
-    ''' define the cell pairs (tuples) that face each other
-    '''
-    pair, facing = tuple(), str()
-    if self.conf:
-      for axis in self.axis():
-        if axis == 'all':
-          continue
-        for p in self.conf[axis]:
-          if cell in p:
-            pair = p
-            facing = axis
-    return pair, facing
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Models(Db):
-  ''' models give us the base template to draw a rink
-  '''
-  def __init__(self):
-    super().__init__()
-
-  def create(self, model, uniqcells, blocksizexy, scale):
-    ''' only used once during The Great Import from JSON
-    '''
-    success = True
-    try:
-      self.cursor.execute("""
-INSERT INTO models (model, uniqcells, blocksizexy, scale)
-VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      success = False
-    return success
-
-  def read(self, model=None):
-    ''' fetch a single entry indexed by model 
-        return a tuple
-    '''
-    if model:
-      self.cursor.execute("""
-SELECT *
-FROM models
-WHERE model = %s;""", [model])
-      entry = self.cursor.fetchone()
-      if entry:
-        return entry
-      else:
-        raise ValueError(f"nothing found for {model}")
-    else:
-      self.cursor.execute("""
-SELECT model
-FROM models;""", )
-      records = [m[0] for m in self.cursor.fetchall()]
-      return records
-
-  # TODO strip testcard out of the list
-  def generate(self):
-    models = self.read()
-    return random.choice(models)
-
-  def positions(self, model):
-    ''' load csv data as 2D array
-      ./recurrink.py -m soleares -o CELL
-      [['a', 'b', 'a'], ['c', 'd', 'c']]
-      represented as a string
-    '''
-    self.cursor.execute("""
-SELECT blocksizeXY
-FROM models
-WHERE model = %s;""", [model])
-    (bsX, bsY) = self.cursor.fetchone()[0]
-    data = [[0 for x in range(bsX)] for y in range(bsY)]
-    self.cursor.execute("""
-SELECT position, cell 
-FROM blocks 
-WHERE model = %s;""", [model])
-    records = self.cursor.fetchall()
-    for r in records:
-      x = r[0][1] # x is the inner array
-      y = r[0][0]
-      data[x][y] = r[1]
-    return data
-
-  # list_model_with_stats
-  def stats(self):
-    ''' display uniq cells, blocksize and model names
-    '''
-    stats = dict()
-    self.cursor.execute("""
-SELECT model, uniqcells, blocksizexy
-FROM models;""",)
-    for row in self.cursor.fetchall():
-      model, uniq, size = row
-      stats[model] = list()
-      stats[model].append(uniq)
-      stats[model].append(size)
-    self.cursor.execute("""
-SELECT model, count(top) 
-FROM blocks
-GROUP BY model;""",)
-    top = self.cursor.fetchall()
-    model = 'soleares'
-    self.cursor.execute("""
-SELECT model, count(cell) 
-FROM compass
-GROUP BY model;""",)
-    compass = self.cursor.fetchall()
-    for m in stats:
-      n = [t for t in top if t[0] == m]
-      stats[m].append(n[0][1]) # assume blocks always have model
-      i = [c for c in compass if c[0] == m] # but compass does not, so set a default
-      counter = i[0][1] if len(i) else 0
-      stats[m].append(counter)
-    output = f"uniq\t   x\t   y\t top\tcompass\t model\n" + ('-' * 80) + "\n"
-    for m in stats:
-      output += f"{stats[m][0]:>4}\t{stats[m][1][0]:>4}\t{stats[m][1][1]:>4}\t{stats[m][2]:>4}\t{stats[m][3]:>4}\t{m}\n"
-    return output
-
-  def get_scale(self, model):
-    return self.read(model=model)[3]
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Blocks(Db):
-
-  def __init__(self, model):
-    self.model = model
-    super().__init__()
-
-  def create(self, position, cell):
-    success = True
-    try:
-      self.cursor.execute("""
-INSERT INTO blocks (model, position, cell)
-VALUES (%s, %s, %s);""", [self.model, position, cell])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      success = False
-    return success
-
-  def read(self, output=dict()):
-    ''' positions link the model and cell: for example 
-        model with a line a, x, x a will be represented as positions[(3,0)] : a
-    '''
-    if type(output) is dict:
-      self.cursor.execute("""
-SELECT cell, top, position
-FROM blocks
-WHERE model = %s;""", [self.model])
-      rows = self.cursor.fetchall()
-      for r in rows:
-        (cell, top, pos) = (r[0], r[1], tuple(r[2]))
-        #output[pos] = cell if top is None else (cell, top)
-        output[pos] = (cell, top)
-    else:  # must be a list
-      uniq = dict() # temporary dict to guarantee uniqueness across cell and top
-      self.cursor.execute("""
-SELECT DISTINCT(cell)
-FROM blocks
-WHERE model = %s;""", [self.model])
-      for cell in self.cursor.fetchall():
-        uniq[cell[0]] = 1
-      self.cursor.execute("""
-SELECT DISTINCT(top)
-FROM blocks
-WHERE model = %s
-AND top IS NOT null;""", [self.model])
-      for top in self.cursor.fetchall():
-        uniq[top[0]] = 1
-      output = list(uniq.keys())
-    return output
-
-  '''
-  def get_topcells(self):
-    self.cursor.execute("""
-SELECT cell, top
-FROM blocks
-WHERE model = %s;""", [self.model])
-    rows = self.cursor.fetchall()
-    tc = dict()
-    for k, v in rows:
-      tc.setdefault(k, v)
-    return tc
-  '''
-
-  def topcells(self):
-    ''' unique list of top cells 
-    '''
-    self.cursor.execute("""
-SELECT distinct(top)
-FROM blocks
-WHERE top IS NOT null
-AND model = %s;""", [self.model])
-    rows = self.cursor.fetchall()
-    tc = [a[0] for a in rows]
-    return tc
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
   ''' a View is a collection of Cells
-      valstr = ' '.join(d)
   '''
   def __init__(self):
     self.view = dict() # cell data goes here
@@ -330,14 +105,11 @@ WHERE view = %s;""", [digest])
     return meta
 
   def generate(self, model=None, ver=0):  # universal by default
-    rnd = False
-    if model is None:
-      m = Models()
-      model = m.generate()
+    m = Models()
+    model = m.generate() if model is None else model
     compass = Compass(model) # compass.conf will be None for unknown models
-    b = Blocks(model)
-    uniqcells = b.read(output=list())
-    topcells = b.topcells()
+    uniqcells = m.read_positions(model, output=list())
+    topcells = m.topcells(model)
     c = Cell(ver=ver) 
     for cell in uniqcells:
       topYN = True if cell in topcells else False
@@ -367,8 +139,230 @@ WHERE view = %s;""", [digest])
     '''
     c = Cell(ver=ver) 
     c.validate(cells)
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Compass(Db):
+  ''' compass gives direction to models 
+  '''
+  def __init__(self, model):
+    super().__init__()
+    conf = dict()
+    self.cursor.execute("""
+SELECT *
+FROM compass
+WHERE model = %s;""", [model])
+    compass = self.cursor.fetchall()
+    if len(compass):
+      for r in compass:
+        _, cell, pair, facing = r
+        if facing not in conf:
+          conf[facing] = list()
+        if facing == 'all':
+          conf[facing].append(cell)
+        else:
+          conf[facing].append((cell, pair))
+      self.conf = conf
+    else:
+      self.conf = None
+
+  def axis(self):
+    return list(self.conf.keys()) if self.conf else list()
+
+  def all(self, cell):
+    ''' test if the given cell is in the model and can face all directions
+    '''
+    return True if self.conf and 'all' in self.conf and cell in self.conf['all'] else False
+
+  def one(self, cell):
+    ''' define the cell pairs (tuples) that face each other
+    '''
+    pair, facing = tuple(), str()
+    if self.conf:
+      for axis in self.axis():
+        if axis == 'all':
+          continue
+        for p in self.conf[axis]:
+          if cell in p:
+            pair = p
+            facing = axis
+    return pair, facing
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Blocks(Db):
+
+  def __init__(self):
+    super().__init__()
+
+  def create(self, position, cell):
+    success = True
+    try:
+      self.cursor.execute("""
+INSERT INTO blocks (model, position, cell)
+VALUES (%s, %s, %s);""", [self.model, position, cell])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      success = False
+    return success
+
+  def read_positions(self, model, output=dict()):
+    ''' positions link the model and cell: for example 
+        model with a line a, x, x a will be represented as positions[(3,0)] : a
+    '''
+    if type(output) is dict:
+      self.cursor.execute("""
+SELECT cell, top, position
+FROM blocks
+WHERE model = %s;""", [model])
+      rows = self.cursor.fetchall()
+      for r in rows:
+        (cell, top, pos) = (r[0], r[1], tuple(r[2]))
+        #output[pos] = cell if top is None else (cell, top)
+        output[pos] = (cell, top)
+    else:  # must be a list
+      uniq = dict() # temporary dict to guarantee uniqueness across cell and top
+      self.cursor.execute("""
+SELECT DISTINCT(cell)
+FROM blocks
+WHERE model = %s;""", [model])
+      for cell in self.cursor.fetchall():
+        uniq[cell[0]] = 1
+      self.cursor.execute("""
+SELECT DISTINCT(top)
+FROM blocks
+WHERE model = %s
+AND top IS NOT null;""", [model])
+      for top in self.cursor.fetchall():
+        uniq[top[0]] = 1
+      output = list(uniq.keys())
+    return output
+
+  def topcells(self, model):
+    ''' unique list of top cells 
+    '''
+    self.cursor.execute("""
+SELECT distinct(top)
+FROM blocks
+WHERE top IS NOT null
+AND model = %s;""", [model])
+    rows = self.cursor.fetchall()
+    tc = [a[0] for a in rows]
+    return tc
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Models(Blocks):
+  ''' models give us the base template to draw a rink
+  '''
+  def __init__(self): 
+    super().__init__()
+
+  def create(self, model, uniqcells, blocksizexy, scale):
+    ''' only used once during The Great Import from JSON
+    '''
+    success = True
+    try:
+      self.cursor.execute("""
+INSERT INTO models (model, uniqcells, blocksizexy, scale)
+VALUES (%s, %s, %s, %s);""", [model, uniqcells, blocksizexy, scale])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      success = False
+    return success
+
+  def read(self, model=None):
+    ''' fetch a single entry indexed by model 
+        return a tuple
+    '''
+    if model:
+      self.cursor.execute("""
+SELECT *
+FROM models
+WHERE model = %s;""", [model])
+      entry = self.cursor.fetchone()
+      if entry:
+        return entry
+      else:
+        raise ValueError(f"nothing found for {model}")
+    else:
+      self.cursor.execute("""
+SELECT model
+FROM models;""", )
+      records = [m[0] for m in self.cursor.fetchall()]
+      return records
+
+  # TODO strip testcard out of the list
+  def generate(self):
+    models = self.read()
+    return random.choice(models)
+
+  def positions(self, model):
+    ''' load csv data as 2D array
+      ./recurrink.py -m soleares -o CELL
+      [['a', 'b', 'a'], ['c', 'd', 'c']]
+      represented as a string
+    '''
+    self.cursor.execute("""
+SELECT blocksizeXY
+FROM models
+WHERE model = %s;""", [model])
+    (bsX, bsY) = self.cursor.fetchone()[0]
+    data = [[0 for x in range(bsX)] for y in range(bsY)]
+    self.cursor.execute("""
+SELECT position, cell 
+FROM blocks 
+WHERE model = %s;""", [model])
+    records = self.cursor.fetchall()
+    for r in records:
+      x = r[0][1] # x is the inner array
+      y = r[0][0]
+      data[x][y] = r[1]
+    return data
+
+  # list_model_with_stats
+  def stats(self):
+    ''' display uniq cells, blocksize and model names
+    '''
+    stats = dict()
+    self.cursor.execute("""
+SELECT model, uniqcells, blocksizexy
+FROM models;""",)
+    for row in self.cursor.fetchall():
+      model, uniq, size = row
+      stats[model] = list()
+      stats[model].append(uniq)
+      stats[model].append(size)
+    self.cursor.execute("""
+SELECT model, count(top) 
+FROM blocks
+GROUP BY model;""",)
+    top = self.cursor.fetchall()
+    model = 'soleares'
+    self.cursor.execute("""
+SELECT model, count(cell) 
+FROM compass
+GROUP BY model;""",)
+    compass = self.cursor.fetchall()
+    for m in stats:
+      n = [t for t in top if t[0] == m]
+      stats[m].append(n[0][1]) # assume blocks always have model
+      i = [c for c in compass if c[0] == m] # but compass does not, so set a default
+      counter = i[0][1] if len(i) else 0
+      stats[m].append(counter)
+    output = f"uniq\t   x\t   y\t top\tcompass\t model\n" + ('-' * 80) + "\n"
+    for m in stats:
+      output += f"{stats[m][0]:>4}\t{stats[m][1][0]:>4}\t{stats[m][1][1]:>4}\t{stats[m][2]:>4}\t{stats[m][3]:>4}\t{m}\n"
+    return output
+
+  def get_scale(self, model):
+    return self.read(model=model)[3]
 
   '''
   the
   end
+  '''
+  '''
+  def get_topcells(self):
+    self.cursor.execute("""
+SELECT cell, top
+FROM blocks
+WHERE model = %s;""", [self.model])
+    rows = self.cursor.fetchall()
+    tc = dict()
+    for k, v in rows:
+      tc.setdefault(k, v)
+    return tc
   '''
