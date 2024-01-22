@@ -250,6 +250,11 @@ There are two use-cases where top affects the output. Shapes with a `large` size
 
 Recurrink will place both cells **a** and **m** at the same co-ordinate. If, for example a is defined as a north-facing line and m as an easterly-facing line then a cross + shape will appear.
 
+When the init command is run from the CLI the drawing objects will have their generate() method called. 
+Generate() produces a tmpfile to start the authoring process. Cells that are generated exclusively to be on top of another cell do not have a home position. We call them a virtual top cell. When a virtual top cell is marked as top:False it is hidden.
+A normal cell may also double as a top cell. In this case top:False stops it appearing on top of its paired cell, but it still appears in its home position.
+
+
 ### Testing
 #### Unit tests
 
