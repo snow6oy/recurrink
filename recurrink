@@ -39,6 +39,8 @@ def inputs():
   parser_u.add_argument("-s", "--scale",  help="zoom control 0.5 - 2.0")
   parser_s = subparsers.add_parser('stencil', help='monochrome to etch screens')
   parser_s.add_argument("-v", "--view", help='view to make stencils from')
+  parser_p = subparsers.add_parser('release', help='add release date to db')
+  parser_p.add_argument("-v", "--view", help='view to mark as released')
   return parser.parse_args()
 
 def stats():
@@ -191,6 +193,8 @@ if __name__ == '__main__':
     print(update(args.model, args.scale))
   elif (args.keyword == 'stencil'):
     print(stencil(args.view))
+  elif (args.keyword == 'release'):
+    print(release(args.view))
   '''
   the 
   end
