@@ -175,6 +175,10 @@ def stencil(d):
     lt.write(f'/tmp/{fn}.svg')
   #pp.pprint(s.colmap)
   return f"{WORKDIR}/{model}/{d}\n"
+
+def release(d):
+  v.update(d)
+  return f"released today: {d}"
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
   tf = TmpFile()

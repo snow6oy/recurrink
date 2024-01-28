@@ -14,6 +14,12 @@ class Views(Db):
     ]
     super().__init__()
 
+  def update(self, digest):
+    ''' capture when view was released to instagram
+    '''
+    self.cursor.execute("""
+UPDATE views SET pubdate=CURRENT_DATE WHERE view = %s;""", [digest])
+
   def delete(self, digest):
     ''' no error checks, this is gonzo style !
         cascade the delete to cells
