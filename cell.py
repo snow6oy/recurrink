@@ -305,6 +305,7 @@ ORDER BY random() LIMIT 1;""", [ver, opacity])
   def generate_one(self, stroke=None):
     ''' given a pair of cells, treat the second with a complimentary stroke
     '''
+    #print(f"one v {self.ver} so {self.opacity}")
     data = dict()
     if stroke:
       data = stroke
@@ -316,6 +317,7 @@ ORDER BY random() LIMIT 1;""", [ver, opacity])
 
   def generate_any(self, ver=None):
     ver = ver if ver else self.ver # override for tester
+    #print(f"any v {ver} so {self.opacity}")
     empty = { 'stroke': None, 'stroke_width': None, 'stroke_dasharray': None, 'stroke_opacity': None }
     # TODO stroke or not should be consistent across all cells in view ?
     YN = random.choice([True, False]) # fifty fifty chance to get a stroke
@@ -380,10 +382,11 @@ VALUES (%s, %s, %s, %s, %s);""", [digest, cell, gid, pid, sid])
         g = Geometry.generate_any(self, top)
       p = Palette.generate_any(self)
       s = Strokes.generate_any(self)
+    if self.ver == 0 and s['stroke_width']: # hack to overcome uneven opacity values in universal palette
+      s['stroke_opacity'] = random.choice(Palette.read_opacity(self, fill=p['fill'], bg=p['bg']))
     self.data = g | p | s
 
   def validate(self, celldata):
-    #[self.validate(c, celldata[c]) for c in celldata]
     self.load_palette()
     [Strokes.validate(self, c, celldata[c]) for c in celldata]
   '''
