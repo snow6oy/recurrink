@@ -38,9 +38,12 @@ class TestPalette(unittest.TestCase):
     items = ['#FFF', '#ZZZ', 1.0]
     self.assertRaises(ValueError, self.p.read_pid, items)
 
-  def testLoadPalette(self):
+  def test_1(self):
+    ''' Load Palette
+    '''
     p = Palette(ver=2)
     p.load_palette(ver=2)
+    #print(len(p.palette))
     #pp.pprint(p.palette)
     for fill in [ '#FFF', '#000', '#F00', '#00F', '#FF0' ]:
       self.assertTrue(fill in p.fill)

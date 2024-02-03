@@ -211,6 +211,7 @@ WHERE ver = %s;""", [self.ver])
     ver = ver if ver else self.ver  # override for tester
     if ver is not None:  # universal is zero
       self.read_palette(ver)
+      #print(len(self.palette))
       if len(self.palette) == 0:
         raise ValueError(f"what version are you on about {ver}")
 
