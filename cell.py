@@ -205,6 +205,13 @@ WHERE ver = %s;""", [self.ver])
     opacity = [o[0] for o in self.cursor.fetchall()]
     return opacity
 
+  def read_colours(self):
+    self.cursor.execute("""
+SELECT fill
+FROM colours;""", [])
+    colours = [c[0] for c in self.cursor.fetchall()]
+    return colours
+
   def load_palette(self, ver=None):
     ''' used to validate inputs from tmpfile
     '''

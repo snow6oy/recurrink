@@ -31,12 +31,13 @@ class PaletteMaker:
         fill, opacity, bg = p
         ct = None
       row = list()
-      row.append({ 'fg': fill, 'op': 1, 'bg': None })
-      row.append({ 'fg': bg, 'op': 1, 'bg': None })
+      if ct and ct == 'y':
+        row.append({ 'fg': fill, 'op': 1, 'bg': None, 'ct': True })
+      else:
+        row.append({ 'fg': fill, 'op': 1, 'bg': None, 'ct': False })
+      row.append({ 'fg': bg, 'op': 1, 'bg': None, 'ct': False })
       if float(opacity) < 1:
-        row.append({ 'fg': fill, 'op': opacity, 'bg': bg })
-      if ct:
-        row.append({ 'fg': ct, 'op': 1, 'bg': None })  # compliment TODO
+        row.append({ 'fg': fill, 'op': opacity, 'bg': bg, 'ct': False })
       if len(row) > maxrow:
         maxrow = len(row)
       grid.append(row)
@@ -57,6 +58,8 @@ class PaletteMaker:
     for y, col in enumerate(grid):
       for x, row in enumerate(col):
         txt = row['op'] if row['bg'] else row['fg']
+        if row['ct'] == True:
+          txt += ' *'
         if txt:
           self.label(txtg, txt, x, y, xid)
 
@@ -64,7 +67,7 @@ class PaletteMaker:
     t = ET.SubElement(txtg, f"{self.ns}text", id=xid)
     t.text = str(f'{text}')
     tx = (x * 60) + 10
-    ty = (y * 60) + 30
+    ty = (y * 60) + 50
     t.set("x", str(tx))
     t.set("y", str(ty))
 
@@ -95,12 +98,24 @@ class PaletteMaker:
     sql = "'),\n('".join(colours)
     print(f"INSERT INTO colours (fill) VALUES \n('{sql}');")
 
-  def create_palette_table(self, palette, complimentary, ver):
+  def create_palette_table(self, palette, ver, colours):
+    ''' print a SQL string to STDOUT
+    '''
+    vals = str()
+    for col in colours:
+      vals += f"('{col}'),\n" 
+    vals = vals[:-2]
+    if len(colours):
+      print(f"INSERT INTO colours (fill) VALUES \n{vals};")
     vals = str()
     for p in palette:
-      fill, o, bg = p
-      vals += f"({ver}, '{fill}', '{bg}', '{complimentary[fill]}', {o}),\n"
-    print(f"INSERT INTO palette (ver, fill, bg, complimentary, opacity) VALUES \n{vals};")
+      if len(p) == 4:
+        fill, o, bg, ct = p
+      else:
+        ct = 'null'
+      vals += f"({ver}, '{fill}', '{bg}', '{o}', '{ct}'),\n"
+    vals = vals[:-2]
+    print(f"INSERT INTO palette (ver, fill, bg, opacity, compliment) VALUES \n{vals};")
 
   def export_txtfile(self, palname, palette):
     ''' write paldata to a tab separated text file
@@ -120,13 +135,33 @@ class PaletteMaker:
     data = [d.split() for d in data[1:]] # ignore header and split on space
     return data
 
+  def compliment(self, palette):
+    ''' TODO use code/cs.py to generate compliment when none
+    '''
+    pass
+
+  def colour_check(self, p, palette):
+    ''' compare the new palette against the main colour list
+        return a list of those that are missing
+    '''
+    colours = p.read_colours()
+    fill = set([p[0] for p in palette])
+    backgrounds = set([p[2] for p in palette])
+    for c in colours:
+      if c in fill:
+        fill.remove(c)
+      if c in backgrounds:
+        backgrounds.remove(c)
+    missing = list(fill) + list(backgrounds)
+    return set(missing)
+
 if __name__ == '__main__':
   pmk = PaletteMaker()
   friendly_name=['universal', 'colour45', 'htmstarter', 'jeb']
-  ver = 0
-  opt = 2
+  ver = 3
+  opt = 3
+  p = Palette(ver=ver)
   if opt == 1:
-    p = Palette(ver=ver)
     p.load_palette(ver=ver)
     pmk.export_txtfile(friendly_name[ver], p.palette)
   elif opt == 2:
@@ -136,11 +171,12 @@ if __name__ == '__main__':
     pmk.root(x * 60, len(grid) * 60)
     pmk.make(grid)
     pmk.write(friendly_name[ver])
+  elif opt == 3:
+    palette = pmk.import_txtfile(friendly_name[ver])
+    missing_colours = pmk.colour_check(p, palette)
+    #print(missing_colours)
+    #compliment = pmk.compliment(palette)
+    #TODO get new colours pmk.create_colour_table(s.colours)
+    pmk.create_palette_table(palette, ver, missing_colours)
   else:
-    pmk = PaletteMaker(540, 300)
-    #pmk.create_colour_table(s.colours)
-    extra = pmk.extra_palette_table(p.fill)
-    pmk.create_palette_table(extra, p.complimentary, 1)
-    #pmk.create_strokes_table()
-    #pp.pprint(s.palette)
-    #pmk.table(s.palette)
+    print("three is the last option")
