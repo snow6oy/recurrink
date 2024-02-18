@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import pprint
 from cell import Palette, Strokes
+from colorsys import rgb_to_hsv, hsv_to_rgb
 pp = pprint.PrettyPrinter(indent = 2)
 
 class PaletteMaker:
@@ -109,13 +110,21 @@ class PaletteMaker:
       print(f"INSERT INTO colours (fill) VALUES \n{vals};")
     vals = str()
     for p in palette:
-      if len(p) == 4:
-        fill, o, bg, ct = p
-      else:
-        ct = 'null'
-      vals += f"({ver}, '{fill}', '{bg}', '{o}', '{ct}'),\n"
+      fill, o, bg = p
+      rn = self.relation(fill, bg)
+      vals += f"({ver}, '{fill}', '{bg}', '{o}', '{rn}'),\n"
     vals = vals[:-2]
     print(f"INSERT INTO palette (ver, fill, bg, opacity, compliment) VALUES \n{vals};")
+
+  def update_palette_table(self, palette, ver):
+    ''' one-off migration to replace compliment with relation
+    '''
+    for p in palette:
+      fill, o, bg = p
+      #print(f"fill {fill} bg {bg} o {o}")
+      if o == '1.0':
+        rn = self.relation(fill, bg)
+        print(f"UPDATE palette SET relation = {rn} WHERE ver = {ver} AND fill = '{fill}' AND bg = '{bg}' and opacity = 1;")
 
   def export_txtfile(self, palname, palette):
     ''' write paldata to a tab separated text file
@@ -135,10 +144,46 @@ class PaletteMaker:
     data = [d.split() for d in data[1:]] # ignore header and split on space
     return data
 
-  def compliment(self, palette):
-    ''' TODO use code/cs.py to generate compliment when none
+  def rgb_int(self, r, g, b):
+    ''' the compliment of #dc143c is #14dcb4
+      https://www.w3schools.com/colors/colors_hexadecimal.asp
+      https://www.educative.io/answers/how-to-convert-hex-to-rgb-and-rgb-to-hex-in-python
+      https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
+      returns RGB components of complementary color as int
     '''
-    pass
+    hsv = rgb_to_hsv(r, g, b)
+    rgb_float = hsv_to_rgb((hsv[0] + 0.5) % 1, hsv[1], hsv[2])
+    return [int(f) for f in rgb_float]
+
+  def hex_rgb(self, hexstr):
+    ''' slice into a list e.g. ['dc', '14', '3c']
+    '''
+    hexitems = [hexstr[1:3], hexstr[3:5], hexstr[5:]]
+    # convert to base 16
+    return [int(h,16) for h in hexitems]
+
+  def relation(self, fill, bg):
+    if len(fill) ==4:
+      fill = f"#{fill[1]*2}{fill[2]*2}{fill[3]*2}".lower()
+    if len(bg) ==4:
+      bg = f"#{bg[1]*2}{bg[2]*2}{bg[3]*2}".lower()
+    s = self.secondary(fill)
+    #print(f"fill {fill} bg {bg} secondary {s}")
+    if bg == fill:
+      return 1
+    elif bg == s:
+      return 2
+    else:
+      return 0
+
+  def secondary(self, fill=None):
+    if fill:
+      r, g, b = self.hex_rgb(fill)
+      R, G, B = self.rgb_int(r, g, b)
+      #return (fill, f'#{R:02x}{G:02x}{B:02x}')
+      return f'#{R:02x}{G:02x}{B:02x}'
+    else:
+      raise ValueError('fill is required')
 
   def colour_check(self, p, palette):
     ''' compare the new palette against the main colour list
@@ -158,25 +203,32 @@ class PaletteMaker:
 if __name__ == '__main__':
   pmk = PaletteMaker()
   friendly_name=['universal', 'colour45', 'htmstarter', 'jeb']
-  ver = 3
-  opt = 3
+  ver = 2
+  opt = 2
   p = Palette(ver=ver)
-  if opt == 1:
+  if opt == 1: # db to tmpfile
     p.load_palette(ver=ver)
     pmk.export_txtfile(friendly_name[ver], p.palette)
-  elif opt == 2:
+  elif opt == 2: # tmpfile to svg
     palette = pmk.import_txtfile(friendly_name[ver])
     x, grid = pmk.grid(palette)
     #pp.pprint(grid)
     pmk.root(x * 60, len(grid) * 60)
     pmk.make(grid)
     pmk.write(friendly_name[ver])
-  elif opt == 3:
+  elif opt == 3: # tmpfile to sql
     palette = pmk.import_txtfile(friendly_name[ver])
     missing_colours = pmk.colour_check(p, palette)
     #print(missing_colours)
     #compliment = pmk.compliment(palette)
     #TODO get new colours pmk.create_colour_table(s.colours)
     pmk.create_palette_table(palette, ver, missing_colours)
+  elif opt == 4: # run some compliment tests
+    # DC143C crimson #C71585 mediumvioletred #FFA500 orange #32CD32 limegreen #4B0082 indigo
+    [print(f, pmk.secondary(f)) for f in ['#dc143c', '#c71585', '#ffa500' ,'#32cd32', '#4b0082']]
+    [print(f, pmk.secondary(f)) for f in ['#ff0000', '#ffff00', '#0000ff' ,'#ffffff', '#000000']]
+  elif opt == 5: # tmpfile to sql
+    palette = pmk.import_txtfile(friendly_name[ver])
+    pmk.update_palette_table(palette, ver)
   else:
-    print("three is the last option")
+    print("five is the last option")

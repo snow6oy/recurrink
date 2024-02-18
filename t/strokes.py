@@ -68,14 +68,25 @@ class TestStrokes(unittest.TestCase):
     data['bg'] = '#CCC'
     self.assertRaises(ValueError, self.s.validate, 'z', data)
 
-  def testGenerateOne(self):
-    ''' select stroke using complimentary palette
+  def test_0(self):
+    ''' generateOne select stroke using complimentary palette OK
+    '''
+    self.s.load_palette(ver=3)
+    #pp.pprint(self.s.complimentary)
+    cell = self.s.generate_one(stroke={ 
+      'stroke': '#0F0', 'stroke_width': 1, 'stroke_dasharray': 1, 'stroke_opacity': 1.0 
+    })
+    self.assertEqual(cell['stroke'], '#F0F')
+
+  def test_1(self):
+    ''' generateOne select stroke using complimentary palette FAIL 
     '''
     self.s.load_palette(ver=1)
+    #pp.pprint(self.s.complimentary)
     cell = self.s.generate_one(stroke={ 
       'stroke': '#C71585', 'stroke_width': 1, 'stroke_dasharray': 1, 'stroke_opacity': 1.0 
     })
-    self.assertEqual(cell['stroke'], '#4B0082')
+    self.assertEqual(cell['stroke'], '#000')
 
   def testGenerateAny(self):
     ''' randomly generate new attributes

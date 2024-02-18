@@ -163,21 +163,28 @@ WHERE ver = %s
 ORDER BY random() LIMIT 1;""", [ver])
     return list(self.cursor.fetchone())
 
+  def read_compliment(self, ver):
+    ''' compliment is defined as any relation whether 1 same:same or 2 same:opposite
+        once the use-cases are defined these should be split
+        colours with multiple palette entries have the relation entry as priority
+    '''
+    self.complimentary = dict()
+    self.cursor.execute("""
+SELECT fill, bg
+FROM palette
+WHERE ver = %s
+ORDER BY relation;""", [ver])
+    for row in self.cursor.fetchall():
+      fill, bg = row
+      self.complimentary[fill] = bg
+      self.complimentary[bg] = fill
+
   def read_palette(self, ver):
     self.cursor.execute("""
 SELECT fill, opacity, bg
 FROM palette
 WHERE ver = %s;""", [ver])
     self.palette = self.cursor.fetchall()
-    self.complimentary = dict()
-    self.cursor.execute("""
-SELECT fill, bg, complimentary
-FROM palette
-WHERE ver = %s;""", [ver])
-    for row in self.cursor.fetchall():
-      fill, bg, compliment = row
-      self.complimentary[fill] = compliment
-      self.complimentary[bg] = compliment
     self.cursor.execute("""
 SELECT DISTINCT(fill)
 FROM palette
@@ -188,6 +195,7 @@ SELECT DISTINCT(bg)
 FROM palette
 WHERE ver = %s;""", [ver])
     self.backgrounds = [bg[0] for bg in self.cursor.fetchall()]
+    self.read_compliment(ver)
 
   def read_opacity(self, fill=None, bg=None):
     if fill and bg: # opacity varies according to fill when ver is universal

@@ -48,7 +48,7 @@ class TestPalette(unittest.TestCase):
     for fill in [ '#FFF', '#000', '#F00', '#00F', '#FF0' ]:
       self.assertTrue(fill in p.fill)
     self.assertEqual(p.opacity, [1.0])
-    self.assertEqual(p.complimentary['#FFF'], '#000')
+    self.assertEqual(p.complimentary['#FFF'], '#FFF')
 
   def testLoadPaletteOk(self):
     self.p = Palette(ver=0) # universal not done yet
@@ -135,8 +135,8 @@ class TestPalette(unittest.TestCase):
     self.assertTrue(cell['bg'] in self.p.backgrounds)
     self.assertTrue(cell['fill_opacity'] in self.p.opacity)
 
-  def testGenerateOne(self):
-    ''' randomly generate first cell of pair and then allocate complimentary to the second cell 
+  def test_2(self):
+    ''' Generate One randomly generate first cell of pair and then allocate complimentary to the second cell 
     '''
     self.p.load_palette(ver=1)
     pairs = ('b', 'd')       # compass.one(axis) for context
