@@ -200,10 +200,54 @@ class PaletteMaker:
     missing = list(fill) + list(backgrounds)
     return set(missing)
 
+  def collapse_opacity(self, ver, pal):
+    ''' for each opacity to be collapsed
+        select palette entry with bad opacity
+        find nearest pid
+        update cells table so view with old pid uses new pid
+    '''
+    pal.load_palette(ver=ver)
+    #new_pid = pal.read_pid(['#C71585', '#FFF', '0.9'])
+    for old_fo in [0.6]:  # 9, 0.7, 0.4, 0.3, 0.1]:
+      #print(old_fo)
+      to_clean = [p for p in pal.palette if p[1] == old_fo]
+      for tc in to_clean:
+        old_pid = pal.read_pid([tc[0], tc[2], tc[1]])
+        new_opacity, new_pid = self.find_opacity(ver, tc, pal)
+        if new_pid:
+          print(f"UPDATE cells SET pid = {new_pid} WHERE pid = {old_pid};")
+        else:
+          pass
+          #relation = self.relation(tc[0], tc[2])
+          #print(f"INSERT INTO palette (ver, fill, bg, opacity, relation) VALUES (0,'{tc[0]}', '{tc[2]}', {new_opacity}, {relation});")
+
+  def find_opacity(self, ver, tc, pal):
+    ''' find the nearest opacity to the one we want to deprecate
+        return the nearest op and pid, if it already exists in db
+    '''
+    old_fo = tc[1]
+    available = pal.read_cleanpids([tc[0], tc[2]])
+    #pp.pprint(available)
+    candidates = list()
+    for candidate in [1, 0.8, 0.5, 0.2]:
+      if candidate > old_fo:
+        nearest = (candidate * 10) - (old_fo * 10)
+      else:
+        nearest = (old_fo * 10) - (candidate * 10)
+      pid = None
+      for a in available:
+        if candidate == a[1]: # compare opacities
+          pid = a[0]
+          break
+      candidates.append([candidate, int(nearest), pid])
+    new_pid = sorted(candidates, key=lambda x: x[1], reverse=False)
+    #pp.pprint(new_pid)
+    return new_pid[0][0], new_pid[0][2]
+
 if __name__ == '__main__':
   pmk = PaletteMaker()
   friendly_name=['universal', 'colour45', 'htmstarter', 'jeb']
-  ver = 2
+  ver = 0
   opt = 2
   p = Palette(ver=ver)
   if opt == 1: # db to tmpfile
@@ -230,5 +274,11 @@ if __name__ == '__main__':
   elif opt == 5: # tmpfile to sql
     palette = pmk.import_txtfile(friendly_name[ver])
     pmk.update_palette_table(palette, ver)
+  elif opt == 6: # collapse opacity
+    # op, pid = pmk.find_opacity(ver, ['#FFA500', 0.9, '#000'], p)
+    # op, pid = pmk.find_opacity(ver, ['#CCC', 0.9, '#9ACD32'], p)
+    # op, pid = pmk.find_opacity(ver, ['#C71585', 0.6, '#FFF'], p)
+    # print(0.6, op, pid) 
+    pmk.collapse_opacity(ver, p)
   else:
-    print("five is the last option")
+    print("six is the last option")

@@ -155,6 +155,18 @@ AND ver = %s;""", palette)
     else:
       raise ValueError(f"unable to find pid for {palette}")
 
+  def read_cleanpids(self, palette):
+    ''' used to collapse opacity in universal palette
+    '''
+    self.cursor.execute("""
+SELECT pid, opacity
+FROM palette
+WHERE ver = 0
+AND fill = %s
+AND bg = %s;""", palette)
+    pids = self.cursor.fetchall()
+    return pids
+
   def read_any(self, ver):
     self.cursor.execute("""
 SELECT fill, bg, opacity
