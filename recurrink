@@ -11,7 +11,7 @@ from tmpfile import TmpFile
 #pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
-friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb']
+friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa']
 WORKDIR = '/home/gavin/Dropbox/familia/rinks'
 PUBDIR = '/home/gavin/Pictures/pubq'
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -26,7 +26,8 @@ def inputs():
   parser_r.add_argument("-v", "--view", help='hex name with 32 char')
   parser_i = subparsers.add_parser('init', help='set config for new image')
   parser_i.add_argument('-m', '--model', help='name of base model')
-  parser_i.add_argument("-p", "--palette", help='palette version', choices=['0', '1', '2', '3'])
+  parser_i.add_argument("-p", "--palette", help='palette version', type=int, choices=range(1, 10))
+  #parser_i.add_argument("-p", "--palette", help='palette version', choices=['0', '1', '2', '3', '4'])
   parser_i.add_argument("-v", "--view", help='view to clone')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_c.add_argument('-m', '--model', help='name of base model')

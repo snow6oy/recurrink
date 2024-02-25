@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import pprint
+from tmpfile import TmpFile
 from cell import Palette, Strokes
 from colorsys import rgb_to_hsv, hsv_to_rgb
 pp = pprint.PrettyPrinter(indent = 2)
@@ -114,7 +115,7 @@ class PaletteMaker:
       rn = self.relation(fill, bg)
       vals += f"({ver}, '{fill}', '{bg}', '{o}', '{rn}'),\n"
     vals = vals[:-2]
-    print(f"INSERT INTO palette (ver, fill, bg, opacity, compliment) VALUES \n{vals};")
+    print(f"INSERT INTO palette (ver, fill, bg, opacity, relation) VALUES \n{vals};")
 
   def update_palette_table(self, palette, ver):
     ''' one-off migration to replace compliment with relation
@@ -244,24 +245,48 @@ class PaletteMaker:
     #pp.pprint(new_pid)
     return new_pid[0][0], new_pid[0][2]
 
+  def cmp_pal(self, p1, p2):
+    #pp.pprint(p1)
+    #pp.pprint(p2)
+    same = 0
+    for x in p1:
+      for y in p2:
+        if x[0] == y[0] and x[1] == y[1] and x[2] == y[2]:
+          # print(x)
+          same += 1
+    return same
+
+  def swap_palette(self, filename):
+    ''' update a view generated with universal palette to use another
+    '''
+    tf = TmpFile()
+    celldata = tf.read(filename, output=list())
+    print(celldata)
+    #for items in celldata:
+    # get old pid
+    # pid = Palette.read_pid(self, palette=items[4:7])
+    # set new pid ?
+
 if __name__ == '__main__':
   pmk = PaletteMaker()
-  friendly_name=['universal', 'colour45', 'htmstarter', 'jeb']
-  ver = 0
+  friendly_name=['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa']
+  ver = 4
+  fn = friendly_name[ver] if False else '0b396143d41f9dadb07c0fb3b47446df'
+  #'15ff3a9dd88436a0fffa87aad8904784'
   opt = 2
   p = Palette(ver=ver)
   if opt == 1: # db to tmpfile
     p.load_palette(ver=ver)
-    pmk.export_txtfile(friendly_name[ver], p.palette)
+    pmk.export_txtfile(fn, p.palette)
   elif opt == 2: # tmpfile to svg
-    palette = pmk.import_txtfile(friendly_name[ver])
+    palette = pmk.import_txtfile(fn)
     x, grid = pmk.grid(palette)
     #pp.pprint(grid)
     pmk.root(x * 60, len(grid) * 60)
     pmk.make(grid)
-    pmk.write(friendly_name[ver])
+    pmk.write(fn)
   elif opt == 3: # tmpfile to sql
-    palette = pmk.import_txtfile(friendly_name[ver])
+    palette = pmk.import_txtfile(fn)
     missing_colours = pmk.colour_check(p, palette)
     #print(missing_colours)
     #compliment = pmk.compliment(palette)
@@ -272,7 +297,7 @@ if __name__ == '__main__':
     [print(f, pmk.secondary(f)) for f in ['#dc143c', '#c71585', '#ffa500' ,'#32cd32', '#4b0082']]
     [print(f, pmk.secondary(f)) for f in ['#ff0000', '#ffff00', '#0000ff' ,'#ffffff', '#000000']]
   elif opt == 5: # tmpfile to sql
-    palette = pmk.import_txtfile(friendly_name[ver])
+    palette = pmk.import_txtfile(fn)
     pmk.update_palette_table(palette, ver)
   elif opt == 6: # collapse opacity
     # op, pid = pmk.find_opacity(ver, ['#FFA500', 0.9, '#000'], p)
@@ -280,5 +305,19 @@ if __name__ == '__main__':
     # op, pid = pmk.find_opacity(ver, ['#C71585', 0.6, '#FFF'], p)
     # print(0.6, op, pid) 
     pmk.collapse_opacity(ver, p)
+  elif opt == 7: # export view as palette
+    palette = p.read_view(fn) # TODO Palette was initialised with ver but it was ignored. Hmmm
+    # pp.pprint(set(palette))
+    pmk.export_txtfile(fn, set(palette)) # need to flaten as same PID can belong to many cells
+  elif opt == 8: # compare palettes
+    new_pal = pmk.import_txtfile(fn)
+    candidate = pmk.import_txtfile(friendly_name[ver])
+    cmp = pmk.cmp_pal(new_pal, candidate)
+    print(f"{len(new_pal):3d} {fn}")
+    print(f"{len(candidate):3d} {friendly_name[ver]}")
+    print(f"{cmp:3d} matching palette entries")
+  elif opt == 9:
+    model = 'bossa' # TODO obtain from view
+    pmk.swap_palette(model)
   else:
-    print("six is the last option")
+    print("9 is the Very Last option")

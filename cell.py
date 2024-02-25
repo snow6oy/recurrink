@@ -139,6 +139,19 @@ WHERE pid = %s;""", [pid])
     palette = self.cursor.fetchone()
     return palette
 
+  def read_view(self, view):
+    ''' export palette to tmpfile based on view
+    '''
+    palette = list()
+    self.cursor.execute("""
+SELECT fill, opacity, bg
+FROM cells, palette
+WHERE cells.pid = palette.pid
+AND view = %s;""", [view])
+    # palette = [p[0] for p in self.cursor.fetchall()]
+    palette = self.cursor.fetchall()
+    return palette
+
   def read_pid(self, palette):
     palette.append(self.ver)
     self.cursor.execute("""

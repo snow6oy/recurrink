@@ -11,11 +11,11 @@ class TestTmpFile(unittest.TestCase):
     self.tf = TmpFile()
     self.model = 'soleares'
 
-  def testWrite(self):
-    ''' soleares.txt in tmp might cause a false positive
+  def test_0(self):
+    ''' Write soleares.txt in tmp might cause a false positive
     '''
     v = Views()
-    b = Blocks(self.model)
+    b = Blocks()
     model, src, celldata = v.generate(self.model)
     #pp.pprint(celldata)
     celldata = self.tf.convert_to_list(celldata)
