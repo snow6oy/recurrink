@@ -2,6 +2,8 @@
 doc
 rinks/*
 pubq/*
+sql/models/*
+sql/palette/*
 *.swp
 .DS_Store
 Archive
