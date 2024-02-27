@@ -128,6 +128,29 @@ class Palette(Geometry):
     '''
     pass
 
+  def swap_palette(self, celldata, ver, view, old_ver=0):
+    ''' WARN: we break the golden "Rinks Are Immutable" rule
+      the reason is that collapsing universal palette requires rinks to be moved to a new palette
+      so we update a view generated with universal palette to use another
+    '''
+    #print(celldata)
+    # old_pid = self.read_pid(ver=old_ver, palette=['#FFF', '#9ACD32', '0.5'])
+    pids = list()
+    for items in celldata: # get old and new pids
+      items.pop(0) # discard cell label 
+      #print(items[4:7])
+      pids.append(tuple([
+        self.read_pid(ver=ver, palette=items[4:7]),
+        view,
+        self.read_pid(ver=old_ver, palette=items[4:7]) 
+      ]))
+    # set new pid 
+    for new_old in set(pids): # send uniq pids for update
+      print(f"new pid = {new_old[0]} view {new_old[1]} old pid = {new_old[2]}")
+      self.cursor.execute("""UPDATE cells SET pid = %s WHERE view = %s AND pid = %s;""", new_old)
+    #[self.cursor.execute("""UPDATE cells SET pid = %s WHERE pid = %s;""", [new_old]) for new_old in pids]
+    return self.cursor.rowcount
+
   def read_item(self, pid):
     ''' not called and may no longer be needed 
     '''
@@ -152,8 +175,8 @@ AND view = %s;""", [view])
     palette = self.cursor.fetchall()
     return palette
 
-  def read_pid(self, palette):
-    palette.append(self.ver)
+  def read_pid(self, ver, palette=list()):
+    palette.append(ver)
     self.cursor.execute("""
 SELECT pid
 FROM palette
@@ -399,7 +422,7 @@ class Cell(Strokes):
     ok = True # used only by unit test
     cell = items.pop(0) # ignore first item cell
     gid = Geometry.read_gid(self, item=items[:4]) 
-    pid = Palette.read_pid(self, palette=items[4:7])
+    pid = Palette.read_pid(self, self.ver, palette=items[4:7])
     sid = Strokes.read_sid(self, strokes=items[7:])
     # print(digest, cell, gid, pid, sid)
     try:

@@ -5,6 +5,26 @@ from cell import Palette, Strokes
 from colorsys import rgb_to_hsv, hsv_to_rgb
 pp = pprint.PrettyPrinter(indent = 2)
 
+'''
+                                ver     f_name  view
+1: db to tmpfile                y       y       -
+2: tmpfile to svg               -       y       -       
+3: create palette from tmpfile  -       y       -
+7: export view as tmp/pal       -       -       y
+8: compare palettes             -       y       y
+
+move to t/palette
+4: unit tests fg/bg relations   -       y       -
+
+move to recurrink
+6: upd db.cells opacity         y       -       -
+9: upd db.cells swap pal view   y       y       y
+
+delete
+5: upd pal from  tmpfile        -       y       -
+'''
+
+
 class PaletteMaker:
   ''' tool for updating tutorial/palette.pdf
   '''
@@ -45,16 +65,18 @@ class PaletteMaker:
       grid.append(row)
     return maxrow, grid
 
-  def make(self, grid):
+  def make(self, grid, verbose=False):
     for y, col in enumerate(grid):
       for x, row in enumerate(col):
         xid = f"{x:02}-{y:02}"
-        print(xid, end=' ', flush=True)
+        if verbose:
+          print(xid, end=' ', flush=True)
         if row['fg']:
           self.color(xid, row['fg'], '1.0', x, y)
         if row['bg']:
           self.color(xid, row['bg'], row['op'], x, y)
-      print()
+      if verbose:
+        print()
     txtg = ET.SubElement(self.root, f"{self.ns}g", id="0")
     txtg.set("style", "fill:#FFF;stroke:#000;stroke-width:0.1;")
     for y, col in enumerate(grid):
@@ -256,24 +278,13 @@ class PaletteMaker:
           same += 1
     return same
 
-  def swap_palette(self, filename):
-    ''' update a view generated with universal palette to use another
-    '''
-    tf = TmpFile()
-    celldata = tf.read(filename, output=list())
-    print(celldata)
-    #for items in celldata:
-    # get old pid
-    # pid = Palette.read_pid(self, palette=items[4:7])
-    # set new pid ?
-
 if __name__ == '__main__':
   pmk = PaletteMaker()
   friendly_name=['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa']
   ver = 4
   fn = friendly_name[ver] if False else '0b396143d41f9dadb07c0fb3b47446df'
   #'15ff3a9dd88436a0fffa87aad8904784'
-  opt = 2
+  opt = 9
   p = Palette(ver=ver)
   if opt == 1: # db to tmpfile
     p.load_palette(ver=ver)
@@ -317,7 +328,10 @@ if __name__ == '__main__':
     print(f"{len(candidate):3d} {friendly_name[ver]}")
     print(f"{cmp:3d} matching palette entries")
   elif opt == 9:
+    tf = TmpFile()
     model = 'bossa' # TODO obtain from view
-    pmk.swap_palette(model)
+    celldata = tf.read(model, output=list())
+    numupdated = p.swap_palette(celldata, ver, fn)
+    print(f"{numupdated} pids were migrated to {friendly_name[ver]}")
   else:
     print("9 is the Very Last option")

@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+import pprint
+import argparse
+from cell import Palette
+from palette import PaletteMaker
+from tmpfile import TmpFile
+pp = pprint.PrettyPrinter(indent=2)
+p = Palette(ver=None) # TODO Palette has to be initialised with ver. Why?
+pmk = PaletteMaker()
+friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'doris']
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+def inputs():
+  ''' get inputs from command line
+      ver 	range(1, 10)
+      fn 	friendly_name[ver] 
+      view 	char, e.g. 0b396143d41f9dadb07c0fb3b47446df
+  '''
+  parser = argparse.ArgumentParser(prog='palette')
+  subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
+  parser_i = subparsers.add_parser('init', help='create palette config as tmpfile')
+  parser_i.add_argument("-p", "--palette", help='palette version to initialise', type=int, choices=range(1, 10))
+  parser_i.add_argument("-v", "--view", help='view to generate palette from')
+  parser_u = subparsers.add_parser('update', help='update svg from config')
+  parser_u.add_argument("-p", "--palette", help='palette version to write as svg', type=int, choices=range(1, 10))
+  parser_u.add_argument("-v", "--view", help='palette from view to write as svg')
+  parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
+  parser_c.add_argument("-p", "--palette", help='new palette to create', type=int, choices=range(1, 10), required=True)
+  parser_m = subparsers.add_parser('cmp', help='compare palettes: tmpfile to db')
+  parser_m.add_argument("-p", "--palette", help='read palette from version in db', type=int, choices=range(0, 10), required=True)
+  parser_m.add_argument("-v", "--view", help='read paletete from view in tmpfile', required=True)
+  return parser.parse_args()
+
+def init(ver, digest):
+  ''' pull a palette from db and write to tmpfile
+  '''
+  fn = str()
+  palette = set() # need to flaten as same PID can belong to many cells
+  if ver: # export from palette table
+    fn = friendly_name[ver]
+    p.load_palette(ver=ver)
+    palette = set(p.palette)
+  elif digest: # export view as palette
+    fn = digest
+    palette = set(p.read_view(fn))
+  else:
+    raise ValueError("init needs either a palette or view")
+  # pp.pprint(palette)
+  pmk.export_txtfile(fn, palette) 
+  return f"{fn}.txt was written"
+
+def update(ver, digest):
+  ''' tmpfile to svg 
+  '''
+  fn = friendly_name[ver] if ver else digest
+  palette = pmk.import_txtfile(fn)
+  # pp.pprint(palette)
+  if len(palette) == 0:
+    raise ValueError("empty palette: check input?")
+  else:
+    x, grid = pmk.grid(palette)
+    pmk.root(x * 60, len(grid) * 60)
+    pmk.make(grid, verbose=False)
+    pmk.write(fn)
+    return f"{fn}.svg was written"
+
+def commit(ver):
+  ''' tmpfile to sql but first manually 
+    create tmpfile NEW_PAL.txt 
+    add NEW_PAL to friendly_name
+    use the index of friendly_name[] as arg
+  '''
+  if ver > len(friendly_name):
+    raise IndexError(f"no friendly name for {ver}")
+  fn = friendly_name[ver]
+  palette = pmk.import_txtfile(fn)
+  missing_colours = pmk.colour_check(p, palette)
+  if missing_colours:
+    pass
+    #compliment = pmk.compliment(palette)
+    #TODO get new colours pmk.create_colour_table(s.colours)
+  pmk.create_palette_table(palette, ver, missing_colours)
+  return "done"
+
+def compare(ver, digest):
+  ''' compare palettes given ver and digest
+  '''
+  fn = friendly_name[ver]
+  new_pal = pmk.import_txtfile(digest)
+  candidate = pmk.import_txtfile(fn)
+  cmp = pmk.cmp_pal(new_pal, candidate)
+  return f"""
+{len(new_pal):3d} {digest}
+{len(candidate):3d} {fn}
+{cmp:3d} matching palette entries"""
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+if __name__ == '__main__':
+  args = inputs()
+  if (args.keyword == 'init'):
+    print(init(ver=args.palette, digest=args.view))
+  elif (args.keyword == 'commit'):
+    print(commit(args.palette))
+  elif (args.keyword == 'cmp'):
+    print(compare(args.palette, args.view))
+  elif (args.keyword == 'update'):
+    print(update(args.palette, digest=args.view))
+  '''
+  the 
+  end
+  '''
