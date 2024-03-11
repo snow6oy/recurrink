@@ -4,6 +4,7 @@ import argparse
 from cell import Palette
 from palette import PaletteMaker
 from tmpfile import TmpFile
+from views import Views
 pp = pprint.PrettyPrinter(indent=2)
 p = Palette(ver=None) # TODO Palette has to be initialised with ver. Why?
 pmk = PaletteMaker()
@@ -25,9 +26,10 @@ def inputs():
   parser_u.add_argument("-v", "--view", help='palette from view to write as svg')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_c.add_argument("-p", "--palette", help='new palette to create', type=int, choices=range(1, 10), required=True)
+  parser_c.add_argument("-v", "--view", help='swap view to use palette')
   parser_m = subparsers.add_parser('cmp', help='compare palettes: tmpfile to db')
   parser_m.add_argument("-p", "--palette", help='read palette from version in db', type=int, choices=range(0, 10), required=True)
-  parser_m.add_argument("-v", "--view", help='read paletete from view in tmpfile', required=True)
+  parser_m.add_argument("-v", "--view", help='read palette from view in tmpfile', required=True)
   return parser.parse_args()
 
 def init(ver, digest):
@@ -52,34 +54,47 @@ def update(ver, digest):
   ''' tmpfile to svg 
   '''
   fn = friendly_name[ver] if ver else digest
-  palette = pmk.import_txtfile(fn)
-  # pp.pprint(palette)
-  if len(palette) == 0:
+  if fn is None:
     raise ValueError("empty palette: check input?")
   else:
+    palette = pmk.import_txtfile(fn)
+    #pp.pprint(palette)
     x, grid = pmk.grid(palette)
     pmk.root(x * 60, len(grid) * 60)
     pmk.make(grid, verbose=False)
     pmk.write(fn)
     return f"{fn}.svg was written"
 
-def commit(ver):
-  ''' tmpfile to sql but first manually 
+def commit(ver, digest=None):
+  msg = None
+  if ver > len(friendly_name):
+    raise IndexError(f"no friendly name for {ver}")
+  elif ver and digest:
+    ''' 1. export view using recurrink init -v --> /tmp/MODEL.txt
+        2. export pal from using palette init -p
+    '''
+    tf = TmpFile()
+    v = Views() # obtain model from view
+    model = v.read_meta(digest)[0]
+    #celldata = tf.read(model, output=list())
+    #numupdated = p.swap_palette(celldata, ver, fn)
+    #print(f"{numupdated} pids were migrated to {friendly_name[ver]}")
+    msg = f"swapped {digest} to palette {friendly_name[ver]}"
+  else:
+    ''' convert palette in tmpfile to sql INSERT but first manually 
     create tmpfile NEW_PAL.txt 
     add NEW_PAL to friendly_name
     use the index of friendly_name[] as arg
-  '''
-  if ver > len(friendly_name):
-    raise IndexError(f"no friendly name for {ver}")
-  fn = friendly_name[ver]
-  palette = pmk.import_txtfile(fn)
-  missing_colours = pmk.colour_check(p, palette)
-  if missing_colours:
-    pass
-    #compliment = pmk.compliment(palette)
-    #TODO get new colours pmk.create_colour_table(s.colours)
-  pmk.create_palette_table(palette, ver, missing_colours)
-  return "done"
+    '''
+    fn = friendly_name[ver]
+    palette = pmk.import_txtfile(fn)
+    missing_colours = pmk.colour_check(p, palette)
+    if missing_colours:
+      pass
+      #compliment = pmk.compliment(palette)
+      #TODO get new colours pmk.create_colour_table(s.colours)
+    pmk.create_palette_table(palette, ver, missing_colours)
+  return msg
 
 def compare(ver, digest):
   ''' compare palettes given ver and digest
@@ -100,7 +115,7 @@ if __name__ == '__main__':
   if (args.keyword == 'init'):
     print(init(ver=args.palette, digest=args.view))
   elif (args.keyword == 'commit'):
-    print(commit(args.palette))
+    print(commit(args.palette, digest=args.view))
   elif (args.keyword == 'cmp'):
     print(compare(args.palette, args.view))
   elif (args.keyword == 'update'):

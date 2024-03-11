@@ -14,7 +14,7 @@ class TestPalette(unittest.TestCase):
     self.defaults = {
       'fill': '#FFF',
       'bg': '#CCC',
-      'opacity':1.0,
+      'fill_opacity':1.0,
       'shape':'triangl',  # Geometry validates before Palette
       'size':'medium', 
       'facing':'all'
@@ -103,7 +103,38 @@ class TestPalette(unittest.TestCase):
     pid = self.p.read_pid(ver=2, palette=items)
     self.assertEqual(pid, 49)
 
-  def testGenerateAny(self):
+  ''' opaque palettes are valid because non-square shapes display background
+      all fg/bg combinations are also valid even when fg and bg are the same
+  '''
+  def test_7(self):
+    ''' validate fake bg value 
+    '''
+    #self.p.spectrum(['#CCC'], ['#FFF'], [1], None)
+    self.p.load_palette()
+    data = self.defaults
+    data['bg'] = '#ZZZ'
+    self.assertRaises(ValueError, self.p.validate, 'a', data)
+
+  def test_8(self):
+    ''' ver changes test to check palette Hunt The Moon starter kit
+    '''
+    self.p = Palette(ver=2)
+    self.p.load_palette()
+    data = self.defaults
+    data['bg'] = '#FFA500'
+    self.assertRaises(ValueError, self.p.validate, 'a', data)
+    data['fill'] = '#DC143C'
+    self.assertRaises(ValueError, self.p.validate, 'a', data)
+
+  def test_9(self):
+    ''' FFF CCC 1. combination does not exist in jeb
+    '''
+    self.p = Palette(ver=3)
+    self.p.load_palette()
+    #pp.pprint(self.p.palette)
+    self.assertRaises(ValueError, self.p.validate, 'a', self.defaults)
+
+  def test_10(self):
     ''' selfect randomly to generate new palette
     '''
     self.p = Palette(ver=0) # universal
@@ -111,9 +142,7 @@ class TestPalette(unittest.TestCase):
     cell = self.p.generate_any()
     #pp.pprint(f"c {cell}")
     self.assertEqual(len(cell.keys()), 3)
-    self.assertTrue(cell['fill'] in self.p.fill)
-    self.assertTrue(cell['bg'] in self.p.backgrounds)
-    self.assertTrue(cell['fill_opacity'] in self.p.opacity)
+    self.assertTrue(tuple([cell['fill'], float(cell['fill_opacity']), cell['bg']]) in self.p.palette)
 
   def testLoadPaletteOk(self):
     self.p = Palette(ver=0) # universal not done yet
@@ -141,40 +170,6 @@ class TestPalette(unittest.TestCase):
     p2 = Palette(ver=2)
     p2.load_palette()
     self.assertEqual(len(p2.opacity), 1)
-
-
-  ''' opaque palettes are valid because non-square shapes display background
-      all fg/bg combinations are also valid even when fg and bg are the same
-  '''
-  def testValidateVer0(self):
-    ''' validate fake bg value 
-    '''
-    #self.p.spectrum(['#CCC'], ['#FFF'], [1], None)
-    self.p.load_palette()
-    data = self.defaults
-    data['bg'] = '#ZZZ'
-    self.assertRaises(ValueError, self.p.validate, 'a', data)
-
-  def testValidateVer1(self):
-    ''' validdate ver 1 changes test to check palette matches
-    '''
-    self.p.load_palette()
-    data = self.defaults
-    data['bg'] = '#FFA500'
-    self.assertRaises(ValueError, self.p.validate, 'a', data)
-    data['fill'] = '#FFF'
-    self.assertRaises(ValueError, self.p.validate, 'a', data)
-
-  def testValidateVer2(self):
-    ''' ver changes test to check palette Hunt The Moon starter kit
-    '''
-    self.p.load_palette()
-    data = self.defaults
-    data['bg'] = '#FFA500'
-    self.assertRaises(ValueError, self.p.validate, 'a', data)
-    data['fill'] = '#DC143C'
-    self.assertRaises(ValueError, self.p.validate, 'a', data)
-    #pp.pprint(self.p.palette)
 
   def testReadWithPid(self):
     ''' items with pid used by View.read() 

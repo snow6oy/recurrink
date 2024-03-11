@@ -233,6 +233,10 @@ SELECT fill, opacity, bg
 FROM palette
 WHERE ver = %s;""", [ver])
     self.palette = self.cursor.fetchall()
+    self.read_compliment(ver)
+
+  # TODO remove this once tested with ./recurrink init
+  def zzzz():
     self.cursor.execute("""
 SELECT DISTINCT(fill)
 FROM palette
@@ -243,7 +247,6 @@ SELECT DISTINCT(bg)
 FROM palette
 WHERE ver = %s;""", [ver])
     self.backgrounds = [bg[0] for bg in self.cursor.fetchall()]
-    self.read_compliment(ver)
 
   def read_opacity(self, fill=None, bg=None):
     if fill and bg: # opacity varies according to fill when ver is universal
@@ -291,8 +294,8 @@ FROM colours;""", [])
       one = Palette.read_any(self, ver=ver)
     return dict(zip(['fill','bg','fill_opacity'], one))
 
-  # TODO edge case where all values are valid but their combined value does not exit in palette
-  def validate(self, cell, data):
+  # edge case where all values are valid but their combined value does not exit in palette
+  def valzzzzz(self, cell, data):
     ''' apply rules for defined palette
     '''
     Geometry.validate(self, cell, data) 
@@ -311,6 +314,19 @@ FROM colours;""", [])
       raise ValueError(f"validation error: background >{cell}< ver: {self.ver}")
     if fo == 1 and data['fill'] == data['bg'] and data['stroke_width'] is None:
       print(f"WARNING: opaque fill on same background >{cell}< ver: {self.ver}")
+ 
+  def validate(self, cell, data):
+    ''' raise error unless given data exists in palette
+    '''
+    Geometry.validate(self, cell, data) 
+    fo = float(data['fill_opacity'])
+    so = float(data['stroke_opacity']) if data['stroke_opacity'] else None
+    t = tuple([data['fill'], fo, data['bg']])
+    if t not in self.palette:
+      raise ValueError(f"validation error: >{cell}< {t}")
+    if fo == 1 and data['fill'] == data['bg'] and so is None:
+      print(f"WARNING: opaque fill on same background >{cell}< ver: {self.ver}")
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Strokes(Palette):
 
