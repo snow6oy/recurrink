@@ -33,11 +33,12 @@ class TestE2E(unittest.TestCase):
     m = Models()
     tf = TmpFile()
     model, author, scale, ver = v.read_meta(digest=self.digest)
-    b = Blocks(model)
+    #b = Blocks(model)
     blocksize = m.read(model=model)[2] # can get scale too
-    positions = b.read()
+    #positions = b.read()
+    positions = m.read_positions(model)
     lt = Layout(scale=scale)
-    #print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
+    print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
     self.assertTrue(scale)
     self.assertEqual(lt.cellsize, 60)
     self.assertEqual(lt.grid, 18)
@@ -64,8 +65,6 @@ class TestE2E(unittest.TestCase):
     #pp.pprint(celldata[0])
     self.assertEqual(len(celldata), 4)
     v.create(self.digest, celldata, model=model, author=author, ver=ver)
-
-
 # in case recovery from /tmp fails hard-code here instead
 txt = """cell shape size facing top fill bg fo stroke sw sd so
 a       circle  small   all     False   #000    #00F    1.0
