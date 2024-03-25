@@ -123,17 +123,36 @@ class Palette(Geometry):
     self.opacity = self.read_opacity()
     self.zeroten = [n for n in range(1, 11)]
 
-  def create(self, items):
-    ''' for palette creation see celldata.py
+
+  ''' print a SQL string to STDOUT
+  def create_colour_table(self, colours):
+    sql = "'),\n('".join(colours)
+    print(f"INSERT INTO colours (fill) VALUES \n('{sql}');")
+
+  '''
+  def create_colours(self, colours):
+    ''' add new colour as required for palette creation
     '''
-    pass
+    if len(colours):
+      for col in colours:
+        self.cursor.execute("""
+INSERT INTO colours (fill) VALUES (%s);""", [col])
+
+  def create_palette_entry(self, palette):
+    ''' ver should be next increment ID of palette
+        palette is an array used to create the colour entries
+    '''
+    for p in palette: 
+      ver, fill, opacity, bg, relation = p # re-order
+      self.cursor.execute("""
+INSERT INTO palette (ver, fill, bg, opacity, relation) VALUES (%s, %s, %s, %s, %s);
+""", [ver, fill, bg, opacity, relation])
 
   def swap_palette(self, celldata, ver, view, old_ver=0):
     ''' WARN: we break the golden "Rinks Are Immutable" rule
       the reason is that collapsing universal palette requires rinks to be moved to a new palette
       so we update a view generated with universal palette to use another
     '''
-    #print(celldata)
     # old_pid = self.read_pid(ver=old_ver, palette=['#FFF', '#9ACD32', '0.5'])
     pids = list()
     for items in celldata: # get old and new pids
@@ -148,7 +167,7 @@ class Palette(Geometry):
     for new_old in set(pids): # send uniq pids for update
       print(f"new pid = {new_old[0]} view {new_old[1]} old pid = {new_old[2]}")
       self.cursor.execute("""UPDATE cells SET pid = %s WHERE view = %s AND pid = %s;""", new_old)
-    #[self.cursor.execute("""UPDATE cells SET pid = %s WHERE pid = %s;""", [new_old]) for new_old in pids]
+    self.cursor.execute("""UPDATE views SET ver = %s WHERE view = %s;""", [ver, view])
     return self.cursor.rowcount
 
   def read_item(self, pid):
@@ -274,12 +293,10 @@ FROM colours;""", [])
   def load_palette(self, ver=None):
     ''' used to validate inputs from tmpfile
     '''
-    ver = ver if ver else self.ver  # override for tester
-    if ver is not None:  # universal is zero
-      self.read_palette(ver)
-      #print(len(self.palette))
-      if len(self.palette) == 0:
-        raise ValueError(f"what version are you on about {ver}")
+    ver = ver if ver in range(10) else self.ver  # override for tester
+    self.read_palette(ver)
+    if len(self.palette) == 0:
+      raise ValueError(f"what version are you on about {ver}")
 
   def generate_any(self, ver=None):
     ver = ver if ver else self.ver

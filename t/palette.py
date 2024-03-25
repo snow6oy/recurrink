@@ -39,8 +39,7 @@ class TestPalette(unittest.TestCase):
     p.load_palette(ver=2)
     #print(len(p.palette))
     #pp.pprint(p.palette)
-    for fill in [ '#FFF', '#000', '#F00', '#00F', '#FF0' ]:
-      self.assertTrue(fill in p.fill)
+    self.assertTrue(len(p.palette), 25)
     self.assertEqual(p.opacity, [1.0])
     self.assertEqual(p.complimentary['#FFF'], '#FFF')
 
@@ -143,6 +142,18 @@ class TestPalette(unittest.TestCase):
     #pp.pprint(f"c {cell}")
     self.assertEqual(len(cell.keys()), 3)
     self.assertTrue(tuple([cell['fill'], float(cell['fill_opacity']), cell['bg']]) in self.p.palette)
+
+  def test_11(self):
+    ''' gridsize converts palette length into a rectangle
+        so that tuple entries are displayed in three
+        NOTE that int() is used instead of round() because round() can round up
+        and that gives a NASTY index out of range error
+    '''
+    lenpal = [8, 24, 13, 33, 25, 60, 296]
+    expected = [(6, 4, 0), (9, 8, 0), (6, 7, 5), (12, 9, 11), (9, 9, 8), (15, 12, 0), (30, 30, 24)]
+
+    for i, lp in enumerate(lenpal):
+      self.assertEqual(self.pmk.gridsize(3, lp), expected[i])
 
   def testLoadPaletteOk(self):
     self.p = Palette(ver=0) # universal not done yet

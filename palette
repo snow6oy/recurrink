@@ -6,9 +6,9 @@ from palette import PaletteMaker
 from tmpfile import TmpFile
 from views import Views
 pp = pprint.PrettyPrinter(indent=2)
-p = Palette(ver=None) # TODO Palette has to be initialised with ver. Why?
+pal = Palette(ver=None) # TODO Palette has to be initialised with ver. Why?
 pmk = PaletteMaker()
-friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'doris']
+friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar']
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def inputs():
   ''' get inputs from command line
@@ -19,13 +19,13 @@ def inputs():
   parser = argparse.ArgumentParser(prog='palette')
   subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
   parser_i = subparsers.add_parser('init', help='create palette config as tmpfile')
-  parser_i.add_argument("-p", "--palette", help='palette version to initialise', type=int, choices=range(1, 10))
+  parser_i.add_argument("-p", "--palette", help='palette version to initialise', type=int, choices=range(0, 10))
   parser_i.add_argument("-v", "--view", help='view to generate palette from')
   parser_u = subparsers.add_parser('update', help='update svg from config')
-  parser_u.add_argument("-p", "--palette", help='palette version to write as svg', type=int, choices=range(1, 10))
+  parser_u.add_argument("-p", "--palette", help='palette version to write as svg', type=int, choices=range(0, 10))
   parser_u.add_argument("-v", "--view", help='palette from view to write as svg')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
-  parser_c.add_argument("-p", "--palette", help='new palette to create', type=int, choices=range(1, 10), required=True)
+  parser_c.add_argument("-p", "--palette", help='new palette to create', type=int, choices=range(0, 10), required=True)
   parser_c.add_argument("-v", "--view", help='swap view to use palette')
   parser_m = subparsers.add_parser('cmp', help='compare palettes: tmpfile to db')
   parser_m.add_argument("-p", "--palette", help='read palette from version in db', type=int, choices=range(0, 10), required=True)
@@ -37,63 +37,81 @@ def init(ver, digest):
   '''
   fn = str()
   palette = set() # need to flaten as same PID can belong to many cells
-  if ver: # export from palette table
+  if ver in range(10): # export from palette table
     fn = friendly_name[ver]
-    p.load_palette(ver=ver)
-    palette = set(p.palette)
+    print(fn)
+    pal.load_palette(ver=ver)
+    pp.pprint(palette)
+    palette = set(pal.palette)
   elif digest: # export view as palette
     fn = digest
-    palette = set(p.read_view(fn))
+    palette = set(pal.read_view(fn))
   else:
     raise ValueError("init needs either a palette or view")
-  # pp.pprint(palette)
   pmk.export_txtfile(fn, palette) 
   return f"{fn}.txt was written"
 
 def update(ver, digest):
   ''' tmpfile to svg 
   '''
-  fn = friendly_name[ver] if ver else digest
+  fn = friendly_name[ver] if ver in range(10) else digest
   if fn is None:
     raise ValueError("empty palette: check input?")
   else:
     palette = pmk.import_txtfile(fn)
     #pp.pprint(palette)
-    x, grid = pmk.grid(palette)
-    pmk.root(x * 60, len(grid) * 60)
-    pmk.make(grid, verbose=False)
+    gs = pmk.gridsize(3, len(palette))
+    #        ver 3 ok       5 ok       4 ok       6 ok        2 ok       1 ok         0
+    expected = [(6, 4, 0), (9, 8, 0), (6, 7, 1), (12, 9, 4), (9, 9, 3), (15, 12, 0), (30, 30, 6)]
+    gs = (30, 30, 24)
+    print(gs, len(palette))
+    x, grid = pmk.grid(palette, gs)
+    pmk.root(gs[0] * 60, gs[1] * 60)
+    pmk.make(grid, verbose=True)
     pmk.write(fn)
     return f"{fn}.svg was written"
 
 def commit(ver, digest=None):
-  msg = None
+  msg = str()
   if ver > len(friendly_name):
     raise IndexError(f"no friendly name for {ver}")
-  elif ver and digest:
+  fn = friendly_name[ver]
+  if ver and digest:
     ''' 1. export view using recurrink init -v --> /tmp/MODEL.txt
         2. export pal from using palette init -p
     '''
     tf = TmpFile()
     v = Views() # obtain model from view
     model = v.read_meta(digest)[0]
-    #celldata = tf.read(model, output=list())
-    #numupdated = p.swap_palette(celldata, ver, fn)
-    #print(f"{numupdated} pids were migrated to {friendly_name[ver]}")
-    msg = f"swapped {digest} to palette {friendly_name[ver]}"
-  else:
+    celldata = tf.read(model, output=list())
+    numupdated = pal.swap_palette(celldata, ver, digest)
+    msg = f"update {numupdated} view, swapping {digest} to palette {fn}"
+  elif ver:
     ''' convert palette in tmpfile to sql INSERT but first manually 
     create tmpfile NEW_PAL.txt 
     add NEW_PAL to friendly_name
     use the index of friendly_name[] as arg
     '''
-    fn = friendly_name[ver]
+    new_pal = list()
     palette = pmk.import_txtfile(fn)
-    missing_colours = pmk.colour_check(p, palette)
-    if missing_colours:
-      pass
-      #compliment = pmk.compliment(palette)
-      #TODO get new colours pmk.create_colour_table(s.colours)
-    pmk.create_palette_table(palette, ver, missing_colours)
+    missing_colours = pmk.colour_check(pal, palette)
+    if missing_colours: # add any new colours 
+      pal.create_colours(missing_colours)
+      msg = f"{len(missing_colours)} new colours "
+    pal.read_palette(ver)
+    for p in palette: # avoid duplicating existing entry
+      p[1] = float(p[1])
+      test_entry = tuple(p[:3]) 
+      if (test_entry not in pal.palette): # its empty the very first time
+        new_pal.append(list(test_entry))
+    for n in new_pal: # decorate palette before INSERTing
+      rn = pmk.relation(n[0], n[2])
+      n.append(rn)
+      n.insert(0, ver)
+    pal.create_palette_entry(new_pal)
+    msg += f"{len(new_pal)} new entries"
+  else:
+    raise ValueError("cannot commit: missing parameters {ver} or {digest} or both")
   return msg
 
 def compare(ver, digest):

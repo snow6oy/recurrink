@@ -1,29 +1,10 @@
 import xml.etree.ElementTree as ET
+import math
 import pprint
 from tmpfile import TmpFile
 from cell import Palette, Strokes
 from colorsys import rgb_to_hsv, hsv_to_rgb
 pp = pprint.PrettyPrinter(indent = 2)
-
-'''
-                                ver     f_name  view
-1: db to tmpfile                y       y       -
-2: tmpfile to svg               -       y       -       
-3: create palette from tmpfile  -       y       -
-7: export view as tmp/pal       -       -       y
-8: compare palettes             -       y       y
-
-move to t/palette
-4: unit tests fg/bg relations   -       y       -
-
-move to recurrink
-6: upd db.cells opacity         y       -       -
-9: upd db.cells swap pal view   y       y       y
-
-delete
-5: upd pal from  tmpfile        -       y       -
-'''
-
 
 class PaletteMaker:
   ''' tool for updating tutorial/palette.pdf
@@ -41,30 +22,6 @@ class PaletteMaker:
     self.ns = ns
     self.root = root
 
-  def grid(self, palette):
-    ''' create a grid with metadata
-    '''
-    grid = list() # list of rows on y axis
-    maxrow = 0
-    for p in palette:
-      if len(p) == 4:
-        fill, opacity, bg, ct = p
-      else:
-        fill, opacity, bg = p
-        ct = None
-      row = list()
-      if ct and ct == 'y':
-        row.append({ 'fg': fill, 'op': 1, 'bg': None, 'ct': True })
-      else:
-        row.append({ 'fg': fill, 'op': 1, 'bg': None, 'ct': False })
-      row.append({ 'fg': bg, 'op': 1, 'bg': None, 'ct': False })
-      if float(opacity) < 1:
-        row.append({ 'fg': fill, 'op': opacity, 'bg': bg, 'ct': False })
-      if len(row) > maxrow:
-        maxrow = len(row)
-      grid.append(row)
-    return maxrow, grid
-
   def make(self, grid, verbose=False):
     for y, col in enumerate(grid):
       for x, row in enumerate(col):
@@ -78,26 +35,87 @@ class PaletteMaker:
       if verbose:
         print()
     txtg = ET.SubElement(self.root, f"{self.ns}g", id="0")
-    txtg.set("style", "fill:#FFF;stroke:#000;stroke-width:0.1;")
+    txtg.set("style", "fill:#FFF;stroke:#000;stroke-width:0.2;")
     for y, col in enumerate(grid):
       for x, row in enumerate(col):
         txt = row['op'] if row['bg'] else row['fg']
-        if row['ct'] == True:
-          txt += ' *'
+        #if row['ct'] == True:
+        #  txt += ' *'
         if txt:
           self.label(txtg, txt, x, y, xid)
+
+  def grid(self, palette, gridsize):
+    ''' create a grid with metadata
+        x,y defines the grid size
+        i,j refer to palette entries
+    '''
+    grid = list() # list of rows on y axis
+    maxrow = 3
+    palette.sort(key=lambda x: x[0]) # sort by fill TODO sort by relation and remove 
+    i = j = 0
+    print(len(palette))
+    if gridsize[2]: # apply padding
+      [palette.append([None, 1, None]) for pad in (range(gridsize[2]))]
+    print(len(palette))
+
+    for y in range(gridsize[1]):
+      row = list()
+      for x in range(gridsize[0]):
+        i = i + 1 if x % maxrow else 0 # count 0,1,2 in relation to x
+        #print(f"{i} {j}")
+        p = palette[j][i]
+        if i == 0: 
+          fg = p
+          row.append({ 'fg': fg, 'op': 1, 'bg': None })
+        elif i == 1:
+          if float(p) < 1:
+            bg = palette[j][2]
+            row.append({ 'fg': fg, 'op': p, 'bg': bg })
+          else:
+            row.append({ 'fg': None, 'op': None, 'bg': None })
+        if i == 2:
+          row.append({ 'fg': p, 'op': 1, 'bg': None })
+          #print(f"{j}", end= ' ', flush=True)
+        j = j + 1 if i == 2 else j
+      grid.append(row)
+      #print()
+    return maxrow, grid
+
+  def gridsize(self, x, y):
+    ''' from the maxrow size x, calculate y 
+        result should be a rectangle with slightly more cols than rows
+        NOTE that int() is used because round() up
+        yields a VERY NASTY index out of range error
+    '''
+    padding = 0
+    cells = x * y
+    square_root = round(math.sqrt(cells))
+    #print(f"x1 {x} y1 {y} c {cells} sqrt {square_root}")
+    for i in range(square_root, y):
+      n = i % x
+      if not n:
+        x = i
+        break
+    y = int(cells / x)
+    slots = x * y     # do we have stragglers?
+    if cells > slots: # add extra row + padding to align with x
+      y += 1
+      padding = x - ((cells - slots) / 3)
+    #print(f"x2 {x} y2 {y} s {slots} p{int(padding)}")
+    #print()
+    return x, y, int(padding)
 
   def label(self, txtg, text, x, y, xid):
     t = ET.SubElement(txtg, f"{self.ns}text", id=xid)
     t.text = str(f'{text}')
-    tx = (x * 60) + 10
+    tx = (x * 60) + 5 
     ty = (y * 60) + 50
     t.set("x", str(tx))
     t.set("y", str(ty))
 
   def color(self, xid, fill, opacity, x, y):
     g = ET.SubElement(self.root, f"{self.ns}g", id=f"g-{xid}")
-    style = f"fill:{fill};fill-opacity:{opacity};stroke:#FFF;stroke-width:1"
+    style = f"fill:{fill};fill-opacity:{opacity};stroke:#FFF;stroke-width:5"
     g.set("style", style)
     rect = ET.SubElement(g, f"{self.ns}rect", id=f"r-{xid}")
     rect.set("x", str(x * 60))
@@ -277,61 +295,3 @@ class PaletteMaker:
           # print(x)
           same += 1
     return same
-
-if __name__ == '__main__':
-  pmk = PaletteMaker()
-  friendly_name=['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa']
-  ver = 4
-  fn = friendly_name[ver] if False else '0b396143d41f9dadb07c0fb3b47446df'
-  #'15ff3a9dd88436a0fffa87aad8904784'
-  opt = 9
-  p = Palette(ver=ver)
-  if opt == 1: # db to tmpfile
-    p.load_palette(ver=ver)
-    pmk.export_txtfile(fn, p.palette)
-  elif opt == 2: # tmpfile to svg
-    palette = pmk.import_txtfile(fn)
-    x, grid = pmk.grid(palette)
-    #pp.pprint(grid)
-    pmk.root(x * 60, len(grid) * 60)
-    pmk.make(grid)
-    pmk.write(fn)
-  elif opt == 3: # tmpfile to sql
-    palette = pmk.import_txtfile(fn)
-    missing_colours = pmk.colour_check(p, palette)
-    #print(missing_colours)
-    #compliment = pmk.compliment(palette)
-    #TODO get new colours pmk.create_colour_table(s.colours)
-    pmk.create_palette_table(palette, ver, missing_colours)
-  elif opt == 4: # run some compliment tests
-    # DC143C crimson #C71585 mediumvioletred #FFA500 orange #32CD32 limegreen #4B0082 indigo
-    [print(f, pmk.secondary(f)) for f in ['#dc143c', '#c71585', '#ffa500' ,'#32cd32', '#4b0082']]
-    [print(f, pmk.secondary(f)) for f in ['#ff0000', '#ffff00', '#0000ff' ,'#ffffff', '#000000']]
-  elif opt == 5: # tmpfile to sql
-    palette = pmk.import_txtfile(fn)
-    pmk.update_palette_table(palette, ver)
-  elif opt == 6: # collapse opacity
-    # op, pid = pmk.find_opacity(ver, ['#FFA500', 0.9, '#000'], p)
-    # op, pid = pmk.find_opacity(ver, ['#CCC', 0.9, '#9ACD32'], p)
-    # op, pid = pmk.find_opacity(ver, ['#C71585', 0.6, '#FFF'], p)
-    # print(0.6, op, pid) 
-    pmk.collapse_opacity(ver, p)
-  elif opt == 7: # export view as palette
-    palette = p.read_view(fn) # TODO Palette was initialised with ver but it was ignored. Hmmm
-    # pp.pprint(set(palette))
-    pmk.export_txtfile(fn, set(palette)) # need to flaten as same PID can belong to many cells
-  elif opt == 8: # compare palettes
-    new_pal = pmk.import_txtfile(fn)
-    candidate = pmk.import_txtfile(friendly_name[ver])
-    cmp = pmk.cmp_pal(new_pal, candidate)
-    print(f"{len(new_pal):3d} {fn}")
-    print(f"{len(candidate):3d} {friendly_name[ver]}")
-    print(f"{cmp:3d} matching palette entries")
-  elif opt == 9:
-    tf = TmpFile()
-    model = 'bossa' # TODO obtain from view
-    celldata = tf.read(model, output=list())
-    numupdated = p.swap_palette(celldata, ver, fn)
-    print(f"{numupdated} pids were migrated to {friendly_name[ver]}")
-  else:
-    print("9 is the Very Last option")

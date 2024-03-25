@@ -11,7 +11,7 @@ from tmpfile import TmpFile
 #pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
-friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa']
+friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar']
 WORKDIR = '/home/gavin/Dropbox/familia/rinks'
 PUBDIR = '/home/gavin/Pictures/pubq'
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''

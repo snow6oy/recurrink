@@ -1,10 +1,10 @@
 -- views with pids in universal
-SELECT distinct(view) as v, count(palette.pid) as pnum
+SELECT distinct(view) as v, count(distinct(palette.pid)) as pnum
 FROM palette
 LEFT JOIN cells ON cells.pid = palette.pid
 WHERE ver = 0
 GROUP BY v
-ORDER BY pnum DESC
+ORDER BY pnum ASC
 
 -- frequency of versions in views
 -- SELECT count(ver), ver 
