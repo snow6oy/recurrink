@@ -250,7 +250,8 @@ ORDER BY relation;""", [ver])
     self.cursor.execute("""
 SELECT fill, opacity, bg
 FROM palette
-WHERE ver = %s;""", [ver])
+WHERE ver = %s
+ORDER BY relation, fill, opacity;""", [ver])
     self.palette = self.cursor.fetchall()
     self.read_compliment(ver)
 

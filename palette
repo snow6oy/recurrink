@@ -39,10 +39,9 @@ def init(ver, digest):
   palette = set() # need to flaten as same PID can belong to many cells
   if ver in range(10): # export from palette table
     fn = friendly_name[ver]
-    print(fn)
     pal.load_palette(ver=ver)
-    pp.pprint(palette)
-    palette = set(pal.palette)
+    #pp.pprint(pal.palette)
+    palette = pal.palette # keep order so relations are grouped
   elif digest: # export view as palette
     fn = digest
     palette = set(pal.read_view(fn))
@@ -61,10 +60,6 @@ def update(ver, digest):
     palette = pmk.import_txtfile(fn)
     #pp.pprint(palette)
     gs = pmk.gridsize(3, len(palette))
-    #        ver 3 ok       5 ok       4 ok       6 ok        2 ok       1 ok         0
-    expected = [(6, 4, 0), (9, 8, 0), (6, 7, 1), (12, 9, 4), (9, 9, 3), (15, 12, 0), (30, 30, 6)]
-    gs = (30, 30, 24)
-    print(gs, len(palette))
     x, grid = pmk.grid(palette, gs)
     pmk.root(gs[0] * 60, gs[1] * 60)
     pmk.make(grid, verbose=True)

@@ -51,12 +51,9 @@ class PaletteMaker:
     '''
     grid = list() # list of rows on y axis
     maxrow = 3
-    palette.sort(key=lambda x: x[0]) # sort by fill TODO sort by relation and remove 
     i = j = 0
-    print(len(palette))
     if gridsize[2]: # apply padding
       [palette.append([None, 1, None]) for pad in (range(gridsize[2]))]
-    print(len(palette))
 
     for y in range(gridsize[1]):
       row = list()
