@@ -110,9 +110,11 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return meta
 
-  def generate(self, model=None, ver=0):  # universal by default
+  #def generate(self, model=None, ver=0): 
+  def generate(self, ver, model=None): 
     m = Models()
     model = m.generate() if model is None else model
+    #ver = ver if ver else random.choice(range(1, 6)) 
     compass = Compass(model) # compass.conf will be None for unknown models
     uniqcells = m.read_positions(model, output=list())
     topcells = m.topcells(model)
