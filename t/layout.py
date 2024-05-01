@@ -1,6 +1,6 @@
 import unittest
 import pprint
-from svgfile import Layout
+from outfile import Layout
 pp = pprint.PrettyPrinter(indent = 2)
 
 class TestLayout(unittest.TestCase):
@@ -12,11 +12,12 @@ class TestLayout(unittest.TestCase):
       (1, 0): ('b', 'd'),  # d is only top
       (2, 0): ('c',None)
     }
+    ''' celldata for minkscape '''
     self.cells = {
       'a': {
         'bg': '#CCC', 'fill': '#FFF', 'fill_opacity': 1.0,
-        #'shape': 'circle', 'facing': 'all', 'size': 'medium', 'top': False,
-        'shape': 'square', 'facing': 'all', 'size': 'medium', 'top': False,
+        'shape': 'circle', 'facing': 'all', 'size': 'medium', 'top': False,
+        #'shape': 'square', 'facing': 'all', 'size': 'medium', 'top': False,
         'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
       },
       'b': {
@@ -27,8 +28,8 @@ class TestLayout(unittest.TestCase):
       'c': {
         'bg': '#CCC', 'fill': '#000', 'fill_opacity': 1.0,
         'shape': 'square', 'facing': 'all', 'size': 'small', 'top': True,
-        'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 1.0, 'stroke_width': 0, 
-        #'stroke': '#000', 'stroke_dasharray': 3, 'stroke_opacity': 1.0, 'stroke_width': 9, 
+        #'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 1.0, 'stroke_width': 0, 
+        'stroke': '#000', 'stroke_dasharray': 3, 'stroke_opacity': 1.0, 'stroke_width': 9, 
       },
       'd': {
         'bg': '#CCC', 'fill': '#FFF', 'fill_opacity': 1.0,
@@ -37,16 +38,22 @@ class TestLayout(unittest.TestCase):
       }
     }
 
-  def testSize(self):
+  def test_0(self):
     ''' size will be divided by scale
     '''
     self.assertEqual(self.lt.cellsize, 60)
 
-  def testScale(self):
+  def test_1(self):
     expected = [36, 18, 12, 9]
     for i, s in enumerate([0.5, 1.0, 1.5, 2.0]):
       l5 = Layout(scale=s) # 8 is the 8th scale which is 0.5. size / 0.5 = 108.0
       self.assertEqual(l5.grid, expected[i])
+
+  def test_2(self):
+    self.lt.uniqstyle('a', 'bg', False) 
+    self.lt.rendercell('bg', 'a', 'a', False, 0, 0, 0, 0) # layer, cell, c, t, gx, x, gy, y
+    bg = self.lt.doc[0]['shapes'][0]
+    self.assertEqual(bg['name'], 'rect')
 
   def test_3(self):
     ''' copy from cells into styles and check they arrived ok
@@ -87,29 +94,22 @@ class TestLayout(unittest.TestCase):
         self.assertTrue("fill:#FFF;fill-opacity:1.0" in self.lt.styles)
       self.lt.styles.clear()
 
-  def testFindStyle(self):
+  def test_4(self):
+    ''' find style '''
     [self.lt.uniqstyle(c, 'bg', self.cells[c]['top']) for c in self.cells]
     #pp.pprint(self.lt.styles)
     style = self.lt.findstyle('a')
     self.assertTrue("fill:#CCC;stroke-width:0", style)
 
-  def test_1(self):
-    self.lt.gridwalk((3, 1), self.positions, self.cells)
-    self.lt.write('/tmp/minkscape.svg')
+  def test_5(self):
+    ''' walk the grid and test if the number of background cells matches gridsize 
+    '''
+    expected_bg = self.lt.grid * self.lt.grid
     numof_bg = 0
-    for g in list(self.lt.root.iter(tag=f"{self.lt.ns}g")):
-      gid = g.get('id')
-      if int(gid) == 1:
-        numof_bg = len(list(g.iter())[1:]) # the first item is g so ignore it
-    self.assertEqual(numof_bg, (self.lt.grid * self.lt.grid))
-
-  # TODO
-  def testRenderCell(self):
-    self.lt.uniqstyle('a', 'bg', False) 
-    self.lt.rendercell('bg', 'a', 'a', False, 0, 0, 0, 0) # layer, cell, c, t, gx, x, gy, y
-    bg = self.lt.root[1][0]
-    self.assertEqual(bg.get('id'), '2')
-
+    self.lt.gridwalk((3, 1), self.positions, self.cells)
+    #pp.pprint(self.lt.doc[0]['shapes'])
+    numof_bg = len(self.lt.doc[0]['shapes'])
+    self.assertEqual(numof_bg, expected_bg)
   '''
   the
   end

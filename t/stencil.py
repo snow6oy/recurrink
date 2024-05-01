@@ -4,7 +4,7 @@
 '''
 import unittest
 import pprint
-from svgfile import Stencil
+from outfile import Stencil
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestStencil(unittest.TestCase):
@@ -59,18 +59,24 @@ class TestStencil(unittest.TestCase):
     self.s = Stencil('soleares', data)
     self.data = data
 
-  def testColourMap(self):
+  def test_0(self):
+    ''' Count Colour 
+    '''
+    uniq = self.s.colours()
+    self.assertEqual(len(uniq), 2)
+ 
+  def test_1(self):
+    ''' Colour Map
+    '''
     uniq = self.s.colours()
     #[print(colour) for colour in uniq]
     #pp.pprint(self.s.colmap)
     a_bg = self.s.colmap[1]
     self.assertEqual(a_bg, ('a', 'ccc', 'bg'))
 
-  def testCountColour(self):
-    uniq = self.s.colours()
-    self.assertEqual(len(uniq), 2)
- 
-  def testMonochrome(self):
+  def test_2(self):
+    ''' Monochrome
+    '''
     expected = { 'a': '#000', 'b': '#FFF', 'c': '#FFF', 'd': '#FFF' }
     uniq = self.s.colours()
     cccdata = self.s.monochrome('ccc', self.data) # make a stencil for grey only

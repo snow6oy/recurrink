@@ -3,7 +3,7 @@ import pprint
 import filecmp
 import unittest
 from views import Views, Models, Blocks
-from svgfile import Layout
+from outfile import Svg
 from tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 class TestE2E(unittest.TestCase):
@@ -37,15 +37,17 @@ class TestE2E(unittest.TestCase):
     blocksize = m.read(model=model)[2] # can get scale too
     #positions = b.read()
     positions = m.read_positions(model)
-    lt = Layout(scale=scale)
-    print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
+    #lt = Layout(scale=scale)
+    svg = Svg(scale=scale)
+    print(f"s {svg.scale} c {svg.cellsize} g {svg.grid}")
     self.assertTrue(scale)
-    self.assertEqual(lt.cellsize, 60)
-    self.assertEqual(lt.grid, 18)
+    self.assertEqual(svg.cellsize, 60)
+    self.assertEqual(svg.grid, 18)
     cells = tf.read(model, output=dict())
     v.validate(cells, ver=ver)
-    lt.gridwalk(blocksize, positions, cells)
-    lt.write(f'/tmp/{model}.svg')
+    svg.gridwalk(blocksize, positions, cells)
+    svg.make()
+    svg.write(f'/tmp/{model}.svg')
     ok = filecmp.cmp(f'/tmp/{model}.svg', f't/{model}.svg')
     self.assertTrue(ok)
   def test_3(self):
