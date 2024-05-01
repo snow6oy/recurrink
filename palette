@@ -30,6 +30,7 @@ def inputs():
   parser_m = subparsers.add_parser('cmp', help='compare palettes: tmpfile to db')
   parser_m.add_argument("-p", "--palette", help='read palette from version in db', type=int, choices=range(0, 10), required=True)
   parser_m.add_argument("-v", "--view", help='read palette from view in tmpfile', required=True)
+  parser_m = subparsers.add_parser('list', help='list palettes')
   return parser.parse_args()
 
 def init(ver, digest):
@@ -122,6 +123,7 @@ def compare(ver, digest):
 {cmp:3d} matching palette entries"""
 
 
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
   args = inputs()
@@ -133,6 +135,8 @@ if __name__ == '__main__':
     print(compare(args.palette, args.view))
   elif (args.keyword == 'update'):
     print(update(args.palette, digest=args.view))
+  elif (args.keyword == 'list'):
+    [print(f"{i}\t{name}") for i, name in enumerate(friendly_name)]
   '''
   the 
   end

@@ -7,7 +7,7 @@ import random
 import argparse
 import pprint
 from views import Views, Models
-from svgfile import Layout, Stencil
+from outfile import Svg, Stencil
 from tmpfile import TmpFile
 #pp = pprint.PrettyPrinter(indent=2)
 m = Models()
@@ -100,7 +100,6 @@ def init(model=None, ver=None, digest=None):
 def update(model, scale):
   ''' generate an SVG using ElementTree
   '''
-  #m = Models()
   model_conf, palette = tf.conf()
   model = model_conf if model is None else model
   ver = friendly_name.index(palette)
@@ -108,12 +107,13 @@ def update(model, scale):
   blocksize = m.read(model=model)[2] # can get scale too
   svgfile = f'/tmp/{model}.svg'
   positions = m.read_positions(model)
-  lt = Layout(scale=s)
+  svg = Svg(scale=s)
   #print(f"s {lt.scale} c {lt.cellsize} g {lt.grid}")
   cells = tf.read(model, output=dict())
   v.validate(cells, ver=ver)
-  lt.gridwalk(blocksize, positions, cells)
-  lt.write(svgfile)
+  svg.gridwalk(blocksize, positions, cells)
+  svg.make()
+  svg.write(svgfile)
   return f"{svgfile} {s}"
 
 def delete(view):

@@ -1,8 +1,24 @@
-import xml.etree.ElementTree as ET
+import math
 import pprint
-#from mecode import G
+import xml.etree.ElementTree as ET
 from gcwriter import GcodeWriter
 pp = pprint.PrettyPrinter(indent = 2)
+
+class Points:
+  ''' nw n ne    do the maths to render a cell
+      w  c  e    points are calculated and called as p.ne p.nne p.s
+      sw s se
+  '''
+  def __init__(self, x, y, stroke_width, size):
+    self.n  = [x + size / 2,              y + stroke_width]
+    self.e  = [x + size - stroke_width,   y + size / 2]
+    self.s  = [x + size / 2,              y + size - stroke_width]
+    self.w  = [x + stroke_width,          y + size / 2]
+    self.ne = [x + size - stroke_width,   y + stroke_width] 
+    self.se = [x + size - stroke_width,   y + size - stroke_width]
+    self.nw = [x + stroke_width,          y + stroke_width]
+    self.sw = [x + stroke_width,          y + size - stroke_width]
+    self.mid= [x + size / 2,              y + size / 2]
 
 class Shapes():
 
@@ -14,14 +30,37 @@ class Shapes():
     size = cell['size']
     hsw = cell['stroke_width'] / 2
     sw = cell['stroke_width']
-    #p = Points(x, y, sw, self.cellsize)
+    p = Points(x, y, sw, self.cellsize)
 
-    if shape == 'square':
+    if shape == 'circle':
+      self.circle(size, sw, p, g)
+    elif shape == 'square':
       self.square(x, y, size, hsw, sw, g)
     elif shape == 'line':
       self.line(x, y, facing, size, hsw, sw, g)
+    elif shape == 'triangl':
+      self.triangle(facing, p, g)
+    elif shape == 'diamond':
+      self.diamond(facing, p, g)
     else:
-      print(f"unknown {shape}")
+      print(f"Warning: do not know {shape}")
+      self.text(shape, x, y, g)
+
+  def circle(self, size, stroke_width, p, g):
+    cs = self.cellsize
+    if size == 'large': 
+      cs /= 2
+      sum_two_sides = (cs**2 + cs**2) # pythagoras was a pythonista :)
+      r = math.sqrt(sum_two_sides) - stroke_width
+    elif size == 'medium':
+      r = (cs / 2 - stroke_width) # normal cs
+    elif size == 'small':
+      r = (cs / 3 - stroke_width) 
+    else:
+      raise ValueError(f"Cannot set circle to {size} size")
+    g.append({
+      'name': 'circle', 'cx': str(p.mid[0]), 'cy': str(p.mid[1]), 'r': str(r)
+    })
 
   def square(self, x, y, size, hsw, sw, g):
     cs = self.cellsize
@@ -91,6 +130,43 @@ class Shapes():
     g.append({
       'name': 'rect', 'x': x, 'y': y, 'width': width, 'height': height
     })
+
+  def triangle(self, facing, p, g):
+    if facing == 'west': 
+      points = p.w + p.ne + p.se + p.w
+    elif facing == 'east': 
+      points = p.nw + p.e + p.sw + p.nw
+    elif facing == 'north': 
+      points = p.sw + p.n + p.se + p.sw
+    elif facing == 'south':
+      points = p.nw + p.ne + p.s + p.nw
+    else:
+      raise ValueError(f"Cannot face triangle {facing}")
+    g.append({
+      'name': 'polygon', 
+      'points': ','.join(map(str, points))
+    })
+
+  def diamond(self, facing, p, g):
+    if facing == 'all': 
+      points = p.w + p.n + p.e + p.s + p.w
+    elif facing == 'west': 
+      points = p.w + p.n + p.s + p.w
+    elif facing == 'east': 
+      points = p.n + p.e + p.s + p.n
+    elif facing == 'north': 
+      points = p.w + p.n + p.e + p.w
+    elif facing == 'south':
+      points = p.w + p.e + p.s + p.w
+    else:
+      raise ValueError(f"Cannot face diamond {facing}")
+    g.append({
+      'name': 'polygon', 
+      'points': ','.join(map(str, points))
+    })
+
+  def text(self, name, x, y, g):
+    g.append({ 'name': name, 'x': x, 'y': y })
 
 class Layout(Shapes):
   ''' expand cells and draw across grid
@@ -163,7 +239,7 @@ class Layout(Shapes):
     return self.doc[-1]['shapes']
 
   def rendercell(self, layer, cell, c, t, gx, x, gy, y):
-    ''' gather inputs and call Svg()
+    ''' gather inputs call Shapes() and add shape to group
     '''
     X = (gx + x) * self.cellsize # this logic is the base for Points
     Y = (gy + y) * self.cellsize
@@ -212,6 +288,68 @@ class Layout(Shapes):
       raise ValueError(f"{cell} aint got no style (hint: cannot make bg for topcell?)")
     return found
 
+class Stencil:
+  ''' accept a cell dictionary and for each unique colour
+      create a new view as a black white negative
+      return a set of views
+  ''' 
+  def __init__(self, model, data):
+    self.model = model
+    self.data = data # read-only copy for generating colmap
+
+  def colours(self):
+    ''' colour counter depends on shape
+    '''
+    seen = dict()
+    keys = list()
+    for cell in self.data:
+      c = self.data[cell]
+      fo = float(c['fill_opacity'])
+      if fo >= 1:  # background is irrelevant when foreground is opaque
+        if c['shape'] == 'square' or c['shape'] == 'circle' and c['size'] == 'large':
+          keys.append(tuple([cell, self.composite(c['fill']), 'fill']))
+        else:
+          keys.append(tuple([cell, self.composite(c['fill']), 'fill']))
+          keys.append(tuple([cell, self.composite(c['bg']), 'bg']))
+      else:
+        #name = self.composite(c['fill'], c['bg'], c['fill_opacity'])
+        name = self.composite(c['fill'], c['bg'], fo)
+        keys.append(tuple([cell, name, 'fill']))
+        keys.append(tuple([cell, self.composite(c['bg']), 'bg']))
+      if c['stroke_width']:
+        #name = self.composite(c['stroke'], c['bg'], c['fill_opacity'])
+        so = float(c['stroke_opacity'])
+        name = self.composite(c['stroke'], c['bg'], so)
+        keys.append(tuple([cell, name, 'stroke']))
+
+    self.colmap = keys # helps build a stencil later
+    for k in keys:
+      uniqcol = k[1]
+      if uniqcol in seen:
+        seen[uniqcol] += 1 
+      else:
+        seen[uniqcol] = 1
+    return list(seen.keys())
+ 
+  def monochrome(self, colour, celldata): # send a copy
+    ''' use the colmap to return a view with black areas where a colour matched
+        everything else is white
+    '''
+    for cell in celldata:
+      for area in ['fill', 'bg', 'stroke']:
+        found = [cm[2] for cm in self.colmap if cm[0] == cell and cm[1] == colour and cm[2] == area]
+        celldata[cell][area] = '#000' if len(found) else '#FFF'
+        celldata[cell]['fill_opacity'] = celldata[cell]['stroke_opacity'] = 1
+    return celldata
+
+  def composite(self, fill, bg=None, fo=None):
+    ''' dinky likkle method to make nice filenames
+    '''
+    fo = str(round(fo * 10)) if fo else '' # 0.7 > 7
+    bg = bg[1:] if bg else '' # remove the leading #
+    fn = ''.join([fill[1:], bg[1:], fo])
+    return fn.lower()
+
 class Svg(Layout):
   def __init__(self, scale, gridpx=1080, cellsize=60):
     # svg:transform(scale) does the same but is lost when converting to raster. Instagram !!!
@@ -241,15 +379,30 @@ class Svg(Layout):
       g.set('style', group['style'])
       for s in group['shapes']:
         uniqid += 1
-        #print(s['name'], s['x'], s['y'], s['width'], s['height'], str(uniqid) )
-        name, x, y, w, h = s['name'], s['x'], s['y'], s['width'], s['height']
-        shape = ET.SubElement(g, f"{self.ns}{name}", id=str(uniqid))
-        if name == 'rect':
-          shape.set("x", x)
-          shape.set("y", y)
-          shape.set("width", w)
-          shape.set("height", h)
-        # TODO add more shapes here
+        name = s['name']
+        #print(name, str(uniqid))
+        if name == 'circle':
+          circle = ET.SubElement(g, f"{self.ns}circle", id=str(uniqid))
+          circle.set('cx', s['cx'])
+          circle.set('cy', s['cy'])
+          circle.set('r', s['r'])
+        elif name == 'rect':
+          rect = ET.SubElement(g, f"{self.ns}rect", id=str(uniqid))
+          rect.set("x", s['x'])
+          rect.set("y", s['y'])
+          rect.set("width", s['width'])
+          rect.set("height", s['height'])
+        elif name == 'polygon':
+          polyg = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
+          polyg.set("points", s['points'])
+        else:
+          t = ET.SubElement(g, f"{self.ns}text", id=str(uniqid))
+          t.text = name
+          tx = s['x'] + 10
+          ty = s['y'] + 30
+          t.set("x", str(tx))
+          t.set("y", str(ty))
+          t.set("class", "{fill:#000;fill-opacity:1.0}")
 
   def write(self, svgfile):
     tree = ET.ElementTree(self.root)
