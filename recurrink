@@ -7,9 +7,9 @@ import random
 import argparse
 import pprint
 from views import Views, Models
-from outfile import Svg, Stencil
+from outfile import Svg, Stencil, Gcode
 from tmpfile import TmpFile
-#pp = pprint.PrettyPrinter(indent=2)
+pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
 friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar']
@@ -41,6 +41,8 @@ def inputs():
   parser_u.add_argument("-s", "--scale",  help="zoom control 0.5 - 2.0")
   parser_s = subparsers.add_parser('stencil', help='monochrome to etch screens')
   parser_s.add_argument("-v", "--view", help='view to make stencils from')
+  parser_s = subparsers.add_parser('gcode', help='write rink as gcode for plotter')
+  parser_s.add_argument("-v", "--view", help='view to plot')
   parser_p = subparsers.add_parser('release', help='add release date to db')
   parser_p.add_argument("-v", "--view", help='view to mark as released')
   return parser.parse_args()
@@ -170,17 +172,40 @@ def stencil(d):
   s = Stencil(model, cells)
   for colour in s.colours():
     fn = f"{model}_{colour}"
-    print(fn)
+    #print(fn)
     bwdata = s.monochrome(colour, cells)
     #pp.pprint(bwdata)
     lt.gridwalk(blocksize, positions, bwdata)
     lt.write(f'/tmp/{fn}.svg')
-  #pp.pprint(s.colmap)
   return f"{WORKDIR}/{model}/{d}\n"
 
 def release(d):
   v.update(d)
   return f"released today: {d}"
+
+def gcode(d):
+  d = '7e731bfc1863c186616d2b3de09a9b6b' # override for testing
+  outfile = None
+  model, _, scale, _ = v.read_meta(digest=d) # ignore author palette
+  blocksize = m.read(model=model)[2] # can get scale too
+  positions = m.read_positions(model)
+  '''
+  celldata = v.read(digest=d, output=list()) # cells without strokes are empty items
+  tf.write(model, celldata)  # writing is to ensure cells without strokes have keys
+  '''
+  cells = tf.read(model, output=dict())
+  pp.pprint(cells)
+  '''
+  s = Stencil(model, cells)
+  print(s.colours())
+  gc = Gcode(scale=scale, gridpx=6, cellsize=6)
+  gc.gridwalk(blocksize, positions, cells)
+  gc.make(['fill:#000', 'fill:#00F', 'fill:#F00', 'fill:#FF0', 'fill:#FFF'])
+  pp.pprint(gc.gcdata)
+  outfile = gc.write(model, fill='fill:#CCC')
+  return f"{model} {scale} {blocksize} written to {outfile}"
+  '''
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
   tf = TmpFile()
@@ -201,6 +226,10 @@ if __name__ == '__main__':
     print(stencil(args.view))
   elif (args.keyword == 'release'):
     print(release(args.view))
+  elif (args.keyword == 'gcode'):
+    print(gcode(args.view))
+  else:
+    pass
   '''
   the 
   end

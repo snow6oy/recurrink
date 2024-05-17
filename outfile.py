@@ -293,9 +293,10 @@ class Stencil:
       create a new view as a black white negative
       return a set of views
   ''' 
-  def __init__(self, model, data):
+  def __init__(self, model, data, gcode=False):
     self.model = model
     self.data = data # read-only copy for generating colmap
+    self.gcode = gcode # allow gcode to receive values formatted as fill:#ZZZ
 
   def colours(self):
     ''' colour counter depends on shape
@@ -306,13 +307,14 @@ class Stencil:
       c = self.data[cell]
       fo = float(c['fill_opacity'])
       if fo >= 1:  # background is irrelevant when foreground is opaque
-        if c['shape'] == 'square' or c['shape'] == 'circle' and c['size'] == 'large':
+        if c['shape'] == 'square' and c['size'] == 'large' or c['shape'] == 'square' and c['size'] == 'medium':
+          keys.append(tuple([cell, self.composite(c['fill']), 'fill']))
+        elif c['shape'] == 'circle' and c['size'] == 'large':
           keys.append(tuple([cell, self.composite(c['fill']), 'fill']))
         else:
           keys.append(tuple([cell, self.composite(c['fill']), 'fill']))
           keys.append(tuple([cell, self.composite(c['bg']), 'bg']))
       else:
-        #name = self.composite(c['fill'], c['bg'], c['fill_opacity'])
         name = self.composite(c['fill'], c['bg'], fo)
         keys.append(tuple([cell, name, 'fill']))
         keys.append(tuple([cell, self.composite(c['bg']), 'bg']))
@@ -345,10 +347,14 @@ class Stencil:
   def composite(self, fill, bg=None, fo=None):
     ''' dinky likkle method to make nice filenames
     '''
-    fo = str(round(fo * 10)) if fo else '' # 0.7 > 7
-    bg = bg[1:] if bg else '' # remove the leading #
-    fn = ''.join([fill[1:], bg[1:], fo])
-    return fn.lower()
+    fn = str()
+    if self.gcode:
+      fn = f"fill:{fill}"
+    else:
+      fo = str(round(fo * 10)) if fo else '' # 0.7 > 7
+      bg = bg[1:] if bg else '' # remove the leading #
+      fn = ''.join([fill[1:], bg[1:], fo]).lower()
+    return fn
 
 class Svg(Layout):
   def __init__(self, scale, gridpx=1080, cellsize=60):
@@ -419,10 +425,12 @@ class Gcode(Layout):
     self.cubesz = round(cellsize / 3)
     super().__init__(scale=scale, gridpx=gridpx, cellsize=cellsize)
 
-  def make(self):
+  def make(self, colours):
+    ''' colours  = ['fill:#CCC', 'fill:#FFF', 'fill:#000']
+    '''
     for group in self.doc:
       fill = None
-      for pencol in ['fill:#CCC', 'fill:#FFF', 'fill:#000']:
+      for pencol in colours:
         if pencol in group['style']:
           fill = pencol
       for cell in group['shapes']:
@@ -459,51 +467,7 @@ class Gcode(Layout):
       for X in range(x, (w + x), self.cubesz):
         moveto = tuple([X, Y])
         self.gcdata[moveto] = fill # top overwrites fg which overwrites bg
-
-
-if __name__ == '__main__':
-  positions = { 
-    (0, 0): ('a', 'c'),  # c is both cell and top
-    (1, 0): ('b', 'd'),  # d is only top
-    (2, 0): ('c',None)
-  }
-  cells = {
-    'a': {
-      'bg': '#CCC', 'fill': '#FFF', 'fill_opacity': 1.0,
-      'shape': 'square', 'facing': 'all', 'size': 'medium', 'top': False,
-      'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
-    },
-    'b': {
-      'bg': '#CCC', 'fill': '#000', 'fill_opacity': 1.0,
-      'shape': 'line', 'facing': 'north', 'size': 'medium', 'top': False,
-      'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
-    },
-    'c': {
-      'bg': '#CCC', 'fill': '#000', 'fill_opacity': 1.0,
-      'shape': 'square', 'facing': 'all', 'size': 'small', 'top': True,
-      'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 1.0, 'stroke_width': 0, 
-    },
-    'd': {
-      'bg': '#CCC', 'fill': '#FFF', 'fill_opacity': 1.0,
-      'shape': 'line', 'facing': 'east', 'size': 'large', 'top': True,
-      'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
-    }
-  }
-  '''
-  '''
-  if False:
-    svg = Svg(scale=1.0, gridpx=180) # 180px / 60px = 3 cells high and 3 cells wide
-    svg.gridwalk((3, 1), positions, cells)
-    svg.make()
-    #pp.pprint(svg.doc)
-    svg.write('/tmp/minkscape.svg')
-  else:
-    gc = Gcode(scale=1.0, gridpx=6, cellsize=6)
-    gc.gridwalk((3, 1), positions, cells)
-    gc.make()
-    #pp.pprint(gc.gcdata)
-    print(gc.write('minkscape', fill='fill:#CCC'))
-  '''
+'''
   the
   end
-  '''
+'''

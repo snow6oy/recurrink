@@ -70,7 +70,7 @@ class TestStencil(unittest.TestCase):
     '''
     uniq = self.s.colours()
     #[print(colour) for colour in uniq]
-    #pp.pprint(self.s.colmap)
+    pp.pprint(self.s.colmap)
     a_bg = self.s.colmap[1]
     self.assertEqual(a_bg, ('a', 'ccc', 'bg'))
 
@@ -82,6 +82,83 @@ class TestStencil(unittest.TestCase):
     cccdata = self.s.monochrome('ccc', self.data) # make a stencil for grey only
     #pp.pprint(cccdata)
     [self.assertEqual(expected[c], cccdata[c]['bg']) for c in expected]
+
+  def test_3(self):
+    ''' Buleria data is different 
+    '''
+    data = { 
+      'a': { 'bg': '#00F',
+         'facing': 'all',
+         'fill': '#F00',
+         'fill_opacity': '1.0',
+         'shape': 'square',
+         'size': 'small',
+         'stroke': None,
+         'stroke_dasharray': None,
+         'stroke_opacity': None,
+         'stroke_width': 0,
+         'top': False},
+      'b': { 'bg': '#F00',
+         'facing': 'all',
+         'fill': '#F00',
+         'fill_opacity': '1.0',
+         'shape': 'square',
+         'size': 'small',
+         'stroke': '#000',
+         'stroke_dasharray': 0,
+         'stroke_opacity': '1.0',
+         'stroke_width': 2,
+         'top': False},
+      'c': { 'bg': '#FFF',
+         'facing': 'all',
+         'fill': '#F00',
+         'fill_opacity': '1.0',
+         'shape': 'square',
+         'size': 'small',
+         'stroke': None,
+         'stroke_dasharray': None,
+         'stroke_opacity': None,
+         'stroke_width': 0,
+         'top': False},
+      'd': { 'bg': '#00F',
+         'facing': 'all',
+         'fill': '#F00',
+         'fill_opacity': '1.0',
+         'shape': 'square',
+         'size': 'small',
+         'stroke': None,
+         'stroke_dasharray': None,
+         'stroke_opacity': None,
+         'stroke_width': 0,
+         'top': False},
+      'e': { 'bg': '#000',
+         'facing': 'all',
+         'fill': '#F00',
+         'fill_opacity': '1.0',
+         'shape': 'square',
+         'size': 'small',
+         'stroke': None,
+         'stroke_dasharray': None,
+         'stroke_opacity': None,
+         'stroke_width': 0,
+         'top': False},
+      'f': { 'bg': '#FF0',
+         'facing': 'all',
+         'fill': '#F00',
+         'fill_opacity': '1.0',
+         'shape': 'square',
+         'size': 'small',
+         'stroke': None,
+         'stroke_dasharray': None,
+         'stroke_opacity': None,
+         'stroke_width': 0,
+         'top': False}}
+    s = Stencil('buleria', data, gcode=True)
+    uniqcol = s.colours()
+    #pp.pprint(s.colmap)
+    #pp.pprint(uniqcol)
+    [self.assertTrue(f in uniqcol) for f in ['fill:#000', 'fill:#00F', 'fill:#F00', 'fill:#FF0', 'fill:#FFF']]
+
   ''' 
   the 
   end
