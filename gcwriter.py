@@ -51,7 +51,7 @@ class GcodeWriter:
     self.custom([
       ('G00','G17','G80'),
       ('G90','G94','G98'),
-      ('G54', 'G43'),
+      ('G54','G43','G21'),  # G21 set to millimetres for NC viewer
       ('T04','H04','M0'),
       ('S1000','M3')
     ])
