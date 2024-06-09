@@ -31,9 +31,6 @@ class Shapes():
     hsw = (cell['stroke_width'] / 2) * self.scale
     sw = cell['stroke_width'] * self.scale
     p = Points(x, y, sw, self.cellsize)
-    #hsw = cell['stroke_width'] / 2
-    #sw = cell['stroke_width']
-
     # print(f"cell size:{self.cellsize} shape size:{size} shape:{shape} x:{x} y:{y} half stroke width:{hsw} stroke width:{sw}")
     if shape == 'circle':
       self.circle(size, sw, p, g)
@@ -68,6 +65,7 @@ class Shapes():
       'name': 'circle', 'cx': str(p.mid[0]), 'cy': str(p.mid[1]), 'r': str(r)
     })
 
+
   def square(self, x, y, size, hsw, sw, g):
     cs = self.cellsize
     if size == 'medium':
@@ -87,20 +85,13 @@ class Shapes():
       y      = (y + third + hsw)
       width  = (third - sw)
       height = (third - sw)
-      '''
-      third  = cs / 3
-      x      = (x + sw + third)
-      y      = (y + sw + third)
-      width  = (third - sw)
-      height = (third - sw)
-      '''
     else:
       raise ValueError(f"Cannot make square with {size}")
 
     if width < 1 or height < 1:
       raise ValueError(f"square too small w {width} h {height}")
     g.append({
-      'name': 'rect', 'x': x, 'y': y, 'width': width, 'height': height
+      'name': 'square', 'x': x, 'y': y, 'width': width, 'height': height
     })
 
   def line(self, x, y, facing, size, hsw, sw, g):
@@ -147,7 +138,7 @@ class Shapes():
     if width < 1 or height < 1:
       raise ValueError(f"line too small w {width} h {height}")
     g.append({
-      'name': 'rect', 'x': x, 'y': y, 'width': width, 'height': height
+      'name': 'line', 'x': x, 'y': y, 'width': width, 'height': height
     })
 
   def triangle(self, facing, p, g):
@@ -162,7 +153,7 @@ class Shapes():
     else:
       raise ValueError(f"Cannot face triangle {facing}")
     g.append({
-      'name': 'polygon', 
+      'name': 'triangl', 
       'points': ','.join(map(str, points))
     })
 
@@ -180,7 +171,7 @@ class Shapes():
     else:
       raise ValueError(f"Cannot face diamond {facing}")
     g.append({
-      'name': 'polygon', 
+      'name': 'diamond', 
       'points': ','.join(map(str, points))
     })
 
@@ -424,13 +415,15 @@ class Svg(Layout):
           circle.set('cx', s['cx'])
           circle.set('cy', s['cy'])
           circle.set('r', s['r'])
-        elif name == 'rect':
+        #elif name == 'rect':
+        elif name == 'square' or name == 'line':
           rect = ET.SubElement(g, f"{self.ns}rect", id=str(uniqid))
           rect.set("x", str(s['x']))
           rect.set("y", str(s['y']))
           rect.set("width", str(s['width']))
           rect.set("height", str(s['height']))
-        elif name == 'polygon':
+        #elif name == 'polygon':
+        elif name == 'triangl' or name == 'diamond':
           polyg = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
           polyg.set("points", s['points'])
         else:
