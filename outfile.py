@@ -28,10 +28,13 @@ class Shapes():
     facing = cell['facing']
     shape = cell['shape']
     size = cell['size']
-    hsw = cell['stroke_width'] / 2
-    sw = cell['stroke_width']
+    hsw = (cell['stroke_width'] / 2) * self.scale
+    sw = cell['stroke_width'] * self.scale
     p = Points(x, y, sw, self.cellsize)
+    #hsw = cell['stroke_width'] / 2
+    #sw = cell['stroke_width']
 
+    # print(f"cell size:{self.cellsize} shape size:{size} shape:{shape} x:{x} y:{y} half stroke width:{hsw} stroke width:{sw}")
     if shape == 'circle':
       self.circle(size, sw, p, g)
     elif shape == 'square':
@@ -45,6 +48,9 @@ class Shapes():
     else:
       print(f"Warning: do not know {shape}")
       self.text(shape, x, y, g)
+    ## TODO
+    ## s = self.SHAPE
+    ## validate(s) and g.append(s) OR complain
 
   def circle(self, size, stroke_width, p, g):
     cs = self.cellsize
@@ -65,24 +71,34 @@ class Shapes():
   def square(self, x, y, size, hsw, sw, g):
     cs = self.cellsize
     if size == 'medium':
-      x      = str(x + hsw)
-      y      = str(y + hsw)
-      width  = str(cs - sw)
-      height = str(cs - sw)
+      x      = (x + hsw)
+      y      = (y + hsw)
+      width  = (cs - sw)
+      height = (cs - sw)
     elif size == 'large':
       third  = cs / 3
-      x      = str(x - third / 2 + hsw)
-      y      = str(y - third / 2 + hsw)
-      width  = str(cs + third - sw)
-      height = str(cs + third - sw)
+      x      = (x - third / 2 + hsw)
+      y      = (y - third / 2 + hsw)
+      width  = (cs + third - sw)
+      height = (cs + third - sw)
     elif size == 'small':
       third  = cs / 3
-      x      = str(x + sw + third)
-      y      = str(y + sw + third)
-      width  = str(third - sw)
-      height = str(third - sw)
+      x      = (x + third + hsw)
+      y      = (y + third + hsw)
+      width  = (third - sw)
+      height = (third - sw)
+      '''
+      third  = cs / 3
+      x      = (x + sw + third)
+      y      = (y + sw + third)
+      width  = (third - sw)
+      height = (third - sw)
+      '''
     else:
       raise ValueError(f"Cannot make square with {size}")
+
+    if width < 1 or height < 1:
+      raise ValueError(f"square too small w {width} h {height}")
     g.append({
       'name': 'rect', 'x': x, 'y': y, 'width': width, 'height': height
     })
@@ -96,37 +112,40 @@ class Shapes():
     facing = 'north' if facing == 'south' else facing
     facing = 'east' if facing == 'west' else facing
     if size == 'large' and facing == 'north':
-      x      = str(x + cs / 3 + hsw)
-      y      = str(y - cs / 3 + hsw)
-      width  = str(cs / 3 - sw)
-      height = str((cs / 3 * 2 + cs) - sw)
+      x      = (x + cs / 3 + hsw)
+      y      = (y - cs / 3 + hsw)
+      width  = (cs / 3 - sw)
+      height = ((cs / 3 * 2 + cs) - sw)
     elif size == 'large' and facing == 'east':
-      x      = str(x - cs / 3 + hsw)
-      y      = str(y + cs / 3 + hsw)
-      width  = str((cs / 3 * 2 + cs) - sw)
-      height = str(cs / 3 - sw)
+      x      = (x - cs / 3 + hsw)
+      y      = (y + cs / 3 + hsw)
+      width  = ((cs / 3 * 2 + cs) - sw)
+      height = (cs / 3 - sw)
     elif size == 'medium' and facing == 'north':
-      x      = str(x + cs / 3 + hsw)
-      y      = str(y + hsw)
-      width  = str(cs / 3 - sw)
-      height = str(cs - sw)
+      x      = (x + cs / 3 + hsw)
+      y      = (y + hsw)
+      width  = cs / 3 - sw
+      height = (cs - sw)
     elif size == 'medium' and facing == 'east':
-      x      = str(x + hsw)
-      y      = str(y + cs / 3 + hsw)
-      width  = str(cs - sw)
-      height = str(cs / 3 - sw)
+      x      = (x + hsw)
+      y      = (y + cs / 3 + hsw)
+      width  = (cs - sw)
+      height = (cs / 3 - sw)
     elif size == 'small' and facing == 'north':
-      x      = str(x + cs / 3 + hsw)
-      y      = str(y + cs / 4 + hsw)
-      width  = str(cs / 3 - sw)
-      height = str(cs / 2 - sw)
+      x      = (x + cs / 3 + hsw)
+      y      = (y + cs / 4 + hsw)
+      width  = (cs / 3 - sw)
+      height = (cs / 2 - sw)
     elif size == 'small' and facing == 'east':
-      x      = str(x + cs / 4 + hsw)
-      y      = str(y + cs / 3 + hsw)
-      width  = str(cs / 2 - sw)
-      height = str(cs / 3 - sw)
+      x      = (x + cs / 4 + hsw)
+      y      = (y + cs / 3 + hsw)
+      width  = (cs / 2 - sw)
+      height = (cs / 3 - sw)
     else:
       raise ValueError(f"Cannot set line to {size} {facing}")
+
+    if width < 1 or height < 1:
+      raise ValueError(f"line too small w {width} h {height}")
     g.append({
       'name': 'rect', 'x': x, 'y': y, 'width': width, 'height': height
     })
@@ -184,24 +203,25 @@ class Layout(Shapes):
           { "x": 0, "y": 0, "width": 60, "height": 60 } ]} ] }
     '''
 
-  def __init__(self, scale=1.0, gridpx=1080, cellsize=60):
+  def __init__(self, scale=1.0, gridsize=1080, cellsize=60):
     ''' scale expected to be one of [0.5, 1.0, 1.5, 2.0]
     '''
     self.scale = scale
-    self.grid = round(gridpx / (cellsize * scale))
+    self.grid = round(gridsize / (cellsize * scale))
     self.cellsize = round(cellsize * scale)
+    msg = self.checksum()
+    if msg:
+      raise ValueError(msg)
+
     self.styles = dict() # unique style associated with many cells
     self.seen = str()    # have we seen this style before
-    if False:            # run with gridpx=180 to get a demo
+    self.doc = list()
+    if False:           # run with gridsize=60 cellsize=6 to get a demo
       for col in range(self.grid):
         for row in range(self.grid):
           xy = tuple([row, col])
           print(xy, end=' ', flush=True)
         print()
-    self.doc = list()
-    #self.doc['scale'] = scale
-    #self.doc['height'] = self.doc['width'] = gridpx
-    #self.doc['groups'] = list()
 
   def gridwalk(self, blocksize, positions, cells):
     ''' traverse the grid once for each block, populating ET elems as we go
@@ -288,14 +308,26 @@ class Layout(Shapes):
       raise ValueError(f"{cell} aint got no style (hint: cannot make bg for topcell?)")
     return found
 
+  def checksum(self):
+    ''' like a checksum but for cells
+    '''
+    error_msg = None
+    if self.scale not in [0.5, 1.0, 1.5, 2.0]:
+      error_msg = f'checksum failed scale {self.scale}'
+    if (self.cellsize % 3):
+      error_msg = f'checksum failed cell size div by three {self.cellsize}'
+    self.A4_OK = True if (self.grid * self.cellsize) <= 210 else False
+    return error_msg
+
 class Stencil:
   ''' accept a cell dictionary and for each unique colour
       create a new view as a black white negative
       return a set of views
   ''' 
-  def __init__(self, model, data, gcode=False):
-    self.model = model
-    self.data = data # read-only copy for generating colmap
+  #def __init__(self, model, data, gcode=False):
+  def __init__(self, cells, gcode=False):
+    #self.model = model
+    self.data = cells # read-only copy for generating colmap
     self.gcode = gcode # allow gcode to receive values formatted as fill:#ZZZ
 
   def colours(self):
@@ -349,7 +381,7 @@ class Stencil:
     '''
     fn = str()
     if self.gcode:
-      fn = f"fill:{fill}"
+      fn = fill
     else:
       fo = str(round(fo * 10)) if fo else '' # 0.7 > 7
       bg = bg[1:] if bg else '' # remove the leading #
@@ -357,7 +389,7 @@ class Stencil:
     return fn
 
 class Svg(Layout):
-  def __init__(self, scale, gridpx=1080, cellsize=60):
+  def __init__(self, scale, gridsize=1080, cellsize=60):
     # svg:transform(scale) does the same but is lost when converting to raster. Instagram !!!
     ns = '{http://www.w3.org/2000/svg}'
     ET.register_namespace('',"http://www.w3.org/2000/svg")
@@ -365,7 +397,7 @@ class Svg(Layout):
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
       xmlns:svg="http://www.w3.org/2000/svg" 
-      viewBox="0 0 {gridpx} {gridpx}" width="{gridpx}px" height="{gridpx}px"
+      viewBox="0 0 {gridsize} {gridsize}" width="{gridsize}px" height="{gridsize}px"
       transform="scale(1)"></svg>
     ''')
     comment = ET.Comment(f' scale:{scale} cellpx:{cellsize} ')
@@ -373,8 +405,9 @@ class Svg(Layout):
     #ET.dump(root)
     self.ns = ns
     self.root = root
-    super().__init__(scale, gridpx, cellsize)
+    super().__init__(scale, gridsize, cellsize)
 
+  # TODO rect is converted to str for gcode BUT other shapes were not done
   def make(self):
     ''' expand the doc from gridwalk and convert to XML
     '''
@@ -394,10 +427,10 @@ class Svg(Layout):
           circle.set('r', s['r'])
         elif name == 'rect':
           rect = ET.SubElement(g, f"{self.ns}rect", id=str(uniqid))
-          rect.set("x", s['x'])
-          rect.set("y", s['y'])
-          rect.set("width", s['width'])
-          rect.set("height", s['height'])
+          rect.set("x", str(s['x']))
+          rect.set("y", str(s['y']))
+          rect.set("width", str(s['width']))
+          rect.set("height", str(s['height']))
         elif name == 'polygon':
           polyg = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
           polyg.set("points", s['points'])
@@ -420,10 +453,18 @@ class Svg(Layout):
 class Gcode(Layout):
   ''' Paper size is A4: 60px / 10 = 6mm
   '''
-  def __init__(self, scale, gridpx, cellsize):
+  def __init__(self, scale, gridsize, cellsize):
     self.gcdata = dict()
     self.cubesz = round(cellsize / 3)
-    super().__init__(scale=scale, gridpx=gridpx, cellsize=cellsize)
+    print(self.cubesz)
+    super().__init__(scale=scale, gridsize=gridsize, cellsize=cellsize)
+
+  def make2(self, uniqcol, colmap):
+    for uc in uniqcol: # order by colour for pen changing
+      for cm in colmap:
+        if (cm[1] == uc):
+          print(cm)
+    pp.pprint(self.doc)
 
   def make(self, colours):
     ''' colours  = ['fill:#CCC', 'fill:#FFF', 'fill:#000']
@@ -433,8 +474,22 @@ class Gcode(Layout):
       for pencol in colours:
         if pencol in group['style']:
           fill = pencol
-      for cell in group['shapes']:
-        self.cube(cell, fill)
+      [self.cube(cell, fill) for cell in group['shapes']]
+      #print('.' * 80)
+
+  def cube(self, cell, fill):
+    ''' Slice a cell into nine cubes, each 20x20
+        Example: cube({'name': 'rect', 'x': '120', 'y': '120', 'width': '60', 'height': '60'})
+    '''
+    x = round(float(cell['x'])) # TODO ask Layout to send integers
+    y = round(float(cell['y']))
+    w = round(float(cell['width']))
+    h = round(float(cell['height']))
+    #print(f"{x:>4}, {y:<4} {w}x{h} {fill}")
+    for Y in range(y, (h + y), self.cubesz):
+      for X in range(x, (w + x), self.cubesz):
+        moveto = tuple([X, Y])
+        self.gcdata[moveto] = fill # top overwrites fg which overwrites bg
 
   def write(self, model, fill='fill:#FFF'):
     ''' stream path data to file as gcodes
@@ -454,20 +509,7 @@ class Gcode(Layout):
         gcw.points(cube)
     gcw.stop()
     return fn
-
-  def cube(self, cell, fill):
-    ''' Slice a cell into nine cubes, each 20x20
-        Example: cube({'name': 'rect', 'x': '120', 'y': '120', 'width': '60', 'height': '60'})
-    '''
-    x = round(float(cell['x'])) # TODO ask Layout to send integers
-    y = round(float(cell['y']))
-    w = round(float(cell['width']))
-    h = round(float(cell['height']))
-    for Y in range(y, (h + y), self.cubesz):
-      for X in range(x, (w + x), self.cubesz):
-        moveto = tuple([X, Y])
-        self.gcdata[moveto] = fill # top overwrites fg which overwrites bg
 '''
-  the
-  end
+the
+end
 '''

@@ -2,14 +2,19 @@ import unittest
 import pprint
 from gcwriter import GcodeWriter
 from outfile import Gcode
+from config import * 
 pp = pprint.PrettyPrinter(indent = 2)
 
 class TestGcode(unittest.TestCase):
 
   def setUp(self):
     self.gcw = GcodeWriter()
+    self.positions = config.positions
+    self.data = config.cells
 
   def test_0(self):
+    ''' write cube data into a tmpfile
+    '''
     cube = [(0, 0), (0, 2), (2, 2), (2, 0), (0, 0)]
     self.gcw.writer('/tmp/test_gcwriter.gcode')
     self.gcw.points(cube)
@@ -19,43 +24,36 @@ class TestGcode(unittest.TestCase):
     self.assertEqual(written, 10)
 
   def test_1(self):
-    ''' ncviewer.com
+    ''' create a gcode file from a minkscape rink
+        /code/gcode-plotter/ to test visually
     '''
-    positions = { 
-      (0, 0): ('a', 'c'),  # c is both cell and top
-      (1, 0): ('b', 'd'),  # d is only top
-      (2, 0): ('c',None)
-    }
-    cells = {
-      'a': {
-        'bg': '#CCC', 'fill': '#FFF', 'fill_opacity': 1.0,
-        'shape': 'square', 'facing': 'all', 'size': 'medium', 'top': False,
-        'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
-      },
-      'b': {
-        'bg': '#CCC', 'fill': '#000', 'fill_opacity': 1.0,
-        'shape': 'line', 'facing': 'north', 'size': 'medium', 'top': False,
-        'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
-      },
-      'c': {
-        'bg': '#CCC', 'fill': '#000', 'fill_opacity': 1.0,
-        'shape': 'square', 'facing': 'all', 'size': 'small', 'top': True,
-        'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 1.0, 'stroke_width': 0, 
-      },
-      'd': {
-        'bg': '#CCC', 'fill': '#FFF', 'fill_opacity': 1.0,
-        'shape': 'line', 'facing': 'east', 'size': 'large', 'top': True,
-        'stroke': '#000', 'stroke_dasharray': 0, 'stroke_opacity': 0, 'stroke_width': 0, 
-      }
-    }
-    gc = Gcode(scale=1.0, gridpx=6, cellsize=6)
-    gc.gridwalk((3, 1), positions, cells)
-    gc.make()
+    num_of_lines = [92, 260, 239]
+    gc = Gcode(scale=1.0, gridpx=18, cellsize=6)
+    gc.gridwalk((3, 1), self.positions, self.data)
+    gc.make(['fill:#CCC', 'fill:#FFF', 'fill:#000'])
     #pp.pprint(gc.gcdata)
-    gc.write('minkscape', fill='fill:#CCC')
-    with open('/tmp/minkscape_CCC.gcode') as f:
-      written = len(f.readlines()) 
-    self.assertEqual(written, 85)
+    for fill in ['CCC', 'FFF', '000']:
+      expected = num_of_lines.pop()
+      gc.write('minkscape', fill=f'fill:#{fill}')
+      with open(f'/tmp/minkscape_{fill}.gcode') as f:
+        written = len(f.readlines()) 
+      self.assertEqual(written, expected)
+
+  def test_2(self):
+    ''' stencil yields uniqcol and colmap
+        sequence pen up/down and pen col changes
+    '''
+    uc = ['#FFF', '#000', '#CCC']
+    cm = [ ('a', '#FFF', 'fill'),
+      ('b', '#000', 'fill'),
+      ('b', '#CCC', 'bg'),
+      ('c', '#000', 'fill'),
+      ('c', '#CCC', 'bg'),
+      ('d', '#FFF', 'fill'),
+      ('d', '#CCC', 'bg')]
+    gc = Gcode(scale=1.0, gridpx=18, cellsize=6)
+    gc.gridwalk((3, 1), self.positions, self.data)
+    gc.make2(uc, cm)
 
 '''
 the

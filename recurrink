@@ -28,7 +28,6 @@ def inputs():
   parser_i = subparsers.add_parser('init', help='set config for new image')
   parser_i.add_argument('-m', '--model', help='name of base model')
   parser_i.add_argument("-p", "--palette", help='palette version', type=int, choices=range(1, 10))
-  #parser_i.add_argument("-p", "--palette", help='palette version', choices=['0', '1', '2', '3', '4'])
   parser_i.add_argument("-v", "--view", help='view to clone')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_c.add_argument('-m', '--model', help='name of base model')
@@ -185,6 +184,7 @@ def release(d):
 
 def gcode(d):
   # used for testing '7e731bfc1863c186616d2b3de09a9b6b' 
+  src = 'file'
   model, _, scale, _ = v.read_meta(digest=d) # ignore author palette
   blocksize = m.read(model=model)[2] # can get scale too
   positions = m.read_positions(model)
@@ -194,18 +194,26 @@ def gcode(d):
     celldata = v.read(digest=d, output=list()) # cells without strokes are empty items
     tf.write(model, celldata)  # writing is to ensure cells without strokes have keys
     cells = tf.read(model, output=dict())
+    src = 'db'
   else:
     raise ValueError("model and digest are required")
-  s = Stencil(model, cells, gcode=True)
+  s = Stencil(cells, gcode=True)
   uniqcol = s.colours() # e.g ['fill:#000', 'fill:#00F', 'fill:#F00', 'fill:#FF0', 'fill:#FFF']
-  gc = Gcode(scale=scale, gridpx=6, cellsize=6)
-  gc.gridwalk(blocksize, positions, cells)
-  gc.make(uniqcol)
-  #pp.pprint(gc.gcdata)
+  hw = 180 # height width are same even though A4 = 210x297 mm 
+  gc = Gcode(scale=1, gridpx=hw, cellsize=30)
+  if gc.A4_OK:
+    gc.gridwalk(blocksize, positions, cells)
+    gc.make(uniqcol)
+  else:
+    uniqcol = 0 # dropout 
+  '''
+  print(gc.cellsum())
+  pp.pprint(gc.gcdata)
+  '''
   for f in uniqcol:
     outfile = gc.write(model, fill=f)
     print(outfile)
-  return f"\n{model} {d} was written ok"
+  return f"\n{model} {d} was read from {src} and written to {hw}x{hw}mm grid\nnum of colours: {len(uniqcol)}"
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':

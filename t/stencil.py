@@ -5,12 +5,14 @@
 import unittest
 import pprint
 from outfile import Stencil
+from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestStencil(unittest.TestCase):
 
   def setUp(self):
-    # data source='e4681aa9b7aef66efc6290f320b43e55'
+    ''' soleares data source='e4681aa9b7aef66efc6290f320b43e55'
+    '''
     data = { 
       'a': { 'bg': '#CCC',
          'facing': 'west',
@@ -56,7 +58,7 @@ class TestStencil(unittest.TestCase):
          'stroke_opacity': '0.5',
          'stroke_width': 0,
          'top': False}}
-    self.s = Stencil('soleares', data)
+    self.s = Stencil(data)
     self.data = data
 
   def test_0(self):
@@ -70,7 +72,7 @@ class TestStencil(unittest.TestCase):
     '''
     uniq = self.s.colours()
     #[print(colour) for colour in uniq]
-    pp.pprint(self.s.colmap)
+    #pp.pprint(self.s.colmap)
     a_bg = self.s.colmap[1]
     self.assertEqual(a_bg, ('a', 'ccc', 'bg'))
 
@@ -153,11 +155,18 @@ class TestStencil(unittest.TestCase):
          'stroke_opacity': None,
          'stroke_width': 0,
          'top': False}}
-    s = Stencil('buleria', data, gcode=True)
+    s = Stencil(data, gcode=True)
     uniqcol = s.colours()
-    #pp.pprint(s.colmap)
-    #pp.pprint(uniqcol)
-    [self.assertTrue(f in uniqcol) for f in ['fill:#000', 'fill:#00F', 'fill:#F00', 'fill:#FF0', 'fill:#FFF']]
+    [self.assertTrue(f in uniqcol) for f in ['#000', '#00F', '#F00', '#FF0', '#FFF']]
+
+  def test_4(self):
+    ''' check minkscape uniq colours
+    '''
+    s = Stencil(config.cells, gcode=True)
+    uniqcol = s.colours()
+    pp.pprint(uniqcol)
+    pp.pprint(s.colmap)
+    [self.assertTrue(f in uniqcol) for f in ['#000', '#CCC', '#FFF']]
 
   ''' 
   the 
