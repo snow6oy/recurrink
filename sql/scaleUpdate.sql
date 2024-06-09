@@ -1,0 +1,10 @@
+UPDATE views set scale=1 WHERE scale=0.00;
+UPDATE views set scale=.5 WHERE scale=0.30;
+UPDATE views set scale=.75 WHERE scale=0.60;
+UPDATE views set scale=.75 WHERE scale=0.80;
+UPDATE views set scale=.75 WHERE scale=0.90;
+UPDATE views set scale=1 WHERE scale=1.10;
+UPDATE views set scale=1 WHERE scale=1.20;
+UPDATE views set scale=1 WHERE scale=1.30;
+UPDATE views set scale=1.5 WHERE scale=1.80;
+UPDATE views set scale=2 WHERE scale=3.00;

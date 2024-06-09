@@ -109,7 +109,7 @@ def update(model, scale, a4=False):
   svgfile = f'/tmp/{model}.svg'
   positions = m.read_positions(model)
   svg = Svg(scale=s, gridsize=180, cellsize=24) if a4 else Svg(scale=s)
-  print(f"s {svg.scale} c {svg.cellsize} g {svg.grid}")
+  #print(f"s {svg.scale} c {svg.cellsize} g {svg.grid}")
   cells = tf.read(model, output=dict())
   v.validate(cells, ver=ver)
   svg.gridwalk(blocksize, positions, cells)
@@ -143,7 +143,6 @@ def commit(model, scale, author):
   scale = scale if scale else m.get_scale(model)
   celldata = tf.read(model, output=list())
   cellhash = tf.read(model, output=dict()) # read the data again, but as a dictionary
-  #s = Stencil(model, cellhash)
   s = Stencil(cellhash)
   lc = len(s.colours())
   if os.path.isdir(f"{WORKDIR}/{model}"):

@@ -45,10 +45,10 @@ class TestShapes(unittest.TestCase):
     self.assertEqual(cs, (x + x + w))
 
   def test_2(self):
-    ''' test a 1080 layout calculates stroke_with and Northern Point for each scale
+    ''' how does a 1080 layout calculate stroke_width for each scale
     '''
-    expected_width = [27.5, 55.0, 82.5, 110.0]
-    for i, scale in enumerate([0.5, 1.0, 1.5, 2.0]):
+    expected_width = [27.5, 41.25, 55.0, 82.5, 110.0]
+    for i, scale in enumerate([0.5, 0.75, 1.0, 1.5, 2.0]):
       lt = Layout(scale=scale)
       self.data['a']['stroke_width'] = 5
       self.lt.uniqstyle('a', 'fg', False) 
@@ -59,20 +59,15 @@ class TestShapes(unittest.TestCase):
 
   def test_3(self):
     ''' test a 180 layout calculates stroke_with and Northern Point for each scale
-
-0.5     36      30      True    yes     True    1080    True    2.5     15.0
-0.5     15      12      True    yes     False   180     True    0.0     6.0
-................................................................................
-1.0     18      60      True    yes     False   1080    True    5.0     30.0
-1.0     8       24      True    yes     False   192     True    0.0     12.0
-................................................................................
-1.5     12      90      True    yes     False   1080    True    7.5     45.0
-1.5     5       36      True    yes     False   180     True    0.0     18.0
-................................................................................
-2.0     9       120     True    yes     False   1080    True    10.0    60.0
     '''
-
-
+    expected_width = [9.5, 14.25, 19.0, 28.5, 38.0]
+    for i, scale in enumerate([0.5, 0.75, 1.0, 1.5, 2.0]):
+      lt = Layout(scale=scale, gridsize=180, cellsize=24)
+      self.data['a']['stroke_width'] = 5
+      self.lt.uniqstyle('a', 'fg', False) 
+      g = self.lt.getgroup('fg', 'a')  
+      lt.foreground(0, 0, self.data['a'], g)
+      self.assertEqual(g[-1]['width'], expected_width[i])
 '''
 the
 end

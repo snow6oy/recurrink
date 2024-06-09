@@ -204,7 +204,7 @@ class Layout(Shapes):
     '''
 
   def __init__(self, scale=1.0, gridsize=1080, cellsize=60):
-    ''' scale expected to be one of [0.5, 1.0, 1.5, 2.0]
+    ''' scale expected to be one of [0.5, 0.75, 1.0, 1.5, 2.0]
     '''
     self.scale = scale
     self.grid = round(gridsize / (cellsize * scale))
@@ -312,7 +312,7 @@ class Layout(Shapes):
     ''' like a checksum but for cells
     '''
     error_msg = None
-    if self.scale not in [0.5, 1.0, 1.5, 2.0]:
+    if self.scale not in [0.5, 0.75, 1.0, 1.5, 2.0]:
       error_msg = f'checksum failed scale {self.scale}'
     if (self.cellsize % 3):
       error_msg = f'checksum failed cell size div by three {self.cellsize}'
@@ -325,9 +325,7 @@ class Stencil:
       create a new view as a black white negative
       return a set of views
   ''' 
-  #def __init__(self, model, data, gcode=False):
   def __init__(self, cells, gcode=False):
-    #self.model = model
     self.data = cells # read-only copy for generating colmap
     self.gcode = gcode # allow gcode to receive values formatted as fill:#ZZZ
 
