@@ -319,6 +319,7 @@ class Layout(Shapes):
     self.A4_OK = True if (self.grid * self.cellsize) <= 210 else False
     return error_msg
 
+# TODO Layout generates unique styles. Can we use that?
 class Stencil:
   ''' accept a cell dictionary and for each unique colour
       create a new view as a black white negative
