@@ -25,9 +25,10 @@ class TestLayout(unittest.TestCase):
 
   def test_2(self):
     self.lt.uniqstyle('a', 'bg', False) 
+    self.lt.cells = self.data
     self.lt.rendercell('bg', 'a', 'a', False, 0, 0, 0, 0) # layer, cell, c, t, gx, x, gy, y
     bg = self.lt.doc[0]['shapes'][0]
-    self.assertEqual(bg['name'], 'rect')
+    self.assertEqual(bg['name'], 'square')
 
   def test_3(self):
     ''' copy from cells into styles and check they arrived ok

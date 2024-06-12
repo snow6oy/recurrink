@@ -37,9 +37,9 @@ class TestE2E(unittest.TestCase):
     blocksize = m.read(model=model)[2] # can get scale too
     #positions = b.read()
     positions = m.read_positions(model)
-    #lt = Layout(scale=scale)
     svg = Svg(scale=scale)
-    print(f"s {svg.scale} c {svg.cellsize} g {svg.grid}")
+    #print(f"s {svg.scale} c {svg.cellsize} g {svg.grid}")
+    #print(type(svg.scale))
     self.assertTrue(scale)
     self.assertEqual(svg.cellsize, 60)
     self.assertEqual(svg.grid, 18)

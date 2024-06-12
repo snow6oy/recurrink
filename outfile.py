@@ -22,7 +22,8 @@ class Points:
 
 class Shapes():
 
-  def foreground(self, x, y, cell, g):
+  #def foreground(self, x, y, cell, g):
+  def foreground(self, x, y, cell):
     ''' create a shape from a cell for adding to a group
     '''
     facing = cell['facing']
@@ -33,23 +34,28 @@ class Shapes():
     p = Points(x, y, sw, self.cellsize)
     # print(f"cell size:{self.cellsize} shape size:{size} shape:{shape} x:{x} y:{y} half stroke width:{hsw} stroke width:{sw}")
     if shape == 'circle':
-      self.circle(size, sw, p, g)
+      #self.circle(size, sw, p, g)
+      s = self.circle(size, sw, p)
     elif shape == 'square':
-      self.square(x, y, size, hsw, sw, g)
+      s = self.square(x, y, size, hsw, sw)
     elif shape == 'line':
-      self.line(x, y, facing, size, hsw, sw, g)
+      s = self.line(x, y, facing, size, hsw, sw)
     elif shape == 'triangl':
-      self.triangle(facing, p, g)
+      s = self.triangle(facing, p)
     elif shape == 'diamond':
-      self.diamond(facing, p, g)
+      s = self.diamond(facing, p)
     else:
       print(f"Warning: do not know {shape}")
-      self.text(shape, x, y, g)
-    ## TODO
-    ## s = self.SHAPE
-    ## validate(s) and g.append(s) OR complain
+      s = self.text(shape, x, y)
 
-  def circle(self, size, stroke_width, p, g):
+    if 'width' in s and s['width'] < 1:
+      raise ValueError(f"square too small width: {s['width']}")
+    elif 'height' in s and s['height'] < 1:
+      raise ValueError(f"square too small height: {s['height']}")
+    s['name'] = shape
+    return s
+
+  def circle(self, size, stroke_width, p):
     cs = self.cellsize
     if size == 'large': 
       cs /= 2
@@ -61,12 +67,9 @@ class Shapes():
       r = (cs / 3 - stroke_width) 
     else:
       raise ValueError(f"Cannot set circle to {size} size")
-    g.append({
-      'name': 'circle', 'cx': str(p.mid[0]), 'cy': str(p.mid[1]), 'r': str(r)
-    })
+    return { 'cx': p.mid[0], 'cy': p.mid[1], 'r': r }
 
-
-  def square(self, x, y, size, hsw, sw, g):
+  def square(self, x, y, size, hsw, sw):
     cs = self.cellsize
     if size == 'medium':
       x      = (x + hsw)
@@ -87,14 +90,9 @@ class Shapes():
       height = (third - sw)
     else:
       raise ValueError(f"Cannot make square with {size}")
+    return { 'x': x, 'y': y, 'width': width, 'height': height }
 
-    if width < 1 or height < 1:
-      raise ValueError(f"square too small w {width} h {height}")
-    g.append({
-      'name': 'square', 'x': x, 'y': y, 'width': width, 'height': height
-    })
-
-  def line(self, x, y, facing, size, hsw, sw, g):
+  def line(self, x, y, facing, size, hsw, sw):
     ''' lines can be orientated along a north-south axis or east-west axis
         but the user can choose any of the four cardinal directions
         here we silently collapse the non-sensical directions
@@ -134,14 +132,9 @@ class Shapes():
       height = (cs / 3 - sw)
     else:
       raise ValueError(f"Cannot set line to {size} {facing}")
+    return { 'x': x, 'y': y, 'width': width, 'height': height }
 
-    if width < 1 or height < 1:
-      raise ValueError(f"line too small w {width} h {height}")
-    g.append({
-      'name': 'line', 'x': x, 'y': y, 'width': width, 'height': height
-    })
-
-  def triangle(self, facing, p, g):
+  def triangle(self, facing, p):
     if facing == 'west': 
       points = p.w + p.ne + p.se + p.w
     elif facing == 'east': 
@@ -152,12 +145,9 @@ class Shapes():
       points = p.nw + p.ne + p.s + p.nw
     else:
       raise ValueError(f"Cannot face triangle {facing}")
-    g.append({
-      'name': 'triangl', 
-      'points': ','.join(map(str, points))
-    })
+    return { 'points': ','.join(map(str, points)) }
 
-  def diamond(self, facing, p, g):
+  def diamond(self, facing, p):
     if facing == 'all': 
       points = p.w + p.n + p.e + p.s + p.w
     elif facing == 'west': 
@@ -170,13 +160,10 @@ class Shapes():
       points = p.w + p.e + p.s + p.w
     else:
       raise ValueError(f"Cannot face diamond {facing}")
-    g.append({
-      'name': 'diamond', 
-      'points': ','.join(map(str, points))
-    })
+    return { 'points': ','.join(map(str, points)) }
 
-  def text(self, name, x, y, g):
-    g.append({ 'name': name, 'x': x, 'y': y })
+  def text(self, name, x, y):
+    return { 'x': x, 'y': y }
 
 class Layout(Shapes):
   ''' expand cells and draw across grid
@@ -184,20 +171,12 @@ class Layout(Shapes):
     12 * 60 = 720  * 1.5 = 1080
     18 * 60 = 1080 * 1.0 = 1080
     36 * 60 = 2160 * 0.5 = 1080
+  '''
 
-    return celldata in a layout for output as either SVG or Gcode
-    { "width":"180px", "height":"180px", "scale": 1,
-      "groups": [{
-        "fill":"#CCC",
-        "stroke-width":0,
-        "shapes": [
-          { "x": 0, "y": 0, "width": 60, "height": 60 } ]} ] }
-    '''
-
-  def __init__(self, scale=1.0, gridsize=1080, cellsize=60):
+  def __init__(self, scale=1, gridsize=1080, cellsize=60):
     ''' scale expected to be one of [0.5, 0.75, 1.0, 1.5, 2.0]
     '''
-    self.scale = scale
+    self.scale = float(scale)
     self.grid = round(gridsize / (cellsize * scale))
     self.cellsize = round(cellsize * scale)
     msg = self.checksum()
@@ -256,15 +235,16 @@ class Layout(Shapes):
     Y = (gy + y) * self.cellsize
     if layer == 'bg' and cell == c:
       g = self.getgroup('bg', cell)
-      self.square(X, Y, 'medium', 0, 0, g) 
+      bgcell = { 'facing': 'all', 'shape': 'square', 'size': 'medium', 'stroke_width': 0 }
+      g.append(self.foreground(X, Y, bgcell))
     if layer == 'fg' and cell == c:
       if ord(cell) < 97:  # upper case
         self.cells[cell]['shape'] = ' '.join([c, self.cells[cell]['shape']]) # testcard hack
       g = self.getgroup('fg', cell)
-      self.foreground(X, Y, self.cells[cell], g) 
+      g.append(self.foreground(X, Y, self.cells[cell]))
     if layer == 'top' and cell == t and self.cells[cell]['top']:
       g = self.getgroup('top', cell)
-      self.foreground(X, Y, self.cells[cell], g) 
+      g.append(self.foreground(X, Y, self.cells[cell]))
 
   def uniqstyle(self, cell, layer, top, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
     ''' remember what style to use for this cell and that layer
@@ -412,16 +392,16 @@ class Svg(Layout):
         #print(name, str(uniqid))
         if name == 'circle':
           circle = ET.SubElement(g, f"{self.ns}circle", id=str(uniqid))
-          circle.set('cx', s['cx'])
-          circle.set('cy', s['cy'])
-          circle.set('r', s['r'])
+          circle.set('cx', f"{s['cx']:g}")
+          circle.set('cy', f"{s['cy']:g}")
+          circle.set('r', f"{s['r']:g}")
         #elif name == 'rect':
         elif name == 'square' or name == 'line':
           rect = ET.SubElement(g, f"{self.ns}rect", id=str(uniqid))
-          rect.set("x", str(s['x']))
-          rect.set("y", str(s['y']))
-          rect.set("width", str(s['width']))
-          rect.set("height", str(s['height']))
+          rect.set("x", f"{s['x']:g}")
+          rect.set("y", f"{s['y']:g}")
+          rect.set("width", f"{s['width']:g}")
+          rect.set("height", f"{s['height']:g}")
         #elif name == 'polygon':
         elif name == 'triangl' or name == 'diamond':
           polyg = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
@@ -473,7 +453,7 @@ class Gcode(Layout):
     ''' Slice a cell into nine cubes, each 20x20
         Example: cube({'name': 'rect', 'x': '120', 'y': '120', 'width': '60', 'height': '60'})
     '''
-    x = round(float(cell['x'])) # TODO ask Layout to send integers
+    x = round(float(cell['x'])) # TODO ask Layout to send integers BUT scale has to be float ):
     y = round(float(cell['y']))
     w = round(float(cell['width']))
     h = round(float(cell['height']))
