@@ -1,18 +1,17 @@
-def cmpOnce(doc):
-  ''' loop a complex list so that each item 
-  is compared to another exactly once
-  without ever being compared to itself
+shapes = list()
+
+def backgroundCheck(bg, a):
+  ''' compare shapes from different layers 
+      merge if they overlap
   '''
-  for g1 in doc:               # first group
-    if len(g1['A']):
-      a = g1['A'].pop()
-      style = g1['B']
-      for g2 in doc:           # second group
-        if (style != g2['B']): # overlapping is only possible between different groups
-          [print(a, b) for b in g2['A']]
-      cmpOnce(doc)
-doc = [
-  { 'A': list('abc'), 'B': 'one' },
-  { 'A': list('xyz'), 'B': 'two' }
-]
+  [shapes.append(b.upper()) for b in bg if a ==  b]
+
+def cmpOnce(doc):
+  ''' loop a nested list so that each item
+      from the second list onwards is compared 
+      to the first list exactly once
+  '''
+  [[backgroundCheck(doc[0], cell) for cell in up] for up in doc[1:]] # fg and top group
+doc = [ list('abc'), list('ayz'), list('xbz') ]
 cmpOnce(doc)
+print(shapes)
