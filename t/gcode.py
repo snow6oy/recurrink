@@ -16,30 +16,14 @@ class TestGcode(unittest.TestCase):
     ''' write cube data into a tmpfile
     '''
     cube = [(0, 0), (0, 2), (2, 2), (2, 0), (0, 0)]
-    self.gcw.writer('/tmp/test_gcwriter.gcode')
+    self.gcw.writer('/tmp/gcwriter_t0.gcode')
     self.gcw.points(cube)
     self.gcw.stop()
-    with open('/tmp/test_gcwriter.gcode') as f:
+    with open('/tmp/gcwriter_t0.gcode') as f:
       written = len(f.readlines()) 
     self.assertEqual(written, 10)
 
   def test_1(self):
-    ''' create a gcode file from a minkscape rink
-        /code/gcode-plotter/ to test visually
-    '''
-    num_of_lines = [92, 260, 239]
-    gc = Gcode(scale=1.0, gridpx=18, cellsize=6)
-    gc.gridwalk((3, 1), self.positions, self.data)
-    gc.make(['fill:#CCC', 'fill:#FFF', 'fill:#000'])
-    #pp.pprint(gc.gcdata)
-    for fill in ['CCC', 'FFF', '000']:
-      expected = num_of_lines.pop()
-      gc.write('minkscape', fill=f'fill:#{fill}')
-      with open(f'/tmp/minkscape_{fill}.gcode') as f:
-        written = len(f.readlines()) 
-      self.assertEqual(written, expected)
-
-  def test_2(self):
     ''' stencil yields uniqcol and colmap
         sequence pen up/down and pen col changes
     '''
@@ -51,10 +35,48 @@ class TestGcode(unittest.TestCase):
       ('c', '#CCC', 'bg'),
       ('d', '#FFF', 'fill'),
       ('d', '#CCC', 'bg')]
-    gc = Gcode(scale=1.0, gridpx=18, cellsize=6)
+    gc = Gcode(scale=1.0, gridsize=18, cellsize=6)
     gc.gridwalk((3, 1), self.positions, self.data)
-    gc.make2(uc, cm)
+    gc.make(uc, cm)
 
+  def test_2(self):
+    ''' create a gcode file from a minkscape rink
+        by meandering shapes in first pos
+        /code/gcode-plotter/ to test visually
+    '''
+    hw = 90 # height width are same even though A4 = 210x297 mm 
+    blocksize = (3, 1)
+    gc = Gcode(scale=1, gridsize=hw, cellsize=30)
+    self.assertTrue(gc.A4_OK)
+    gc.gridwalk(blocksize, self.positions, self.data)
+    #pp.pprint(gc.doc)
+    for d in gc.doc:   # remove shapes except first position (0, 0)
+      del d['shapes'][1:] 
+    gc.meanderAll()  
+    #pp.pprint(gc.gcdata)
+    gc.write3('minkscape_t3', fill='fill:#CCC')
+    with open(f'/tmp/minkscape_t3_CCC.gcode') as f:
+      written = len(f.readlines()) 
+    self.assertEqual(written, 72)
+
+  def test_3(self):
+    ''' meander all
+        create a gcode file from a minkscape rink
+        /code/gcode-plotter/ to test visually
+    '''
+    hw = 90 # height width are same even though A4 = 210x297 mm 
+    blocksize = (3, 1)
+    gc = Gcode(scale=1, gridsize=hw, cellsize=30)
+    self.assertTrue(gc.A4_OK)
+    num_of_lines = [224, 644, 716]
+    gc.gridwalk(blocksize, self.positions, self.data)
+    gc.meanderAll()
+    for fill in ['CCC', 'FFF', '000']:
+      expected = num_of_lines.pop()
+      gc.write3('minkscape_t4', fill=f'fill:#{fill}')
+      with open(f'/tmp/minkscape_t4_{fill}.gcode') as f:
+        written = len(f.readlines()) 
+      self.assertEqual(written, expected)
 '''
 the
 end
