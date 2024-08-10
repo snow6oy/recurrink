@@ -17,7 +17,7 @@ class Rectangle:
       self.x = x
       self.y = y
       self.p = tuple([x, y])
-  def __init__(self, coordinates, dimensions, direction=None):
+  def __init__(self, coordinates, dimensions, direction=None, pencolor='000'):
     x, y = coordinates
     w, h = dimensions
     # corners have points
@@ -31,6 +31,7 @@ class Rectangle:
     self.s = y
     self.e = x + w
     self.dimensions = dimensions 
+    self.pencolor = pencolor
     if direction == 'E' or direction == 'W':
       self.p1 = self.w
       self.direction = 'E'

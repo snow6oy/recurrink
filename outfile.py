@@ -438,6 +438,24 @@ class Gcode(Layout):
     r = Rectangle(coordinates=c, dimensions=d)
     return r
 
+  def makeRectangles(self):
+    ''' convert all cells made by Layer() into Rectangle objects
+    '''
+    rectangles = list()
+    [rectangles.append(list()) for g in self.doc]  # make a template
+    
+    for i, group in enumerate(self.doc):        
+      for cell in group['shapes']:
+        style = group['style']  # each group has a uniq style
+        start = style.index('#') + 2
+        end = style.index(';')
+        c = tuple([round(float(cell['x'])), round(float(cell['y']))])
+        d = tuple([round(float(cell['width'])), round(float(cell['height']))])
+        r = Rectangle(coordinates=c, dimensions=d, pencolor=style[start:end])
+        rectangles[i].append(r)
+        #print(cell['x'], r.sw.x)
+    return rectangles
+
   def meanderAll(self):
     ''' linear fill for each colour ['fill:#CCC', 'fill:#FFF', 'fill:#000']
     '''

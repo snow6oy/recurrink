@@ -2,6 +2,7 @@ import unittest
 import pprint
 from gcwriter import GcodeWriter
 from outfile import Gcode
+from flatten import Rectangle
 from config import * 
 pp = pprint.PrettyPrinter(indent = 2)
 
@@ -77,6 +78,17 @@ class TestGcode(unittest.TestCase):
       with open(f'/tmp/minkscape_t4_{fill}.gcode') as f:
         written = len(f.readlines()) 
       self.assertEqual(written, expected)
+
+  def test_4(self):
+    ''' convert gc.doc shapes into Rectangles()
+    '''
+    hw = 90 # height width are same even though A4 = 210x297 mm 
+    blocksize = (3, 1)
+    gc = Gcode(scale=1, gridsize=hw, cellsize=30)
+    self.assertTrue(gc.A4_OK)
+    gc.gridwalk(blocksize, self.positions, self.data)
+    rects = gc.makeRectangles()
+    self.assertTrue(isinstance(rects[0][0], Rectangle))
 '''
 the
 end
