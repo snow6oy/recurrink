@@ -2,7 +2,7 @@ import math
 import pprint
 import xml.etree.ElementTree as ET
 from gcwriter import GcodeWriter
-from gcwriter_3 import GcodeWriter3, Rectangle
+from flatten import Flatten, Rectangle
 pp = pprint.PrettyPrinter(indent = 2)
 
 class Points:
@@ -428,6 +428,7 @@ class Gcode(Layout):
   '''
   def __init__(self, scale, gridsize, cellsize):
     self.gcdata = dict()
+    self.f = Flatten()
     super().__init__(scale=scale, gridsize=gridsize, cellsize=cellsize)
 
   # TODO ask Layout to send integers BUT scale has to be float ):
@@ -440,7 +441,6 @@ class Gcode(Layout):
   def meanderAll(self):
     ''' linear fill for each colour ['fill:#CCC', 'fill:#FFF', 'fill:#000']
     '''
-    gcw = GcodeWriter3()
     for g1 in self.doc:          # first group
       if len(g1['shapes']):
         a = g1['shapes'].pop()   
@@ -452,16 +452,16 @@ class Gcode(Layout):
               upper = self.rect(b) # TODO make style an attribute of Rectangle 
               ui = tuple([upper.sw.x, upper.sw.y, upper.dimensions[0], upper.dimensions[1]])
               self.gcdata[ui] = { 'shapes': upper, 'style': g2['style'] }
-              numof_edges, d = gcw.overlayTwoCells(lower, upper)
+              numof_edges, d = self.f.overlayTwoCells(lower, upper)
               if numof_edges:
-                shapes = gcw.splitLowerUpper(numof_edges, lower, upper, direction=d)
+                shapes = self.f.splitLowerUpper(numof_edges, lower, upper, direction=d)
                 for s in shapes:
                   li = tuple([s.sw.x, s.sw.y, s.dimensions[0], s.dimensions[1]])
                   self.gcdata[li] = { 'shapes': s, 'style': style }
                   #print(f"pos size {li} {s.direction} lo style {style} up style {g2['style']}")
         self.meanderAll()
 
-  def write3(self, model, fill='fill:#FFF'):
+  def write(self, model, fill='fill:#FFF'):
     ''' stream path data to file as gcodes
     '''
     gcw = GcodeWriter()

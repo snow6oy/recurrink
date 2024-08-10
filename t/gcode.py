@@ -54,7 +54,7 @@ class TestGcode(unittest.TestCase):
       del d['shapes'][1:] 
     gc.meanderAll()  
     #pp.pprint(gc.gcdata)
-    gc.write3('minkscape_t3', fill='fill:#CCC')
+    gc.write('minkscape_t3', fill='fill:#CCC')
     with open(f'/tmp/minkscape_t3_CCC.gcode') as f:
       written = len(f.readlines()) 
     self.assertEqual(written, 72)
@@ -73,7 +73,7 @@ class TestGcode(unittest.TestCase):
     gc.meanderAll()
     for fill in ['CCC', 'FFF', '000']:
       expected = num_of_lines.pop()
-      gc.write3('minkscape_t4', fill=f'fill:#{fill}')
+      gc.write('minkscape_t4', fill=f'fill:#{fill}')
       with open(f'/tmp/minkscape_t4_{fill}.gcode') as f:
         written = len(f.readlines()) 
       self.assertEqual(written, expected)
