@@ -2,6 +2,7 @@ import math
 import pprint
 import xml.etree.ElementTree as ET
 from gcwriter import GcodeWriter
+from gcwriter_3 import GcodeWriter3, Rectangle
 pp = pprint.PrettyPrinter(indent = 2)
 
 class Points:
@@ -427,43 +428,40 @@ class Gcode(Layout):
   '''
   def __init__(self, scale, gridsize, cellsize):
     self.gcdata = dict()
-    self.cubesz = round(cellsize / 3)
-    print(self.cubesz)
     super().__init__(scale=scale, gridsize=gridsize, cellsize=cellsize)
 
-  def make2(self, uniqcol, colmap):
-    for uc in uniqcol: # order by colour for pen changing
-      for cm in colmap:
-        if (cm[1] == uc):
-          print(cm)
-    pp.pprint(self.doc)
+  # TODO ask Layout to send integers BUT scale has to be float ):
+  def rect(self, cell):
+    c = tuple([round(float(cell['x'])), round(float(cell['y']))])
+    d = tuple([round(float(cell['width'])), round(float(cell['height']))])
+    r = Rectangle(coordinates=c, dimensions=d)
+    return r
 
-  def make(self, colours):
-    ''' colours  = ['fill:#CCC', 'fill:#FFF', 'fill:#000']
+  def meanderAll(self):
+    ''' linear fill for each colour ['fill:#CCC', 'fill:#FFF', 'fill:#000']
     '''
-    for group in self.doc:
-      fill = None
-      for pencol in colours:
-        if pencol in group['style']:
-          fill = pencol
-      [self.cube(cell, fill) for cell in group['shapes']]
-      #print('.' * 80)
+    gcw = GcodeWriter3()
+    for g1 in self.doc:          # first group
+      if len(g1['shapes']):
+        a = g1['shapes'].pop()   
+        style = g1['style']
+        lower = self.rect(a)    #lower.printPoints()
+        for g2 in self.doc:      # second group
+          if (style != g2['style']): # overlapping is only possible between different groups
+            for b in g2['shapes']:
+              upper = self.rect(b) # TODO make style an attribute of Rectangle 
+              ui = tuple([upper.sw.x, upper.sw.y, upper.dimensions[0], upper.dimensions[1]])
+              self.gcdata[ui] = { 'shapes': upper, 'style': g2['style'] }
+              numof_edges, d = gcw.overlayTwoCells(lower, upper)
+              if numof_edges:
+                shapes = gcw.splitLowerUpper(numof_edges, lower, upper, direction=d)
+                for s in shapes:
+                  li = tuple([s.sw.x, s.sw.y, s.dimensions[0], s.dimensions[1]])
+                  self.gcdata[li] = { 'shapes': s, 'style': style }
+                  #print(f"pos size {li} {s.direction} lo style {style} up style {g2['style']}")
+        self.meanderAll()
 
-  def cube(self, cell, fill):
-    ''' Slice a cell into nine cubes, each 20x20
-        Example: cube({'name': 'rect', 'x': '120', 'y': '120', 'width': '60', 'height': '60'})
-    '''
-    x = round(float(cell['x'])) # TODO ask Layout to send integers BUT scale has to be float ):
-    y = round(float(cell['y']))
-    w = round(float(cell['width']))
-    h = round(float(cell['height']))
-    #print(f"{x:>4}, {y:<4} {w}x{h} {fill}")
-    for Y in range(y, (h + y), self.cubesz):
-      for X in range(x, (w + x), self.cubesz):
-        moveto = tuple([X, Y])
-        self.gcdata[moveto] = fill # top overwrites fg which overwrites bg
-
-  def write(self, model, fill='fill:#FFF'):
+  def write3(self, model, fill='fill:#FFF'):
     ''' stream path data to file as gcodes
     '''
     gcw = GcodeWriter()
@@ -471,16 +469,22 @@ class Gcode(Layout):
     fn = f'/tmp/{model}_{fillname}.gcode'
     gcw.writer(fn)
     gcw.start()
-    for startpos in self.gcdata:
-      if self.gcdata[startpos] == fill:
-        cube = [startpos]
-        cube.append(tuple([startpos[0], startpos[1] + self.cubesz]))
-        cube.append(tuple([startpos[0] + self.cubesz, startpos[1] + self.cubesz]))
-        cube.append(tuple([startpos[0] + self.cubesz, startpos[1]]))
-        cube.append(startpos)
-        gcw.points(cube)
+    for index in self.gcdata:
+      s = self.gcdata[index]['shapes']
+      if fill in self.gcdata[index]['style']:
+        #print(f"{fillname} xy {s.sw.x:>4} {s.sw.y:<4} dim {s.dimensions} {s.direction:<2}")
+        s.meander()
+        gcw.points(list(s.path))
     gcw.stop()
     return fn
+
+  def make(self, uniqcol, colmap):
+    ''' reduce duplication by using Stencil() as self.write wrapper
+    '''
+    for uc in uniqcol: # order by colour for pen changing
+      for cm in colmap:
+        if (cm[1] == uc):
+          pass # TODO write
 '''
 the
 end
