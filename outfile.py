@@ -447,7 +447,7 @@ class Gcode(Layout):
     for i, group in enumerate(self.doc):        
       for cell in group['shapes']:
         style = group['style']  # each group has a uniq style
-        start = style.index('#') + 2
+        start = style.index('#') + 1
         end = style.index(';')
         c = tuple([round(float(cell['x'])), round(float(cell['y']))])
         d = tuple([round(float(cell['width'])), round(float(cell['height']))])
@@ -479,6 +479,40 @@ class Gcode(Layout):
                   #print(f"pos size {li} {s.direction} lo style {style} up style {g2['style']}")
         self.meanderAll()
 
+  def make(self, uniqcol, colmap):
+    ''' reduce duplication by using Stencil() as self.write wrapper
+    '''
+    for uc in uniqcol: # order by colour for pen changing
+      for cm in colmap:
+        if (cm[1] == uc):
+          pass # TODO write
+
+  def mergeBackground(self, bg, upper):
+    ''' compare shapes from different layers 
+        merge if they overlap
+    '''
+    found = 0
+    shapes = None
+    for i, lower in enumerate(bg):
+      numof_edges, d = self.f.overlayTwoCells(lower, upper)
+      if numof_edges:
+        found = i
+        shapes = self.f.splitLowerUpper(numof_edges, lower, upper, direction=d)
+    if found: # insert any found shapes using index
+      [bg.insert(found, s) for s in shapes]
+    return bg
+
+  def makeFlat(self, rects):
+    ''' loop a nested list so that each item
+        from the second list onwards is compared 
+        to the first list exactly once
+    '''
+    bg = rects.pop(0)
+    for up in rects:  # fg and top group
+      for cell in up: # cell is a Rectangle()
+        bg = self.mergeBackground(bg, cell) 
+    return bg
+
   def write(self, model, fill='fill:#FFF'):
     ''' stream path data to file as gcodes
     '''
@@ -496,13 +530,22 @@ class Gcode(Layout):
     gcw.stop()
     return fn
 
-  def make(self, uniqcol, colmap):
-    ''' reduce duplication by using Stencil() as self.write wrapper
+  def write4(self, model, shapes, fill=None):
+    ''' stream path data to file as gcodes
     '''
-    for uc in uniqcol: # order by colour for pen changing
-      for cm in colmap:
-        if (cm[1] == uc):
-          pass # TODO write
+    gcw = GcodeWriter()
+    fn = f'/tmp/{model}_{fill}.gcode'
+    gcw.writer(fn)
+    gcw.start()
+    for s in shapes:
+      print(s.pencolor, fill)
+      if s.pencolor == fill:
+        print(f"{fill} xy {s.sw.x:>4} {s.sw.y:<4} dim {s.dimensions} {s.direction:<2}")
+        s.meander()
+        gcw.points(list(s.path))
+    gcw.stop()
+    return fn
+
 '''
 the
 end
