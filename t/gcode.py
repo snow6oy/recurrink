@@ -89,6 +89,16 @@ class TestGcode(unittest.TestCase):
     gc.gridwalk(blocksize, self.positions, self.data)
     rects = gc.makeRectangles()
     self.assertTrue(isinstance(rects[0][0], Rectangle))
+
+  def test_5(self):
+    hw = 90 # height width are same even though A4 = 210x297 mm 
+    blocksize = (3, 1)
+    gc = Gcode(scale=1, gridsize=hw, cellsize=30)
+    self.assertTrue(gc.A4_OK)
+    gc.gridwalk(blocksize, self.positions, self.data)
+    rects = gc.makeRectangles()
+    flattened = gc.makeFlat(rects)
+    gc.write4('gcode_t5', flattened, fill='FFF')
 '''
 the
 end
