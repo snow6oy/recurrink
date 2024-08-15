@@ -247,9 +247,14 @@ class Layout(Shapes):
       g = self.getgroup('top', cell)
       g.append(self.foreground(X, Y, self.cells[cell]))
 
-  def uniqstyle(self, cell, layer, top, bg=None, fill=None, fo=None, stroke=None, sw=None, sd=None, so=None):
+  # TODO 
+  # bg and fill cannot be None - raise ValueError
+  def uniqstyle(self, cell, layer, top, bg=None, fill=None, fo=1, stroke=None, sw=0, sd=0, so=1):
     ''' remember what style to use for this cell and that layer
+        as None is invalid XML we use 0 as default for: fo sw sd so
     '''
+    if bg is None or fill is None:
+      raise ValueError(f"either {bg} or {fill} are empty")
     style = str()
     if layer == 'bg': # create new entry in self.layers.bg
       style = f"fill:{bg};stroke-width:0" # hide the cracks between the background tiles
@@ -290,6 +295,11 @@ class Layout(Shapes):
       error_msg = f'checksum failed cell size div by three {self.cellsize}'
     self.A4_OK = True if (self.grid * self.cellsize) <= 210 else False
     return error_msg
+
+  def trimStyle(self, style):
+    start = style.index('#') + 1
+    end = style.index(';')
+    return style[start:end]
 
 # TODO Layout generates unique styles. Can we use that?
 class Stencil:
@@ -387,6 +397,8 @@ class Svg(Layout):
       uniqid += 1
       g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
       g.set('style', group['style'])
+      g.set('inkscape:groupmode', "layer") # no need new namespace for inkscape ?
+      g.set('inkscape:label', self.trimStyle(group['style'])) # inkscape:label="CCC"
       for s in group['shapes']:
         uniqid += 1
         name = s['name']
@@ -447,15 +459,14 @@ class Gcode(Layout):
     for i, group in enumerate(self.doc):        
       for cell in group['shapes']:
         style = group['style']  # each group has a uniq style
-        start = style.index('#') + 1
-        end = style.index(';')
         c = tuple([round(float(cell['x'])), round(float(cell['y']))])
         d = tuple([round(float(cell['width'])), round(float(cell['height']))])
-        r = Rectangle(coordinates=c, dimensions=d, pencolor=style[start:end])
+        r = Rectangle(coordinates=c, dimensions=d, pencolor=self.trimStyle(group['style']))
         rectangles[i].append(r)
         #print(cell['x'], r.sw.x)
     return rectangles
 
+  # TODO remove v4 works
   def meanderAll(self):
     ''' linear fill for each colour ['fill:#CCC', 'fill:#FFF', 'fill:#000']
     '''
