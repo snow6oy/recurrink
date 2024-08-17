@@ -18,8 +18,10 @@ class TestSvg(unittest.TestCase):
     self.positions = config.positions
 
   def test_0(self):
-    ''' triangle '''
-    self.svg.uniqstyle('a', 'fg', False, bg='#000', fill='#FFF') # create a style so cell 'a' can have a group
+    ''' triangle
+    create a style so cell 'a' has a group to belong to
+    '''
+    self.svg.uniqstyle('a', 'fg', False, bg='#000', fill='#FFF') 
     self.group = self.svg.getgroup('fg', 'a')
     self.geometry['shape'] = 'triangl'
     triangl = self.svg.foreground(x=0, y=0, cell=self.geometry)
@@ -49,7 +51,8 @@ class TestSvg(unittest.TestCase):
       self.svg.foreground(x=0, y=0, cell=self.geometry)
 
   def test_3(self):
-    #svg = Svg(scale=1.0, gridsize=180) # 180px / 60px = 3 cells high and 3 cells wide
+    ''' from config.py make a minkscape.svg in /tmp
+    '''
     self.svg.gridwalk((3, 1), self.positions, self.data)
     self.svg.make()
     #pp.pprint(self.svg.doc)
@@ -57,6 +60,12 @@ class TestSvg(unittest.TestCase):
     with open('/tmp/minkscape.svg') as f:
       written = len(f.readlines()) 
     self.assertEqual(written, 35)
+
+  def test_4(self):
+    ''' toggle inkscape tags for plotter
+    '''
+    svg = Svg(scale=1, inkscape=True)
+    self.assertTrue(svg.inkscape)
 
 '''
 the

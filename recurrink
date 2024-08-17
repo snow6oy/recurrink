@@ -108,7 +108,10 @@ def update(model, scale, a4=False):
   blocksize = m.read(model=model)[2] # can get scale too
   svgfile = f'/tmp/{model}.svg'
   positions = m.read_positions(model)
-  svg = Svg(scale=s, gridsize=180, cellsize=24) if a4 else Svg(scale=s)
+  if a4: # prepare SVG for plotting
+    svg = Svg(scale=s, gridsize=180, cellsize=24, inkscape=True) 
+  else:
+    svg =  Svg(scale=s)
   #print(f"s {svg.scale} c {svg.cellsize} g {svg.grid}")
   cells = tf.read(model, output=dict())
   v.validate(cells, ver=ver)

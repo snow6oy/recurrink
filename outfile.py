@@ -370,22 +370,32 @@ class Stencil:
     return fn
 
 class Svg(Layout):
-  def __init__(self, scale, gridsize=1080, cellsize=60):
-    # svg:transform(scale) does the same but is lost when converting to raster. Instagram !!!
-    ns = '{http://www.w3.org/2000/svg}'
+  def __init__(self, scale, gridsize=1080, cellsize=60, inkscape=False):
+    ''' svg:transform(scale) is better than homemade scaling
+    but is lost when converting to raster. Instagram !!!
+    '''
     ET.register_namespace('',"http://www.w3.org/2000/svg")
     root = ET.fromstring(f'''
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
-      xmlns:svg="http://www.w3.org/2000/svg" 
-      viewBox="0 0 {gridsize} {gridsize}" width="{gridsize}px" height="{gridsize}px"
+      viewBox="0 0 {gridsize} {gridsize}" 
+      width="{gridsize}px" height="{gridsize}px"
       transform="scale(1)"></svg>
     ''')
-    comment = ET.Comment(f' scale:{scale} cellpx:{cellsize} ')
+    comment = ET.Comment(
+      f' scale:{scale} cellsize:{cellsize} gridsize:{gridsize} '
+    )
     root.insert(0, comment)  # 0 is the index where comment is inserted
+    if inkscape:             # add tags so plotter can split on layer
+      ET.register_namespace(
+        'inkscape',"http://www.inkscape.org/namespaces/inkscape"
+      )
+      root.set('xmlns:inkscape', "http://www.inkscape.org/namespaces/inkscape")
+      self.ns1 = '{http://www.inkscape.org/namespaces/inkscape}'
     #ET.dump(root)
-    self.ns = ns
+    self.ns = '{http://www.w3.org/2000/svg}'
     self.root = root
+    self.inkscape = inkscape
     super().__init__(scale, gridsize, cellsize)
 
   # TODO rect is converted to str for gcode BUT other shapes were not done
@@ -397,8 +407,9 @@ class Svg(Layout):
       uniqid += 1
       g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
       g.set('style', group['style'])
-      g.set('inkscape:groupmode', "layer") # no need new namespace for inkscape ?
-      g.set('inkscape:label', self.trimStyle(group['style'])) # inkscape:label="CCC"
+      if self.inkscape:
+        g.set('inkscape:groupmode', "layer") # need namespace for inkscape
+        g.set('inkscape:label', self.trimStyle(group['style'])) # e.g "CCC"
       for s in group['shapes']:
         uniqid += 1
         name = s['name']
