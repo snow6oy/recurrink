@@ -59,6 +59,7 @@ class Rectangle:
     else:  # fallback for S and W but meander will break
       self.direction = direction 
     self.path = tuple([self.sw.p, self.nw.p, self.ne.p, self.se.p, self.sw.p])
+
   def compare(self, lo):
     ''' Booleans that may become true after comparing
     with another rectangle and finding a point or EDG within our boundary
@@ -73,6 +74,8 @@ class Rectangle:
     self.EEDG      = True if self.e < lo.e and self.e > lo.w and self.n >= lo.n and self.s <= lo.s else False
     self.SEDG      = True if self.s > lo.s and self.s < lo.n and self.e >= lo.e and self.w <= lo.w else False
     self.WEDG      = True if self.w > lo.w and self.w < lo.e and self.n >= lo.n and self.s <= lo.s else False
+    self.SAME      = True if self.n == lo.n and self.e == lo.e and self.s == lo.s and self.w == lo.w else False
+
   def meander(self, gap=1):
     ''' meander chooses a line depending on whether the coordinate is odd or even
         even lines vary depending on where the coordinate lies in the sequence
@@ -96,6 +99,7 @@ class Rectangle:
         p1 = p3 if (p2 % 2 == 0) else self.oddline
         points.append([p1, p2])
     self.path = tuple(points)
+
   def xyPoints(self):
     ''' convert rectangle into one list of x xpoints and another list of y points
         useful for matplotlib
@@ -103,12 +107,14 @@ class Rectangle:
     x = [point[0] for point in self.path]
     y = [point[1] for point in self.path]
     return x, y
+
   def printPoints(self):
     x, y = self.xyPoints()
     if len(x) == len(y):
       [print(f"{p:>2}", y[i]) for i, p in enumerate(x)]
     else:
       raise IndexError("uneven lists x and y")
+
   def plotPoints(self, lower=None):
     ''' r1x = [0, 0, 1, 1, 2, 2, 0]
         r1y = [0, 2, 2, 1, 1, 0, 0]
@@ -125,6 +131,7 @@ class Rectangle:
       ax.plot(x, y)
       #plt.axis([0, 9, 0, 9])
     plt.show()   
+
 class Gnomon(Rectangle):
   ''' Gnomon has an area of IDGP that equals HPFB
     D  G  C
@@ -132,12 +139,12 @@ class Gnomon(Rectangle):
     A  H  B
     https://en.wikipedia.org/wiki/Theorem_of_the_gnomon
   '''
-  def __init__(self, coordinates, dimensions, direction=None, edges=dict()):
+  def __init__(self, coordinates, dimensions, direction=None, edges=dict(), pencolor='000'):
     ''' two out of four possible gnomon can be drawn
         NW  +---  SE     |
             |         ---+
     '''
-    super().__init__(coordinates, dimensions)
+    super().__init__(coordinates, dimensions, pencolor=pencolor)
     # to be compatible with Parabola
     self.p1 = self.p2 = self.w
     self.a = edges['a']
@@ -167,6 +174,7 @@ class Gnomon(Rectangle):
       self.outer = self.s # outer even
       self.inner = self.c # inner even
       self.path = tuple([self.sw.p, self.nw.p, self.ne.p, self.ec.p, self.ac.p, self.sa.p, self.sw.p])
+
 class Parabola(Rectangle):
   ''' u-shaped parallelogram
   '''
@@ -226,6 +234,7 @@ class Parabola(Rectangle):
       self.outer = self.e
       self.inner = edges['b']
       self.path = tuple([self.sw.p, self.nw.p, self.ne.p, self.ec.p, self.bc.p, self.bd.p, self.ed.p, self.se.p, self.sw.p])
+
 class Flatten:
   '''
 1. call gdoc writer from Outfile.gdoc 
@@ -246,7 +255,7 @@ inject pen up/down commands at the shape boundary
     and the direction that meander should take when hatching
     '''
     up.compare(lo)
-    direction = ''
+    direction = 'N'
     if up.NORTHWEST and up.SOUTHEAST:  # test 6
       count = 4
     # test 7 
@@ -261,7 +270,6 @@ inject pen up/down commands at the shape boundary
       direction = 'S'
     elif up.NORTHWEST and up.NORTHEAST: 
       count = 3
-      direction = 'N'
     elif up.NORTHEAST or up.SOUTHWEST or up.SOUTHEAST or up.NORTHWEST: # test 9
       count = 2
     elif up.NEDG and up.SEDG: # tests 10-12
@@ -272,13 +280,12 @@ inject pen up/down commands at the shape boundary
       direction = 'E'
     elif up.EEDG and up.WEDG:
       count = 2
-      direction = 'N'
-    elif up.EEDG or up.WEDG:
+    elif up.EEDG or up.WEDG or up.SAME:
       count = 1
-      direction = 'N'
     else: # tests 13-14
       count = 0
     return count, direction
+
   def splitLowerUpper(self, count, lo, up, direction=None):
     ''' clockwise around the lower adding rectangles according to count
     generate the new rectangles and replace the old lower rectangle 
@@ -289,9 +296,12 @@ inject pen up/down commands at the shape boundary
     1-6---7 '''
     shapes = list()
     if count == 4:
+      shapes.append(up)
       e = {'a':up.w, 'b':(lo.e + 1), 'c':up.nw.y, 'd':None}
       # print(e)
-      nw = Gnomon(coordinates=(lo.sw.x, lo.sw.y), edges=e, dimensions=lo.dimensions, direction='NW')
+      nw = Gnomon(
+        coordinates=(lo.sw.x, lo.sw.y), edges=e, dimensions=lo.dimensions, direction='NW', pencolor=lo.pencolor
+      )
       shapes.append(nw)
       x2 = up.sw.x
       y2 = lo.sw.y
@@ -305,7 +315,9 @@ inject pen up/down commands at the shape boundary
       #c = lo.se.y + up.sw.y - d
       c = up.n
       e={'a':a, 'b':up.se.x, 'c':up.se.y, 'd':up.sw.y}
-      se = Gnomon(coordinates=(x2, y2), edges={'a':a, 'b':b, 'c':c, 'd':d}, dimensions=(w2, h2), direction='SE')
+      se = Gnomon(
+        coordinates=(x2, y2), edges={'a':a, 'b':b, 'c':c, 'd':d}, dimensions=(w2, h2), direction='SE', pencolor=lo.pencolor
+      )
       shapes.append(se)
     elif count == 3:
       if direction == 'N':
@@ -322,16 +334,29 @@ inject pen up/down commands at the shape boundary
       shapes.append(p)
     elif count == 2:
       if direction == 'N':
+        shapes.append(up)
         w1 = lo.e - up.e
         w2 = up.w - lo.w
         h = lo.n - lo.s
-        e = Rectangle(coordinates=(up.se.x, up.se.y), dimensions=(w1, h), direction='E')
+        e = Rectangle(coordinates=(up.se.x, up.se.y), dimensions=(w1, h), direction='E', pencolor=lo.pencolor)
         shapes.append(e)
-        w = Rectangle(coordinates=(lo.sw.x, lo.sw.y), dimensions=(w2, h), direction='W')
+        w = Rectangle(coordinates=(lo.sw.x, lo.sw.y), dimensions=(w2, h), direction='W', pencolor=lo.pencolor)
         shapes.append(w)
+      elif direction == 'E':
+        h1 = lo.n - up.n
+        h2 = up.s - lo.s
+        w = lo.e - lo.w
+        n = Rectangle(coordinates=(lo.w, up.n), dimensions=(w, h1), direction='N', pencolor=lo.pencolor)
+        s = Rectangle(coordinates=(lo.w, lo.s), dimensions=(w, h2), direction='S', pencolor=lo.pencolor)
+        shapes.append([up, s, n])
+      else:
+        raise ValueError(f'count is 2 and direction is >{direction}< err?')
+    elif count == 1:
+      shapes.append(up) # fg colour replaces bg
     else:
       raise ValueError(f'{count} {direction} not done')
     return shapes
+
   def draw(self, r1x, r1y, r2x, r2y):
     ''' r1x = [0, 0, 1, 1, 2, 2, 0]
         r1y = [0, 2, 2, 1, 1, 0, 0]
@@ -343,6 +368,7 @@ inject pen up/down commands at the shape boundary
     plt.axis([0, 9, 0, 9])
     #plt.label(r1name + r2name)
     plt.show()
+
 if __name__ == '__main__':
   ''' look here for visual testing with matplot otherwise see unittest
   '''
@@ -413,24 +439,24 @@ if __name__ == '__main__':
   # Parabolas #
   #-----------#
   elif t == 10: # north facing parabola
-    lo = Rectangle(coordinates=(1, 1), dimensions=(6, 2))
-    up = Rectangle(coordinates=(3, 0), dimensions=(2, 2))
-    numof_edges, d = gcw.overlayTwoCells(lo, up)
-    shapes = gcw.splitLowerUpper(numof_edges, lo, up, direction=d)
+    lo = Rectangle(coordinates=(1, 1), dimensions=(6, 3))
+    up = Rectangle(coordinates=(3, 0), dimensions=(2, 3))
+    numof_edges, d = f.overlayTwoCells(lo, up)
+    shapes = f.splitLowerUpper(numof_edges, lo, up, direction=d)
     #shapes[0].printPoints()
     up.plotPoints(lower=shapes[0])
   elif t == 11: # south facing parabola
     lo = Rectangle(coordinates=(1, 1), dimensions=(6, 3))
     up = Rectangle(coordinates=(3, 2), dimensions=(2, 3))
-    numof_edges, d = gcw.overlayTwoCells(lo, up)
-    shapes = gcw.splitLowerUpper(numof_edges, lo, up, direction=d)
+    numof_edges, d = f.overlayTwoCells(lo, up)
+    shapes = f.splitLowerUpper(numof_edges, lo, up, direction=d)
     #shapes[0].printPoints()
     up.plotPoints(lower=shapes[0])
   elif t == 12:  # calculate parabola and draw path
     lo = Rectangle(coordinates=(1, 1), dimensions=(6, 6))
     up = Rectangle(coordinates=(3, 1), dimensions=(2, 2))
-    count, d = gcw.overlayTwoCells(lo, up) 
-    shapes = gcw.splitLowerUpper(count, lo, up, direction=d)
+    count, d = f.overlayTwoCells(lo, up) 
+    shapes = f.splitLowerUpper(count, lo, up, direction=d)
     shapes[0].plotPoints()
   elif t == 13: # parabola meander
     #p = Parabola(coordinates=(1,1), edges={'a':3,'b':5,'c':None,'d':3}, dimensions=(6,6), direction='N') # north

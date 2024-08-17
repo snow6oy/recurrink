@@ -6,7 +6,7 @@ import pprint
 from flatten import Flatten, Rectangle, Gnomon, Parabola
 pp = pprint.PrettyPrinter(indent=2)
 
-class TestGcode(unittest.TestCase):
+class TestFlatten(unittest.TestCase):
 
   def setUp(self):
     self.f  = Flatten()
@@ -145,6 +145,7 @@ class TestGcode(unittest.TestCase):
       Rectangle(coordinates=( 9,  1), dimensions=(3, 3))
     )
     self.assertEqual(expect, count)
+
   def test_14(self):
     ''' count rectangles no overlap with same row or col
     '''
@@ -159,6 +160,18 @@ class TestGcode(unittest.TestCase):
     print(up.WEDG)
     '''
     self.assertEqual(expect, count)
+
+  def test_15(self):
+    ''' two rectangles with exact overlap
+    '''
+    up = Rectangle(coordinates=(0, 6), dimensions=(3, 3))
+    count, d = self.f.overlayTwoCells(
+      Rectangle(coordinates=(0, 0), dimensions=(3, 3)),
+      Rectangle(coordinates=(0, 0), dimensions=(3, 3))
+    )
+    self.assertEqual(1, count)
+    self.assertEqual('N', d)
+
   #############
   # Gnomons   #
   #############

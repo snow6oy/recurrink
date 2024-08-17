@@ -506,11 +506,14 @@ class Gcode(Layout):
     shapes = None
     for i, lower in enumerate(bg):
       numof_edges, d = self.f.overlayTwoCells(lower, upper)
+      #print(i, 'numof edges', numof_edges, 'direction', d)
       if numof_edges:
         found = i
         shapes = self.f.splitLowerUpper(numof_edges, lower, upper, direction=d)
-    if found: # insert any found shapes using index
-      [bg.insert(found, s) for s in shapes]
+    #print(found, shapes)
+    if len(shapes): # insert any found shapes using index
+      del bg[found] # can replace one with many BUT not many with one. E.g Gnomon 
+      [bg.insert(found, s) for s in shapes] # the shape order is reversed, but thats kewl
     return bg
 
   def makeFlat(self, rects):
@@ -549,7 +552,7 @@ class Gcode(Layout):
     gcw.writer(fn)
     gcw.start()
     for s in shapes:
-      print(s.pencolor, fill)
+      #print(s.pencolor, fill)
       if s.pencolor == fill:
         print(f"{fill} xy {s.sw.x:>4} {s.sw.y:<4} dim {s.dimensions} {s.direction:<2}")
         s.meander()
