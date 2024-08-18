@@ -120,37 +120,74 @@ class TestGcode(unittest.TestCase):
     use mock data based on makeRectangles()
     '''
     gc = Gcode(scale=1, gridsize=90, cellsize=30)
-    bg = list()
+    bgdata = list()
     upper = list()
     for c in [(0,0), (30,0), (60,0)]:
-      bg.append(Rectangle(coordinates=c, dimensions=(30,30), pencolor='CCC'))
+      bgdata.append(
+        [Rectangle(coordinates=c, dim=(30,30), pencolor='CCC')]
+      )
     d = [(30,30), (10,30), (10,10), (10,10), (50,10)]
     p = ['FFF', '000', '000', '000', 'FFF']
     for i, c in enumerate([(0,0), (40,0), (70,10), (10,10), (20,10)]):
-      upper.append(Rectangle(coordinates=c, dimensions=d[i], pencolor=p[i]))
+      up = Rectangle(c, d[i], pencolor=p[i])
+      bgdata = gc.mergeBackground(bgdata, up)
     ''' do the real work here
+    bgdata = gc.mergeBackground(bgdata, upper[0]) # white instead of grey
+    self.assertEqual(bgdata[0][0].label, 'RFFF     0  0 30 30') 
+    bgdata = gc.mergeBackground(bgdata, upper[1]) # black line split grey in 2
+    self.assertEqual(bgdata[1][0].label, 'RCCC    30  0 10 30')
+    self.assertEqual(bgdata[1][1].label, 'RCCC    50  0 10 30')
+    self.assertEqual(bgdata[1][2].label, 'R000    40  0 10 30')
+    bgdata = gc.mergeBackground(bgdata, upper[2])   # small black sq centre
+    self.assertEqual(bgdata[2][0].label, 'GCCC    70  0 20 20')
+    self.assertEqual(bgdata[2][1].label, 'GCCC    60  0 30 30')
+    self.assertEqual(bgdata[2][2].label, 'R000    70 10 10 10')
+    bgdata = gc.mergeBackground(bgdata, upper[3])   # small black sq centre
+    self.assertEqual(bgdata[0][0].label, 'GFFF    10  0 20 20')
+    self.assertEqual(bgdata[0][1].label, 'GFFF     0  0 30 30')
+    self.assertEqual(bgdata[0][2].label, 'R000    10 10 10 10')
+    bgdata = gc.mergeBackground(bgdata, upper[4]) # large white line overlay all
+    self.assertEqual(bgdata[0][0].label, 'P000     0  0 30 30')
+    self.assertEqual(bgdata[1][0].label, 'RCCC    30  0 30 10')
+    self.assertEqual(bgdata[1][1].label, 'RCCC    30 20 30 10')
+    self.assertEqual(bgdata[1][2].label, 'RFFF    20 10 50 10')
+    self.assertEqual(bgdata[2][0].label, 'P000    60  0 30 30')
+
+0 GFFF    10  0 20 20
+1 P000     0  0 30 30
+2 R000    10 10 10 10
+--------------------------------------------------------------------------------
+0 RCCC    30  0 10 30
+1 RCCC    50  0 10 30
+2 R000    40  0 10 10
+3 R000    40 20 10 10
+4 RFFF    20 10 50 10
+--------------------------------------------------------------------------------
+0 GCCC    70  0 20 20
+1 P000    60  0 30 30
+2 R000    70 10 10 10
+
     '''
-    bg = gc.mergeBackground(bg, upper[0])  
-    self.assertEqual(bg[0].pencolor, 'FFF') # white instead of grey
-    self.assertEqual(len(bg), 3)
-    bg = gc.mergeBackground(bg, upper[1])   # ?? black line split grey in 2
+
+    # pp.pprint(bgdata)
+    for bg in bgdata:
+      for i, a in enumerate(bg):
+        print(i, a.label)
+      print('-' * 80)
+    '''
+    self.assertEqual(len(bg[0]), 1)
     self.assertEqual(len(bg), 5)            # add 3 remove 1
-    self.assertEqual(bg[3].pencolor, '000')
-    bg = gc.mergeBackground(bg, upper[2])   # small black sq centre
     self.assertEqual(len(bg), 7)            # add 2 gnomons, 1 fg and remove 1 bg
+    self.assertEqual(bg[3].pencolor, '000')
     self.assertEqual(bg[4].direction, 'SE') # only gnomon 
     self.assertEqual(bg[4].pencolor, 'CCC') # 
     self.assertEqual(bg[5].direction, 'NW')
     self.assertEqual(bg[5].pencolor, 'CCC') 
     self.assertEqual(bg[6].pencolor, '000')
-    bg = gc.mergeBackground(bg, upper[3])   # small black sq centre
     self.assertEqual(bg[0].pencolor, 'FFF') # white sq became a white gnomon
     self.assertEqual(bg[0].direction, 'SE')
-    bg = gc.mergeBackground(bg, upper[4])   # ?? large white line overlays all 3
     self.assertEqual(bg[8].direction, 'N')
-    for i, a in enumerate(bg):
-      print(i, a.pencolor, a.direction, a.sw.p) 
-    print('-' * 80)
+    '''
 
 '''
 the

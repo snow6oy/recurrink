@@ -17,9 +17,11 @@ class Rectangle:
       self.x = x
       self.y = y
       self.p = tuple([x, y])
-  def __init__(self, coordinates, dimensions, direction=None, pencolor='000'):
+  def __init__(
+    self, coordinates, dim, direction=None, pencolor='000', name='R'
+  ):
     x, y = coordinates
-    w, h = dimensions
+    w, h = dim
     # corners have points
     self.sw = self.Point(x, y)
     self.nw = self.Point(x, y + h)
@@ -30,8 +32,9 @@ class Rectangle:
     self.n = y + h
     self.s = y
     self.e = x + w
-    self.dimensions = dimensions 
+    self.dimensions = dim 
     self.pencolor = pencolor
+    self.label = f'{name}{pencolor:<6}{x:>3}{y:>3}{w:>3}{h:>3}'
     if direction == 'E' or direction == 'W':
       self.p1 = self.w
       self.direction = 'E'
@@ -139,12 +142,13 @@ class Gnomon(Rectangle):
     A  H  B
     https://en.wikipedia.org/wiki/Theorem_of_the_gnomon
   '''
-  def __init__(self, coordinates, dimensions, direction=None, edges=dict(), pencolor='000'):
+  def __init__(
+    self, coordinates, dim, direction=None, edges=dict(), pencolor='000'):
     ''' two out of four possible gnomon can be drawn
         NW  +---  SE     |
             |         ---+
     '''
-    super().__init__(coordinates, dimensions, pencolor=pencolor)
+    super().__init__(coordinates, dim, pencolor=pencolor, name='G')
     # to be compatible with Parabola
     self.p1 = self.p2 = self.w
     self.a = edges['a']
@@ -178,8 +182,10 @@ class Gnomon(Rectangle):
 class Parabola(Rectangle):
   ''' u-shaped parallelogram
   '''
-  def __init__(self, coordinates, dimensions, direction=None, edges=dict()):
-    super().__init__(coordinates, dimensions)
+  def __init__(
+    self, coordinates, dim, direction=None, edges=dict(), pencolor='000'
+  ):
+    super().__init__(coordinates, dim, pencolor=pencolor, name='P')
     self.direction = direction
     # define inner lines
     self.a = edges['a']
@@ -300,7 +306,8 @@ inject pen up/down commands at the shape boundary
       e = {'a':up.w, 'b':(lo.e + 1), 'c':up.nw.y, 'd':None}
       # print(e)
       nw = Gnomon(
-        coordinates=(lo.sw.x, lo.sw.y), edges=e, dimensions=lo.dimensions, direction='NW', pencolor=lo.pencolor
+        coordinates=(lo.sw.x, lo.sw.y), edges=e, 
+        dim=lo.dimensions, direction='NW', pencolor=lo.pencolor
       )
       shapes.append(nw)
       x2 = up.sw.x
@@ -316,7 +323,7 @@ inject pen up/down commands at the shape boundary
       c = up.n
       e={'a':a, 'b':up.se.x, 'c':up.se.y, 'd':up.sw.y}
       se = Gnomon(
-        coordinates=(x2, y2), edges={'a':a, 'b':b, 'c':c, 'd':d}, dimensions=(w2, h2), direction='SE', pencolor=lo.pencolor
+        coordinates=(x2, y2), edges={'a':a, 'b':b, 'c':c, 'd':d}, dim=(w2, h2), direction='SE', pencolor=lo.pencolor
       )
       shapes.append(se)
     elif count == 3:
@@ -330,7 +337,7 @@ inject pen up/down commands at the shape boundary
         e = { 'a':None, 'b':up.w, 'c':up.n, 'd':up.s }
       else:
         raise ValueError(f"Parabola does not know '{direction}' direction")
-      p = Parabola(coordinates=(lo.sw.x, lo.se.y), edges=e, dimensions=lo.dimensions, direction=direction)
+      p = Parabola(coordinates=(lo.sw.x, lo.se.y), edges=e, dim=lo.dimensions, direction=direction)
       shapes.append(p)
     elif count == 2:
       if direction == 'N':
@@ -338,17 +345,19 @@ inject pen up/down commands at the shape boundary
         w1 = lo.e - up.e
         w2 = up.w - lo.w
         h = lo.n - lo.s
-        e = Rectangle(coordinates=(up.se.x, up.se.y), dimensions=(w1, h), direction='E', pencolor=lo.pencolor)
+        e = Rectangle(coordinates=(up.se.x, up.se.y), dim=(w1, h), direction='E', pencolor=lo.pencolor)
         shapes.append(e)
-        w = Rectangle(coordinates=(lo.sw.x, lo.sw.y), dimensions=(w2, h), direction='W', pencolor=lo.pencolor)
+        w = Rectangle(coordinates=(lo.sw.x, lo.sw.y), dim=(w2, h), direction='W', pencolor=lo.pencolor)
         shapes.append(w)
       elif direction == 'E':
+        shapes.append(up)
         h1 = lo.n - up.n
         h2 = up.s - lo.s
         w = lo.e - lo.w
-        n = Rectangle(coordinates=(lo.w, up.n), dimensions=(w, h1), direction='N', pencolor=lo.pencolor)
-        s = Rectangle(coordinates=(lo.w, lo.s), dimensions=(w, h2), direction='S', pencolor=lo.pencolor)
-        shapes.append([up, s, n])
+        n = Rectangle(coordinates=(lo.w, up.n), dim=(w, h1), direction='N', pencolor=lo.pencolor)
+        shapes.append(n)
+        s = Rectangle((lo.w, lo.s), (w,h2), direction='S', pencolor=lo.pencolor)
+        shapes.append(s)
       else:
         raise ValueError(f'count is 2 and direction is >{direction}< err?')
     elif count == 1:
@@ -372,8 +381,8 @@ inject pen up/down commands at the shape boundary
 if __name__ == '__main__':
   ''' look here for visual testing with matplot otherwise see unittest
   '''
-  lo = Rectangle(coordinates=(1, 1), dimensions=(4, 4))
-  up = Rectangle(coordinates=(2, 2), dimensions=(2, 2))
+  lo = Rectangle(coordinates=(1, 1), dim=(4, 4))
+  up = Rectangle(coordinates=(2, 2), dim=(2, 2))
   f = Flatten()
   t = int(sys.argv[1])
   # TODO refactor from Parabola
@@ -384,9 +393,9 @@ if __name__ == '__main__':
     print(up.xyPoints()) 
     up.plotPoints(lower=lo)
   elif t == 2:  # meander N or E
-    #r = Rectangle(coordinates=(1, 1), dimensions=(6, 6))
+    #r = Rectangle(coordinates=(1, 1), dim=(6, 6))
     #r.meander(direction='E', gap=1)
-    r = Rectangle(coordinates=(1, 1), dimensions=(6, 6), direction='N')
+    r = Rectangle(coordinates=(1, 1), dim=(6, 6), direction='N')
     r.meander()
     r.printPoints()
     r.plotPoints()
@@ -406,15 +415,15 @@ if __name__ == '__main__':
     shapes[1].printPoints()
     shapes[0].plotPoints(lower=shapes[1])
   elif t == 5: # create gnomon paths 
-    g = Gnomon(coordinates=(1,1), edges={'a':2,'b':None,'d':None,'c':4}, dimensions=(4,4))
+    g = Gnomon(coordinates=(1,1), edges={'a':2,'b':None,'d':None,'c':4}, dim=(4,4))
     g.printPoints()
     g.plotPoints()
   elif t == 6: # gnomon south east
-    g = Gnomon(coordinates=(2,1), edges={'a':2,'b':4,'c':4,'d':2}, dimensions=(3,3), direction='SE')
+    g = Gnomon(coordinates=(2,1), edges={'a':2,'b':4,'c':4,'d':2}, dim=(3,3), direction='SE')
     g.printPoints()
     g.plotPoints()
   elif t == 7: # meander gnomons
-    g1 = Gnomon(coordinates=(1,1), edges={'a':2,'b':5,'d':None,'c':4}, dimensions=(4,4))
+    g1 = Gnomon(coordinates=(1,1), edges={'a':2,'b':5,'d':None,'c':4}, dim=(4,4))
     g1.printPoints()
     g1.meander()
     print('-'*80)
@@ -422,16 +431,16 @@ if __name__ == '__main__':
     g1.plotPoints()
     g2.plotPoints()
     '''
-    g2 = Gnomon(coordinates=(2,1), edges={'a':2,'b':4,'c':4,'d':2}, dimensions=(3,3), direction='SE')
+    g2 = Gnomon(coordinates=(2,1), edges={'a':2,'b':4,'c':4,'d':2}, dim=(3,3), direction='SE')
     g2.meander()
     g2.printPoints()
     g1.plotPoints(lower=g2)
   elif t == 8:
-    g = Gnomon(coordinates=(0,0), edges={'a': 9, 'b': 31, 'c': 20, 'd': None}, dimensions=(30,30), direction='NW')
+    g = Gnomon(coordinates=(0,0), edges={'a': 9, 'b': 31, 'c': 20, 'd': None}, dim=(30,30), direction='NW')
     g.meander()
     g.plotPoints()
   elif t == 9:
-    g = Gnomon(coordinates=(10,0), edges={'a': 10, 'b': 20, 'c': 20, 'd': 10}, dimensions=(20,20), direction='SE')
+    g = Gnomon(coordinates=(10,0), edges={'a': 10, 'b': 20, 'c': 20, 'd': 10}, dim=(20,20), direction='SE')
     g.meander()
     g.plotPoints()
 
@@ -439,30 +448,30 @@ if __name__ == '__main__':
   # Parabolas #
   #-----------#
   elif t == 10: # north facing parabola
-    lo = Rectangle(coordinates=(1, 1), dimensions=(6, 3))
-    up = Rectangle(coordinates=(3, 0), dimensions=(2, 3))
+    lo = Rectangle(coordinates=(1, 1), dim=(6, 3))
+    up = Rectangle(coordinates=(3, 0), dim=(2, 3))
     numof_edges, d = f.overlayTwoCells(lo, up)
     shapes = f.splitLowerUpper(numof_edges, lo, up, direction=d)
     #shapes[0].printPoints()
     up.plotPoints(lower=shapes[0])
   elif t == 11: # south facing parabola
-    lo = Rectangle(coordinates=(1, 1), dimensions=(6, 3))
-    up = Rectangle(coordinates=(3, 2), dimensions=(2, 3))
+    lo = Rectangle(coordinates=(1, 1), dim=(6, 3))
+    up = Rectangle(coordinates=(3, 2), dim=(2, 3))
     numof_edges, d = f.overlayTwoCells(lo, up)
     shapes = f.splitLowerUpper(numof_edges, lo, up, direction=d)
     #shapes[0].printPoints()
     up.plotPoints(lower=shapes[0])
   elif t == 12:  # calculate parabola and draw path
-    lo = Rectangle(coordinates=(1, 1), dimensions=(6, 6))
-    up = Rectangle(coordinates=(3, 1), dimensions=(2, 2))
+    lo = Rectangle(coordinates=(1, 1), dim=(6, 6))
+    up = Rectangle(coordinates=(3, 1), dim=(2, 2))
     count, d = f.overlayTwoCells(lo, up) 
     shapes = f.splitLowerUpper(count, lo, up, direction=d)
     shapes[0].plotPoints()
   elif t == 13: # parabola meander
-    #p = Parabola(coordinates=(1,1), edges={'a':3,'b':5,'c':None,'d':3}, dimensions=(6,6), direction='N') # north
-    p = Parabola(coordinates=(1,1), edges={'a':3,'b':5,'c':5,'d':None}, dimensions=(6,6), direction='S') # south
-    #p = Parabola(coordinates=(1,1), edges={'a':3,'b':None,'c':5,'d':3}, dimensions=(6,6), direction='E') # east
-    #p = Parabola(coordinates=(1,1), edges={'a':None,'b':5,'c':5,'d':3}, dimensions=(6,6), direction='W') # west
+    #p = Parabola(coordinates=(1,1), edges={'a':3,'b':5,'c':None,'d':3}, dim=(6,6), direction='N') # north
+    p = Parabola(coordinates=(1,1), edges={'a':3,'b':5,'c':5,'d':None}, dim=(6,6), direction='S') # south
+    #p = Parabola(coordinates=(1,1), edges={'a':3,'b':None,'c':5,'d':3}, dim=(6,6), direction='E') # east
+    #p = Parabola(coordinates=(1,1), edges={'a':None,'b':5,'c':5,'d':3}, dim=(6,6), direction='W') # west
     p.meander()
     p.printPoints()
     p.plotPoints()

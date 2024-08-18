@@ -461,7 +461,7 @@ class Gcode(Layout):
         style = group['style']  # each group has a uniq style
         c = tuple([round(float(cell['x'])), round(float(cell['y']))])
         d = tuple([round(float(cell['width'])), round(float(cell['height']))])
-        r = Rectangle(coordinates=c, dimensions=d, pencolor=self.trimStyle(group['style']))
+        r = Rectangle(c, d, pencolor=self.trimStyle(group['style']))
         rectangles[i].append(r)
         #print(cell['x'], r.sw.x)
     return rectangles
@@ -498,7 +498,30 @@ class Gcode(Layout):
         if (cm[1] == uc):
           pass # TODO write
 
-  def mergeBackground(self, bg, upper):
+  def mergeBackground(self, bgdata, upper):
+    ''' compare shapes from different layers 
+        merge if they overlap
+    '''
+    found = 0
+    shapes = list()
+    for bg in bgdata:
+      for i, lower in enumerate(bg):
+        numof_edges, d = self.f.overlayTwoCells(lower, upper)
+        #print(i, 'numof edges', numof_edges, 'direction', d)
+        if numof_edges:
+          found = i
+          shapes = self.f.splitLowerUpper(
+            numof_edges, lower, upper, direction=d
+          )
+      #print(found, shapes)
+      if len(shapes): # insert any found shapes using index
+        del bg[found] # can replace one with many BUT not many with one.Eg Gnomon 
+        # shape order is reversed, but thats kewl
+        [bg.insert(found, s) for s in shapes]
+      shapes = list()
+    return bgdata
+
+  def ___mergeBackground(self, bg, upper):
     ''' compare shapes from different layers 
         merge if they overlap
     '''
@@ -512,20 +535,23 @@ class Gcode(Layout):
         shapes = self.f.splitLowerUpper(numof_edges, lower, upper, direction=d)
     #print(found, shapes)
     if len(shapes): # insert any found shapes using index
-      del bg[found] # can replace one with many BUT not many with one. E.g Gnomon 
-      [bg.insert(found, s) for s in shapes] # the shape order is reversed, but thats kewl
+      del bg[found] # can replace one with many BUT not many with one.Eg Gnomon 
+      # shape order is reversed, but thats kewl
+      [bg.insert(found, s) for s in shapes] 
     return bg
+
 
   def makeFlat(self, rects):
     ''' loop a nested list so that each item
         from the second list onwards is compared 
         to the first list exactly once
     '''
-    bg = rects.pop(0)
+    bgdata = list()
+    [bgdata.append([bg]) for bg in rects.pop(0)]
     for up in rects:  # fg and top group
       for cell in up: # cell is a Rectangle()
-        bg = self.mergeBackground(bg, cell) 
-    return bg
+        bgdata = self.mergeBackground(bgdata, cell) 
+    return bgdata
 
   def write(self, model, fill='fill:#FFF'):
     ''' stream path data to file as gcodes
@@ -538,7 +564,9 @@ class Gcode(Layout):
     for index in self.gcdata:
       s = self.gcdata[index]['shapes']
       if fill in self.gcdata[index]['style']:
-        #print(f"{fillname} xy {s.sw.x:>4} {s.sw.y:<4} dim {s.dimensions} {s.direction:<2}")
+        #print("""
+#{fillname} xy {s.sw.x:>4} {s.sw.y:<4} dim {s.dimensions} {s.direction:<2}
+#"""
         s.meander()
         gcw.points(list(s.path))
     gcw.stop()
