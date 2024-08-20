@@ -2,7 +2,8 @@ import math
 import pprint
 pp = pprint.PrettyPrinter(indent = 2)
 from config import *
-
+''' python3 -m scripts.scaler
+'''
 class Points:
   ''' nw n ne    do the maths to render a cell
       w  c  e    points are calculated and called as p.ne p.nne p.s
@@ -99,9 +100,15 @@ if __name__ == '__main__':
     12 * 60 = 720  * 1.5 = 1080
     18 * 60 = 1080 * 1.0 = 1080
     36 * 60 = 2160 * 0.5 = 1080
+
+                   gridsz cellsz maxmm
+    a4 210x297 mm     180     24   210
+    a3 297x420 mm     270     36   297
   '''
   scale_range = [0.5, 1.0, 1.5, 2.0]
-  test_vals = [ (1080, 60, 1081, 5), (180, 24, 210, 0) ]
+  test_vals = [ (1080, 60, 1081, 5), (270, 36, 297, 0) ]
+
+
   blocksize = 24  # afroclave[x] = 24
   print("\t".join(['scale', "num_cel", "cel_siz", "scal_ok", "div_3", "blocksz", "hi_wid", "fit_pg", "strok_w", "N_x"]))
   print('.' * 80)
