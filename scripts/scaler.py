@@ -104,10 +104,11 @@ if __name__ == '__main__':
                    gridsz cellsz maxmm
     a4 210x297 mm     180     24   210
     a3 297x420 mm     270     36   297
+    a3                702    118   980  above * 3.3 
   '''
   scale_range = [0.5, 1.0, 1.5, 2.0]
-  test_vals = [ (1080, 60, 1081, 5), (270, 36, 297, 0) ]
-
+  test_vals = [ (1080, 60, 1081, 5), (900, 60, 980, 0) ]
+  # (270, 36, 297, 0) ]
 
   blocksize = 24  # afroclave[x] = 24
   print("\t".join(['scale', "num_cel", "cel_siz", "scal_ok", "div_3", "blocksz", "hi_wid", "fit_pg", "strok_w", "N_x"]))
