@@ -47,7 +47,7 @@ class Rectangle:
       else:
         self.outer = self.w
         self.oddline = self.e
-    elif direction == 'N' or direction == None:
+    elif direction == 'N' or direction == 'S' or direction == None:
       self.p2 = self.s
       self.direction = 'N'
       self.start = self.w
@@ -59,8 +59,8 @@ class Rectangle:
       else:
         self.outer = self.s
         self.oddline = self.n
-    else:  # fallback for S and W but meander will break
-      self.direction = direction 
+    else:  # fallback for unexpected direction, but meander will break anyway
+      self.direction = direction if direction else 'N' 
     self.path = tuple([self.sw.p, self.nw.p, self.ne.p, self.se.p, self.sw.p])
 
   def compare(self, lo):
@@ -302,14 +302,12 @@ inject pen up/down commands at the shape boundary
     1-6---7 '''
     shapes = list()
     if count == 4:
-      shapes.append(up)
       e = {'a':up.w, 'b':(lo.e + 1), 'c':up.nw.y, 'd':None}
       # print(e)
       nw = Gnomon(
         coordinates=(lo.sw.x, lo.sw.y), edges=e, 
         dim=lo.dimensions, direction='NW', pencolor=lo.pencolor
       )
-      shapes.append(nw)
       x2 = up.sw.x
       y2 = lo.sw.y
       w2 = up.se.x - lo.sw.x
@@ -325,7 +323,10 @@ inject pen up/down commands at the shape boundary
       se = Gnomon(
         coordinates=(x2, y2), edges={'a':a, 'b':b, 'c':c, 'd':d}, dim=(w2, h2), direction='SE', pencolor=lo.pencolor
       )
+      shapes.append(nw)
       shapes.append(se)
+      print(up.label)
+      shapes.append(up)
     elif count == 3:
       if direction == 'N':
         e = { 'a':up.w, 'b':up.e, 'c':None, 'd':up.n }
@@ -337,8 +338,14 @@ inject pen up/down commands at the shape boundary
         e = { 'a':None, 'b':up.w, 'c':up.n, 'd':up.s }
       else:
         raise ValueError(f"Parabola does not know '{direction}' direction")
-      p = Parabola(coordinates=(lo.sw.x, lo.se.y), edges=e, dim=lo.dimensions, direction=direction)
+      p = Parabola(
+        coordinates=(lo.sw.x, lo.se.y), 
+        edges=e, 
+        dim=lo.dimensions, 
+        direction=direction,
+        pencolor=up.pencolor)
       shapes.append(p)
+      shapes.append(up)
     elif count == 2:
       if direction == 'N':
         shapes.append(up)
