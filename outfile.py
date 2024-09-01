@@ -469,26 +469,40 @@ class Gcode(Layout):
         bgdata = self.mergeBackground(bgdata, cell) 
     return bgdata
 
+  def undoBackground(self, bg):
+    ''' CCC is temp indicator of background that we want to zap
+    '''
+    only_up = [lo for lo in bg if lo.pencolor != 'CCC']
+    return only_up
+
   def mergeBackground(self, bgdata, upper):
     ''' compare a given upper shape against all background shapes
         merge if they overlap
     '''
     tx = list()
     for bg in bgdata:
+      hidden = False
       for lower in bg:
         # call overlay from splitLower
         numof_edges, d = self.f.overlayTwoCells(lower, upper)
-        #print('numof edges', numof_edges, 'direction', d)
         if numof_edges:
+          #print('numof edges', numof_edges, 'direction', d)
           shapes = self.f.splitLowerUpper(
             numof_edges, lower, upper, direction=d
           )
           if len(shapes):
+            hidden = True if numof_edges > 2 else False
             break
       else:
         tx.append(bg)    # nothing new found, keep the old
         continue
-      tx.append(shapes)  # replace old with new
+      if hidden:
+        bg = self.undoBackground(bg)
+        bg.extend(shapes)
+        tx.append(bg)  # replace old with new
+      else:
+        bg.extend(shapes)
+        tx.append(bg)
     return tx
 
   def write4(self, model, cells, fill=None):
@@ -611,8 +625,3 @@ class Gcode(Layout):
 the
 end
 '''
-
-
-
-
-

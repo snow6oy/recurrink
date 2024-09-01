@@ -135,6 +135,11 @@ class Rectangle:
       #plt.axis([0, 9, 0, 9])
     plt.show()   
 
+  def area(self):
+    w = self.dimensions[0]
+    h = self.dimensions[1]
+    return w * h 
+
 class Gnomon(Rectangle):
   ''' Gnomon has an area of IDGP that equals HPFB
     D  G  C
@@ -321,11 +326,12 @@ inject pen up/down commands at the shape boundary
       c = up.n
       e={'a':a, 'b':up.se.x, 'c':up.se.y, 'd':up.sw.y}
       se = Gnomon(
-        coordinates=(x2, y2), edges={'a':a, 'b':b, 'c':c, 'd':d}, dim=(w2, h2), direction='SE', pencolor=lo.pencolor
+        coordinates=(x2, y2), edges={'a':a, 'b':b, 'c':c, 'd':d}, 
+        dim=(w2, h2), direction='SE', pencolor=lo.pencolor
       )
       shapes.append(nw)
       shapes.append(se)
-      print(up.label)
+      #print(up.label)
       shapes.append(up)
     elif count == 3:
       if direction == 'N':
@@ -343,7 +349,7 @@ inject pen up/down commands at the shape boundary
         edges=e, 
         dim=lo.dimensions, 
         direction=direction,
-        pencolor=up.pencolor)
+        pencolor=lo.pencolor)
       shapes.append(p)
       shapes.append(up)
     elif count == 2:
@@ -352,16 +358,25 @@ inject pen up/down commands at the shape boundary
         w1 = lo.e - up.e
         w2 = up.w - lo.w
         h = lo.n - lo.s
-        e = Rectangle(coordinates=(up.se.x, up.se.y), dim=(w1, h), direction='E', pencolor=lo.pencolor)
+        e = Rectangle(
+          coordinates=(up.se.x, up.se.y), dim=(w1, h), 
+          direction='E', pencolor=lo.pencolor
+        )
         shapes.append(e)
-        w = Rectangle(coordinates=(lo.sw.x, lo.sw.y), dim=(w2, h), direction='W', pencolor=lo.pencolor)
+        w = Rectangle(
+          coordinates=(lo.sw.x, lo.sw.y), dim=(w2, h), 
+          direction='W', pencolor=lo.pencolor
+        )
         shapes.append(w)
       elif direction == 'E':
         shapes.append(up)
         h1 = lo.n - up.n
         h2 = up.s - lo.s
         w = lo.e - lo.w
-        n = Rectangle(coordinates=(lo.w, up.n), dim=(w, h1), direction='N', pencolor=lo.pencolor)
+        n = Rectangle(
+          coordinates=(lo.w, up.n), dim=(w, h1), 
+          direction='N', pencolor=lo.pencolor
+        )
         shapes.append(n)
         s = Rectangle((lo.w, lo.s), (w,h2), direction='S', pencolor=lo.pencolor)
         shapes.append(s)
