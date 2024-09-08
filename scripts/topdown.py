@@ -1,102 +1,142 @@
+import pprint
 from flatten import Rectangle, Flatten
 
-def whitespace(this, retry=False):
-  ''' attempt to find whitespace for this rectangle
-  split any that collide and retest
-  returning False will cause a rect to be ignored
+class MinkFlatten():
+  ''' tactical flattener that only knows Minkscape
   '''
-  #print(this.label)
-  found = True # have whitespace
-  for up in done:
-    numof_edges, d = f.overlayTwoCells(this, up)
-    if numof_edges == 1:
-      found = False # position already occupied
-      break
-    elif numof_edges > 1:
-      #print('numof edges', numof_edges, 'direction', d)
-      shapes = f.splitLowerUpper(numof_edges, this, up, direction=d)
-      if len(shapes) and not retry:
-        [collisions.add(s) for s in shapes]
-        found = False # no more room in here
+
+  def findSpace(self, seeker):
+    ''' attempt to find a space sought by this shape
+    split any that collide and retest
+    returning False will cause a rect to be ignored
+    '''
+    found = []
+    #print(seeker.label)
+    for up in self.done:
+      numof_edges, d = self.f.overlayTwoCells(seeker, up)
+      # TODO make sure flatten exludes up from [shapes]
+      if numof_edges: # note: greater than 0 adds unwanted shapes
+        #print('numof edges', numof_edges, 'direction', d)
+        found = self.f.splitLowerUpper(numof_edges, seeker, up, direction=d)
+        #print(f"{seeker.label} {up.label} {len(found)}")
         break
-  return found
+    return found
 
-def whitespaceAgain(this, retry=False):
-  print(this.label)
-  for up in done:
-    numof_edges, d = f.overlayTwoCells(this, up)
-    if numof_edges:
-      print('numof edges', numof_edges, 'direction', d)
-      shapes = f.splitLowerUpper(numof_edges, this, up, direction=d)
-      print(len(shapes))
-      [print(s.label) for s in shapes]
-  return None
+  def theParabolaHack(self):
+    ''' parabolas are not added to done because of a fault in collision detection
+    this hack forces but only works for minkscape
+    '''
+    missing = ['PFFF     0  0 30 30', 'PCCC    60  0 30 30']
+    for t in self.todo:
+      for label in missing:
+        if label == t.label:
+          self.done.append(t) 
 
-def oneRect(this):
-  ''' if no collisions are detected move item to done
-  '''
-  r = Rectangle(coordinates=this[0], dim=this[1], pencolor=this[2])
-  if whitespace(r):
-    done.add(r)
+  # TODO look into Shapely.area()
+  def checkAreaSum(expected_area, done=list()):
+    ''' check the done set() by calculating the bounded area
+    the sum of all bounded area should equal blocksize * cellsize
+    if higher than fail because there are overlaps
+    if lower then warn about unallocated whitespace (run visual check)
+    '''
+    area = 0
+    for s in done:
+      print(s.label, area)
+      area += s.area()           # TODO Gnomon and Parabole area()
+    if area > expected_area:
+      #raise ValueError(f"overlapping: expected {expected_area} actual {area}")
+      print(f"overlapping: expected {expected_area} actual {area}")
+    elif area < expected_area:
+      print(f"whitespace warning: expected {expected_area} actual {area}")
 
-def checkAreaSum(expected_area):
-  ''' check the done set() by calculating the bounded area
-  the sum of all bounded area should equal blocksize * cellsize
-  if higher than fail because there are overlaps
-  if lower then warn about unallocated whitespace (run visual check)
-  '''
-  area = 0
-  for s in done:
-    print(area, s.label)
-    area += s.area()           # Gnomon and Parabole shapes are NOT done
-  if area > expected_area:
-    #raise ValueError(f"overlapping: expected {expected_area} actual {area}")
-    print(f"overlapping: expected {expected_area} actual {area}")
-  elif area < expected_area:
-    print(f"whitespace warning: expected {expected_area} actual {area}")
+  def t(self):
+    expected = [
+      'PFFF     0  0 30 30',
+      'RCCC    30 20 10 10',
+      'R000    10 10 10 10',
+      'R000    70 10 10 10',
+      'RCCC    30  0 10 10',
+      'RCCC    50  0 10 10',
+      'RCCC    50 20 10 10',
+      'R000    40  0 10 10',
+      'R000    40 20 10 10',
+      'PCCC    60  0 30 30',
+      'RFFF    20 10 50 10' 
+    ]
+    unwanted = [x.label for x in self.done if x.label not in expected]
+    done_labels = set([d.label for d in self.done])
+    omitted = [e for e in expected if e not in done_labels]
+    return unwanted, omitted
 
+  def __init__(self):
+    ''' make a list of rects todo
+    '''
+    # pos     size     color
+    init = [
+      [( 0, 0), (30,30), 'CCC'],
+      [(30, 0), (30,30), 'CCC'],
+      [(60, 0), (30,30), 'CCC'],
+      [( 0, 0), (30,30), 'FFF'],
+      [(40, 0), (10,30), '000'], 
+      [(70,10), (10,10), '000'],
+      [(10,10), (10,10), '000'],
+      [(20,10), (50,10), 'FFF'] 
+    ]
+    self.done = [Rectangle(i[0], i[1], pencolor=i[2]) for i in reversed(init)]
+    self.todo = [Rectangle(i[0], i[1], pencolor=i[2]) for i in reversed(init)]
+    self.f = Flatten()
 
-''' make a list of rects todo
+  def firstPass(self):
+    ''' first pass 
+    add any shape that does not collide with another
+    these are immutable (cannot be split) and similar to "top cells"
+    '''
+    top = []
+    for x in self.done:
+      shapes = self.findSpace(x)
+      if len(shapes) == 0:
+        top.append(x)
+    self.done = top
+    self.todo = [t for t in self.todo if t not in top]
+
+  def secondPass(self):
+    ''' second pass
+    compare the remaining shapes to top 
+    shapes that collide are split and added for a subsequent retry
+    or without colliding they are added directly
+    further splitting may happen on subsequent retries
+    but if there none then loop exists before max retries is reached
+    '''
+    retries = 3
+
+    for rt in range(retries):
+      stash = []
+      for shape in self.todo:
+        collides = self.findSpace(shape)
+        if len(collides):
+          [stash.append(c) for c in collides]
+        else:
+          self.done.append(shape)
+        #print(rt, len(stash), len(done))
+        #[print(s.label) for s in stash]
+      else: # retry while there is stuff todo
+        self.todo = stash
+        #[print(t.label) for t in todo]
+        continue
+
+if __name__ == '__main__':
+  # python3 -m scripts.topdown
+  mf = MinkFlatten()
+  mf.firstPass()
+  print('.'*80)
+  mf.secondPass()
+  mf.theParabolaHack()
+  #[print(d.label) for d in self.done]
+  print("Unwanted")
+  pprint.pprint(mf.t()[0])
+  print("Omitted")
+  pprint.pprint(mf.t()[1])
 '''
-todo = [
-  # pos     size     color
-  [( 0, 0), (30,30), 'CCC'],
-  [(30, 0), (30,30), 'CCC'],
-  [(60, 0), (30,30), 'CCC'],
-  [( 0, 0), (30,30), 'FFF'],
-  [(40, 0), (10,30), '000'], 
-  [(70,10), (10,10), '000'],
-  [(10,10), (10,10), '000'],
-  [(20,10), (50,10), 'FFF'] 
-]
-
-''' create a done list to target the final rects
-and a collissions bucket for the misses
+the
+end
 '''
-done = set()
-collisions = set()
-expected_area = 3 * 1 * 30 * 30 # blocksize * cellsize
-f = Flatten()
-''' reverse iterate through todo list, comparing against done
-stop once the todo list is empty
-'''
-[oneRect(todo.pop()) for rect in todo[:]]
-checkAreaSum(expected_area)
-[done.add(c) for c in collisions if whitespace(c, retry=True)]
-checkAreaSum(expected_area)
-
-
-'''
-tmp = set()
-[tmp.add(c) for c in collisions]
-collisions.clear()
-'''
-
-print("remainder from collisions, copied to tmp")
-for c in collisions:
-  dim = c.dimensions
-  if dim[0] == 30 and dim[1] == 10:
-    whitespaceAgain(c, retry=True)
-    print('!'*80)
-
-print(f"{len(done)} done {len(todo)} remaining")

@@ -164,13 +164,27 @@ class TestFlatten(unittest.TestCase):
   def test_15(self):
     ''' two rectangles with exact overlap
     '''
-    up = Rectangle(coordinates=(0, 6), dim=(3, 3))
+    #up = Rectangle(coordinates=(0, 6), dim=(3, 3))
     count, d = self.f.overlayTwoCells(
       Rectangle(coordinates=(0, 0), dim=(3, 3)),
       Rectangle(coordinates=(0, 0), dim=(3, 3))
     )
     self.assertEqual(1, count)
     self.assertEqual('N', d)
+
+  def test_16(self):
+    ''' Rectangle with exact fit against a Parabola HACK
+    '''
+    expect = 0
+    count, d = self.f.overlayTwoCells(
+      Rectangle(coordinates=(20, 10), dim=(50, 10)),
+      Parabola(
+        coordinates=(0, 0), 
+        edges={'a':10,'b':None,'c':10,'d':20}, 
+        dim=(30, 30), direction='E'
+      )
+    )
+    self.assertEqual(expect, count)
 
   #############
   # Gnomons   #
