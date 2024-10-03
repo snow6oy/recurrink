@@ -1,5 +1,6 @@
 import pprint
 from flatten import Rectangle, Flatten
+from gcwriter import GcodeWriter
 
 class MinkFlatten():
   ''' tactical flattener that only knows Minkscape
@@ -23,7 +24,8 @@ class MinkFlatten():
     return found
 
   def theParabolaHack(self):
-    ''' parabolas are not added to done because of a fault in collision detection
+    ''' parabolas cannot be added to done 
+    because of a fault in collision detection
     this hack forces but only works for minkscape
     '''
     missing = ['PFFF     0  0 30 30', 'PCCC    60  0 30 30']
@@ -124,6 +126,22 @@ class MinkFlatten():
         #[print(t.label) for t in todo]
         continue
 
+  def write(self, model, fill=None):
+    ''' stream path data to file as gcodes
+    '''
+    gcw = GcodeWriter()
+    fn = f'/tmp/{model}_{fill}.gcode'
+    gcw.writer(fn)
+    gcw.start()
+    for s in self.done:
+      #print(s.pencolor, fill)
+      if s.pencolor == fill:
+        #print(f"{s.label} {s.direction:<2}")
+        s.meander()
+        gcw.points(list(s.path))
+    gcw.stop()
+    return fn
+
 if __name__ == '__main__':
   # python3 -m scripts.topdown
   mf = MinkFlatten()
@@ -136,6 +154,7 @@ if __name__ == '__main__':
   pprint.pprint(mf.t()[0])
   print("Omitted")
   pprint.pprint(mf.t()[1])
+  [mf.write('minkscape', fill=fill) for fill in ['CCC', '000', 'FFF']]
 '''
 the
 end
