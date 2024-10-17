@@ -17,23 +17,24 @@ class Rectangle():
       w   a   b   e   used to calculate Gnomon and Parabola
   '''
 
-  def __init__(self, direction=None, pencolor='000', name=None, **dim):
-    self.name = name if name else 'R'
+  def __init__(self, direction=None, pencolor='000', name='R', **dim):
+    self.name = name
+    self.pencolor = pencolor
     if (len(dim)): # make a rectangle if we have dimensions
-      self.set_dimensions(dim, direction, pencolor)
       #pp.pprint(dim)
+      self.set_dimensions(dim, direction, pencolor)
     else:
       pass # things that inherit from us .make() themselves
 
   def set_dimensions(self, dim, direction, pencolor):
     x, y, w, h = dim.values()
     self.direction = direction if direction else 'N'
-    self.label = f'{self.name}{pencolor:<6}{x:>3}{y:>3}{w:>3}{h:>3}'
     ''' box defines the surface area for geom calculation
         access as r.box.bounds BUT be careful
         bounds are absolute unlike dimensions (width/height) which are relative
     '''
     self.box = box(x, y, x + w, y + h)  
+    self.label = f'{self.name}{pencolor:<6}{int(x):>3}{int(y):>3}{int(x+w):>3}{int(y+h):>3}'
     ''' these FOUR are used by Flatten for collision detection
     '''
     self.w = LineString([(x, y), (x, y + h)])
@@ -69,26 +70,31 @@ class Rectangle():
         self.outer = y
         self.oddline = y + h
 
-  # TODO geom rename to transform AND push meander conf outside self.__init__() and call from here
+  # TODO push meander conf outside self.__init__() and call from here
+  # TODO test E and W
   def set_seeker(self, seeker, direction):
     ''' rewrite key geom values
     '''
     x, y, w, h = self.box.bounds
-    sx, sy, sw, sh = seeker.box.bounds
-    # print(x, y, w, h, direction)
+    X, Y, W, H = seeker.box.bounds
     self.direction = direction
+    #print("SET SEEKER self", x, y, w, h, " seeker ", X, W, Y, H, direction)
     if direction == 'N':
-      self.box = box(x, sh, w, h) 
-      self.boundary = LinearRing([(x, sh), (x, h), (w, h), (w, sh), (x, sh)])
+      self.box = box(X, h, W, H) 
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(h):>3}{int(W):>3}{int(H):>3}'
+      self.boundary = LinearRing([(X, h), (X, H), (W, H), (W, h), (X, h)])
     elif direction == 'E':
-      self.box = box(sw, y, w, h) 
-      self.boundary = LinearRing([(sw, y), (sw, h), (w, h), (w, y), (sw, y)])
+      self.box = box(w, Y, W, H) 
+      self.label = f'{self.name}{self.pencolor:<6}{int(w):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+      self.boundary = LinearRing([(w, Y), (w, H), (W, H), (W, Y), (w, Y)])
     elif direction == 'S':
-      self.box = box(x, y, w, sy) 
-      self.boundary = LinearRing([(x, y), (x, sy), (w, sy), (w, y), (x, y)])
+      self.box = box(X, Y, W, y) 
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(y):>3}'
+      self.boundary = LinearRing([(X, Y), (X, y), (W, y), (W, Y), (X, Y)])
     elif direction == 'W':
-      self.box = box(x, y, sx, h) 
-      self.boundary = LinearRing([(x, y), (x, h), (sx, h), (sx, y), (x, y)])
+      self.box = box(X, Y, x, H)
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(x):>3}{int(H):>3}'
+      self.boundary = LinearRing([(X, Y), (X, H), (x, H), (x, Y), (X, Y)])
 
   def dimensions(self):
     ''' return the orignal dimensions in order to make a new Rectangle()    
@@ -169,7 +175,7 @@ class Rectangle():
         points.append([p1, p2])
     elif self.direction in ['E','W','SE']:
       p1 = self.p1
-      #print(f"meander d {self.direction} p1 {p1} d {self.d} c {self.c} in {self.inner} out {self.outer} ")
+      print(f"meander d {self.direction} p1 {p1} d {self.d} c {self.c} in {self.inner} out {self.outer} ")
       for p2 in range(start, stop, gap):
         points.append([p1, p2])
         p3 = self.inner if p2 >= self.d and p2 <= self.c else self.outer
@@ -192,35 +198,38 @@ class Gnomon(Rectangle):
   '''
   def __init__(self, seeker, done, direction=None):
     super().__init__(name = 'G')
-    x, y, w, h = done
-    X, Y, W, H = seeker
+    x, y, w, h = done.box.bounds
+    X, Y, W, H = seeker.box.bounds
+    pencolor = seeker.pencolor
     self.direction = direction
 
     if self.direction == 'NW':
-      self.p2 = x
-      self.start = x
-      self.stop  = w  # x + w
-      self.oddline = h # y + h     # north odd
-      self.outer = Y # y + sx      # south outer even
-      self.inner = H           # inner even
+      self.p2      = X
+      self.start   = X
+      self.stop    = W  # x + w
+      self.oddline = H # y + h     # north odd
+      self.outer   = y # y + sx      # south outer even
+      self.inner   = h           # inner even
       # override Rectangle().boundary
-      self.boundary = LinearRing([(x,y), (x,h), (w,h), (w,H), (X,H), (X,y), (x,y)])
+      self.boundary = LinearRing([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,y), (x,Y)])
+      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     elif self.direction == 'SE':
-      self.p1 = X
-      self.direction = 'SE'
-      self.start = y # self.s
-      self.stop  = H # self.n
-      self.oddline = x + w # self.e # odd
-      self.outer = X # outer even
-      self.inner = W # inner even
-      self.boundary = LinearRing([(X,y), (X,Y), (W,Y), (W,H), (w,H), (w,y), (X,y)])
+      # meander d SE p1 3.0 d 3.0 c 6.0 in 2.0 out 8.0
+      self.p1      = x
+      self.start   = y # self.s
+      self.stop    = W # self.n
+      self.oddline = X # self.e # odd
+      self.outer   = W # outer even
+      self.inner   = h # inner even
+      self.boundary = LinearRing([(x,Y), (x,y), (w,y), (w,h), (W,h), (W,Y), (x,Y)])
+      self.label = f'{self.name}{pencolor:<6}{int(x):>3}{int(Y):>3}{int(W):>3}{int(h):>3}'
     else:
       raise NotImplementedError(f'direction {self.direction} lacking implementation')
     # get ready for Rectangle.meander()
-    self.a = X
-    self.b = W
-    self.c = H
-    self.d = Y
+    self.a = x
+    self.b = w
+    self.c = h
+    self.d = y
 
 class Parabola(Rectangle):
   ''' u-shaped parallelograms
@@ -229,76 +238,85 @@ class Parabola(Rectangle):
   # TODO pass pencol to parent Rectangle()
   def __init__(self, seeker, done, direction):
     super().__init__(name = 'P')
-    x, y, w, h = done
-    X, Y, W, H = seeker
+    x, y, w, h = done.box.bounds
+    X, Y, W, H = seeker.box.bounds
+    pencolor = seeker.pencolor
     self.direction = direction
 
     if self.direction == 'N':
-      ''' these COULD belong to self.meander_conf{} ?
+      ''' these COULD belong to Meander()
       '''
-      self.p2      = y
-      self.start   = x
-      self.stop    = w
-      self.oddline = h
-      self.outer   = y
-      self.inner   = H
+      self.p2      = Y
+      self.start   = X
+      self.stop    = W
+      self.oddline = H
+      self.outer   = Y
+      self.inner   = h
       ''' end
       '''
       self.boundary = LinearRing([
         (x,y), (x,h), (w,h), (w,y), (W,y), (W,H), (X,H), (X,y), (x,y)
       ])
     elif self.direction == 'W': 
-      self.p1    = w
-      self.start = y
-      self.stop  = h
-      self.oddline = x
-      self.outer = w
-      self.inner = W
+      self.p1      = W
+      self.start   = Y
+      self.stop    = H
+      self.oddline = X
+      self.outer   = W
+      self.inner   = w
       self.boundary = LinearRing([
-        (x,y), (x,h), (w,h), (w,H), (X,H), (X,Y), (w,Y), (w,y), (x,y)
+        (X,Y), (X,H), (W,H), (W,h), (x,h), (x,y), (W,y), (W,Y), (X,Y)
       ])
+      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     elif self.direction == 'S':
-      self.p2 = h
-      self.start = x
-      self.stop  = w
-      self.oddline = y
-      self.outer = h
-      self.inner = Y
+      self.p2      = H
+      self.start   = X
+      self.stop    = W
+      self.oddline = Y
+      self.outer   = H
+      self.inner   = y
       self.boundary = LinearRing([
-        (x,y), (x,h), (X,h), (X,Y), (W,Y), (W,h), (w,h), (w,y), (x,y)
+        (X,Y), (X,H), (x,H), (x,y), (w,y), (w,H), (W,H), (W,Y), (X,Y)
       ])
+      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     elif self.direction == 'E':
-      self.p1    = x
-      self.start = y
-      self.stop  = h
-      self.oddline = w
-      self.outer = x
-      self.inner = X
+      self.p1      = X
+      self.start   = Y
+      self.stop    = H
+      self.oddline = W
+      self.outer   = X
+      self.inner   = x
       self.boundary = LinearRing([
-        (x,y), (x,Y), (W,Y), (W,H), (x,H), (x,h), (w,h), (w,y), (x,y)
+        (X,Y), (X,y), (w,y), (w,h), (X,h), (X,H), (W,H), (W,Y), (X,Y)
       ])
+      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     else:
       raise ValueError('no direction')
     # meander needs to know a,b,c,d
     # ALTHOUGH it could use self.boundary instead ???
-    self.a = X
-    self.b = W
-    self.c = H
-    self.d = Y
+    self.a = x
+    self.b = w
+    self.c = h
+    self.d = y
 
 class Flatten:
   def overlayTwoCells(self, s, done):
     ''' test the number of seeker edges that cross or are entirely inside done
+        ignore edges that touch but do not cross
         transform done into one or more shapes and return them as a list
     '''
-    if s.w.intersects(done.w) and s.e.intersects(done.e) and s.n.disjoint(done.boundary): # test 7
-      return self.split(s, done, required=[{'R':'S'}])
-    elif s.w.intersects(done.w) and s.e.intersects(done.e): # test 7
-      return self.split(s, done, required=[{'R':'N'}])
-    elif s.n.intersects(done.n) and s.s.intersects(done.s) and s.e.disjoint(done.boundary): # test 7
-      return self.split(s, done, required=[{'R':'W'}])
-    elif s.n.intersects(done.n) and s.s.intersects(done.s): # test 7
-      return self.split(s, done, required=[{'R':'E'}])
+    #print(s.box.bounds, done.box.bounds)
+    if s.box.equals(done.box): # rectangle t16 
+      return []
+    # next four tests rectangle t14
+    elif s.w.intersects(done.w) and s.e.intersects(done.e) and s.n.disjoint(done.boundary): 
+      return [] if s.s.covers(done.n) else self.split(s, done, required=[{'R':'N'}])
+    elif s.w.intersects(done.w) and s.e.intersects(done.e): 
+      return [] if s.n.covers(done.s) else self.split(s, done, required=[{'R':'S'}])
+    elif s.n.intersects(done.n) and s.s.intersects(done.s) and s.e.disjoint(done.boundary):
+      return [] if s.w.covers(done.e) else self.split(s, done, required=[{'R':'E'}])
+    elif s.n.intersects(done.n) and s.s.intersects(done.s):
+      return [] if s.e.covers(done.w) else self.split(s, done, required=[{'R':'W'}])
     elif s.n.crosses(done.e) and s.w.crosses(done.s):       # test 6
       return self.split(s, done, required=[{'G':'NW'}])
     elif s.n.crosses(done.w) and s.e.crosses(done.s): # test 6
@@ -308,9 +326,9 @@ class Flatten:
     elif s.w.crosses(done.n) and s.s.crosses(done.e): # test 6
       return self.split(s, done, required=[{'G':'SW'}])
     elif s.n.crosses(done.e) and s.s.crosses(done.w): # test 5
-      return self.split(s, done, required=[{'R':'N'}, {'R':'S'}])
-    elif s.e.crosses(done.n) and s.w.crosses(done.s): # test 5
       return self.split(s, done, required=[{'R':'E'}, {'R':'W'}])
+    elif s.e.crosses(done.n) and s.w.crosses(done.s): # test 5
+      return self.split(s, done, required=[{'R':'N'}, {'R':'S'}])
     elif s.e.crosses(done.s) and s.w.crosses(done.s): # test 10
       return self.split(s, done, required=[{'P':'N'}])
     elif s.n.crosses(done.w) and s.s.crosses(done.w): # test 11
@@ -319,24 +337,41 @@ class Flatten:
       return self.split(s, done, required=[{'P':'S'}])
     elif s.n.crosses(done.e) and s.s.crosses(done.e): # test 9
       return self.split(s, done, required=[{'P':'W'}])
+    # TODO 
+    elif done.e.crosses(s.n) and done.w.crosses(s.n): # topdown t2
+      return self.split(s, done, required=[{'P':'S'}])
+    elif done.n.crosses(s.w) and done.s.crosses(s.w): # topdown t5
+      return self.split(s, done, required=[{'P':'E'}])
+    elif done.n.crosses(s.e) and done.s.crosses(s.e): # topdown t4
+      return self.split(s, done, required=[{'P':'W'}])
+    # TODO is this test ever needed???
     elif s.box.within(done.box):                      # test 3 
+      return self.split(s, done, required=[{'G':'NW'}, {'G':'SE'}])
+    elif done.box.within(s.box):                      # test topdown 3.1
       return self.split(s, done, required=[{'G':'NW'}, {'G':'SE'}])
     # print("Err Flatten.overlayTwoCells NO MATCH")
     return []
 
+  def overlapTwoCells(self, seeker, done):
+    return seeker.box.overlaps(done.box)
+
+  def sameBoxen(self, seeker, done):
+    return seeker.box.equals(done.box)
+
   def split(self, seeker, done, required=list()):
     shapes = []
+    #print(required)
     for r in required:
       for name in r:
         direction = r[name]
-        if name == 'P':
-          s = Parabola(seeker.box.bounds, done.box.bounds, direction=r[name]) # make shape geoms from two boxen
+        if name == 'P': # make shape geoms from two boxen
+          s = Parabola(seeker, done, direction=r[name]) 
         elif name == 'G':
-          s = Gnomon(seeker.box.bounds, done.box.bounds, direction=r[name]) # make shape geoms from two boxen
+          s = Gnomon(seeker, done, direction=r[name]) 
         elif name == 'R':
           x, y, w, h = done.dimensions()
-          s = Rectangle(x=x, y=y, w=w, h=h)
-          s.set_seeker(seeker, direction)
+          s = Rectangle(x=x, y=y, w=w, h=h) # copy of done
+          s.set_seeker(seeker, direction)   # transform done copy into seeker
         else:
           raise ValueError(f"cannot split anonymous '{name}'")
         shapes.append(s)

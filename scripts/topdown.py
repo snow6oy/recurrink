@@ -2,6 +2,18 @@ import pprint
 from flatten import Rectangle, Flatten
 from gcwriter import GcodeWriter
 
+''' Strategy is Top-N-Tail
+    =collect the immutables aka top
+    start with empty list done
+    iterate through todo and add seeker to done 
+    unless seeker overlaps with already done
+
+    remove the invisibles aka background
+    split remainder against immutables
+    split remainder against themselves
+    calculate sum of area to validate results
+'''
+
 class MinkFlatten():
   ''' tactical flattener that only knows Minkscape
   '''
@@ -13,15 +25,54 @@ class MinkFlatten():
     '''
     found = []
     #print(seeker.label)
-    for up in self.done:
-      numof_edges, d = self.f.overlayTwoCells(seeker, up)
+    for d in self.done:
+      found = self.f.overlayTwoCells(seeker, d)
       # TODO make sure flatten exludes up from [shapes]
-      if numof_edges: # note: greater than 0 adds unwanted shapes
-        #print('numof edges', numof_edges, 'direction', d)
-        found = self.f.splitLowerUpper(numof_edges, seeker, up, direction=d)
-        #print(f"{seeker.label} {up.label} {len(found)}")
+      if len(found): # note: greater than 0 adds unwanted shapes
+        #print('numof found ', len(found), 'direction', d)
+        #print(f"s {seeker.label} d {d.label} {len(found)}")
         break
     return found
+
+  def firstPass(self):
+    ''' first pass 
+        add any shape that does not collide with another
+        these are immutable (cannot be split) and similar to "top cells"
+    '''
+    done = [] # if it works then remove from init
+    for x in self.todo:
+      for d in done:
+        if self.f.overlapTwoCells(x, d):
+          break
+      else:
+        done.append(x)
+    self.todo = [t for t in self.todo if t not in done]
+    self.done = done
+
+  def findInvisibles(self, todo):
+    invisibles = []
+    x = todo.pop()
+    for y in todo:
+      if self.f.sameBoxen(x, y):
+        # print(x.label, y.label)
+        invisibles.append(x)
+    if len(todo):
+      self.findInvisibles(todo)
+    return invisibles
+
+  def _firstPass(self):
+    ''' first pass 
+        add any shape that does not collide with another
+        these are immutable (cannot be split) and similar to "top cells"
+    '''
+    top = []
+    for x in self.done:
+      shapes = self.findSpace(x)
+      if len(shapes) == 0:
+        top.append(x)
+    self.done = top
+    self.todo = [t for t in self.todo if t not in top]
+
 
   def theParabolaHack(self):
     ''' parabolas cannot be added to done 
@@ -71,35 +122,28 @@ class MinkFlatten():
     return unwanted, omitted
 
   def __init__(self):
-    ''' make a list of rects todo
+    ''' make two lists of rects, todo and done, as exact copies
     '''
     # pos     size     color
     init = [
-      [( 0, 0), (30,30), 'CCC'],
-      [(30, 0), (30,30), 'CCC'],
-      [(60, 0), (30,30), 'CCC'],
-      [( 0, 0), (30,30), 'FFF'],
-      [(40, 0), (10,30), '000'], 
-      [(70,10), (10,10), '000'],
-      [(10,10), (10,10), '000'],
-      [(20,10), (50,10), 'FFF'] 
+      [( 0, 0, 30,30), 'CCC'],
+      [(30, 0, 30,30), 'CCC'],
+      [(60, 0, 30,30), 'CCC'],
+      [( 0, 0, 30,30), 'FFF'],
+      [(40, 0, 10,30), '000'], 
+      [(70,10, 10,10), '000'],
+      [(10,10, 10,10), '000'],
+      [(20,10, 50,10), 'FFF'] 
     ]
-    self.done = [Rectangle(i[0], i[1], pencolor=i[2]) for i in reversed(init)]
-    self.todo = [Rectangle(i[0], i[1], pencolor=i[2]) for i in reversed(init)]
-    self.f = Flatten()
-
-  def firstPass(self):
-    ''' first pass 
-    add any shape that does not collide with another
-    these are immutable (cannot be split) and similar to "top cells"
     '''
-    top = []
-    for x in self.done:
-      shapes = self.findSpace(x)
-      if len(shapes) == 0:
-        top.append(x)
-    self.done = top
-    self.todo = [t for t in self.todo if t not in top]
+    self.done = [
+      Rectangle(pencolor=i[1], x=i[0][0], y=i[0][1], w=i[0][2], h=i[0][3]) for i in reversed(init)
+    ]
+    '''
+    self.todo = [
+      Rectangle(pencolor=i[1], x=i[0][0], y=i[0][1], w=i[0][2], h=i[0][3]) for i in reversed(init)
+    ]
+    self.f = Flatten()
 
   def secondPass(self):
     ''' second pass
@@ -119,8 +163,8 @@ class MinkFlatten():
           [stash.append(c) for c in collides]
         else:
           self.done.append(shape)
-        #print(rt, len(stash), len(done))
-        #[print(s.label) for s in stash]
+        print(rt, len(stash), len(self.done))
+        [print(s.label) for s in stash]
       else: # retry while there is stuff todo
         self.todo = stash
         #[print(t.label) for t in todo]
@@ -143,18 +187,39 @@ class MinkFlatten():
     return fn
 
 if __name__ == '__main__':
-  # python3 -m scripts.topdown
+  # python -m scripts.topdown
+  #i = [(0,0,30,30), 'CCC']
+  r = Rectangle(pencolor='000', x=10, y=10, w=10, h=10)
+  print('ok1') if (r.label == 'R000    10 10 20 20') else print(r.label)
   mf = MinkFlatten()
+  #shapes = mf.findSpace(r)
+  #print('ok2') if len(shapes) == 2 else print('empty shape')
+  #print('ok2') if (shapes[0].name == 'G') else print(shapes[0].name)
   mf.firstPass()
+  top = ['R000    70 10 80 20', 'R000    10 10 20 20', 'RFFF    20 10 70 20']
+  done_labels = [d.label for d in mf.done]
+  for d in mf.done: # test for the 3 top cells 
+    print('ok3') if d.label in top else print(d.label)
+  print(len(mf.todo))
   print('.'*80)
-  mf.secondPass()
-  mf.theParabolaHack()
-  #[print(d.label) for d in self.done]
+  todo = [x for x in mf.todo]  # make a hard copy
+  invisibles = mf.findInvisibles(todo)
+  print(len(invisibles))
+  mf.todo = [x for x in mf.todo if x not in invisibles]
+  print(len(mf.todo))
+  #mf.secondPass()
+  [print(d.label) for d in mf.done]
+  print('.'*80)
+  [print(t.label) for t in mf.todo]
+  '''
+  print(a)
+  #mf.theParabolaHack()
   print("Unwanted")
   pprint.pprint(mf.t()[0])
-  print("Omitted")
+  print("Oh-mitted")
   pprint.pprint(mf.t()[1])
   [mf.write('minkscape', fill=fill) for fill in ['CCC', '000', 'FFF']]
+  '''
 '''
 the
 end
