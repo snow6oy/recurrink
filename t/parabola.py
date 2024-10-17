@@ -43,10 +43,10 @@ class Test(unittest.TestCase):
     ''' parabola south after split
     '''
     expect = ([1,1,3,3,5,5,7,7,1], [1,4,4,2,2,4,4,1,1])
-    done   = Rectangle(x=1, y=1, w=6, h=3)
-    seeker = Rectangle(x=3, y=2, w=2, h=3)
+    done   = Rectangle(x=3, y=2, w=2, h=3)
+    seeker = Rectangle(x=1, y=1, w=6, h=3)
     shapes = self.f.overlayTwoCells(seeker, done)
-    shapes[0].plotPoints(seeker=seeker, fn='parabola_2')
+    done.plotPoints(seeker=shapes[0], fn='parabola_2')
     xy = shapes[0].boundary.xy
     #pp.pprint(expect)
     #pp.pprint(xy[0].tolist())
@@ -57,10 +57,10 @@ class Test(unittest.TestCase):
     ''' west
     '''
     expect = ([0,0,3,3,2,2,3,3,0], [0,3,3,2,2,1,1,0,0])
-    done   = Rectangle(x=0, y=0, w=3, h=3)
-    seeker = Rectangle(x=2, y=1, w=3, h=1)
+    done   = Rectangle(x=2, y=1, w=3, h=1)
+    seeker = Rectangle(x=0, y=0, w=3, h=3)
     shapes = self.f.overlayTwoCells(seeker, done)
-    shapes[0].plotPoints(seeker=seeker, fn='parabola_3')
+    done.plotPoints(seeker=shapes[0], fn='parabola_3')
     xy = shapes[0].boundary.xy
     self.assertEqual(xy[0].tolist(), expect[0])
     self.assertEqual(xy[1].tolist(), expect[1])
@@ -69,10 +69,10 @@ class Test(unittest.TestCase):
     ''' north parabola
     '''
     expect = ([1,1,7,7,5,5,3,3,1], [1,3,3,1,1,2,2,1,1])
-    done   = Rectangle(x=1, y=1, w=6, h=2)
     seeker = Rectangle(x=3, y=0, w=2, h=2)
+    done   = Rectangle(x=1, y=1, w=6, h=2)
     shapes = self.f.overlayTwoCells(seeker, done)
-    shapes[0].plotPoints(seeker=seeker, fn='parabola_4')
+    done.plotPoints(seeker=shapes[0], fn='parabola_4')
     xy = shapes[0].boundary.xy
     self.assertEqual(xy[0].tolist(), expect[0])
     self.assertEqual(xy[1].tolist(), expect[1])
@@ -81,10 +81,11 @@ class Test(unittest.TestCase):
     ''' east parabola
     '''
     expect = ([1,1,2,2,1,1,4,4,1], [0,1,1,2,2,3,3,0,0])
-    done   = Rectangle(x=1, y=0, w=3, h=3)
-    seeker = Rectangle(x=0, y=1, w=2, h=1)
+    done   = Rectangle(x=0, y=1, w=2, h=1)
+    seeker = Rectangle(x=1, y=0, w=3, h=3)
+    done.plotPoints(seeker=seeker, fn='parabola_5')
     shapes = self.f.overlayTwoCells(seeker, done)
-    shapes[0].plotPoints(seeker=seeker, fn='parabola_5')
+    done.plotPoints(seeker=shapes[0], fn='parabola_5')
     xy = shapes[0].boundary.xy
     self.assertEqual(xy[0].tolist(), expect[0])
     self.assertEqual(xy[1].tolist(), expect[1])
@@ -96,7 +97,9 @@ class Test(unittest.TestCase):
       (7, 1), (1, 1), (1, 2), (7, 2), (7, 3), (1, 3), (1, 4),
       (5, 4), (5, 5), (1, 5), (1, 6), (7, 6), (7, 7), (1, 7)
     ]
-    p = Parabola((3,3,5,5), (1,1,7,7), direction='W')
+    done   = Rectangle(x=3,y=3,w=2,h=2)
+    seeker = Rectangle(x=1,y=1,w=6,h=6)
+    p = Parabola(seeker, done, direction='W')
     p.meander()
     p.plotPoints(fn='parabola_6', boundary=False)
     xy = list(p.linefill.coords)
@@ -109,7 +112,9 @@ class Test(unittest.TestCase):
       (2, 6), (2, 6), (3, 6), (3, 2), (4, 2), (4, 4), (5, 4), 
       (5, 2), (6, 2), (6, 4), (7, 4), (7, 2), (8, 2), (8, 6)
     ]
-    p = Parabola((4,4,6,6), (2,2,8,6), direction='S')
+    done   = Rectangle(x=4,y=4,w=2,h=2)
+    seeker = Rectangle(x=2,y=2,w=6,h=4)
+    p = Parabola(seeker, done, direction='S')
     p.meander()
     p.plotPoints(fn='parabola_7', boundary=False)
     xy = list(p.linefill.coords)

@@ -134,7 +134,7 @@ class Test(unittest.TestCase):
     expect_d = None
     done   = Rectangle(x=1, y=1, w=3, h=3)
     seeker = Rectangle(x=6, y=2, w=2, h=5)
-    shapes = self.f.overlayTwoCells(done, seeker)
+    shapes = self.f.overlayTwoCells(seeker, done) # TODO ds swap
     self.assertEqual(expect, len(shapes))
     done.plotPoints(seeker=seeker, fn='rectangle_10')
 
@@ -142,15 +142,16 @@ class Test(unittest.TestCase):
     ''' count rectangles no overlap with same row or col
     '''
     expect = 0
-    expect_d = None
     done   = Rectangle(x=1, y=1, w=3, h=3)
     seeker = Rectangle(x=5, y=1, w=3, h=3)
-    shapes = self.f.overlayTwoCells(done, seeker)
+    shapes = self.f.overlayTwoCells(seeker, done)
     self.assertEqual(len(shapes), expect)
     done.plotPoints(seeker=seeker, fn='rectangle_11')
 
   def test_12(self):
     ''' count rectangles large line
+        this test splits seeker in two
+        to avoid printing all permutations, rerun test afer tweaking 
     '''
     expect = {
       'N': { 'x': [1, 1, 4, 4, 1], 'y': [3, 4, 4, 3, 3] },
@@ -158,76 +159,56 @@ class Test(unittest.TestCase):
       'E': { 'x': [3, 3, 4, 4, 3], 'y': [1, 4, 4, 1, 1] },
       'W': { 'x': [1, 1, 2, 2, 1], 'y': [1, 4, 4, 1, 1] }
     }
-    done = Rectangle(x=1, y=1, w=3, h=3)
-    seekers = [
-      Rectangle(x=0, y=2, w=5, h=1),
-      Rectangle(x=2, y=0, w=1, h=5)
+    seeker = Rectangle(x=1, y=1, w=3, h=3)
+    done = [
+      Rectangle(x=0, y=2, w=5, h=1), # Done is EW and Seeker requires NS split
+      Rectangle(x=2, y=0, w=1, h=5)  # EW split
     ]
-    for sk in seekers:
-      shapes = self.f.overlayTwoCells(sk, done)
+    #done[1].plotPoints(seeker=seeker, fn='rectangle_12')
+    for d in done:
+      shapes = self.f.overlayTwoCells(seeker, d)
       for shape in shapes:
-        d = shape.direction
+        dn = shape.direction
         xy = shape.boundary.xy
-        if d == 'W': # N and S are seeker 0
-          shape.plotPoints(seeker=seekers[1], fn='rectangle_12')
-          #pp.pprint(f"y {xy[1].tolist()}")
-        self.assertEqual(expect[d]['x'], xy[0].tolist())
-        self.assertEqual(expect[d]['y'], xy[1].tolist())
-
-  def test_13(self):
-    ''' count rectangles large square single corner
-    '''
-    expect = {
-      'NW': { 'x': [3, 3, 6, 6, 5, 5, 3], 'y': [3, 6, 6, 4, 4, 3, 3] },
-      'SE': { 'x': [1, 1, 4, 4, 6, 6, 1], 'y': [3, 5, 5, 8, 8, 3, 3] },
-    }
-    '''
-      'NE': { 'x': [], 'y': [] }, # not implemented
-      Rectangle(x= 1, y=1, w=3, h=3),
-      'SW': { 'x': [], 'y': [] }  # not implemented
-      Rectangle(x= 5, y=5, w=3, h=3)
-    '''
-    done = Rectangle(x=3, y=3, w=3, h=3)
-    seekers = [
-      Rectangle(x= 5, y=1, w=3, h=3),
-      Rectangle(x= 1, y=5, w=3, h=3),
-    ]
-    for s in (seekers):
-      shapes = self.f.overlayTwoCells(s, Rectangle(x=3, y=3, w=3, h=3))
-      d = shapes[0].direction
-      xy = shapes[0].boundary.xy
-      self.assertEqual(xy[0].tolist(), expect[d]['x'])
-      self.assertEqual(xy[1].tolist(), expect[d]['y'])
-    done.plotPoints(seeker=seekers[1], fn='rectangle_13')
+        if dn == 'z': # NSEW
+          print(dn)
+          pp.pprint(f"y {expect[dn]['y']}")
+          pp.pprint(f"y {xy[1].tolist()}")
+          d.plotPoints(seeker=shape, fn='rectangle_12')
+        self.assertEqual(expect[dn]['x'], xy[0].tolist())
+        self.assertEqual(expect[dn]['y'], xy[1].tolist())
 
   def test_14(self):
     ''' count rectangles large square almost covers all
         expect done rectangle to be north of seeker after overlay
     '''
     expect = {
-      'N': { 'x':[2, 2, 5, 5, 2], 'y': [4, 5, 5, 4, 4] },
-      'E': { 'x':[4, 4, 5, 5, 4], 'y': [2, 5, 5, 2, 2] },
-      'S': { 'x':[2, 2, 5, 5, 2], 'y': [2, 3, 3, 2, 2] },
-      'W': { 'x':[2, 2, 3, 3, 2], 'y': [2, 5, 5, 2, 2] }
+      'N': { 'x':[2, 2, 5, 5, 2], 'y': [5, 6, 6, 5, 5] },
+      'E': { 'x':[5, 5, 6, 6, 5], 'y': [2, 5, 5, 2, 2] },
+      'S': { 'x':[2, 2, 5, 5, 2], 'y': [1, 2, 2, 1, 1] },
+      'W': { 'x':[1, 1, 2, 2, 1], 'y': [2, 5, 5, 2, 2] }
     }
     done = Rectangle(x=2, y=2, w=3, h=3)
     seekers = [
-      Rectangle(x=2, y=1, w=3, h=3),
-      Rectangle(x=1, y=2, w=3, h=3),
       Rectangle(x=2, y=3, w=3, h=3),
-      Rectangle(x=3, y=2, w=3, h=3)
+      Rectangle(x=3, y=2, w=3, h=3),
+      Rectangle(x=2, y=1, w=3, h=3),
+      Rectangle(x=1, y=2, w=3, h=3)
     ]
     # new instance of done because otherwise box.bounds increments each time
+    #done.plotPoints(seeker=seekers[0], fn='rectangle_14')
     for s in seekers:
-      shapes = self.f.overlayTwoCells(s, Rectangle(x=2, y=2, w=3, h=3))
+      shapes = self.f.overlayTwoCells(s, done) # Rectangle(x=2, y=2, w=3, h=3))
       self.assertTrue(len(shapes))
       d = shapes[0].direction
-      #pp.pprint(expect[d]['y'])
       xy = shapes[0].boundary.xy
-      #pp.pprint(xy[1].tolist())
+      if d == 'z':
+        print(d)
+        pp.pprint(expect[d]['y'])
+        pp.pprint(xy[1].tolist())
+        done.plotPoints(seeker=shapes[0], fn='rectangle_14')
       self.assertEqual(xy[0].tolist(), expect[d]['x'])
       self.assertEqual(xy[1].tolist(), expect[d]['y'])
-    done.plotPoints(seeker=seekers[3], fn='rectangle_14')
 
   def test_15(self):
     ''' bounds are absolute
@@ -238,6 +219,28 @@ class Test(unittest.TestCase):
     self.assertEqual((1.0, 1.0, 4.0, 4.0), r.box.bounds)
     self.assertEqual((1.0, 1.0, 3.0, 3.0), r.dimensions())
 
+  def test_16(self):
+    ''' compare a rectangle against itself
+    '''
+    r = Rectangle(x=20,y=10,w=50,h=10)
+    shapes = self.f.overlayTwoCells(r, r)
+    self.assertFalse(len(shapes))
+
+  def test_17(self):
+    ''' touching rectangles cannot be split
+    '''
+    #print(self.id())
+    done = Rectangle(x=1,y=1,w=1,h=1)
+    seekers = [ 
+      Rectangle(x=1,y=0,w=1,h=1), # NORTH
+      Rectangle(x=1,y=2,w=1,h=1), # SOUTH
+      Rectangle(x=0,y=1,w=1,h=1), # EAST
+      Rectangle(x=2,y=1,w=1,h=1)  # WEST
+    ]
+    for s in seekers:
+      shapes = self.f.overlayTwoCells(s, done)
+      self.assertFalse(len(shapes))
+    done.plotPoints(seeker=seekers[0], fn='rectangle_17')
 '''
 the
 end
