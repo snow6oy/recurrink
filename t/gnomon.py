@@ -39,19 +39,18 @@ class Test(unittest.TestCase):
     se.meander()
     se.plotPoints(fn='gnomon_2', boundary=False)
     xy = list(se.linefill.coords)
-    pp.pprint(xy)
-    #self.assertEqual(expect, xy)
+    self.assertEqual(expect, xy)
 
   def test_3(self):
     ''' generate two gnomons from an embedded square
     '''
-    count = 4
     expect_nw = ([1,1,5,5,2,2,1],[1,5,5,4,4,1,1])
     expect_se = ([2,2,4,4,5,5,2],[1,2,2,4,4,1,1])
-    done   = Rectangle(x=1, y=1, w=4, h=4)
-    seeker = Rectangle(x=2, y=2, w=2, h=2)
+    done   = Rectangle(x=2, y=2, w=2, h=2)
+    seeker = Rectangle(x=1, y=1, w=4, h=4)
     shapes = self.f.overlayTwoCells(seeker, done)
-    shapes[1].plotPoints(seeker=seeker, fn='gnomon_3')
+    #done.plotPoints(seeker=seeker, fn='gnomon_3')
+    done.plotPoints(seeker=shapes[1], fn='gnomon_3')
     xy_nw = shapes[0].boundary.xy
     self.assertEqual(xy_nw[0].tolist(), expect_nw[0])
     self.assertEqual(xy_nw[1].tolist(), expect_nw[1])
@@ -60,49 +59,69 @@ class Test(unittest.TestCase):
     self.assertEqual(xy_se[1].tolist(), expect_se[1])
 
   def test_4(self):
-    ''' overlay test: count rectangles embedded square
-        also: does shapely return the expected boundary for our rectangle
+    ''' does overlay return gnomon labels
     '''
-    done   = Rectangle(x=1, y=1, w=4, h=4)
-    seeker = Rectangle(x=2, y=2, w=2, h=2)
+    expect = ['G000     1  1  5  5', 'G000     2  1  5  4']
+    done   = Rectangle(x=2, y=2, w=2, h=2)
+    seeker = Rectangle(x=1, y=1, w=4, h=4)
     shapes = self.f.overlayTwoCells(seeker, done)
-    done.plotPoints(seeker=seeker, fn='gnomon_4')
-    [self.assertEqual(s.name, 'G') for s in shapes]
+    done.plotPoints(seeker=shapes[1], fn='gnomon_4')
+    [self.assertEqual(s.label, expect[i]) for i, s in enumerate(shapes)]
 
+  # TODO
   def test_5(self):
-    ''' count rectangles large square single corner
-    '''
-    expect = {
-      'NW': { 'x': [3, 3, 6, 6, 5, 5, 3], 'y': [3, 6, 6, 4, 4, 3, 3] },
-      'SE': { 'x': [1, 1, 4, 4, 6, 6, 1], 'y': [3, 5, 5, 8, 8, 3, 3] },
-    }
-    '''
-      'NE': { 'x': [], 'y': [] }, # not implemented
-      Rectangle(x= 1, y=1, w=3, h=3),
-      'SW': { 'x': [], 'y': [] }  # not implemented
-      Rectangle(x= 5, y=5, w=3, h=3)
-    '''
-    done = Rectangle(x=3, y=3, w=3, h=3)
-    seekers = [
-      Rectangle(x= 5, y=1, w=3, h=3),
-      Rectangle(x= 1, y=5, w=3, h=3),
-    ]
-    for s in (seekers):
-      shapes = self.f.overlayTwoCells(s, Rectangle(x=3, y=3, w=3, h=3))
-      d = shapes[0].direction
-      xy = shapes[0].boundary.xy
-      self.assertEqual(xy[0].tolist(), expect[d]['x'])
-      self.assertEqual(xy[1].tolist(), expect[d]['y'])
-    done.plotPoints(seeker=seekers[1], fn='rectangle_13')
-
-  def test_6(self):
     ''' make a Gnomon from the bounding box dimensions of an outer and inner rectangle
     '''
     expect = [1, 1, 5, 5, 2, 2, 1]
-    g = Gnomon(Rectangle(x=2,y=2,w=4,h=4), Rectangle(x=1,y=1,w=5,h=5), direction='NW')
+    done   = Rectangle(x=2,y=2,w=4,h=4)
+    seeker = Rectangle(x=1,y=1,w=5,h=5)
+    done.plotPoints(seeker=seeker, fn='gnomon_5')
+    g = Gnomon(seeker, done, direction='SE')
     x = list(g.boundary.xy[0])
-    #pp.pprint(x)
-    self.assertEqual(x, expect)
+    pp.pprint(x)
+    #self.assertEqual(x, expect)
+
+  def test_6(self):
+    ''' count rectangles large square single corner split into two overlapping S + E
+        NE and SW are not implemented
+    '''
+    expect = {
+      'E': { 'x': [6, 6, 8, 8, 6], 'y': [1, 4, 4, 1, 1] },
+      'S': { 'x': [5, 5, 8, 8, 5], 'y': [1, 3, 3, 1, 1] }
+    }
+    done   = Rectangle(x=3, y=3, w=3, h=3)
+    seeker = Rectangle(x= 5, y=1, w=3, h=3)
+    #done.plotPoints(seeker=seeker, fn='gnomon_5')
+    shapes = self.f.overlayTwoCells(seeker, done)
+    for s in shapes:
+      d = s.direction
+      #print(d)
+      if d == 'S':
+        done.plotPoints(seeker=s, fn='gnomon_6')
+      xy = s.boundary.xy
+      self.assertEqual(xy[0].tolist(), expect[d]['x'])
+      self.assertEqual(xy[1].tolist(), expect[d]['y'])
+
+  def test_7(self):
+    ''' not a gnomon from large square single corner
+        but two rectangles
+    '''
+    expect = {
+      'N': { 'x': [1, 1, 4, 4, 1], 'y': [6, 8, 8, 6, 6] },
+      'W': { 'x': [1, 1, 3, 3, 1], 'y': [5, 8, 8, 5, 5] }
+    }
+    done   = Rectangle(x=3, y=3, w=3, h=3)
+    seeker = Rectangle(x=1, y=5, w=3, h=3)
+    #done.plotPoints(seeker=seeker, fn='gnomon_7')
+    shapes = self.f.overlayTwoCells(seeker, done)
+    for s in shapes:
+      d = s.direction
+      if d == 'N':
+        done.plotPoints(seeker=s, fn='gnomon_7')
+      xy = s.boundary.xy
+      self.assertEqual(xy[0].tolist(), expect[d]['x'])
+      self.assertEqual(xy[1].tolist(), expect[d]['y'])
+
 '''
 the
 end

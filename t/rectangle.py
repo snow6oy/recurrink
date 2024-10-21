@@ -159,7 +159,7 @@ class Test(unittest.TestCase):
       'E': { 'x': [3, 3, 4, 4, 3], 'y': [1, 4, 4, 1, 1] },
       'W': { 'x': [1, 1, 2, 2, 1], 'y': [1, 4, 4, 1, 1] }
     }
-    seeker = Rectangle(x=1, y=1, w=3, h=3)
+    seeker = Rectangle(x=1, y=1, w=3, h=3, pencolor='C71585')
     done = [
       Rectangle(x=0, y=2, w=5, h=1), # Done is EW and Seeker requires NS split
       Rectangle(x=2, y=0, w=1, h=5)  # EW split
@@ -177,6 +177,7 @@ class Test(unittest.TestCase):
           d.plotPoints(seeker=shape, fn='rectangle_12')
         self.assertEqual(expect[dn]['x'], xy[0].tolist())
         self.assertEqual(expect[dn]['y'], xy[1].tolist())
+        self.assertEqual(shape.pencolor, 'C71585')
 
   def test_14(self):
     ''' count rectangles large square almost covers all
@@ -196,17 +197,17 @@ class Test(unittest.TestCase):
       Rectangle(x=1, y=2, w=3, h=3)
     ]
     # new instance of done because otherwise box.bounds increments each time
-    #done.plotPoints(seeker=seekers[0], fn='rectangle_14')
+    done.plotPoints(seeker=seekers[0], fn='rectangle_14a')
     for s in seekers:
       shapes = self.f.overlayTwoCells(s, done) # Rectangle(x=2, y=2, w=3, h=3))
       self.assertTrue(len(shapes))
       d = shapes[0].direction
       xy = shapes[0].boundary.xy
-      if d == 'z':
+      if d == 'Z':
         print(d)
         pp.pprint(expect[d]['y'])
         pp.pprint(xy[1].tolist())
-        done.plotPoints(seeker=shapes[0], fn='rectangle_14')
+        done.plotPoints(seeker=shapes[0], fn='rectangle_14b')
       self.assertEqual(xy[0].tolist(), expect[d]['x'])
       self.assertEqual(xy[1].tolist(), expect[d]['y'])
 
@@ -237,10 +238,10 @@ class Test(unittest.TestCase):
       Rectangle(x=0,y=1,w=1,h=1), # EAST
       Rectangle(x=2,y=1,w=1,h=1)  # WEST
     ]
+    done.plotPoints(seeker=seekers[0], fn='rectangle_17')
     for s in seekers:
       shapes = self.f.overlayTwoCells(s, done)
       self.assertFalse(len(shapes))
-    done.plotPoints(seeker=seekers[0], fn='rectangle_17')
 '''
 the
 end
