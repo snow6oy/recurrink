@@ -444,22 +444,13 @@ class Svg(Layout):
     ET.indent(tree, level=0)
     tree.write(svgfile)
 
-# TODO instead of writing to file send gcode to USB
-# https://github.com/jminardi/mecode?tab=readme-ov-file#direct-control-via-serial-communication
 class Gcode(Layout):
-  ''' Paper size is A4: 60px / 10 = 6mm
+  ''' output design to a plotter
   '''
   def __init__(self, scale, gridsize, cellsize):
     self.gcdata = dict()
     self.f = Flatten()
     super().__init__(scale=scale, gridsize=gridsize, cellsize=cellsize)
-
-  # TODO ask Layout to send integers BUT scale has to be float ):
-  def rect(self, cell):
-    c = tuple([round(float(cell['x'])), round(float(cell['y']))])
-    d = tuple([round(float(cell['width'])), round(float(cell['height']))])
-    r = Rectangle(coordinates=c, dimensions=d)
-    return r
 
   def makeRectangles(self):
     ''' convert all cells made by Layer() into Rectangle objects
@@ -472,10 +463,90 @@ class Gcode(Layout):
         style = group['style']  # each group has a uniq style
         c = tuple([round(float(cell['x'])), round(float(cell['y']))])
         d = tuple([round(float(cell['width'])), round(float(cell['height']))])
-        r = Rectangle(coordinates=c, dimensions=d, pencolor=self.trimStyle(group['style']))
+        r = Rectangle(c, d, pencolor=self.trimStyle(group['style']))
         rectangles[i].append(r)
         #print(cell['x'], r.sw.x)
     return rectangles
+
+  def makeFlat(self, rects):
+    ''' loop a nested list so that each upper cell
+        from the second list onwards is compared 
+        to the background cells in the first list exactly once
+    '''
+    bgdata = list()
+    [bgdata.append([bg]) for bg in rects.pop(0)]
+    for up in rects:  # fg and top group
+      for cell in up: # cell is a Rectangle()
+        bgdata = self.mergeBackground(bgdata, cell) 
+    return bgdata
+
+  def undoBackground(self, bg):
+    ''' CCC is temp indicator of background that we want to zap
+    '''
+    only_up = [lo for lo in bg if lo.pencolor != 'CCC']
+    return only_up
+
+  def mergeBackground(self, bgdata, upper):
+    ''' compare a given upper shape against all background shapes
+        merge if they overlap
+    '''
+    tx = list()
+    for bg in bgdata:
+      hidden = False
+      for lower in bg:
+        # call overlay from splitLower
+        numof_edges, d = self.f.overlayTwoCells(lower, upper)
+        if numof_edges:
+          #print('numof edges', numof_edges, 'direction', d)
+          shapes = self.f.splitLowerUpper(
+            numof_edges, lower, upper, direction=d
+          )
+          if len(shapes):
+            hidden = True if numof_edges > 2 else False
+            break
+      else:
+        tx.append(bg)    # nothing new found, keep the old
+        continue
+      if hidden:
+        bg = self.undoBackground(bg)
+        bg.extend(shapes)
+        tx.append(bg)  # replace old with new
+      else:
+        bg.extend(shapes)
+        tx.append(bg)
+    return tx
+
+  def write4(self, model, cells, fill=None):
+    ''' stream path data to file as gcodes
+    '''
+    gcw = GcodeWriter()
+    fn = f'/tmp/{model}_{fill}.gcode'
+    gcw.writer(fn)
+    gcw.start()
+    for cell in cells:
+      for s in cell:  # cell contains many shapes
+        #print(s.pencolor, fill)
+        if s.pencolor == fill:
+          #print(f"{s.label} {s.direction:<2}")
+          s.meander()
+          gcw.points(list(s.path))
+    gcw.stop()
+    return fn
+
+  def make(self, uniqcol, colmap):
+    ''' reduce duplication by using Stencil() as self.write wrapper
+    '''
+    for uc in uniqcol: # order by colour for pen changing
+      for cm in colmap:
+        if (cm[1] == uc):
+          pass # TODO write
+  #############################################################################
+  # TODO ask Layout to send integers BUT scale has to be float ):
+  def rect(self, cell):
+    c = tuple([round(float(cell['x'])), round(float(cell['y']))])
+    d = tuple([round(float(cell['width'])), round(float(cell['height']))])
+    r = Rectangle(coordinates=c, dimensions=d)
+    return r
 
   # TODO remove v4 works
   def meanderAll(self):
@@ -501,15 +572,30 @@ class Gcode(Layout):
                   #print(f"pos size {li} {s.direction} lo style {style} up style {g2['style']}")
         self.meanderAll()
 
-  def make(self, uniqcol, colmap):
-    ''' reduce duplication by using Stencil() as self.write wrapper
+  def _mergeBackground(self, bgdata, upper):
+    ''' compare shapes from different layers 
+        merge if they overlap
     '''
-    for uc in uniqcol: # order by colour for pen changing
-      for cm in colmap:
-        if (cm[1] == uc):
-          pass # TODO write
+    found = 0
+    shapes = list()
+    for bg in bgdata:
+      for i, lower in enumerate(bg):
+        numof_edges, d = self.f.overlayTwoCells(lower, upper)
+        #print(i, 'numof edges', numof_edges, 'direction', d)
+        if numof_edges:
+          found = i
+          shapes = self.f.splitLowerUpper(
+            numof_edges, lower, upper, direction=d
+          )
+      #print(found, shapes)
+      if len(shapes): # insert any found shapes using index
+        del bg[found] # can replace one with many BUT not many with one.Eg Gnomon 
+        # shape order is reversed, but thats kewl
+        [bg.insert(found, s) for s in shapes]
+      shapes = list()
+    return bgdata
 
-  def mergeBackground(self, bg, upper):
+  def ___mergeBackground(self, bg, upper):
     ''' compare shapes from different layers 
         merge if they overlap
     '''
@@ -517,22 +603,15 @@ class Gcode(Layout):
     shapes = None
     for i, lower in enumerate(bg):
       numof_edges, d = self.f.overlayTwoCells(lower, upper)
+      #print(i, 'numof edges', numof_edges, 'direction', d)
       if numof_edges:
         found = i
         shapes = self.f.splitLowerUpper(numof_edges, lower, upper, direction=d)
-    if found: # insert any found shapes using index
-      [bg.insert(found, s) for s in shapes]
-    return bg
-
-  def makeFlat(self, rects):
-    ''' loop a nested list so that each item
-        from the second list onwards is compared 
-        to the first list exactly once
-    '''
-    bg = rects.pop(0)
-    for up in rects:  # fg and top group
-      for cell in up: # cell is a Rectangle()
-        bg = self.mergeBackground(bg, cell) 
+    #print(found, shapes)
+    if len(shapes): # insert any found shapes using index
+      del bg[found] # can replace one with many BUT not many with one.Eg Gnomon 
+      # shape order is reversed, but thats kewl
+      [bg.insert(found, s) for s in shapes] 
     return bg
 
   def write(self, model, fill='fill:#FFF'):
@@ -546,28 +625,13 @@ class Gcode(Layout):
     for index in self.gcdata:
       s = self.gcdata[index]['shapes']
       if fill in self.gcdata[index]['style']:
-        #print(f"{fillname} xy {s.sw.x:>4} {s.sw.y:<4} dim {s.dimensions} {s.direction:<2}")
+        #print("""
+#{fillname} xy {s.sw.x:>4} {s.sw.y:<4} dim {s.dimensions} {s.direction:<2}
+#"""
         s.meander()
         gcw.points(list(s.path))
     gcw.stop()
     return fn
-
-  def write4(self, model, shapes, fill=None):
-    ''' stream path data to file as gcodes
-    '''
-    gcw = GcodeWriter()
-    fn = f'/tmp/{model}_{fill}.gcode'
-    gcw.writer(fn)
-    gcw.start()
-    for s in shapes:
-      print(s.pencolor, fill)
-      if s.pencolor == fill:
-        print(f"{fill} xy {s.sw.x:>4} {s.sw.y:<4} dim {s.dimensions} {s.direction:<2}")
-        s.meander()
-        gcw.points(list(s.path))
-    gcw.stop()
-    return fn
-
 '''
 the
 end

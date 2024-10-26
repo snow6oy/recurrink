@@ -1,7 +1,11 @@
 import sys
 import matplotlib.pyplot as plt
-class Rectangle:
-  ''' helper class to elaborate rectangle
+import pprint
+from shapely.geometry import box, LinearRing, Polygon, LineString
+pp = pprint.PrettyPrinter(indent=2)
+
+class Rectangle():
+  ''' boxen
 
     n +---+---+---+   OUTER EDGES      POINTS
       |   |   |   |   n north          nw na nb ne
@@ -12,433 +16,570 @@ class Rectangle:
     s +---+---+---+   INNER EDGES a b c d 
       w   a   b   e   used to calculate Gnomon and Parabola
   '''
-  class Point:
-    def __init__(self, x, y):
-      self.x = x
-      self.y = y
-      self.p = tuple([x, y])
-  def __init__(self, coordinates, dimensions, direction=None, pencolor='000'):
-    x, y = coordinates
-    w, h = dimensions
-    # corners have points
-    self.sw = self.Point(x, y)
-    self.nw = self.Point(x, y + h)
-    self.ne = self.Point(x + w, y + h)
-    self.se = self.Point(x + w, y)
-    # edges have lines
-    self.w = x
-    self.n = y + h
-    self.s = y
-    self.e = x + w
-    self.dimensions = dimensions 
+
+  def __init__(self, direction=None, pencolor='000', name='R', **dim):
+    self.name = name
     self.pencolor = pencolor
-    if direction == 'E' or direction == 'W':
-      self.p1 = self.w
-      self.direction = 'E'
-      self.start = self.s
-      self.stop  = self.n
+    if (len(dim)): # make a rectangle if we have dimensions
+      #pp.pprint(dim)
+      self.set_dimensions(dim, direction, pencolor)
+    else:
+      pass # things that inherit from us .make() themselves
+
+  # TODO ClassName functionName var_name
+  def set_dimensions(self, dim, direction, pencolor):
+    x, y, w, h = dim.values()
+    self.direction = direction if direction else 'N'
+    ''' box defines the surface area for geom calculation
+        access as r.box.bounds BUT be careful
+        bounds are absolute unlike dimensions (width/height) which are relative
+    '''
+    self.box = box(x, y, x + w, y + h)
+    #self.polygon = self.box  # alias for comparing against Parabolas that do not have boxen
+    self.label = f'{self.name}{pencolor:<6}{int(x):>3}{int(y):>3}{int(x+w):>3}{int(y+h):>3}'
+    ''' these FOUR are used by Flatten for collision detection
+    '''
+    self.w = LineString([(x, y), (x, y + h)])
+    self.n = LineString([(x, y + h), (x + w, y + h)])
+    self.s = LineString([(x, y), (x + w, y)])
+    self.e = LineString([(x + w, y), (x + w, y + h)])
+
+    # TODO boundary is also a Shapely property Name It Better or use box.boundary
+    # boundary around the box for matplot
+    self.boundary = LinearRing([(x, y), (x, y + h), (x + w, y + h), (x + w, y)])
+    ''' configure self.meander()
+    '''
+    if self.direction in ['E', 'W']:
+      self.p1 = x
+      self.start = y
+      self.stop  = y + h
       self.d     = float("inf") # any value bigger than p2 is ok
       if (self.start % 2 == 0):  # odd and even must be absolute
-        self.outer = self.e
-        self.oddline = self.w
+        self.outer = x + w
+        self.oddline = x
       else:
-        self.outer = self.w
-        self.oddline = self.e
-    elif direction == 'N' or direction == None:
-      self.p2 = self.s
-      self.direction = 'N'
-      self.start = self.w
-      self.stop  = self.e
+        self.outer = x
+        self.oddline = x + w
+    elif self.direction in ['N', 'S']:
+      self.p2 = y
+      self.start = x
+      self.stop  = x + w
       self.a     = float("inf") # see self.d
       if (self.start % 2 == 0):  # odd and even must be absolute
-        self.outer = self.n
-        self.oddline = self.s
+        self.outer = y + h
+        self.oddline = y
       else:
-        self.outer = self.s
-        self.oddline = self.n
-    else:  # fallback for S and W but meander will break
-      self.direction = direction 
-    self.path = tuple([self.sw.p, self.nw.p, self.ne.p, self.se.p, self.sw.p])
-  def compare(self, lo):
-    ''' Booleans that may become true after comparing
-    with another rectangle and finding a point or EDG within our boundary
+        self.outer = y
+        self.oddline = y + h
+
+  # TODO push meander conf outside self.__init__() and call from here
+  # TODO test E and W
+  def set_seeker(self, seeker, direction):
+    ''' rewrite key geom values
     '''
-    self.EAST      = True if self.sw.x > lo.sw.x and self.se.x < lo.se.x else False
-    self.NORTH     = True if self.sw.y > lo.sw.y and self.ne.y < lo.ne.y else False
-    self.SOUTHWEST = True if self.sw.x > lo.sw.x and self.sw.x < lo.se.x and self.sw.y > lo.sw.y and self.sw.y < lo.ne.y else False 
-    self.NORTHWEST = True if self.nw.x > lo.sw.x and self.nw.x < lo.se.x and self.nw.y > lo.sw.y and self.nw.y < lo.ne.y else False 
-    self.NORTHEAST = True if self.ne.x > lo.sw.x and self.ne.x < lo.se.x and self.ne.y > lo.sw.y and self.ne.y < lo.ne.y else False 
-    self.SOUTHEAST = True if self.se.x > lo.sw.x and self.se.x < lo.se.x and self.se.y > lo.sw.y and self.se.y < lo.ne.y else False 
-    self.NEDG      = True if self.n < lo.n and self.n > lo.s and self.e >= lo.e and self.w <= lo.w else False
-    self.EEDG      = True if self.e < lo.e and self.e > lo.w and self.n >= lo.n and self.s <= lo.s else False
-    self.SEDG      = True if self.s > lo.s and self.s < lo.n and self.e >= lo.e and self.w <= lo.w else False
-    self.WEDG      = True if self.w > lo.w and self.w < lo.e and self.n >= lo.n and self.s <= lo.s else False
-  def meander(self, gap=1):
-    ''' meander chooses a line depending on whether the coordinate is odd or even
-        even lines vary depending on where the coordinate lies in the sequence
+    x, y, w, h = self.box.bounds
+    X, Y, W, H = seeker.box.bounds
+    self.direction = direction
+    self.pencolor = seeker.pencolor
+    #print("SET SEEKER self", x, y, w, h, " seeker ", X, W, Y, H, direction)
+    if direction == 'N':
+      self.box = box(X, h, W, H) 
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(h):>3}{int(W):>3}{int(H):>3}'
+      self.boundary = LinearRing([(X, h), (X, H), (W, H), (W, h)])
+    elif direction == 'E':
+      self.box = box(w, Y, W, H) 
+      self.label = f'{self.name}{self.pencolor:<6}{int(w):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+      self.boundary = LinearRing([(w, Y), (w, H), (W, H), (W, Y)])
+    elif direction == 'S':
+      self.box = box(X, Y, W, y) 
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(y):>3}'
+      self.boundary = LinearRing([(X, Y), (X, y), (W, y), (W, Y)])
+    elif direction == 'W':
+      self.box = box(X, Y, x, H)
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(x):>3}{int(H):>3}'
+      self.boundary = LinearRing([(X, Y), (X, H), (x, H), (x, Y)])
+
+  def dimensions(self):
+    ''' return the orignal dimensions in order to make a new Rectangle()    
+        the Pythonic way would be __deepcopy__ shenanigans
     '''
-    points = []
-    if self.direction in ['N','S','NW']:
-      p2 = self.p2
-      # an uneven gap can cause the last line to stop short
-      # stop + gap fixes that but there maybe a side-effect
-      # that causes meander to leak across the Rectangle border
-      for p1 in range(self.start, self.stop + gap, gap):
-        points.append([p1, p2])
-        p3 = self.inner if p1 >= self.a and p1 <= self.b else self.outer
-        p2 = p3 if (p1 % 2 == 0) else self.oddline
-        points.append([p1, p2])
-    elif self.direction in ['E','W','SE']:
-      p1 = self.p1
-      for p2 in range(self.start, self.stop + gap, gap):
-        points.append([p1, p2])
-        p3 = self.inner if p2 >= self.d and p2 <= self.c else self.outer
-        p1 = p3 if (p2 % 2 == 0) else self.oddline
-        points.append([p1, p2])
-    self.path = tuple(points)
+    dim = list(self.box.bounds)
+    dim[2] -= dim[0]
+    dim[3] -= dim[1]
+    return tuple(dim)
+
   def xyPoints(self):
-    ''' convert rectangle into one list of x xpoints and another list of y points
-        useful for matplotlib
+    ''' Shapely has one list of x xpoints and another list of y points
+        also useful for matplotlib
     '''
-    x = [point[0] for point in self.path]
-    y = [point[1] for point in self.path]
-    return x, y
+    return self.boundary.xy
+
   def printPoints(self):
     x, y = self.xyPoints()
     if len(x) == len(y):
       [print(f"{p:>2}", y[i]) for i, p in enumerate(x)]
     else:
       raise IndexError("uneven lists x and y")
-  def plotPoints(self, lower=None):
-    ''' r1x = [0, 0, 1, 1, 2, 2, 0]
+
+  def plotPoints(self, seeker=None, fn=None, boundary=True):
+    ''' matplot to svg on disk
+        r1x = [0, 0, 1, 1, 2, 2, 0]
         r1y = [0, 2, 2, 1, 1, 0, 0]
         r2x = [2, 3, 3, 1, 1, 2, 2]
         r2y = [0, 0, 2, 2, 1, 1, 0] 
     '''
-    x, y = self.xyPoints()
+    if boundary:
+      x, y = self.xyPoints() 
+    else: # swap list format for plotter
+     x = []
+     y = []
+     [x.append(c[0]) for c in self.linefill.coords]
+     [y.append(c[1]) for c in self.linefill.coords]
     fig, ax = plt.subplots()   # Create a figure containing a single Axes.
-    if lower:
-      x1, y1 = lower.xyPoints()
-      plt.plot(x, y, 'r-', x1, y1, 'b--')
+    if seeker and boundary:
+      x1, y1 = seeker.xyPoints()
+      plt.plot(x, y, 'b-', x1, y1, 'r--')
       plt.axis([0, 9, 0, 9])
     else:
       ax.plot(x, y)
       #plt.axis([0, 9, 0, 9])
-    plt.show()   
+    if fn:
+      plt.savefig(f'/tmp/{fn}.svg', format="svg")
+    else:
+      plt.show()
+
+  def meander(self, gap=1):
+    ''' meander chooses line depending on whether the coordinate is odd or even
+        even lines vary depending on where the coordinate lies in the sequence
+    '''
+    points = []
+    start = int(self.start)  # Shapely send floats
+    stop  = int(self.stop + gap)
+    if self.direction in ['N','S','NW']:
+      p2 = self.p2
+      # an uneven gap can cause the last line to stop short
+      # stop + gap fixes that but there maybe a side-effect
+      # that causes meander to leak across the Rectangle border
+      for p1 in range(start, stop, gap):
+        points.append([p1, p2])
+        p3 = self.inner if p1 >= self.a and p1 <= self.b else self.outer
+        p2 = p3 if (p1 % 2 == 0) else self.oddline
+        points.append([p1, p2])
+    elif self.direction in ['E','W','SE']:
+      p1 = self.p1
+      #print(f"meander d {self.direction} p1 {p1} d {self.d} c {self.c} in {self.inner} out {self.outer} ")
+      for p2 in range(start, stop, gap):
+        points.append([p1, p2])
+        p3 = self.inner if p2 >= self.d and p2 <= self.c else self.outer
+        p1 = p3 if (p2 % 2 == 0) else self.oddline
+        points.append([p1, p2])
+    #self.path = tuple(points)
+    #self.linefill = LineString(points[:-1]) # boundaries are closed loops, unlike meander
+    self.linefill = LineString(points) # boundaries are closed loops, unlike meander
+
 class Gnomon(Rectangle):
   ''' Gnomon has an area of IDGP that equals HPFB
     D  G  C
     I  P  F
     A  H  B
     https://en.wikipedia.org/wiki/Theorem_of_the_gnomon
-  '''
-  def __init__(self, coordinates, dimensions, direction=None, edges=dict()):
-    ''' two out of four possible gnomon can be drawn
+
+    two out of four possible gnomon can be drawn here
         NW  +---  SE     |
             |         ---+
-    '''
-    super().__init__(coordinates, dimensions)
-    # to be compatible with Parabola
-    self.p1 = self.p2 = self.w
-    self.a = edges['a']
-    self.b = edges['b']
-    self.c = edges['c']
-    self.d = edges['d']
-    self.nb = self.Point(self.n, self.b)
-    self.sa = self.Point(self.a, self.s)
-    self.ec = self.Point(self.e, self.c)
-    self.wa = self.Point(self.w, self.a)
-    self.wd = self.Point(self.w, self.d)
-    self.ac = self.Point(self.a, self.c)
-    self.bd = self.Point(self.b, self.d)
-    if direction == 'SE':
-      self.direction = 'SE'
-      self.start = self.s
-      self.stop  = self.n
-      self.oddline = self.e # odd
-      self.outer = self.a # outer even
-      self.inner = self.b # inner even
-      self.path = tuple([self.sw.p, self.wd.p, self.bd.p, self.nb.p, self.ne.p, self.se.p, self.sw.p])
-    else:
-      self.direction = 'NW'
-      self.start = self.w
-      self.stop  = self.e
-      self.oddline = self.n # odd
-      self.outer = self.s # outer even
-      self.inner = self.c # inner even
-      self.path = tuple([self.sw.p, self.nw.p, self.ne.p, self.ec.p, self.ac.p, self.sa.p, self.sw.p])
-class Parabola(Rectangle):
-  ''' u-shaped parallelogram
   '''
-  def __init__(self, coordinates, dimensions, direction=None, edges=dict()):
-    super().__init__(coordinates, dimensions)
+  def __init__(self, seeker, done, direction=None):
+    super().__init__(name = 'G')
+    x, y, w, h = done.box.bounds
+    X, Y, W, H = seeker.box.bounds
+    pencolor = seeker.pencolor
     self.direction = direction
-    # define inner lines
-    self.a = edges['a']
-    self.b = edges['b']
-    self.c = edges['c']
-    self.d = edges['d']
-    # inner corners too
-    self.ac = self.Point(self.a, self.c)
-    self.ad = self.Point(self.a, self.d)
-    self.bc = self.Point(self.b, self.c)
-    self.bd = self.Point(self.b, self.d)
-    # also intersection of inner and outer edges
-    self.na = self.Point(self.a, self.n)
-    self.nb = self.Point(self.b, self.n)
-    self.sa = self.Point(self.a, self.s)
-    self.sb = self.Point(self.b, self.s)
-    self.ec = self.Point(self.e, self.c)
-    self.ed = self.Point(self.e, self.d)
-    self.wc = self.Point(self.w, self.c)
-    self.wd = self.Point(self.w, self.d)
-    # lookups based on direction
-    self.path = []
-    if direction == 'N':
-      self.p2    = self.s
-      self.start = self.w
-      self.stop  = self.e
-      self.oddline = self.n
-      self.outer = self.s
-      self.inner = edges['d']
-      self.path = tuple([self.sw.p, self.nw.p, self.ne.p, self.se.p, self.sb.p, self.bd.p, self.ad.p, self.sa.p, self.sw.p])
-    elif direction == 'S':
-      self.p2 = self.n
-      self.start = self.w
-      self.stop  = self.e
-      self.oddline = self.s
-      self.outer = self.n
-      self.inner = edges['c']
-      self.path = tuple([self.sw.p, self.nw.p, self.na.p, self.ac.p, self.bc.p, self.nb.p, self.ne.p, self.se.p, self.sw.p])
-    elif direction == 'E':
-      self.p1    = self.w
-      self.start = self.s
-      self.stop  = self.n
-      self.oddline = self.e
-      self.outer = self.w
-      self.inner = edges['a']
-      self.path = tuple([self.sw.p, self.wd.p, self.ad.p, self.ac.p, self.wc.p, self.nw.p, self.ne.p, self.se.p, self.sw.p])
-    elif direction == 'W':
-      self.p1    = self.e
-      self.start = self.s
-      self.stop  = self.n
-      self.oddline = self.w
-      self.outer = self.e
-      self.inner = edges['b']
-      self.path = tuple([self.sw.p, self.nw.p, self.ne.p, self.ec.p, self.bc.p, self.bd.p, self.ed.p, self.se.p, self.sw.p])
-class Flatten:
-  '''
-1. call gdoc writer from Outfile.gdoc 
-2. writer will collapse three layers into one
-   starting from the lower layer to the highest (bg > gf > top) 
-   test each lower cell against all other upper cells 
-   if the colour is the same then continue ..
-3. at the point that cells intersect split or transform the lower cell
-   try to facilitate continuous drawing to avoid unecessary pen up/down
-   count how many edges are to be added to the lower cell (0-4)
-   so that the lower cell is adjacent to the upper cell
-4. now each cell is on a single plane
-meander across each shape to create a zigzag fill
-inject pen up/down commands at the shape boundary
-  '''
-  def overlayTwoCells(self, lo, up):
-    ''' define how many parallelograms are required to transform lower
-    and the direction that meander should take when hatching
-    '''
-    up.compare(lo)
-    direction = ''
-    if up.NORTHWEST and up.SOUTHEAST:  # test 6
-      count = 4
-    # test 7 
-    elif up.NORTHWEST and up.SOUTHWEST:
-      count = 3
-      direction = 'W'
-    elif up.NORTHEAST and up.SOUTHEAST:
-      count = 3
-      direction = 'E'
-    elif up.SOUTHWEST and up.SOUTHEAST:
-      count = 3
-      direction = 'S'
-    elif up.NORTHWEST and up.NORTHEAST: 
-      count = 3
-      direction = 'N'
-    elif up.NORTHEAST or up.SOUTHWEST or up.SOUTHEAST or up.NORTHWEST: # test 9
-      count = 2
-    elif up.NEDG and up.SEDG: # tests 10-12
-      count = 2
-      direction = 'E'
-    elif up.NEDG or up.SEDG:
-      count = 1
-      direction = 'E'
-    elif up.EEDG and up.WEDG:
-      count = 2
-      direction = 'N'
-    elif up.EEDG or up.WEDG:
-      count = 1
-      direction = 'N'
-    else: # tests 13-14
-      count = 0
-    return count, direction
-  def splitLowerUpper(self, count, lo, up, direction=None):
-    ''' clockwise around the lower adding rectangles according to count
-    generate the new rectangles and replace the old lower rectangle 
-    2-----3
-    | 5-9-4/8
-    | | | |
-    | 1-0 |
-    1-6---7 '''
-    shapes = list()
-    if count == 4:
-      e = {'a':up.w, 'b':(lo.e + 1), 'c':up.nw.y, 'd':None}
-      # print(e)
-      nw = Gnomon(coordinates=(lo.sw.x, lo.sw.y), edges=e, dimensions=lo.dimensions, direction='NW')
-      shapes.append(nw)
-      x2 = up.sw.x
-      y2 = lo.sw.y
-      w2 = up.se.x - lo.sw.x
-      h2 = up.nw.y - lo.sw.y
-      # for example 'a': 10, 'b': 20, 'c': 20, 'd': 10 with dimensions  20,20 
-      b = up.se.x
-      d = up.sw.y
-      #a = lo.se.x + up.sw.x - b
-      a = up.w
-      #c = lo.se.y + up.sw.y - d
-      c = up.n
-      e={'a':a, 'b':up.se.x, 'c':up.se.y, 'd':up.sw.y}
-      se = Gnomon(coordinates=(x2, y2), edges={'a':a, 'b':b, 'c':c, 'd':d}, dimensions=(w2, h2), direction='SE')
-      shapes.append(se)
-    elif count == 3:
-      if direction == 'N':
-        e = { 'a':up.w, 'b':up.e, 'c':None, 'd':up.n }
-      elif direction == 'S':
-        e = { 'a':up.w, 'b':up.e, 'c':up.s, 'd':None }
-      elif direction == 'E':
-        e = { 'a':up.e, 'b':None, 'c':up.n, 'd':up.s }
-      elif direction == 'W':
-        e = { 'a':None, 'b':up.w, 'c':up.n, 'd':up.s }
-      else:
-        raise ValueError(f"Parabola does not know '{direction}' direction")
-      p = Parabola(coordinates=(lo.sw.x, lo.se.y), edges=e, dimensions=lo.dimensions, direction=direction)
-      shapes.append(p)
-    elif count == 2:
-      if direction == 'N':
-        w1 = lo.e - up.e
-        w2 = up.w - lo.w
-        h = lo.n - lo.s
-        e = Rectangle(coordinates=(up.se.x, up.se.y), dimensions=(w1, h), direction='E')
-        shapes.append(e)
-        w = Rectangle(coordinates=(lo.sw.x, lo.sw.y), dimensions=(w2, h), direction='W')
-        shapes.append(w)
-    else:
-      raise ValueError(f'{count} {direction} not done')
-    return shapes
-  def draw(self, r1x, r1y, r2x, r2y):
-    ''' r1x = [0, 0, 1, 1, 2, 2, 0]
-        r1y = [0, 2, 2, 1, 1, 0, 0]
-        r2x = [2, 3, 3, 1, 1, 2, 2]
-        r2y = [0, 0, 2, 2, 1, 1, 0] 
-    '''
-    #print(r1x, r1y)
-    plt.plot(r1x, r1y, 'r-', r2x, r2y, 'b--')
-    plt.axis([0, 9, 0, 9])
-    #plt.label(r1name + r2name)
-    plt.show()
-if __name__ == '__main__':
-  ''' look here for visual testing with matplot otherwise see unittest
-  '''
-  lo = Rectangle(coordinates=(1, 1), dimensions=(4, 4))
-  up = Rectangle(coordinates=(2, 2), dimensions=(2, 2))
-  f = Flatten()
-  t = int(sys.argv[1])
-  # TODO refactor from Parabola
-  #############
-  # Rectangles
-  #############
-  if t == 1:
-    print(up.xyPoints()) 
-    up.plotPoints(lower=lo)
-  elif t == 2:  # meander N or E
-    #r = Rectangle(coordinates=(1, 1), dimensions=(6, 6))
-    #r.meander(direction='E', gap=1)
-    r = Rectangle(coordinates=(1, 1), dimensions=(6, 6), direction='N')
-    r.meander()
-    r.printPoints()
-    r.plotPoints()
-  #---------+
-  # Gnomons |
-  #---------+
-  elif t == 3: # plot gnomons
-    f.draw(
-      [2,1,1,5,5,2,2,5,5,4,4,2,2], 
-      [1,1,5,5,4,4,1,1,4,4,2,2,1],
-      [2,2,4,4,2], 
-      [2,4,4,2,2]
-    )
-  elif t == 4:  # calculate gnomons 
-    count, d = f.overlayTwoCells(lo, up)
-    shapes = f.splitLowerUpper(count, lo, up)
-    shapes[1].printPoints()
-    shapes[0].plotPoints(lower=shapes[1])
-  elif t == 5: # create gnomon paths 
-    g = Gnomon(coordinates=(1,1), edges={'a':2,'b':None,'d':None,'c':4}, dimensions=(4,4))
-    g.printPoints()
-    g.plotPoints()
-  elif t == 6: # gnomon south east
-    g = Gnomon(coordinates=(2,1), edges={'a':2,'b':4,'c':4,'d':2}, dimensions=(3,3), direction='SE')
-    g.printPoints()
-    g.plotPoints()
-  elif t == 7: # meander gnomons
-    g1 = Gnomon(coordinates=(1,1), edges={'a':2,'b':5,'d':None,'c':4}, dimensions=(4,4))
-    g1.printPoints()
-    g1.meander()
-    print('-'*80)
-    '''
-    g1.plotPoints()
-    g2.plotPoints()
-    '''
-    g2 = Gnomon(coordinates=(2,1), edges={'a':2,'b':4,'c':4,'d':2}, dimensions=(3,3), direction='SE')
-    g2.meander()
-    g2.printPoints()
-    g1.plotPoints(lower=g2)
-  elif t == 8:
-    g = Gnomon(coordinates=(0,0), edges={'a': 9, 'b': 31, 'c': 20, 'd': None}, dimensions=(30,30), direction='NW')
-    g.meander()
-    g.plotPoints()
-  elif t == 9:
-    g = Gnomon(coordinates=(10,0), edges={'a': 10, 'b': 20, 'c': 20, 'd': 10}, dimensions=(20,20), direction='SE')
-    g.meander()
-    g.plotPoints()
 
-  #===========#
-  # Parabolas #
-  #-----------#
-  elif t == 10: # north facing parabola
-    lo = Rectangle(coordinates=(1, 1), dimensions=(6, 2))
-    up = Rectangle(coordinates=(3, 0), dimensions=(2, 2))
-    numof_edges, d = gcw.overlayTwoCells(lo, up)
-    shapes = gcw.splitLowerUpper(numof_edges, lo, up, direction=d)
-    #shapes[0].printPoints()
-    up.plotPoints(lower=shapes[0])
-  elif t == 11: # south facing parabola
-    lo = Rectangle(coordinates=(1, 1), dimensions=(6, 3))
-    up = Rectangle(coordinates=(3, 2), dimensions=(2, 3))
-    numof_edges, d = gcw.overlayTwoCells(lo, up)
-    shapes = gcw.splitLowerUpper(numof_edges, lo, up, direction=d)
-    #shapes[0].printPoints()
-    up.plotPoints(lower=shapes[0])
-  elif t == 12:  # calculate parabola and draw path
-    lo = Rectangle(coordinates=(1, 1), dimensions=(6, 6))
-    up = Rectangle(coordinates=(3, 1), dimensions=(2, 2))
-    count, d = gcw.overlayTwoCells(lo, up) 
-    shapes = gcw.splitLowerUpper(count, lo, up, direction=d)
-    shapes[0].plotPoints()
-  elif t == 13: # parabola meander
-    #p = Parabola(coordinates=(1,1), edges={'a':3,'b':5,'c':None,'d':3}, dimensions=(6,6), direction='N') # north
-    p = Parabola(coordinates=(1,1), edges={'a':3,'b':5,'c':5,'d':None}, dimensions=(6,6), direction='S') # south
-    #p = Parabola(coordinates=(1,1), edges={'a':3,'b':None,'c':5,'d':3}, dimensions=(6,6), direction='E') # east
-    #p = Parabola(coordinates=(1,1), edges={'a':None,'b':5,'c':5,'d':3}, dimensions=(6,6), direction='W') # west
-    p.meander()
-    p.printPoints()
-    p.plotPoints()
-  else:
-    print('bye')
+    if self.direction == 'NW':
+      self.p2      = X
+      self.start   = X
+      self.stop    = W  # x + w
+      self.oddline = H # y + h     # north odd
+      self.outer   = y # y + sx      # south outer even
+      self.inner   = h           # inner even
+      # override Rectangle().boundary
+      self.boundary = LinearRing([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,Y)])
+      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+    elif self.direction == 'SE':
+      self.p1      = x
+      self.start   = Y # self.s
+      self.stop    = h # self.n
+      self.oddline = W # self.e # odd
+      self.outer   = x # outer even
+      self.inner   = w # inner even
+      self.boundary = LinearRing([(x,Y), (x,y), (w,y), (w,h), (W,h), (W,Y)])
+      self.label = f'{self.name}{pencolor:<6}{int(x):>3}{int(Y):>3}{int(W):>3}{int(h):>3}'
+    else:
+      raise NotImplementedError(f'direction {self.direction} lacking implementation')
+    # get ready for Rectangle.meander()
+    self.a = x
+    self.b = w
+    self.c = h
+    self.d = y
+
+class Parabola(Rectangle):
+  ''' u-shaped parallelograms
+      north n south u ... 
+  '''
+  # TODO pass pencol to parent Rectangle()
+  def __init__(self, seeker, done, direction):
+    super().__init__(name = 'P')
+    x, y, w, h = done.box.bounds
+    X, Y, W, H = seeker.box.bounds
+    pencolor = seeker.pencolor
+    self.direction = direction
+
+    if self.direction == 'N':
+      ''' these COULD belong to Meander()
+      '''
+      self.p2      = Y
+      self.start   = X
+      self.stop    = W
+      self.oddline = H
+      self.outer   = Y
+      self.inner   = h
+      ''' end
+      '''
+      self.boundary = LinearRing([(x,y), (x,h), (w,h), (w,y), (W,y), (W,H), (X,H), (X,y)])
+      self.label = 'not done :/'
+    elif self.direction == 'W': 
+      self.p1      = W
+      self.start   = Y
+      self.stop    = H
+      self.oddline = X
+      self.outer   = W
+      self.inner   = w
+      self.boundary = LinearRing([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,y), (W,y), (W,Y)])
+      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+    elif self.direction == 'S':
+      self.p2      = H
+      self.start   = X
+      self.stop    = W
+      self.oddline = Y
+      self.outer   = H
+      self.inner   = y
+      self.boundary = LinearRing([(X,Y), (X,H), (x,H), (x,y), (w,y), (w,H), (W,H), (W,Y)])
+      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+    elif self.direction == 'E':
+      self.p1      = X
+      self.start   = Y
+      self.stop    = H
+      self.oddline = W
+      self.outer   = X
+      self.inner   = x
+      self.boundary = LinearRing([(X,Y), (X,y), (w,y), (w,h), (X,h), (X,H), (W,H), (W,Y)])
+      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+    else:
+      raise ValueError('no direction')
+    # meander needs to know a,b,c,d
+    # ALTHOUGH it could use self.boundary instead ???
+    self.a = x
+    self.b = w
+    self.c = h
+    self.d = y
+
+class FakeBox:
+  ''' wrap a Shapely Polygon with .box and .dimensions
+      then it can pass as a Rectangle for the purpose of Cropping a Seeker
+  '''
+  def __init__(self, polygon):
+    x, y, w, h =  list(polygon.exterior.bounds)
+    self.w = LineString([(x, y), (x, h)])
+    self.n = LineString([(x, h), (w, h)])
+    self.s = LineString([(x, y), (w, y)])
+    self.e = LineString([(w, y), (w, h)])
+    self.box = box(x, y, w, h)  
+
+  def dimensions(self):
+    ''' copy of Rectangle.dimensions()
+    '''
+    dim = list(self.box.bounds)
+    dim[2] -= dim[0]
+    dim[3] -= dim[1]
+    return tuple(dim)
+
+
+class Flatten:
+
+  def __init__(self):
+    self.found = dict() # stash shapes found by self.cmpSeekers()
+
+  def combine(self, polygon, pencolor):
+    ''' return a Rectangle without check what Shapely.difference produced
+    '''
+    #print(polygon.bounds, seeker.label)
+    x, y, w, h = polygon.bounds
+    w -= x  # TODO refactor so that Rectangle can accept bounds
+    h -= y
+    return Rectangle(pencolor=pencolor, x=x, y=y, w=w, h=h)
+
+  def assemble(self, seekers):
+    ''' reunite found with seekers
+    '''
+    print(f"{len(seekers)=}")
+    for label in self.found:
+      mp = self.found[label]
+      print(f"{label} {len(mp.geoms)}")
+      ''' identify and destroy the covering shape
+      '''
+      delete_me = None
+      pencolor = None
+      #print(f"{s.pencolor=}")
+      for i, s in enumerate(seekers):
+        if s.label == label:
+          delete_me = i
+          pencolor = s.pencolor
+          break
+      if delete_me:
+        del seekers[delete_me] # about to be replaced 
+      ''' combine the color with the new shape
+      '''
+      for p in mp.geoms:
+        r = self.combine(p, pencolor)
+        seekers.append(r)
+    return seekers 
+
+  def cmpSeekers(self, seekers):
+    ''' collision detect seekers against each other
+        stash new shapes in Flatten and their index
+        after comparison replace old with new using index
+    '''
+    this = seekers.pop()
+    p = Polygon(this.boundary)
+    for i, s in enumerate(seekers): # TODO remove i
+      seeker = Polygon(s.boundary)
+      if p.covers(seeker):
+        #print(f"{this.label} {this.pencolor} | {s.label} {this.name} {this.direction}")
+        multipolygon = p.difference(seeker) # like self.split but better
+        self.found[this.label] = multipolygon
+    if len(seekers):
+      self.cmpSeekers(seekers)
+    return None
+
+  def sameBoxen(self, seeker, done):
+    return seeker.box.equals(done.box)
+
+  def split(self, seeker, done, required=list()):
+    shapes = []
+    #print(required)
+    for r in required:
+      for name in r:
+        direction = r[name]
+        if name == 'P': # make shape geoms from two boxen
+          s = Parabola(seeker, done, direction=r[name]) 
+        elif name == 'G':
+          s = Gnomon(seeker, done, direction=r[name]) 
+        elif name == 'R':
+          x, y, w, h = done.dimensions()
+          s = Rectangle(x=x, y=y, w=w, h=h) # copy of done
+          s.set_seeker(seeker, direction)   # transform done copy into seeker
+        else:
+          raise ValueError(f"cannot split anonymous '{name}'")
+        shapes.append(s)
+    return shapes
+
+  def overlayTwoCells(self, s, done):
+    ''' test the number of seeker edges that cross or are entirely inside done
+        ignore edges that touch but do not cross
+        transform done into one or more shapes and return them as a list
+    '''
+    #print(s.box.bounds, done.box.bounds)
+    if done.box.equals(s.box): # rectangle t16 
+      return []
+    # next four tests rectangle t14
+    elif done.w.intersects(s.w) and done.e.intersects(s.e) and done.n.disjoint(s.boundary): 
+      return [] if done.s.covers(s.n) else self.split(s, done, required=[{'R':'S'}])
+    elif done.w.intersects(s.w) and done.e.intersects(s.e): 
+      return [] if done.n.covers(s.s) else self.split(s, done, required=[{'R':'N'}])
+    elif done.n.intersects(s.n) and done.s.intersects(s.s) and done.e.disjoint(s.boundary):
+      return [] if done.w.covers(s.e) else self.split(s, done, required=[{'R':'W'}])
+    elif done.n.intersects(s.n) and done.s.intersects(s.s):
+      return [] if done.e.covers(s.w) else self.split(s, done, required=[{'R':'E'}])
+    # rectangle t6
+    elif done.n.crosses(s.e) and done.w.crosses(s.s):
+      return self.split(s, done, required=[{'R':'S'}, {'R':'E'}])
+      #return self.split(s, done, required=[{'R':'N'}, {'R':'W'}])
+      #return self.split(s, done, required=[{'G':'NW'}])
+    elif done.n.crosses(s.w) and done.e.crosses(s.s):
+      return self.split(s, done, required=[{'G':'NE'}])
+    elif done.s.crosses(s.w) and done.e.crosses(s.n): # test 6
+      return self.split(s, done, required=[{'R':'E'}, {'R':'W'}])
+      #return self.split(s, done, required=[{'G':'SE'}])
+    elif done.w.crosses(s.n) and done.s.crosses(s.e):
+      return self.split(s, done, required=[{'G':'SW'}])
+    # rectangle t5
+    elif done.n.crosses(s.e) and done.s.crosses(s.w):
+      return self.split(s, done, required=[{'R':'N'}, {'R':'S'}])
+    elif done.e.crosses(s.n) and done.w.crosses(s.s): # test 5
+      return self.split(s, done, required=[{'R':'E'}, {'R':'W'}])
+    # topdown t2 - t5
+    elif done.e.crosses(s.n) and done.w.crosses(s.n): # t2
+      return self.split(s, done, required=[{'P':'S'}])
+    elif done.e.crosses(s.s) and done.w.crosses(s.s): # t3 TODO
+      return self.split(s, done, required=[{'P':'N'}])
+    elif done.n.crosses(s.e) and done.s.crosses(s.e): # t4
+      return self.split(s, done, required=[{'P':'W'}])
+    elif done.n.crosses(s.w) and done.s.crosses(s.w): # t5
+      return self.split(s, done, required=[{'P':'E'}])
+    # topdown t3.1
+    elif done.box.within(s.box):                      
+      return self.split(s, done, required=[{'G':'NW'}, {'G':'SE'}])
+    # print("Err Flatten.overlayTwoCells NO MATCH")
+    return []
+
+  # TODO merge this confusingly named func into firstPass. RENAME firstPass findImmutables
+  def overlapTwoCells(self, seeker, done):
+    '''
+    '''
+    return done.boundary.crosses(seeker.boundary)
+
+  def expungeInvisibles(self, todo):
+    invisibles = [] # TODO test this with more than a single invisible
+    x = todo.pop()
+    for y in todo:
+      if self.sameBoxen(x, y):
+        # print(x.label, y.label)
+        invisibles.append(x)
+    if len(todo):
+      self.expungeInvisibles(todo)
+    return invisibles
+
+  def cropSeekers(self, seekers):
+    ''' compare each Done against each Seeker (a Seeker is neither done nor invisible)
+        align the seekers by cropping whenenver Done overlaps
+        when seekers are Gnomons they grow in number
+    '''
+    print(f"{len(self.done)=} {len(seekers)=}")
+    a = [] 
+    for d in self.merge_d:
+      for s in seekers:
+        #print(f"d {d.label} s {s.label} len {len(shapes)}")
+        shapes = self.overlayTwoCells(s, d)
+        if len(shapes) == 2: # Gnomons
+          [a.append(shape) for shape in shapes]
+        elif len(shapes) == 1: # Rectangle or Parabola
+          a.append(shapes[0])
+    return a
+
+  def mergeDone(self, done):
+    ''' assume we get Polygons and if they touch then merge them
+        shapes that touch more than once get added twice
+    '''
+    last = done.pop()
+    for d in done:
+      #if last.box.touches(d.box):
+      if last.box.intersects(d.box):
+        #print(f"{d.box.geom_type=} {d.label=} {last.label=}")
+        if hasattr(self, 'merge_d'):
+          p  = last.box.union(d.box) # shapely gives us a merged polygon
+          fb = FakeBox(p)            # rectanglify
+          self.merge_d.append(fb)
+        else:
+          self.merge_d = []
+          p  = last.box.union(d.box) # shapely gives us a merged polygon
+          fb = FakeBox(p)            # rectanglify
+          self.merge_d.append(fb)
+    if len(done):
+      self.mergeDone(done)
+    return None
+
+  def firstPass(self, todo):
+    ''' first pass 
+        add any shape that does not collide with another
+        these are immutable (cannot be split) and similar to "top cells"
+    '''
+    done = [] 
+    for x in todo:
+      for d in done:
+        if self.overlapTwoCells(x, d):
+          break
+      else:
+        done.append(x)
+    self.todo = [t for t in todo if t not in done] # copy everything but done into todo
+    self.done = done
+
+  # TODO look into Shapely.area()
+  def checkAreaSum(expected_area, done=list()):
+    ''' check the done set() by calculating the bounded area
+    the sum of all bounded area should equal blocksize * cellsize
+    if higher than fail because there are overlaps
+    if lower then warn about unallocated whitespace (run visual check)
+    '''
+    area = 0
+    for s in done:
+      print(s.label, area)
+      area += s.area()           # TODO Gnomon and Parabole area()
+    if area > expected_area:
+      #raise ValueError(f"overlapping: expected {expected_area} actual {area}")
+      print(f"overlapping: expected {expected_area} actual {area}")
+    elif area < expected_area:
+      print(f"whitespace warning: expected {expected_area} actual {area}")
+
+  def run(self, todo):
+    ''' orchestrate Flattening from here. There are five steps
+        1. isolate the top cells as self.done
+        2. remove invisible cells, e.g. background covered by square
+        3. merge the done into a template for cropping seeker
+        4. crop the seekers
+        5. re-assemble the parts
+    '''
+    self.firstPass(todo)               # create Flatten().done
+    todo = [x for x in self.todo]      # make a hard copy
+    invisibles = self.expungeInvisibles(todo)
+    self.todo = [x for x in f.todo if x not in invisibles] # omit the invisibles
+    print(f"{len(self.todo)=}")
+    done  = self.done[:]               # another copy
+    count = len(done)
+    self.mergeDone(done)            # should set two merged Polygons in Flatten
+    if count > len(self.merge_d):   # if something merged then check again
+      done = self.merge_d[:]        # hard copy
+      self.merge_d = []      
+      self.mergeDone(done)          # compare two merged Polygons with each other
+      #[print(p.box.bounds) for p in self.merge_d]
+    seekers = self.cropSeekers(self.todo)
+    tmp = seekers[:]
+    self.cmpSeekers(tmp)        # after comparison any that overlap are saved in Flatten.found
+    seekers = self.assemble(seekers)   # almost there
+    seekers.extend(self.done)   # not the folk singers :-)
+    [print(ns.label) for ns in seekers]
+    '''
+    PFFF     0  0  3  3
+    PCCC     6  0  9  3
+    R000     4  2  5  3
+    R000     4  0  5  1
+    RCCC     3  0  4  1
+    RCCC     5  0  6  1
+    RCCC     3  2  4  3
+    RCCC     5  2  6  3
+    RFFF     2  1  7  2
+    R000     1  1  2  2
+    R000     7  1  8  2
+    '''
+
+if __name__ == '__main__':
+  ''' test to flatten minkscape
+  '''
+  f = Flatten()
+  data = [
+    [(0, 0, 3, 3), 'CCC'],
+    [(3, 0, 3, 3), 'CCC'],
+    [(6, 0, 3, 3), 'CCC'],
+    [(0, 0, 3, 3), 'FFF'],
+    [(4, 0, 1, 3), '000'],
+    [(7, 1, 1, 1), '000'],
+    [(1, 1, 1, 1), '000'],
+    [(2, 1, 5, 1), 'FFF'] 
+  ]
+  todo = [
+    Rectangle(pencolor=i[1], x=i[0][0], y=i[0][1], w=i[0][2], h=i[0][3]) for i in reversed(data)
+  ]
+  f.run(todo)
+'''
+the
+end
+'''
