@@ -26,6 +26,7 @@ class Rectangle():
     else:
       pass # things that inherit from us .make() themselves
 
+  # TODO ClassName functionName var_name
   def set_dimensions(self, dim, direction, pencolor):
     x, y, w, h = dim.values()
     self.direction = direction if direction else 'N'
@@ -33,7 +34,8 @@ class Rectangle():
         access as r.box.bounds BUT be careful
         bounds are absolute unlike dimensions (width/height) which are relative
     '''
-    self.box = box(x, y, x + w, y + h)  
+    self.box = box(x, y, x + w, y + h)
+    #self.polygon = self.box  # alias for comparing against Parabolas that do not have boxen
     self.label = f'{self.name}{pencolor:<6}{int(x):>3}{int(y):>3}{int(x+w):>3}{int(y+h):>3}'
     ''' these FOUR are used by Flatten for collision detection
     '''
@@ -42,6 +44,7 @@ class Rectangle():
     self.s = LineString([(x, y), (x + w, y)])
     self.e = LineString([(x + w, y), (x + w, y + h)])
 
+    # TODO boundary is also a Shapely property Name It Better or use box.boundary
     # boundary around the box for matplot
     self.boundary = LinearRing([(x, y), (x, y + h), (x + w, y + h), (x + w, y)])
     ''' configure self.meander()
@@ -141,10 +144,6 @@ class Rectangle():
       ax.plot(x, y)
       #plt.axis([0, 9, 0, 9])
     if fn:
-      # plt.figure(figsize=[6, 6])
-      # plt.gca().set_position([0, 0, 1, 1])
-      # plt.axis('off')
-      # plt.axis([0, 9, 0, 9])
       plt.savefig(f'/tmp/{fn}.svg', format="svg")
     else:
       plt.show()
@@ -247,6 +246,7 @@ class Parabola(Rectangle):
       ''' end
       '''
       self.boundary = LinearRing([(x,y), (x,h), (w,h), (w,y), (W,y), (W,H), (X,H), (X,y)])
+      self.label = 'not done :/'
     elif self.direction == 'W': 
       self.p1      = W
       self.start   = Y
@@ -283,7 +283,83 @@ class Parabola(Rectangle):
     self.c = h
     self.d = y
 
+class FakeBox:
+  ''' wrap a Shapely Polygon with .box and .dimensions
+      then it can pass as a Rectangle for the purpose of Cropping a Seeker
+  '''
+  def __init__(self, polygon):
+    x, y, w, h =  list(polygon.exterior.bounds)
+    self.w = LineString([(x, y), (x, h)])
+    self.n = LineString([(x, h), (w, h)])
+    self.s = LineString([(x, y), (w, y)])
+    self.e = LineString([(w, y), (w, h)])
+    self.box = box(x, y, w, h)  
+
+  def dimensions(self):
+    ''' copy of Rectangle.dimensions()
+    '''
+    dim = list(self.box.bounds)
+    dim[2] -= dim[0]
+    dim[3] -= dim[1]
+    return tuple(dim)
+
+
 class Flatten:
+
+  def __init__(self):
+    self.found = dict() # stash shapes found by self.cmpSeekers()
+
+  def combine(self, polygon, pencolor):
+    ''' return a Rectangle without check what Shapely.difference produced
+    '''
+    #print(polygon.bounds, seeker.label)
+    x, y, w, h = polygon.bounds
+    w -= x  # TODO refactor so that Rectangle can accept bounds
+    h -= y
+    return Rectangle(pencolor=pencolor, x=x, y=y, w=w, h=h)
+
+  def assemble(self, seekers):
+    ''' reunite found with seekers
+    '''
+    print(f"{len(seekers)=}")
+    for label in self.found:
+      mp = self.found[label]
+      print(f"{label} {len(mp.geoms)}")
+      ''' identify and destroy the covering shape
+      '''
+      delete_me = None
+      pencolor = None
+      #print(f"{s.pencolor=}")
+      for i, s in enumerate(seekers):
+        if s.label == label:
+          delete_me = i
+          pencolor = s.pencolor
+          break
+      if delete_me:
+        del seekers[delete_me] # about to be replaced 
+      ''' combine the color with the new shape
+      '''
+      for p in mp.geoms:
+        r = self.combine(p, pencolor)
+        seekers.append(r)
+    return seekers 
+
+  def cmpSeekers(self, seekers):
+    ''' collision detect seekers against each other
+        stash new shapes in Flatten and their index
+        after comparison replace old with new using index
+    '''
+    this = seekers.pop()
+    p = Polygon(this.boundary)
+    for i, s in enumerate(seekers): # TODO remove i
+      seeker = Polygon(s.boundary)
+      if p.covers(seeker):
+        #print(f"{this.label} {this.pencolor} | {s.label} {this.name} {this.direction}")
+        multipolygon = p.difference(seeker) # like self.split but better
+        self.found[this.label] = multipolygon
+    if len(seekers):
+      self.cmpSeekers(seekers)
+    return None
 
   def sameBoxen(self, seeker, done):
     return seeker.box.equals(done.box)
@@ -306,51 +382,6 @@ class Flatten:
           raise ValueError(f"cannot split anonymous '{name}'")
         shapes.append(s)
     return shapes
-
-  def __overlayTwoCells(self, s, done):
-    ''' test the number of seeker edges that cross or are entirely inside done
-        ignore edges that touch but do not cross
-        transform done into one or more shapes and return them as a list
-    '''
-    #print(s.box.bounds, done.box.bounds)
-    if s.box.equals(done.box): # rectangle t16 
-      return []
-    # next four tests rectangle t14
-    elif s.w.intersects(done.w) and s.e.intersects(done.e) and s.n.disjoint(done.boundary): 
-      return [] if s.s.covers(done.n) else self.split(s, done, required=[{'R':'N'}])
-    elif s.w.intersects(done.w) and s.e.intersects(done.e): 
-      return [] if s.n.covers(done.s) else self.split(s, done, required=[{'R':'S'}])
-    elif s.n.intersects(done.n) and s.s.intersects(done.s) and s.e.disjoint(done.boundary):
-      return [] if s.w.covers(done.e) else self.split(s, done, required=[{'R':'E'}])
-    elif s.n.intersects(done.n) and s.s.intersects(done.s):
-      return [] if s.e.covers(done.w) else self.split(s, done, required=[{'R':'W'}])
-    elif s.n.crosses(done.e) and s.w.crosses(done.s):       # test 6
-      #return self.split(s, done, required=[{'G':'NW'}])
-      # TODO return a Gnomon
-      return self.split(s, done, required=[{'R':'S'}, {'R':'E'}])
-    elif s.n.crosses(done.w) and s.e.crosses(done.s): # test 6
-      return self.split(s, done, required=[{'G':'NE'}])
-    elif s.s.crosses(done.w) and s.e.crosses(done.n): # test 6
-      return self.split(s, done, required=[{'R':'E'}, {'R':'W'}])
-      #return self.split(s, done, required=[{'G':'SE'}])
-    elif s.w.crosses(done.n) and s.s.crosses(done.e): # test 6
-      return self.split(s, done, required=[{'G':'SW'}])
-    elif s.n.crosses(done.e) and s.s.crosses(done.w): # test 5
-      return self.split(s, done, required=[{'R':'E'}, {'R':'W'}])
-    elif s.e.crosses(done.n) and s.w.crosses(done.s): # test 5
-      return self.split(s, done, required=[{'R':'N'}, {'R':'S'}])
-    elif s.e.crosses(done.s) and s.w.crosses(done.s): # test 10
-      return self.split(s, done, required=[{'P':'N'}])
-    elif s.n.crosses(done.w) and s.s.crosses(done.w): # test 11
-      return self.split(s, done, required=[{'P':'E'}])
-    elif s.e.crosses(done.n) and s.w.crosses(done.n): # test 8 
-      return self.split(s, done, required=[{'P':'S'}])
-    elif s.n.crosses(done.e) and s.s.crosses(done.e): # test 9
-      return self.split(s, done, required=[{'P':'W'}])
-    elif s.box.within(done.box):                      # test 3 
-      return self.split(s, done, required=[{'G':'NW'}, {'G':'SE'}])
-    # print("Err Flatten.overlayTwoCells NO MATCH")
-    return []
 
   def overlayTwoCells(self, s, done):
     ''' test the number of seeker edges that cross or are entirely inside done
@@ -401,56 +432,14 @@ class Flatten:
     # print("Err Flatten.overlayTwoCells NO MATCH")
     return []
 
-  def firstPass(self, todo):
-    ''' first pass 
-        add any shape that does not collide with another
-        these are immutable (cannot be split) and similar to "top cells"
-    '''
-    done = [] # if it works then remove from init
-    for x in todo:
-      for d in done:
-        if self.overlapTwoCells(x, d):
-          break
-      else:
-        done.append(x)
-    self.todo = [t for t in todo if t not in done] # copy everything but done into todo
-    self.done = done
-
   # TODO merge this confusingly named func into firstPass. RENAME firstPass findImmutables
   def overlapTwoCells(self, seeker, done):
-    print("done")
-    print(done.boundary.geom_type) # expect LinearRing
-    print(list(done.boundary.coords))   # .geom_type) # expect LinearRing
-    print("seeker")
-    print(seeker.boundary.geom_type) # expect LinearRing
-    print(list(seeker.boundary.coords)) 
-    #return done.boundary.overlaps(seeker.boundary)
-    return done.boundary.intersects(seeker.boundary)
-    #return done.boundary.contains(seeker.boundary)
-    #return done.boundary.touches(seeker.boundary)
-    #return done.boundary.within(seeker.boundary)
-
-  def cleanCropped(self, cropped):
-    ''' remove anything cropped from a seeker that clashes with done
-        boundary tests are used instead of box because non-Rectangles are in the loop
     '''
-    cleaned = [] # set to avoid duplicates
-    clean = True
-    for c in cropped:
-      for d in self.done:
-        if d.boundary.crosses(c.boundary):
-          #print(d.label, " x ", c.label) 
-          #print(list(c.boundary.xy))
-          clean = False
-        print(f"c {c.label} d {d.label} YN {clean}") 
-      if clean:
-        cleaned.append(c)
-      clean = True
-    print()
-    return cleaned
+    '''
+    return done.boundary.crosses(seeker.boundary)
 
   def expungeInvisibles(self, todo):
-    invisibles = []
+    invisibles = [] # TODO test this with more than a single invisible
     x = todo.pop()
     for y in todo:
       if self.sameBoxen(x, y):
@@ -465,10 +454,9 @@ class Flatten:
         align the seekers by cropping whenenver Done overlaps
         when seekers are Gnomons they grow in number
     '''
-    print(len(self.done))
-    print(len(seekers))
-    a = []
-    for d in self.done:
+    print(f"{len(self.done)=} {len(seekers)=}")
+    a = [] 
+    for d in self.merge_d:
       for s in seekers:
         #print(f"d {d.label} s {s.label} len {len(shapes)}")
         shapes = self.overlayTwoCells(s, d)
@@ -478,86 +466,42 @@ class Flatten:
           a.append(shapes[0])
     return a
 
-
-class MinkFlatten():
-  ''' tactical flattener that only knows Minkscape
-      strategy is Top-N-Tail
-      =collect the immutables aka top
-      start with empty list done
-      iterate through todo and add seeker to done 
-      unless seeker overlaps with already done
-
-      remove the invisibles aka background
-      split remainder against immutables
-      split remainder against themselves
-      calculate sum of area to validate results
-  '''
-  def __init__(self):
-    ''' make two lists of rects, todo and done, as exact copies
+  def mergeDone(self, done):
+    ''' assume we get Polygons and if they touch then merge them
+        shapes that touch more than once get added twice
     '''
-    # pos     size     color
-    init = [
-      [( 0, 0, 30,30), 'CCC'],
-      [(30, 0, 30,30), 'CCC'],
-      [(60, 0, 30,30), 'CCC'],
-      [( 0, 0, 30,30), 'FFF'],
-      [(40, 0, 10,30), '000'], 
-      [(70,10, 10,10), '000'],
-      [(10,10, 10,10), '000'],
-      [(20,10, 50,10), 'FFF'] 
-    ]
-    '''
-    self.done = [
-      Rectangle(pencolor=i[1], x=i[0][0], y=i[0][1], w=i[0][2], h=i[0][3]) for i in reversed(init)
-    ]
-    '''
-    self.todo = [
-      Rectangle(pencolor=i[1], x=i[0][0], y=i[0][1], w=i[0][2], h=i[0][3]) for i in reversed(init)
-    ]
-    self.f = Flatten()
+    last = done.pop()
+    for d in done:
+      #if last.box.touches(d.box):
+      if last.box.intersects(d.box):
+        #print(f"{d.box.geom_type=} {d.label=} {last.label=}")
+        if hasattr(self, 'merge_d'):
+          p  = last.box.union(d.box) # shapely gives us a merged polygon
+          fb = FakeBox(p)            # rectanglify
+          self.merge_d.append(fb)
+        else:
+          self.merge_d = []
+          p  = last.box.union(d.box) # shapely gives us a merged polygon
+          fb = FakeBox(p)            # rectanglify
+          self.merge_d.append(fb)
+    if len(done):
+      self.mergeDone(done)
+    return None
 
-
-  def findSpace(self, seeker):
-    ''' attempt to find a space sought by this shape
-    split any that collide and retest
-    returning False will cause a rect to be ignored
-    '''
-    found = []
-    #print(seeker.label)
-    for d in self.done:
-      found = self.f.overlayTwoCells(seeker, d)
-      # TODO make sure flatten exludes up from [shapes]
-      if len(found): # note: greater than 0 adds unwanted shapes
-        #print('numof found ', len(found), 'direction', d)
-        #print(f"s {seeker.label} d {d.label} {len(found)}")
-        break
-    return found
-
-
-  def _firstPass(self):
+  def firstPass(self, todo):
     ''' first pass 
         add any shape that does not collide with another
         these are immutable (cannot be split) and similar to "top cells"
     '''
-    top = []
-    for x in self.done:
-      shapes = self.findSpace(x)
-      if len(shapes) == 0:
-        top.append(x)
-    self.done = top
-    self.todo = [t for t in self.todo if t not in top]
-
-
-  def theParabolaHack(self):
-    ''' parabolas cannot be added to done 
-    because of a fault in collision detection
-    this hack forces but only works for minkscape
-    '''
-    missing = ['PFFF     0  0 30 30', 'PCCC    60  0 30 30']
-    for t in self.todo:
-      for label in missing:
-        if label == t.label:
-          self.done.append(t) 
+    done = [] 
+    for x in todo:
+      for d in done:
+        if self.overlapTwoCells(x, d):
+          break
+      else:
+        done.append(x)
+    self.todo = [t for t in todo if t not in done] # copy everything but done into todo
+    self.done = done
 
   # TODO look into Shapely.area()
   def checkAreaSum(expected_area, done=list()):
@@ -576,58 +520,66 @@ class MinkFlatten():
     elif area < expected_area:
       print(f"whitespace warning: expected {expected_area} actual {area}")
 
-  def t(self):
-    expected = [
-      'PFFF     0  0 30 30',
-      'RCCC    30 20 10 10',
-      'R000    10 10 10 10',
-      'R000    70 10 10 10',
-      'RCCC    30  0 10 10',
-      'RCCC    50  0 10 10',
-      'RCCC    50 20 10 10',
-      'R000    40  0 10 10',
-      'R000    40 20 10 10',
-      'PCCC    60  0 30 30',
-      'RFFF    20 10 50 10' 
-    ]
-    unwanted = [x.label for x in self.done if x.label not in expected]
-    done_labels = set([d.label for d in self.done])
-    omitted = [e for e in expected if e not in done_labels]
-    return unwanted, omitted
-
-  def secondPass(self):
-    ''' second pass
-    compare the remaining shapes to top 
-    shapes that collide are split and added for a subsequent retry
-    or without colliding they are added directly
-    further splitting may happen on subsequent retries
-    but if there none then loop exists before max retries is reached
+  def run(self, todo):
+    ''' orchestrate Flattening from here. There are five steps
+        1. isolate the top cells as self.done
+        2. remove invisible cells, e.g. background covered by square
+        3. merge the done into a template for cropping seeker
+        4. crop the seekers
+        5. re-assemble the parts
     '''
-    retries = 3
-
-    for rt in range(retries):
-      stash = []
-      for shape in self.todo:
-        collides = self.findSpace(shape)
-        if len(collides):
-          [stash.append(c) for c in collides]
-        else:
-          self.done.append(shape)
-        print(rt, len(stash), len(self.done))
-        [print(s.label) for s in stash]
-      else: # retry while there is stuff todo
-        self.todo = stash
-        #[print(t.label) for t in todo]
-        continue
+    self.firstPass(todo)               # create Flatten().done
+    todo = [x for x in self.todo]      # make a hard copy
+    invisibles = self.expungeInvisibles(todo)
+    self.todo = [x for x in f.todo if x not in invisibles] # omit the invisibles
+    print(f"{len(self.todo)=}")
+    done  = self.done[:]               # another copy
+    count = len(done)
+    self.mergeDone(done)            # should set two merged Polygons in Flatten
+    if count > len(self.merge_d):   # if something merged then check again
+      done = self.merge_d[:]        # hard copy
+      self.merge_d = []      
+      self.mergeDone(done)          # compare two merged Polygons with each other
+      #[print(p.box.bounds) for p in self.merge_d]
+    seekers = self.cropSeekers(self.todo)
+    tmp = seekers[:]
+    self.cmpSeekers(tmp)        # after comparison any that overlap are saved in Flatten.found
+    seekers = self.assemble(seekers)   # almost there
+    seekers.extend(self.done)   # not the folk singers :-)
+    [print(ns.label) for ns in seekers]
+    '''
+    PFFF     0  0  3  3
+    PCCC     6  0  9  3
+    R000     4  2  5  3
+    R000     4  0  5  1
+    RCCC     3  0  4  1
+    RCCC     5  0  6  1
+    RCCC     3  2  4  3
+    RCCC     5  2  6  3
+    RFFF     2  1  7  2
+    R000     1  1  2  2
+    R000     7  1  8  2
+    '''
 
 if __name__ == '__main__':
-  ''' quick test to make a parabola from two boxen
+  ''' test to flatten minkscape
   '''
   f = Flatten()
-  r1 = Rectangle(x=1, y=1, w=6, h=3)
-  print(r1.name)
-  r2 = Rectangle(x=3, y=2, w=2, h=3)
-  shapes = f.overlayTwoCells(r2, r1)
-  if len(shapes):
-    r1.plotPoints(seeker=shapes[0]) 
-
+  data = [
+    [(0, 0, 3, 3), 'CCC'],
+    [(3, 0, 3, 3), 'CCC'],
+    [(6, 0, 3, 3), 'CCC'],
+    [(0, 0, 3, 3), 'FFF'],
+    [(4, 0, 1, 3), '000'],
+    [(7, 1, 1, 1), '000'],
+    [(1, 1, 1, 1), '000'],
+    [(2, 1, 5, 1), 'FFF'] 
+  ]
+  todo = [
+    Rectangle(pencolor=i[1], x=i[0][0], y=i[0][1], w=i[0][2], h=i[0][3]) for i in reversed(data)
+  ]
+  f.run(todo)
+'''
+the
+end
+'''

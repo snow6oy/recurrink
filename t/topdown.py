@@ -5,10 +5,10 @@
 '''
 import unittest
 import pprint
-from flatten import Rectangle, Flatten
+from flatten import Rectangle, Flatten, Parabola
 pp = pprint.PrettyPrinter(indent=2)
 
-### topdown use cases 
+### topdown use cases for Minkscape
 
 class Test(unittest.TestCase):
   def setUp(self):
@@ -20,19 +20,25 @@ class Test(unittest.TestCase):
       Rectangle(x=6, y=0, w=3, h=3),
       Rectangle(x=3, y=0, w=3, h=3)
     ]
-    # TODO units are 10 times too big
-    ''' make lists of rects todo
+    ''' done after first pass
+    '''
+    self.done = [
+      Rectangle(pencolor='FFF', x=2, y=1, w=5, h=1), 
+      Rectangle(x=1, y=1, w=1, h=1), 
+      Rectangle(x=7, y=1, w=1, h=1)
+    ]
+    ''' list of rects todo
     '''
     # pos     size     color
     data = [
-      [( 0, 0, 30,30), 'CCC'], # seeker 1
-      [(30, 0, 30,30), 'CCC'], # 3
-      [(60, 0, 30,30), 'CCC'], # seeker 2
-      [( 0, 0, 30,30), 'FFF'],
-      [(40, 0, 10,30), '000'], # seeker 0
-      [(70,10, 10,10), '000'],
-      [(10,10, 10,10), '000'],
-      [(20,10, 50,10), 'FFF'] 
+      [(0, 0, 3, 3), 'CCC'], # seeker 1
+      [(3, 0, 3, 3), 'CCC'], # 3
+      [(6, 0, 3, 3), 'CCC'], # seeker 2
+      [(0, 0, 3, 3), 'FFF'],
+      [(4, 0, 1, 3), '000'], # seeker 0
+      [(7, 1, 1, 1), '000'],
+      [(1, 1, 1, 1), '000'],
+      [(2, 1, 5, 1), 'FFF'] 
     ]
     self.todo = [
       Rectangle(pencolor=i[1], x=i[0][0], y=i[0][1], w=i[0][2], h=i[0][3]) for i in reversed(data)
@@ -40,11 +46,24 @@ class Test(unittest.TestCase):
     self.f = Flatten()
 
   def test_1(self):
+    #print(self.id())
     ''' simple label check
     '''
     r = Rectangle(pencolor='000', x=10, y=10, w=10, h=10)
     #print(r.label)
     self.assertEqual(r.label, 'R000    10 10 20 20')
+
+  def test_2(self):
+    ''' minkscape top 20 10 50 10 and seeker 2 after splitting
+    '''
+    done = Rectangle(x=2, y=1, w=5, h=1)
+    #done.plotPoints(seeker=self.seeker[2], fn='topdown_5')
+    shapes = self.f.overlayTwoCells(self.seeker[2], done)
+    if len(shapes):
+      done.plotPoints(seeker=shapes[0], fn='topdown_5')
+      self.assertEqual(shapes[0].label, 'P000     6  0  9  3')
+    else:
+      self.assertTrue(len(shapes)) 
 
   def test_3(self):
     ''' minkscape top cell 10 10 10 10
@@ -59,7 +78,7 @@ class Test(unittest.TestCase):
         self.assertFalse(expect[i])
       else:
         [self.assertTrue(s.label in expect[i]) for s in shapes]
-        done.plotPoints(seeker=shapes[1], fn='topdown_1')
+        done.plotPoints(seeker=shapes[1], fn='topdown_3')
 
   def test_4(self):
     ''' minkscape top cell 70 10 10 10
@@ -73,7 +92,7 @@ class Test(unittest.TestCase):
         self.assertFalse(expect[i])
       else:
         [self.assertTrue(s.label in expect[i]) for s in shapes]
-        done.plotPoints(seeker=shapes[0], fn='topdown_2')
+        done.plotPoints(seeker=shapes[0], fn='topdown_4')
 
   def test_6(self):
     ''' minkscape top 20 10 50 10 and seeker 0
@@ -84,9 +103,9 @@ class Test(unittest.TestCase):
     ]
     label = [ 'R000     4  2  5  3', 'R000     4  0  5  1' ]
     done = Rectangle(x=2, y=1, w=5, h=1)
-    done.plotPoints(seeker=self.seeker[1], fn='topdown_3a')
+    done.plotPoints(seeker=self.seeker[1], fn='topdown_6a')
     shapes = self.f.overlayTwoCells(self.seeker[0], done)
-    done.plotPoints(seeker=shapes[0], fn='topdown_3b')
+    done.plotPoints(seeker=shapes[0], fn='topdown_6b')
     for i in range(2):
       #print(label[i])
       self.assertEqual(shapes[i].label, label[i])
@@ -106,18 +125,6 @@ class Test(unittest.TestCase):
       # TODO pencolor is not 000
       self.assertEqual(shapes[0].label, 'P000     0  0  3  3')
 
-  def test_2(self):
-    ''' minkscape top 20 10 50 10 and seeker 2 after splitting
-    '''
-    done = Rectangle(x=2, y=1, w=5, h=1)
-    #done.plotPoints(seeker=self.seeker[2], fn='topdown_5')
-    shapes = self.f.overlayTwoCells(self.seeker[2], done)
-    if len(shapes):
-      done.plotPoints(seeker=shapes[0], fn='topdown_5')
-      self.assertEqual(shapes[0].label, 'P000     6  0  9  3')
-    else:
-      self.assertTrue(len(shapes)) 
-
   def test_7(self):
     ''' minkscape top 20 10 50 10 and seeker 3
     '''
@@ -136,40 +143,26 @@ class Test(unittest.TestCase):
     else:
       self.assertTrue(len(shapes)) # fail on purposeG
 
-  def test_12(self):
-    ''' final test using labels
-    '''
-    expected = [
-      'PFFF     0  0 30 30',
-      'RCCC    30 20 10 10',
-      'R000    10 10 10 10',
-      'R000    70 10 10 10',
-      'RCCC    30  0 10 10',
-      'RCCC    50  0 10 10',
-      'RCCC    50 20 10 10',
-      'R000    40  0 10 10',
-      'R000    40 20 10 10',
-      'PCCC    60  0 30 30',
-      'RFFF    20 10 50 10' 
-    ]
-    unwanted = [x.label for x in self.done if x.label not in expected]
-    done_labels = set([d.label for d in self.done])
-    omitted = [e for e in expected if e not in done_labels]
-    print("Unwanted")
-    pprint.pprint(mf.t()[0])
-    print("Oh-mitted")
-    pprint.pprint(mf.t()[1])
-
   def test_8(self):
-    ''' gather the immutables
+    ''' this proves that Flatten.overlayTwoCell is required
+        which is a problem because we have Parabolas at this stage
     '''
-    self.f.firstPass(self.todo) # create Flatten().done
-    top = ['R000    70 10 80 20', 'R000    10 10 20 20', 'RFFF    20 10 70 20']
-    for d in self.f.done: # test for the 3 top cells 
-      self.assertTrue(d.label in top)
+    r1 = Rectangle(x=3,y=0,w=3,h=1)
+    r2 = Rectangle(x=4,y=0,w=1,h=1)
+    shape = self.f.split(r1, r2, required=[{'R':'W'}, {'R':'E'}])
+    self.assertEqual(shape[0].label, 'R000     3  0  4  1')
+    self.assertEqual(shape[1].label, 'R000     5  0  6  1')
 
-  def test_9(self):
-    ''' expunge the invisibles
+  ##########################################
+  def test_10(self):
+    ''' stage one: gather the immutables
+    '''
+    expect = ['R000     7  1  8  2', 'R000     1  1  2  2', 'RFFF     2  1  7  2']
+    self.f.firstPass(self.todo) # create Flatten().done
+    [self.assertTrue(d.label in expect) for d in self.f.done] # test for the 3 top cells 
+
+  def test_11(self):
+    ''' stage two: expunge the invisibles
     ''' 
     self.f.firstPass(self.todo) # create Flatten().done
     self.assertTrue(len(self.f.todo))
@@ -179,60 +172,78 @@ class Test(unittest.TestCase):
     self.assertEqual(len(invisibles), 1)
     # self.f.todo = [x for x in f.todo if x not in invisibles] # omit the invisibles
 
-  def test_10(self):
-    ''' stage three: Crop The Seekers
+  def test_12(self):
+    ''' stage three: Merge Them Whats Done
     '''
-    self.expect_cropped = [
-      'R000    40 20 50 30',
-      'R000    40  0 50 10',
-      'PFFF     0  0 30 30',
-      'PCCC    60  0 90 30',
-      'RCCC    30 20 60 30',
-      'RCCC    30  0 60 10',
-      'GFFF     0  0 30 30',
-      'GFFF    10  0 30 20',
-      'GCCC    60  0 90 30',
-      'GCCC    70  0 90 20'
-    ]
-    self.f.firstPass(self.todo) # create Flatten().done
-    todo = self.f.todo # original todo but without done
-    safe = [x for x in todo] # hard copy
-    invisibles = self.f.expungeInvisibles(todo) # now todo is empty but safe still remembers
-    todo = [x for x in safe if x not in invisibles] # excuse the invisibles
-    #[print(t.label) for t in todo]
-    self.assertEqual(len(todo), 4) 
-    cropped = self.f.cropSeekers(todo)
-    for i, c in enumerate(cropped):
-      self.assertEqual(expect[i], c.label)
-
-  def test_11(self):
-    ''' try reverse order ? 
-    '''
-    # repeat test 10
-    self.f.firstPass(self.todo) 
-    todo = self.f.todo # original todo but without done
-    safe = [x for x in todo] # hard copy
-    invisibles = self.f.expungeInvisibles(todo) # now todo is empty but safe still remembers
-    todo = [x for x in safe if x not in invisibles] # excuse the invisibles
-    cropped = self.f.cropSeekers(todo)
-    [print(d.label) for d in self.f.done]
-    #[print(crop.label) for crop in cropped]
-    print('^'*80)
-    # now continue with stage four: Clean The Cropped
-    cleaned = self.f.cleanCropped(cropped)  
-    #[print(clean.label) for clean in cleaned]
+    count = len(self.done)
+    self.f.mergeDone(self.done)     # should set two merged Polygons in Flatten
+    if count > len(self.f.merge_d): # if something merged then check again
+      done = self.f.merge_d[:]      # hard copy
+      self.f.merge_d = []      
+      self.f.mergeDone(done)        # compare two merged Polygons with each other
+      #[print(p.box.bounds) for p in self.f.merge_d]
+    p1 = self.f.merge_d[0]
+    self.assertEqual(list(p1.box.bounds), [1, 1, 8, 2])
 
   def test_13(self):
-    ''' collision detection with gnomons 
+    ''' stage four: crop seekers against the merged immutables
     '''
-    done_1 = Rectangle(x=1,y=1,w=1,h=1)
-    done_2 = Rectangle(x=2,y=1,w=5,h=1)
-    (gnomon_nw, gnomon_se) = self.f.overlayTwoCells(self.seeker[1], done_1)
-    done_1.plotPoints(seeker=gnomon_nw, fn='topdown_13nw')
-    done_2.plotPoints(seeker=gnomon_se, fn='topdown_13')
-    print(self.f.overlapTwoCells(gnomon_nw, done_1))  # overlap TRUE cross FALSE intersect TRUE
-    print()
-    print(self.f.overlapTwoCells(gnomon_se, done_2))  # overlap TRUE cross FALSE intersect TRUE
+    expect = [
+      'R000     4  2  5  3',
+      'R000     4  0  5  1',
+      'PFFF     0  0  3  3',
+      'PCCC     6  0  9  3',
+      'RCCC     3  2  6  3',
+      'RCCC     3  0  6  1'
+    ]
+    already_done = [  # imitate removal of Immutables and Invisibles
+      'RCCC     0  0  3  3', # invisible
+      'R000     7  1  8  2', 
+      'R000     1  1  2  2', 
+      'RFFF     2  1  7  2'
+    ]
+    r = Rectangle(x=1,y=1,w=7,h=1) # merge all three done into one for spatial tests
+    self.f.merge_d = [r]              # assign to Flatten to crop against
+    todo = [t for t in self.todo if t.label not in already_done]
+    cropped = self.f.cropSeekers(todo)
+    #[print(crop.label) for crop in cropped]
+    [self.assertEqual(crop.label, expect[i]) for i, crop in enumerate(cropped)]
+
+  def test_14(self):
+    ''' final stage: compare the seekers against each other
+    '''
+    expect = [
+      'PFFF     0  0  3  3',
+      'PCCC     6  0  9  3',
+      'R000     4  2  5  3',
+      'R000     4  0  5  1',
+      'RCCC     3  0  4  1',
+      'RCCC     5  0  6  1',
+      'RCCC     3  2  4  3',
+      'RCCC     5  2  6  3',
+      'RFFF     2  1  7  2',
+      'R000     1  1  2  2',
+      'R000     7  1  8  2'
+    ]
+    pfff = Parabola(Rectangle(pencolor='FFF', x=0,y=0,w=3,h=3), Rectangle(x=1,y=1,w=2,h=1), direction='W')
+    pccc = Parabola(Rectangle(pencolor='CCC', x=6,y=0,w=3,h=3), Rectangle(x=6,y=1,w=2,h=1), direction='E')
+    seekers = [
+      pfff,
+      pccc,
+      Rectangle(x=4, y=2, w=1, h=1),
+      Rectangle(x=4, y=0, w=1, h=1),
+      Rectangle(pencolor='CCC', x=3, y=2, w=3, h=1),
+      Rectangle(pencolor='CCC', x=3, y=0, w=3, h=1)
+    ]
+    #[print(s.label) for s in seekers]
+    # now we have simulated what stage five gave us .. 
+    to_compare = seekers[:]
+    self.f.cmpSeekers(to_compare) # any compared that overlap are saved in Flatten.found
+    # almost there
+    new_seekers = self.f.assemble(seekers)
+    new_seekers.extend(self.done) # not the folk singers :-)
+    #[print(ns.label) for ns in new_seekers]
+    [self.assertEqual(ns.label, expect[i]) for i, ns in enumerate(new_seekers)]
 
 '''
 the
