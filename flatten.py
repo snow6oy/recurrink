@@ -81,7 +81,7 @@ class Rectangle():
     X, Y, W, H = seeker.box.bounds
     self.direction = direction
     self.pencolor = seeker.pencolor
-    #print("SET SEEKER self", x, y, w, h, " seeker ", X, W, Y, H, direction)
+    #print("SET SEEKER self", x, y, w, h, " seeker ", X, Y, W, H, direction)
     if direction == 'N':
       self.box = box(X, h, W, H) 
       self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(h):>3}{int(W):>3}{int(H):>3}'
@@ -231,7 +231,7 @@ class Parabola(Rectangle):
     super().__init__(name = 'P')
     x, y, w, h = done.box.bounds
     X, Y, W, H = seeker.box.bounds
-    pencolor = seeker.pencolor
+    self.pencolor = seeker.pencolor
     self.direction = direction
 
     if self.direction == 'N':
@@ -253,9 +253,9 @@ class Parabola(Rectangle):
       self.stop    = H
       self.oddline = X
       self.outer   = W
-      self.inner   = w
+      self.inner   = x
       self.boundary = LinearRing([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,y), (W,y), (W,Y)])
-      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     elif self.direction == 'S':
       self.p2      = H
       self.start   = X
@@ -264,16 +264,16 @@ class Parabola(Rectangle):
       self.outer   = H
       self.inner   = y
       self.boundary = LinearRing([(X,Y), (X,H), (x,H), (x,y), (w,y), (w,H), (W,H), (W,Y)])
-      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     elif self.direction == 'E':
       self.p1      = X
       self.start   = Y
       self.stop    = H
       self.oddline = W
       self.outer   = X
-      self.inner   = x
+      self.inner   = w
       self.boundary = LinearRing([(X,Y), (X,y), (w,y), (w,h), (X,h), (X,H), (W,H), (W,Y)])
-      self.label = f'{self.name}{pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
+      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     else:
       raise ValueError('no direction')
     # meander needs to know a,b,c,d
@@ -294,6 +294,7 @@ class FakeBox:
     self.s = LineString([(x, y), (w, y)])
     self.e = LineString([(w, y), (w, h)])
     self.box = box(x, y, w, h)  
+    self.label = f"FAKEBOX {x} {y} {w} {h}"
 
   def dimensions(self):
     ''' copy of Rectangle.dimensions()
@@ -307,10 +308,13 @@ class FakeBox:
 class Flatten:
 
   def __init__(self):
-    self.found = dict() # stash shapes found by self.cmpSeekers()
+    self.done    = []      # immutable shapes
+    self.todo    = []      # shapes that are not yet done are called seekers
+    self.merge_d = []      # top shapes are merged into this list
+    self.found   = dict()  # stash shapes found by self.cmpSeekers()
 
   def combine(self, polygon, pencolor):
-    ''' return a Rectangle without check what Shapely.difference produced
+    ''' return a Rectangle without checkng what Shapely.difference produced
     '''
     #print(polygon.bounds, seeker.label)
     x, y, w, h = polygon.bounds
@@ -321,10 +325,10 @@ class Flatten:
   def assemble(self, seekers):
     ''' reunite found with seekers
     '''
-    print(f"{len(seekers)=}")
+    #print(f"{len(seekers)=}")
     for label in self.found:
       mp = self.found[label]
-      print(f"{label} {len(mp.geoms)}")
+      #print(f"{label} {len(mp.geoms)}")
       ''' identify and destroy the covering shape
       '''
       delete_me = None
@@ -351,12 +355,15 @@ class Flatten:
     '''
     this = seekers.pop()
     p = Polygon(this.boundary)
-    for i, s in enumerate(seekers): # TODO remove i
+    for s in seekers: 
       seeker = Polygon(s.boundary)
       if p.covers(seeker):
-        #print(f"{this.label} {this.pencolor} | {s.label} {this.name} {this.direction}")
         multipolygon = p.difference(seeker) # like self.split but better
-        self.found[this.label] = multipolygon
+        #print(f"{this.label} {this.pencolor} | {s.label} {this.name} {this.direction}")
+        if multipolygon.is_empty:
+          pass # should not happen
+        else:
+          self.found[this.label] = multipolygon
     if len(seekers):
       self.cmpSeekers(seekers)
     return None
@@ -366,7 +373,6 @@ class Flatten:
 
   def split(self, seeker, done, required=list()):
     shapes = []
-    #print(required)
     for r in required:
       for name in r:
         direction = r[name]
@@ -378,6 +384,12 @@ class Flatten:
           x, y, w, h = done.dimensions()
           s = Rectangle(x=x, y=y, w=w, h=h) # copy of done
           s.set_seeker(seeker, direction)   # transform done copy into seeker
+          x, y, w, h = s.dimensions()       # get the new values
+          s.set_dimensions(
+            {'x':x, 'y':y, 'w':w, 'h':h}, 
+            direction=direction, 
+            pencolor=seeker.pencolor
+          ) # apply for meander
         else:
           raise ValueError(f"cannot split anonymous '{name}'")
         shapes.append(s)
@@ -454,14 +466,22 @@ class Flatten:
         align the seekers by cropping whenenver Done overlaps
         when seekers are Gnomons they grow in number
     '''
-    print(f"{len(self.done)=} {len(seekers)=}")
+    #print(f"{len(self.done)=} {len(seekers)=}")
     a = [] 
     for d in self.merge_d:
       for s in seekers:
-        #print(f"d {d.label} s {s.label} len {len(shapes)}")
+        #print(f"{s.label=}")
         shapes = self.overlayTwoCells(s, d)
         if len(shapes) == 2: # Gnomons
           [a.append(shape) for shape in shapes]
+          '''
+          for shape in shapes:
+            #print(f"{shape.label=}")
+            if shape.label == 'R000     4  2  5  3':
+              shape.meander()
+              xy = list(shape.linefill.coords)
+              #print(xy)
+          '''
         elif len(shapes) == 1: # Rectangle or Parabola
           a.append(shapes[0])
     return a
@@ -472,7 +492,6 @@ class Flatten:
     '''
     last = done.pop()
     for d in done:
-      #if last.box.touches(d.box):
       if last.box.intersects(d.box):
         #print(f"{d.box.geom_type=} {d.label=} {last.label=}")
         if hasattr(self, 'merge_d'):
@@ -480,7 +499,6 @@ class Flatten:
           fb = FakeBox(p)            # rectanglify
           self.merge_d.append(fb)
         else:
-          self.merge_d = []
           p  = last.box.union(d.box) # shapely gives us a merged polygon
           fb = FakeBox(p)            # rectanglify
           self.merge_d.append(fb)
@@ -529,10 +547,10 @@ class Flatten:
         5. re-assemble the parts
     '''
     self.firstPass(todo)               # create Flatten().done
+    #print(f"{len(self.todo)=}")
     todo = [x for x in self.todo]      # make a hard copy
     invisibles = self.expungeInvisibles(todo)
-    self.todo = [x for x in f.todo if x not in invisibles] # omit the invisibles
-    print(f"{len(self.todo)=}")
+    self.todo = [x for x in self.todo if x not in invisibles] # omit the invisibles
     done  = self.done[:]               # another copy
     count = len(done)
     self.mergeDone(done)            # should set two merged Polygons in Flatten
@@ -542,16 +560,23 @@ class Flatten:
       self.mergeDone(done)          # compare two merged Polygons with each other
       #[print(p.box.bounds) for p in self.merge_d]
     seekers = self.cropSeekers(self.todo)
+    ''' debug
+    for s in seekers:
+      if s.label == 'R000     4  2  5  3':
+        s.meander()
+        xy = list(s.linefill.coords)
+        print(xy)
+    '''
     tmp = seekers[:]
     self.cmpSeekers(tmp)        # after comparison any that overlap are saved in Flatten.found
-    seekers = self.assemble(seekers)   # almost there
-    seekers.extend(self.done)   # not the folk singers :-)
-    [print(ns.label) for ns in seekers]
+    seekers = self.assemble(seekers)   # new seekers but not the folk singers :-)
+    self.done.extend(seekers)          # not the folk singers :-)
+    return self.done
     '''
     PFFF     0  0  3  3
     PCCC     6  0  9  3
-    R000     4  2  5  3
-    R000     4  0  5  1
+    R000     4  2  5  3  meander empty
+    R000     4  0  5  1  meander empty
     RCCC     3  0  4  1
     RCCC     5  0  6  1
     RCCC     3  2  4  3
@@ -578,6 +603,7 @@ if __name__ == '__main__':
   todo = [
     Rectangle(pencolor=i[1], x=i[0][0], y=i[0][1], w=i[0][2], h=i[0][3]) for i in reversed(data)
   ]
+  #[print(t.label) for t in todo]
   f.run(todo)
 '''
 the
