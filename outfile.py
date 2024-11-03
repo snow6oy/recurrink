@@ -198,6 +198,7 @@ class Layout(Shapes):
     ''' traverse the grid once for each block, populating ET elems as we go
     '''
     self.cells = cells
+    self.blocksize = blocksize         # help LinearSvg()
     for layer in ['bg', 'fg', 'top']:
       for cell in self.cells:
         self.uniqstyle(cell, layer, self.cells[cell]['top'],

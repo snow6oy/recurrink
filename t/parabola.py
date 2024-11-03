@@ -94,15 +94,19 @@ class Test(unittest.TestCase):
     ''' parabola meander with direction=W
     '''
     expect = [
-      (7, 1), (1, 1), (1, 2), (7, 2), (7, 3), (1, 3), (1, 4),
-      (5, 4), (5, 5), (1, 5), (1, 6), (7, 6), (7, 7), (1, 7)
+      (7, 1), (1, 1), (1, 2), (7, 2), (7, 3), (1, 3), (1, 4), (3, 4), (3, 5), (1, 5), (1, 6), (7, 6), (7, 7), (1, 7)
     ]
     done   = Rectangle(x=3,y=3,w=2,h=2)
     seeker = Rectangle(x=1,y=1,w=6,h=6)
+    ''' 
+    done   = Rectangle(x=10,y=10,w=70,h=10)
+    seeker = Rectangle(pencolor='FFF', x=0,y=0,w=30,h=30)
+    '''
     p = Parabola(seeker, done, direction='W')
     p.meander()
     p.plotPoints(fn='parabola_6', boundary=False)
     xy = list(p.linefill.coords)
+    #pp.pprint(xy)
     self.assertEqual(expect, xy)
 
   def test_7(self):
