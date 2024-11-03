@@ -198,6 +198,7 @@ class Layout(Shapes):
     ''' traverse the grid once for each block, populating ET elems as we go
     '''
     self.cells = cells
+    self.blocksize = blocksize         # help LinearSvg()
     for layer in ['bg', 'fg', 'top']:
       for cell in self.cells:
         self.uniqstyle(cell, layer, self.cells[cell]['top'],
@@ -397,8 +398,10 @@ class Svg(Layout):
       uniqid += 1
       g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
       g.set('style', group['style'])
-      g.set('inkscape:groupmode', "layer") # need new namespace for inkscape ?
+      ''' need new namespace for inkscape 
+      g.set('inkscape:groupmode', "layer") 
       g.set('inkscape:label', self.trimStyle(group['style'])) # inkscape:label="CCC"
+      '''
       for s in group['shapes']:
         uniqid += 1
         name = s['name']
