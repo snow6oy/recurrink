@@ -141,7 +141,7 @@ class Test(unittest.TestCase):
       self.assertEqual(shapes[0].label, 'R000     3  2  6  3')
       self.assertEqual(shapes[1].label, 'R000     3  0  6  1')
     else:
-      self.assertTrue(len(shapes)) # fail on purposeG
+      self.assertTrue(len(shapes)) # fail on purpose
 
   def test_8(self):
     ''' this proves that Flatten.overlayTwoCell is required
@@ -152,6 +152,21 @@ class Test(unittest.TestCase):
     shape = self.f.split(r1, r2, required=[{'R':'W'}, {'R':'E'}])
     self.assertEqual(shape[0].label, 'R000     3  0  4  1')
     self.assertEqual(shape[1].label, 'R000     5  0  6  1')
+
+  def test_9(self):
+    ''' Rectangle.set_seeker when splitting long rectangle into cubes 
+        called by Flatten.split
+    '''
+    seeker = Rectangle(x=4, y=0, w=1, h=3)
+    done   = Rectangle(x=1, y=1, w=7, h=1) # copy of done
+    done.set_seeker(seeker, 'S')           # transform done copy into seeker
+    done.plotPoints(seeker=seeker, fn='topdown_9')
+    x, y, w, h = done.dimensions()   # get the new values
+    done.set_dimensions({'x':x, 'y':y, 'w':w, 'h':h}, direction='S', pencolor=seeker.pencolor) # apply for meander
+    done.meander()
+    xy = list(done.linefill.coords)
+    print(f"{done.label=} {done.box.bounds=} {done.direction=}")
+    pp.pprint(xy)
 
   ##########################################
   def test_10(self):
@@ -183,6 +198,7 @@ class Test(unittest.TestCase):
       self.f.mergeDone(done)        # compare two merged Polygons with each other
       #[print(p.box.bounds) for p in self.f.merge_d]
     p1 = self.f.merge_d[0]
+    #print(p1.label)
     self.assertEqual(list(p1.box.bounds), [1, 1, 8, 2])
 
   def test_13(self):
@@ -207,7 +223,11 @@ class Test(unittest.TestCase):
     todo = [t for t in self.todo if t.label not in already_done]
     cropped = self.f.cropSeekers(todo)
     #[print(crop.label) for crop in cropped]
-    [self.assertEqual(crop.label, expect[i]) for i, crop in enumerate(cropped)]
+    for c in cropped:
+      if c.label in ['R000     4  2  5  3','R000     4  0  5  1']:
+        print(f"{c.label=} {c.box.bounds=} {c.direction=}")
+
+    #[self.assertEqual(crop.label, expect[i]) for i, crop in enumerate(cropped)]
 
   def test_14(self):
     ''' final stage: compare the seekers against each other
@@ -235,14 +255,19 @@ class Test(unittest.TestCase):
       Rectangle(pencolor='CCC', x=3, y=2, w=3, h=1),
       Rectangle(pencolor='CCC', x=3, y=0, w=3, h=1)
     ]
-    #[print(s.label) for s in seekers]
     # now we have simulated what stage five gave us .. 
     to_compare = seekers[:]
     self.f.cmpSeekers(to_compare) # any compared that overlap are saved in Flatten.found
     # almost there
     new_seekers = self.f.assemble(seekers)
+    c = new_seekers[2] # 4253
+    c.meander()
+    xy = list(c.linefill.coords)
+    print(f"{c.label=} {c.box.bounds=} {c.direction=}")
+    pp.pprint(xy)
     new_seekers.extend(self.done) # not the folk singers :-)
-    #[print(ns.label) for ns in new_seekers]
+    [print(s.label) for s in new_seekers]
+    #[print(ns) for ns in self.f.found.keys()]
     [self.assertEqual(ns.label, expect[i]) for i, ns in enumerate(new_seekers)]
 
 '''

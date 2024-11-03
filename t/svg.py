@@ -4,7 +4,7 @@ from outfile import Svg
 from config import *
 pp = pprint.PrettyPrinter(indent = 2)
 
-class TestSvg(unittest.TestCase):
+class Test(unittest.TestCase):
 
   def setUp(self):
     self.svg = Svg(scale=1, gridsize=180, cellsize=60)
