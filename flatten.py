@@ -233,6 +233,7 @@ class Parabola(Rectangle):
     X, Y, W, H = seeker.box.bounds
     self.pencolor = seeker.pencolor
     self.direction = direction
+    self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
 
     if self.direction == 'N':
       ''' these COULD belong to Meander()
@@ -245,8 +246,7 @@ class Parabola(Rectangle):
       self.inner   = h
       ''' end
       '''
-      self.boundary = LinearRing([(x,y), (x,h), (w,h), (w,y), (W,y), (W,H), (X,H), (X,y)])
-      self.label = 'not done :/'
+      self.boundary = LinearRing([(X,Y), (X,H), (W,H), (W,Y), (w,Y), (w,h), (x,h), (x,Y)])
     elif self.direction == 'W': 
       self.p1      = W
       self.start   = Y
@@ -255,7 +255,6 @@ class Parabola(Rectangle):
       self.outer   = W
       self.inner   = x
       self.boundary = LinearRing([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,y), (W,y), (W,Y)])
-      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     elif self.direction == 'S':
       self.p2      = H
       self.start   = X
@@ -264,7 +263,6 @@ class Parabola(Rectangle):
       self.outer   = H
       self.inner   = y
       self.boundary = LinearRing([(X,Y), (X,H), (x,H), (x,y), (w,y), (w,H), (W,H), (W,Y)])
-      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     elif self.direction == 'E':
       self.p1      = X
       self.start   = Y
@@ -273,7 +271,6 @@ class Parabola(Rectangle):
       self.outer   = X
       self.inner   = w
       self.boundary = LinearRing([(X,Y), (X,y), (w,y), (w,h), (X,h), (X,H), (W,H), (W,Y)])
-      self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
     else:
       raise ValueError('no direction')
     # meander needs to know a,b,c,d
@@ -441,7 +438,7 @@ class Flatten:
     # topdown t3.1
     elif done.box.within(s.box):                      
       return self.split(s, done, required=[{'G':'NW'}, {'G':'SE'}])
-    # print("Err Flatten.overlayTwoCells NO MATCH")
+    print("Err Flatten.overlayTwoCells NO MATCH")
     return []
 
   # TODO merge this confusingly named func into firstPass. RENAME firstPass findImmutables
