@@ -198,7 +198,7 @@ class Gnomon(Rectangle):
     if self.direction == 'NW':
       self.p2      = X
       self.start   = X
-      self.stop    = W  # x + w
+      self.stop    = w  # x + w
       self.oddline = H # y + h     # north odd
       self.outer   = y # y + sx      # south outer even
       self.inner   = h           # inner even

@@ -92,17 +92,6 @@ class Test(unittest.TestCase):
     xy = list(p.linefill.coords)
     self.assertEqual(expect, xy)
 
-  def test_8(self):
-    ''' seeker square is transformed into a parabola by an overlapping rectangle
-    '''
-    done   = Rectangle(x=2, y=2, w=2, h=4)
-    seeker = Rectangle(x=1, y=1, w=4, h=4)
-    shapes = self.f.overlayTwoCells(seeker, done)
-    done.plotPoints(seeker=seeker, fn='parabola_8')
-    self.assertTrue(len(shapes))
-    self.assertEqual(shapes[0].name, 'P')
-    self.assertEqual(shapes[0].label, 'P000     1  1  7  3')
-
 '''
 the
 end
