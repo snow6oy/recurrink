@@ -46,11 +46,9 @@ class Test(unittest.TestCase):
     self.f = Flatten()
 
   def test_1(self):
-    #print(self.id())
     ''' simple label check
     '''
     r = Rectangle(pencolor='000', x=10, y=10, w=10, h=10)
-    #print(r.label)
     self.assertEqual(r.label, 'R000    10 10 20 20')
 
   def test_2(self):

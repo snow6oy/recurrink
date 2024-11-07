@@ -438,7 +438,7 @@ class Flatten:
     # topdown t3.1
     elif done.box.within(s.box):                      
       return self.split(s, done, required=[{'G':'NW'}, {'G':'SE'}])
-    print("Err Flatten.overlayTwoCells NO MATCH")
+    #print("Err Flatten.overlayTwoCells NO MATCH")
     return []
 
   # TODO merge this confusingly named func into firstPass. RENAME firstPass findImmutables
