@@ -22,12 +22,12 @@ class Rectangle():
     self.pencolor = pencolor
     if (len(dim)): # make a rectangle if we have dimensions
       #pp.pprint(dim)
-      self.set_dimensions(dim, direction, pencolor)
+      self.setDimensions(dim, direction, pencolor)
     else:
       pass # things that inherit from us .make() themselves
 
   # TODO ClassName functionName var_name
-  def set_dimensions(self, dim, direction, pencolor):
+  def setDimensions(self, dim, direction, pencolor):
     x, y, w, h = dim.values()
     self.direction = direction if direction else 'N'
     ''' box defines the surface area for geom calculation
@@ -74,7 +74,7 @@ class Rectangle():
 
   # TODO push meander conf outside self.__init__() and call from here
   # TODO test E and W
-  def set_seeker(self, seeker, direction):
+  def setSeeker(self, seeker, direction):
     ''' rewrite key geom values
     '''
     x, y, w, h = self.box.bounds
@@ -380,9 +380,9 @@ class Flatten:
         elif name == 'R':
           x, y, w, h = done.dimensions()
           s = Rectangle(x=x, y=y, w=w, h=h) # copy of done
-          s.set_seeker(seeker, direction)   # transform done copy into seeker
+          s.setSeeker(seeker, direction)   # transform done copy into seeker
           x, y, w, h = s.dimensions()       # get the new values
-          s.set_dimensions(
+          s.setDimensions(
             {'x':x, 'y':y, 'w':w, 'h':h}, 
             direction=direction, 
             pencolor=seeker.pencolor
