@@ -167,29 +167,51 @@ class Shapes():
     return { 'x': x, 'y': y }
 
 class Layout(Shapes):
-  ''' expand cells and draw across grid
-     9 * 60 = 540  * 2.0 = 1080
-    12 * 60 = 720  * 1.5 = 1080
-    18 * 60 = 1080 * 1.0 = 1080
-    36 * 60 = 2160 * 0.5 = 1080
-  '''
+  ''' the below cell sizes were calculated as
+      gridsize / scale / cellnum
+      18 was chosen as the preferred number of cells
+      for both column and row with scale 1
+      the num of cells is gridsize / cellsize
 
-  def __init__(self, scale=1, gridsize=1080, cellsize=60):
-    ''' scale expected to be one of [0.5, 0.75, 1.0, 1.5, 2.0]
-    '''
-    self.scale = float(scale)
-    self.grid = round(gridsize / (cellsize * scale))
-    self.cellsize = round(cellsize * scale)
-    msg = self.checksum()
+        PIXELS
+
+        num of  cell           grid
+         cells  size   scale   size
+        ---------------------------------
+             9 *  120    * 2.0 = 1080
+            12 *   90    * 1.5 = 1080
+            18 *   60    * 1.0 = 1080
+            24 *   45    * .75 = 1080
+            36 *   30    * 0.5 = 1080
+
+        MILLIMETERS
+
+             9 *   30    * 2.0 =  270
+            18 *   15    * 1.0 =  270 
+            36 *    9    * 0.6 =  270
+  '''
+  def __init__(self, unit='px', scale=1.0, gridsize=None, cellsize=None):
+
+    self.governance = {
+      'mm': { 'gridsize':270,  'cellsize':15, 'scale': [0.6, 1.0, 2.0] },
+      'px': { 'gridsize':1080, 'cellsize':60, 'scale': [0.5, 0.75, 1.0, 1.5, 2.0] }
+    }
+    msg = self.checksum(unit, scale, cellsize)
     if msg:
       raise ValueError(msg)
-
-    self.styles = dict() # unique style associated with many cells
-    self.seen = str()    # have we seen this style before
-    self.doc = list()
+    gridsize      = gridsize if gridsize else self.governance[unit]['gridsize']   
+    cellsize      = cellsize if cellsize else self.governance[unit]['cellsize']
+    self.unit     = unit
+    self.scale    = float(scale)
+    self.cellnum  = round(gridsize / (cellsize * scale))
+    self.cellsize = round(cellsize * scale)
+    self.gridsize = gridsize
+    self.styles   = dict() # unique style associated with many cells
+    self.seen     = str()    # have we seen this style before
+    self.doc      = list()
     if False:           # run with gridsize=60 cellsize=6 to get a demo
-      for col in range(self.grid):
-        for row in range(self.grid):
+      for col in range(self.cellnum):
+        for row in range(self.cellnum):
           xy = tuple([row, col])
           print(xy, end=' ', flush=True)
         print()
@@ -198,7 +220,7 @@ class Layout(Shapes):
     ''' traverse the grid once for each block, populating ET elems as we go
     '''
     self.cells = cells
-    self.blocksize = blocksize         # help LinearSvg()
+    self.blocksize = blocksize         # pass blocksize to LinearSvg()
     for layer in ['bg', 'fg', 'top']:
       for cell in self.cells:
         self.uniqstyle(cell, layer, self.cells[cell]['top'],
@@ -211,8 +233,8 @@ class Layout(Shapes):
           sw=self.cells[cell]['stroke_width']
         )
       for cell in self.cells:
-        for gy in range(0, self.grid, blocksize[1]):
-          for gx in range(0, self.grid, blocksize[0]):
+        for gy in range(0, self.cellnum, blocksize[1]):
+          for gx in range(0, self.cellnum, blocksize[0]):
             for y in range(blocksize[1]):
               for x in range(blocksize[0]):
                 pos = tuple([x, y])
@@ -248,13 +270,11 @@ class Layout(Shapes):
       g = self.getgroup('top', cell)
       g.append(self.foreground(X, Y, self.cells[cell]))
 
-  # TODO 
-  # bg and fill cannot be None - raise ValueError
   def uniqstyle(self, cell, layer, top, bg=None, fill=None, fo=1, stroke=None, sw=0, sd=0, so=1):
     ''' remember what style to use for this cell and that layer
         as None is invalid XML we use 0 as default for: fo sw sd so
     '''
-    if bg is None or fill is None:
+    if bg is None and fill is None:
       raise ValueError(f"either {bg} or {fill} are empty")
     style = str()
     if layer == 'bg': # create new entry in self.layers.bg
@@ -286,16 +306,17 @@ class Layout(Shapes):
       raise ValueError(f"{cell} aint got no style (hint: cannot make bg for topcell?)")
     return found
 
-  def checksum(self):
-    ''' like a checksum but for cells
+  def checksum(self, unit, scale, cellsize):
+    ''' sanity check the inputs
     '''
-    error_msg = None
-    if self.scale not in [0.5, 0.75, 1.0, 1.5, 2.0]:
-      error_msg = f'checksum failed scale {self.scale}'
-    if (self.cellsize % 3):
-      error_msg = f'checksum failed cell size div by three {self.cellsize}'
-    self.A4_OK = True if (self.grid * self.cellsize) <= 210 else False
-    return error_msg
+    if unit not in list(self.governance.keys()):
+      return f'checksum failed: unknown unit {unit}'
+    elif scale not in self.governance[unit]['scale']: # scale must in range
+      return f'checksum failed scale {scale}'
+    elif cellsize and (cellsize % 3):                 # cellsize / 3 must be a whole number
+      return f'checksum failed cell size div by three {cellsize}'
+    else:
+      return None
 
   def trimStyle(self, style):
     start = style.index('#') + 1
@@ -371,18 +392,26 @@ class Stencil:
     return fn
 
 class Svg(Layout):
-  def __init__(self, scale, gridsize=1080, cellsize=60, inkscape=False):
+  def __init__(self, unit, scale, gridsize=0, cellsize=0, inkscape=False):
     ''' svg:transform(scale) is better than homemade scaling
-    but is lost when converting to raster. Instagram !!!
+        but is lost when converting to raster. Instagram !!!
     '''
+    super().__init__(unit, scale, gridsize, cellsize)
     ET.register_namespace('',"http://www.w3.org/2000/svg")
     root = ET.fromstring(f'''
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 {gridsize} {gridsize}" 
-      width="{gridsize}px" height="{gridsize}px"
+      viewBox="0 0 {self.gridsize} {self.gridsize}" 
+      width="{self.gridsize}{self.unit}" height="{self.gridsize}{self.unit}"
       transform="scale(1)"></svg>
     ''')
+    #root = ET.fromstring(f'''
+    #<svg 
+    #  xmlns="http://www.w3.org/2000/svg" 
+    #  viewBox="0 0 {gridsize} {gridsize}" 
+    #  width="{gridsize}px" height="{gridsize}px"
+    #  transform="scale(1)"></svg>
+    #''')
     comment = ET.Comment(
       f' scale:{scale} cellsize:{cellsize} gridsize:{gridsize} '
     )
@@ -397,7 +426,6 @@ class Svg(Layout):
     self.ns = '{http://www.w3.org/2000/svg}'
     self.root = root
     self.inkscape = inkscape
-    super().__init__(scale, gridsize, cellsize)
 
   # TODO rect is converted to str for gcode BUT other shapes were not done
   def make(self):

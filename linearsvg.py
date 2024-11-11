@@ -22,11 +22,10 @@ class LinearSvg(Svg):
   '''
   def __init__(self, scale, gridsize=None, cellsize=None):
     if gridsize and cellsize:
-      super().__init__(scale=scale, gridsize=gridsize, cellsize=cellsize)
+      super().__init__(unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize)
     else:
-      super().__init__(scale=scale)
+      super().__init__(unit='mm', scale=scale)
  
-  #def blockify(self, blocksize, gridsz, cellsz):
   def blockify(self):
     ''' pack the cells back into their blocks
         preserve top order
@@ -34,9 +33,9 @@ class LinearSvg(Svg):
     block_x, block_y = self.blocksize
     total_x = int(block_x * self.cellsize)
     total_y = int(block_y * self.cellsize)
-    grid_mm = int(self.grid * self.cellsize)
+    grid_mm = int(self.cellnum * self.cellsize)
     blocks = []
-    #print(f"{self.blocksize=} {self.grid=} {grid_mm=} {self.cellsize=}")
+    print(f"{self.blocksize=} {self.cellnum=} {grid_mm=} {self.cellsize=} {total_x=} {total_y=}")
 
     for x in range(0, grid_mm, total_x):
       for y in range(0, grid_mm, total_y):
@@ -131,22 +130,20 @@ class LinearSvg(Svg):
         uniqid += 1
         points = str()
         for c in coords:
-          x = c[0] * 3
-          y = c[1] * 3
-          #x = c[0]
-          #y = c[1]
+          x = c[0]
+          y = c[1]
           points += f"{x},{y} "
-        #print(points)
         polyln = ET.SubElement(g, f"{self.ns}polyline", id=str(uniqid))
         polyln.set("points", points)
 
-gs  = 27
-cs  = 9
-svg = LinearSvg(scale=1, gridsize=gs, cellsize=cs)
+gs  = 270
+cs  = 54
+#svg = LinearSvg(scale=.5, gridsize=gs, cellsize=cs)
+svg = LinearSvg(scale=2)
 blocksize = (3, 1)
 svg.gridwalk(blocksize, config.positions, config.cells)
 svg.make()
-svg.write('/tmp/minkscape2.svg')
+svg.write('/tmp/minkscape.svg')
 '''
 the
 end

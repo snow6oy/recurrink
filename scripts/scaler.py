@@ -21,27 +21,65 @@ class Points:
     self.mid= [x + size / 2,              y + size / 2]
 
 class Layout():
-  ''' expand cells and draw across grid
-     9 * 60 = 540  * 2.0 = 1080
-    12 * 60 = 720  * 1.5 = 1080
-    18 * 60 = 1080 * 1.0 = 1080
-    36 * 60 = 2160 * 0.5 = 1080
+  ''' the below cell sizes were calculated as
+      gridsize / scale / cellnum
+      18 was chosen as the preferred number of cells
+      for both column and row with scale 1
+      the num of cells is gridsize / cellsize
+
+ 	PIXELS
+
+	num of	cell   	       grid
+	 cells  size   scale   size
+        ---------------------------------
+	     9 *  120    * 2.0 = 1080
+	    12 *   90    * 1.5 = 1080
+	    18 *   60    * 1.0 = 1080
+            24 *   45    * .75 = 1080
+	    36 *   30    * 0.5 = 1080
+
+ 	MILLIMETERS
+
+	     9 *   30    * 2.0 =  270
+            18 *   15    * 1.0 =  270 
+            30 *    9    * 0.6 =  270
   '''
 
-  def __init__(self, scale=1.0, gridsize=1080, cellsize=60):
+  def __init__(self, unit='px', scale=1.0, gridsize=None, cellsize=None):
     ''' scale expected to be one of [0.5, 1.0, 1.5, 2.0]
     '''
-    self.scale = scale
-    self.grid = round(gridsize / (cellsize * scale))
+    self.governance = {
+      'mm': { 'gridsize':270,  'cellsize':15, 'scale': [0.6, 1.0, 2.0] },
+      'px': { 'gridsize':1080, 'cellsize':60, 'scale': [0.5, 0.75, 1.0, 1.5, 2.0] }
+    }
+    gridsize      = gridsize if gridsize else self.governance[unit]['gridsize']
+    cellsize      = cellsize if cellsize else self.governance[unit]['cellsize']
+    self.unit     = unit
+    self.scale    = scale
+    self.cellnum  = round(gridsize / (cellsize * scale))
     self.cellsize = round(cellsize * scale)
-    #self.checksum() 
+    errmsg = self.checksum(unit, gridsize, cellsize)
+    if errmsg:
+      raise ValueError(errmsg)
 
-    if False:           # run with gridpx=60 cellsize=6 to get a demo
-      for col in range(self.grid):
-        for row in range(self.grid):
+    if False: # run with gridsize=18 cellsize=3 to get a demo
+      for col in range(self.cellnum):
+        for row in range(self.cellnum):
           xy = tuple([row, col])
           print(xy, end=' ', flush=True)
         print()
+
+  def checksum(self, unit, gridsize, cellsize):
+    ''' sanity check the inputs
+    '''
+    if self.unit not in list(self.governance.keys()):
+      return f'checksum failed: unknown unit {self.unit}'
+    elif self.scale not in self.governance[unit]['scale']: # scale must in range
+      return f'checksum failed scale {self.scale}'
+    elif (self.cellsize % 3): # cellsize / 3 must be a whole number
+      return f'checksum failed cell size div by three {self.cellsize}'
+    else:
+      return None
 
   def gridwalk(self, blocksize, positions, cells):
     ''' traverse the grid once for each block, populating ET elems as we go
@@ -68,7 +106,7 @@ class Layout():
         '''
         print(len(s['shapes']), s['style'])
 
-    cellnum = int((self.grid**2) * numoflayers)
+    cellnum = int((self.cellnum**2) * numoflayers)
     if (found != cellnum):
       msg = f"{cellnum} cells expected but found {found}"
     return msg
@@ -87,50 +125,45 @@ class Layout():
         moveto = tuple([X, Y])
         self.gcdata[moveto] = fill # top overwrites fg which overwrites bg
 
-# cellsize / 3 must be a whole number
-# x,y must comply with paper size e.g. A4 = 210x297 mm
-# scale must in range
-# strokes must scale
-
-# cell width height must be > 0
-# ?? blocksize cannot exceed grid
-if __name__ == '__main__':
-  ''' expand cells and draw across grid
-     9 * 60 = 540  * 2.0 = 1080
-    12 * 60 = 720  * 1.5 = 1080
-    18 * 60 = 1080 * 1.0 = 1080
-    36 * 60 = 2160 * 0.5 = 1080
-
-                   gridsz cellsz maxmm
-    a4 210x297 mm     180     24   210
-    a3 297x420 mm     270     36   297
-    a3                720     60   980  above * 3.3 
-  '''
-  scale_range = [0.5, 1.0, 1.5, 2.0]
-  test_vals = [ (1080, 60, 1081, 5), (720, 60, 980, 0) ]
-  # (270, 36, 297, 0) ]
-
-  blocksize = 24  # afroclave[x] = 24
-  print("\t".join(['scale', "num_cel", "cel_siz", "scal_ok", "div_3", "blocksz", "hi_wid", "fit_pg", "strok_w", "N_x"]))
+def inputPrinter(u, scale_vals, tv):
+  blockcount = 24  # afroclave has 24 cells in a single block
   print('.' * 80)
-  for scale in [0.5, 1.0, 1.5, 2.0, 2.9]:
-    for tv in test_vals:
-      lt = Layout(scale=scale, gridsize=tv[0], cellsize=tv[1])
-      max_len = tv[2]
-      hw = lt.grid * lt.cellsize
-      div_3 = 'no' if (lt.cellsize % 3) else 'yes'
-      sw = tv[3] * scale
-      p = Points(0, 0, sw, lt.cellsize) 
-      print("\t".join([
-        str(lt.scale), 
-        str(lt.grid), 
-        str(lt.cellsize), 
-        str(scale in scale_range), 
-        div_3,
-        str(blocksize <= lt.grid),
-        str(hw), 
-        str((hw < max_len)),
-        str(sw),
-        str(p.n[0])
-      ]))
-    print('.' * 80)
+  print(f"UNITS = {u}")
+  print("\t".join([
+    'scale', "cellnum", "cellsz ", "scal_ok", "div_3", "max_blc", 
+    "bloc_fq", "fit_pg", "strok_w", "N_x"
+  ]))
+  print('.' * 80)
+  for scale in scale_vals:
+    lt = Layout(unit=u, scale=scale, gridsize=tv[0], cellsize=tv[1])
+    max_len = tv[2]
+    hw = lt.cellnum * lt.cellsize
+    div_3 = 'no' if (lt.cellsize % 3) else 'yes'
+    sw = tv[3] * scale
+    p = Points(0, 0, sw, lt.cellsize) 
+    print("\t".join([
+      str(lt.scale), 
+      str(lt.cellnum), 
+      str(lt.cellsize), 
+      str(scale in scale_range), 
+      div_3,
+      str(blockcount <= lt.cellnum),
+      str(hw), 
+      str((hw < max_len)),
+      str(sw),
+      str(p.n[0])
+    ]))
+
+if __name__ == '__main__':
+  if False:
+    ''' calculate cell and grid sizes by scale and unit
+    '''
+    scale_range = [0.5, 0.75, 1.0, 1.5, 2.0]
+    tv = (1080, 60, 1081, 5)
+    inputPrinter('px', scale_range, tv)
+  
+    scale_range = [0.6, 1.0, 2.0]
+    tv = (270, 15, 297, 0)
+    inputPrinter('mm', scale_range, tv)
+  else:
+   lt = Layout(gridsize=18, cellsize=3)
