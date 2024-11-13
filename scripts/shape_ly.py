@@ -1,4 +1,4 @@
-from shapely import box, LinearRing, LineString, MultiLineString, Polygon
+from shapely import box, LinearRing, LineString, MultiLineString, Polygon, set_precision
 import matplotlib.pyplot as plt
 
 def make_boxen(x, y, w, h):
@@ -42,7 +42,7 @@ b2 = LineString([(2, 2), (7, 2)])
 p1 = Polygon([(8.0, 2.0), (8.0, 1.0), (7.0, 1.0), (2.0, 1.0), (2.0, 2.0), (7.0, 2.0), (8.0, 2.0)])
 p2 = Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (7.0, 2.0), (7.0, 1.0), (2.0, 1.0), (1.0, 1.0)])
 
-case = 4
+case = 11
 
 if case == 1:
   ''' using overlap predicate with Polygons can detect difference 
@@ -117,7 +117,7 @@ elif case == 8:
   print("ring bounds")
   print(r.bounds)
   print("ring .xy")
-  print(r.xy)  # only works on LinearRing, box and Polygon say not impl
+  print(r.xy)  # only works on LinearRing, use .boundary for box and Polygon
   ''' polygon from ring
   '''
   print()
@@ -140,6 +140,20 @@ elif case == 9:
   print(nw_se.crosses(ne_sw))
 elif case == 10:
   t(p1, p2)
+elif case == 11:
+  ''' buffer can make padding
+  '''
+  # p = Polygon([(1, 1), (1, 20), (20, 20), (20, 1)]) 
+  p = Polygon([(1,1), (1,30), (30,30), (30,20), (20,20), (20,1)])
+  print(p.boundary)
+  px, py = p.boundary.xy
+  p1 = p.buffer(-1, single_sided=True)
+  b = set_precision(p1, 2.0)
+  print(b.boundary)
+  fig, ax = plt.subplots() 
+  bx, by = b.boundary.xy
+  plt.plot(px, py, 'blue', bx, by, 'r--')
+  plt.show()
 
 
 
