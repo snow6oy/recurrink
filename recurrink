@@ -106,7 +106,7 @@ def update(model, scale, mm=False):
   ver = friendly_name.index(palette)
   s = float(scale) if scale else m.get_scale(model)
   blocksize = m.read(model=model)[2] # can get scale too
-  svgfile = f'/tmp/{model}.svg'
+  svgfile = f'tmp/{model}.svg'
   positions = m.read_positions(model)
   # millimetres means prepare SVG for plotting
   unit = 'mm' if mm else 'px'
@@ -137,7 +137,7 @@ def delete(view):
 
 def commit(model, scale, author):
   ''' read config, write to database and return digest
-      clean file system except for /tmp/model.txt
+      clean file system except for tmp/model.txt
   '''
   model_conf, palette = tf.conf()
   model = model_conf if model is None else model
@@ -150,13 +150,13 @@ def commit(model, scale, author):
   if os.path.isdir(f"{WORKDIR}/{model}"):
     if v.create(tf.digest, celldata, model=model, author=author, ver=ver, scale=scale, colournum=lc):
       #[c.create(tf.digest, row) for row in celldata]
-      if os.path.isfile(f"/tmp/{model}.svg"):
+      if os.path.isfile(f"tmp/{model}.svg"):
         svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
-        os.rename(f"/tmp/{model}.svg", svgname)
+        os.rename(f"tmp/{model}.svg", svgname)
         os.symlink(f"{svgname}", f"{PUBDIR}/{tf.digest}.svg")
         response = svgname
       else:
-        raise FileNotFoundError(f"{model}.svg not found in /tmp")
+        raise FileNotFoundError(f"{model}.svg not found in tmp")
     else:
       response = 'unknown error'
   else:

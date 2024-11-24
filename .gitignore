@@ -1,6 +1,7 @@
 # local stuff
 TODO
 doc
+tmp
 rinks/*
 pubq/*
 sql/models/*
