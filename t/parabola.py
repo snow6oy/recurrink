@@ -65,17 +65,34 @@ class Test(unittest.TestCase):
 
   def test_5(self):
     ''' west parabola meander
-    '''
     expect = [
       (7,1),(1,1),(1,2),(7,2),(7,3),(1,3),(1,4),(3,4),(3,5),(1,5),(1,6),(7,6),(7,7),(1,7)
     ]
+    '''
+    expect = [
+      (7,7),(1,7),(1,1),(2,1),(2,6),(7,6),(7,5),(3,5),(3,1),
+      (3,3),(4,3),(4,1),(5,1),(5,3),(6,3),(6,1),(7,1),(7,3)
+    ]
     done   = Rectangle(x=3,y=3,w=2,h=2)
     seeker = Rectangle(x=1,y=1,w=6,h=6)
+    p      = Parabola(seeker, done, direction='W')
+    p.meander()
+    xy = list(p.linefill.coords)
+    p.plotPoints(fn='parabola_5', boundary=False)
+    self.assertEqual(expect, xy)
+
+  def test_8(self):
+    ''' west meander borken
+    '''
+    done   = Rectangle(x=5,y=5,w=10,h=5)
+    seeker = Rectangle(x=0,y=0,w=15,h=15)
+    #done.plotPoints(seeker=seeker, fn='parabola_8')
     p = Parabola(seeker, done, direction='W')
     p.meander()
-    p.plotPoints(fn='parabola_5', boundary=False)
     xy = list(p.linefill.coords)
-    self.assertEqual(expect, xy)
+    print(xy)
+    p.plotPoints(fn='parabola_8', boundary=False)
+    #self.assertEqual(expect, xy)
 
   def test_6(self):
     ''' southern parabola 
@@ -92,7 +109,26 @@ class Test(unittest.TestCase):
     xy = list(p.linefill.coords)
     self.assertEqual(expect, xy)
 
+  def test_7(self):
+    ''' eastern meander with padding
+      (2, 6), (2, 6), (3, 6), (3, 2), (4, 2), (4, 4), (5, 4), 
+      (5, 2), (6, 2), (6, 4), (7, 4), (7, 2), (8, 2), (8, 6)
+    '''
+    expect = [ 
+      (0,18),(18,18),(18,0),(17,0),(17,17),(0,17),(0,16),(16,16),(16,0),(15,0),(15,15),
+      (0,15),(0,14),(14,14),(14,0),(13,0),(13,13),(0,13),(0,12),(12,12),(12,0),(0,0),
+      (0,1),(12,1),(12,2),(0,2),(0,3),(12,3),(12,4),(0,4),(0,5),(12,5),(12,6),(0,6)
+    ]
+    done   = Rectangle(x=0,y=6,w=12,h=6)
+    seeker = Rectangle(x=0,y=0,w=18,h=18)
+    p = Parabola(seeker, done, direction='E')
+    p.meander()
+    p.plotPoints(fn='parabola_7', boundary=False)
+    xy = list(p.linefill.coords)
+    #pp.pprint(xy)
+    self.assertEqual(expect, xy)
 '''
 the
 end
 '''
+

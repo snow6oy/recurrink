@@ -2,6 +2,7 @@ import sys
 import matplotlib.pyplot as plt
 import pprint
 from shapely.geometry import box, LinearRing, Polygon, LineString
+from meander import Meander
 pp = pprint.PrettyPrinter(indent=2)
 
 class Rectangle():
@@ -139,16 +140,31 @@ class Rectangle():
     if seeker and boundary:
       x1, y1 = seeker.xyPoints()
       plt.plot(x, y, 'b-', x1, y1, 'r--')
-      plt.axis([0, 9, 0, 9])
+      #plt.axis([0, 9, 0, 9])
     else:
       ax.plot(x, y)
       #plt.axis([0, 9, 0, 9])
     if fn:
-      plt.savefig(f'/tmp/{fn}.svg', format="svg")
+      plt.savefig(f'tmp/{fn}.svg', format="svg")
     else:
       plt.show()
 
-  def meander(self, gap=1):
+  def meander(self):
+    ''' meander with padding and more
+    print(list(self.box.exterior.coords))
+    print(xywh)
+    '''
+    xywh =  list(self.box.exterior.coords)
+    if self.direction in ['N', 'S']:
+      d = (90,405)
+    elif self.direction in ['E', 'W']:
+      d = (0,360)
+    m             = Meander(xywh, direction=d)
+    points        = m.collectPoints()
+    self.linefill = m.makeStripes(points)
+
+  # TODO not used, either expose it as an option or remove
+  def meanderWithoutPadding(self, gap=1):
     ''' meander chooses line depending on whether the coordinate is odd or even
         even lines vary depending on where the coordinate lies in the sequence
     '''
@@ -173,8 +189,6 @@ class Rectangle():
         p3 = self.inner if p2 >= self.d and p2 <= self.c else self.outer
         p1 = p3 if (p2 % 2 == 0) else self.oddline
         points.append([p1, p2])
-    #self.path = tuple(points)
-    #self.linefill = LineString(points[:-1]) # boundaries are closed loops, unlike meander
     self.linefill = LineString(points) # boundaries are closed loops, unlike meander
 
 class Gnomon(Rectangle):
@@ -222,6 +236,22 @@ class Gnomon(Rectangle):
     self.c = h
     self.d = y
 
+  def meander(self):
+    xywh = list(self.boundary.coords)
+    if self.direction == 'NW':
+      d = (270, 315, 360)
+    elif self.direction == 'SE':
+      d = (180, 135, 405)
+    else:
+      raise NotImplementedError(f'all at sea >{self.direction}<')
+    '''
+    print(xywh)
+    print(d)
+    '''
+    m             = Meander(xywh, direction=d)
+    points        = m.collectPoints()
+    self.linefill = m.makeStripes(points)
+
 class Parabola(Rectangle):
   ''' u-shaped parallelograms
       north n south u ... 
@@ -236,16 +266,12 @@ class Parabola(Rectangle):
     self.label = f'{self.name}{self.pencolor:<6}{int(X):>3}{int(Y):>3}{int(W):>3}{int(H):>3}'
 
     if self.direction == 'N':
-      ''' these COULD belong to Meander()
-      '''
       self.p2      = Y
       self.start   = X
       self.stop    = W
       self.oddline = H
       self.outer   = Y
       self.inner   = h
-      ''' end
-      '''
       self.boundary = LinearRing([(X,Y), (X,H), (W,H), (W,Y), (w,Y), (w,h), (x,h), (x,Y)])
     elif self.direction == 'W': 
       self.p1      = W
@@ -255,6 +281,11 @@ class Parabola(Rectangle):
       self.outer   = W
       self.inner   = x
       self.boundary = LinearRing([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,y), (W,y), (W,Y)])
+      ''' gnomon    = [(0,0),(0,18),(18,18),(18,12),(6,12),(6,0)]
+          rectangle = [(6,0),(6,6),(18,6),(18,0)]
+      '''
+      self.gnomon   = [(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)]
+      self.rectangl = [(x,Y),(x,y),(W,y),(W,Y)]
     elif self.direction == 'S':
       self.p2      = H
       self.start   = X
@@ -271,6 +302,12 @@ class Parabola(Rectangle):
       self.outer   = X
       self.inner   = w
       self.boundary = LinearRing([(X,Y), (X,y), (w,y), (w,h), (X,h), (X,H), (W,H), (W,Y)])
+      ''' these belong to Meander()
+      '''
+      self.gnomon   = [(X,h),(X,H),(W,H),(W,Y),(w,Y),(w,h)]
+      self.rectangl = [(X,Y),(X,y),(w,y),(w,Y)]
+      ''' end
+      '''
     else:
       raise ValueError('no direction')
     # meander needs to know a,b,c,d
@@ -279,6 +316,33 @@ class Parabola(Rectangle):
     self.b = w
     self.c = h
     self.d = y
+
+  def meander(self):
+    ''' Four Parabolas with padding and meander lines that go round corners
+    '''
+    if self.direction == 'W': 
+      gnomon_d   = (450,135,90)
+      rectangl_d = (495,270)
+    elif self.direction == 'E': 
+      gnomon_d   = (180,225,270)
+      rectangl_d = (180,450)
+    else:
+      raise NotImplementedError(f'all at sea >{self.direction}<')
+    '''
+    print(f"""
+{self.direction=} 
+{self.gnomon=} 
+{gnomon_d=} 
+{self.rectangl=} 
+{rectangl_d=}
+""") 
+    '''
+    g  = Meander(self.gnomon,   direction=gnomon_d)
+    r  = Meander(self.rectangl, direction=rectangl_d)
+    p1 = g.collectPoints()
+    p2 = r.collectPoints()
+
+    self.linefill = r.joinStripes(p1, p2)
 
 class FakeBox:
   ''' wrap a Shapely Polygon with .box and .dimensions

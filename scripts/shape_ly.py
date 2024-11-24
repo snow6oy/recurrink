@@ -42,7 +42,7 @@ b2 = LineString([(2, 2), (7, 2)])
 p1 = Polygon([(8.0, 2.0), (8.0, 1.0), (7.0, 1.0), (2.0, 1.0), (2.0, 2.0), (7.0, 2.0), (8.0, 2.0)])
 p2 = Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (7.0, 2.0), (7.0, 1.0), (2.0, 1.0), (1.0, 1.0)])
 
-case = 11
+case = 2
 
 if case == 1:
   ''' using overlap predicate with Polygons can detect difference 
@@ -59,6 +59,7 @@ elif case == 2:
   # crossing Line Strings works
   print(f"{a1.crosses(b1)=}")
   print(f"{a2.crosses(b2)=}")
+  print(list(a1.coords))
 elif case == 3:
   ''' make the blue square from four sides
   '''

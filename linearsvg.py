@@ -58,7 +58,8 @@ class LinearSvg(Svg):
   def regroupColors(self, done):
     self.doc = dict()     # reset
     for d in done:
-      d.meander(gap=1)
+      d.meander()
+      print(f"{d.label=} {d.pencolor=}")
       xy = list(d.linefill.coords)
       ''' the culprits!
       if d.label == 'R000    12  6 15  9' or d.label == 'R000    12  0 15  3':
@@ -139,11 +140,11 @@ class LinearSvg(Svg):
 gs  = 270
 cs  = 54
 #svg = LinearSvg(scale=.5, gridsize=gs, cellsize=cs)
-svg = LinearSvg(scale=2)
+svg = LinearSvg(scale=1)
 blocksize = (3, 1)
 svg.gridwalk(blocksize, config.positions, config.cells)
 svg.make()
-svg.write('/tmp/minkscape.svg')
+svg.write('tmp/minkscape.svg')
 '''
 the
 end
