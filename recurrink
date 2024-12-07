@@ -7,7 +7,7 @@ import random
 import argparse
 import pprint
 from views import Views, Models
-from outfile import Svg, Stencil, Gcode
+from outfile import Svg, Stencil
 from tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 m = Models()
@@ -42,8 +42,8 @@ def inputs():
   parser_u.add_argument("--mm",  help="output for plotter", action=argparse.BooleanOptionalAction)
   parser_s = subparsers.add_parser('stencil', help='monochrome to etch screens')
   parser_s.add_argument("-v", "--view", help='view to make stencils from')
-  parser_s = subparsers.add_parser('gcode', help='write rink as gcode for plotter')
-  parser_s.add_argument("-v", "--view", help='view to plot', required=True)
+  parser_s = subparsers.add_parser('flatten', help='write svg formatted for plotter')
+  parser_s.add_argument("-m", "--model", help='model to plot', required=True)
   parser_p = subparsers.add_parser('release', help='add release date to db')
   parser_p.add_argument("-v", "--view", help='view to mark as released')
   return parser.parse_args()
@@ -184,8 +184,10 @@ def release(d):
   v.update(d)
   return f"released today: {d}"
 
-def gcode(d):
+def flatten(model):
   # used for testing '7e731bfc1863c186616d2b3de09a9b6b' 
+  raise NotImplementedError('flatten')
+  '''
   src = 'file'
   model, _, scale, _ = v.read_meta(digest=d) # ignore author palette
   blocksize = m.read(model=model)[2] # can get scale too
@@ -208,14 +210,13 @@ def gcode(d):
     gc.make(uniqcol)
   else:
     uniqcol = 0 # dropout 
-  '''
   print(gc.cellsum())
   pp.pprint(gc.gcdata)
-  '''
   for f in uniqcol:
     outfile = gc.write(model, fill=f)
     print(outfile)
   return f"\n{model} {d} was read from {src} and written to {hw}x{hw}mm grid\nnum of colours: {len(uniqcol)}"
+  '''
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
@@ -237,13 +238,13 @@ if __name__ == '__main__':
     print(stencil(args.view))
   elif (args.keyword == 'release'):
     print(release(args.view))
-  elif (args.keyword == 'gcode'):
-    print(gcode(args.view))
+  elif (args.keyword == 'flatten'):
+    print(flatten(args.view))
   elif (args.keyword == 'clone'):
     print(clone(args.view))
   else:
     pass
-  '''
-  the 
-  end
-  '''
+'''
+the 
+end
+'''
