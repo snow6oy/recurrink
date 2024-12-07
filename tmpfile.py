@@ -121,7 +121,7 @@ class TmpFile():
         return None
       else: # read link
         path = os.readlink(path)
-        model = re.findall(r"[a-z0-9]+", path)[1]
+        model = re.findall(r"[a-z0-9]+", path)[2]
         return model, link
     elif len(links) == 0 and model and ver: # first time
       os.symlink(f'/tmp/recurrink/{model}.txt', f'/tmp/recurrink/{ver}')
