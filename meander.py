@@ -5,86 +5,54 @@ from shapely.geometry import Polygon, LineString, MultiLineString, Point
 pp = pprint.PrettyPrinter(indent=2)
 
 class Meander():
-  def __init__(self, xywh, direction):
+  def __init__(self, xywh):
     self.shape   = Polygon(xywh) # a Shapely polygon
-    ok = all(d in [0, 45, 90, 135, 180, 225, 270, 315, 360, 405, 450, 495] for d in direction)
-    if not ok:
-      raise ValueError(f"lost at sea {direction}")
-    self.direction = direction
 
   def pad(self):
     ''' make a gap between cells by adding padding with Shapely.buffer
         a small Polygon may end up empty. Then silently return the original
+        Shapely.set_precision did not help
     '''
     b = self.shape.buffer(-1, single_sided=True)
-    #return set_precision(b, 2.0) print(b.is_empty)
-    return self.shape if b.is_empty else self.shape
+    return self.shape if b.is_empty else b
 
-  # TODO direction is the list and test each available axis e.g. 0 in [45,225]
-  def guidelines(self, padme):
-    ''' define lines to guide meander
-        both from direction by axis and by position
-        degrees in the range 0-359 refer to an axis including diagonals e.g. 45 135 225 315
-        the range >360 indicates the same axis but on the opposite side
-        return guidelines with desired endpoints
-
-  315   0    45		360                 E W         n   0 N 360
-      ↖ ↑ ↗              ↑                 +---+        e  90 E 405
-  270 ←   →  90    495 ←   → 405         n |   | N      s 180 S 450
-      ↙ ↓ ↘              ↓               s +---+ S      w 270 W 495
-  225  180  135		450                 e w
+  def guidelines(self, padme, direction):
+    '''
+    NW  N  NE      WT ET
+      ↖ ↑ ↗     NL +---+ NR
+    W ←   → E      |   | 
+      ↙ ↓ ↘     SL +---+ SR
+    SW  S  SE      WB EB
     '''
     x, y, w, h = padme.bounds
     mls        = []
-    glines     = {
-        0 : LineString([(x, y), (x, h)]),
-       45 : LineString([(x, y), (w, h)]),
-       90 : LineString([(x, y), (w, y)]),
-      135 : LineString([(x, h), (w, y)]),
-      180 : LineString([(x, h), (x, y)]), 
-      225 : LineString([(w, h), (x, y)]),
-      270 : LineString([(w, y), (x, y)]),
-      315 : LineString([(w, y), (x, h)]),
-      360 : LineString([(w, y), (w, h)]),
-      405 : LineString([(x, h), (w, h)]),
-      450 : LineString([(w, h), (w, y)]),  
-      495 : LineString([(w, h), (x, h)])   # that too
+    guideline  = {
+      'NL': LineString([(x, y), (x, h)]), # North Left
+      'NE': LineString([(x, y), (w, h)]), # North East
+      'EB': LineString([(x, y), (w, y)]), # East Bottom
+      'SE': LineString([(x, h), (w, y)]), # South East
+      'SL': LineString([(x, h), (x, y)]), # South Left
+      'SW': LineString([(w, h), (x, y)]), # South West
+      'WB': LineString([(w, y), (x, y)]), # West Bottom
+      'NW': LineString([(w, y), (x, h)]), # North West
+      'NR': LineString([(w, y), (w, h)]), # North Right
+      'ET': LineString([(x, h), (w, h)]), # East Top
+      'SR': LineString([(w, h), (w, y)]), # South Right
+      'WT': LineString([(w, h), (x, h)])  # West Top
     }
-    [mls.append(glines[d]) for d in self.direction]
-    return MultiLineString(mls)
+    [mls.append(guideline[d]) for d in direction]
+    return MultiLineString(mls) 
 
-  # TODO 495 450 no-one else ?
-  def orderGrid(self, padme, guidelines):
-    ''' private method to simplify collectPoints()
-    '''
-    grid_order = []
-    bx, by, bX, bY = list(padme.bounds)
-    #print(bx, by, bX, bY)
-    for i, gl in enumerate(list(guidelines.geoms)):
-      if self.direction[i] >= 180 and self.direction[i] < 360 or self.direction[i] == 495:
-        start_x, stop_x, step_x = int(bX), int(bx - 1), -1
-      else:
-        start_x, stop_x, step_x = int(bx), int(bX + 1), 1
-      if self.direction[i] > 90 and self.direction[i] <= 270 or self.direction[i] == 450:
-        start_y, stop_y, step_y = int(bY), int(by - 1), -1
-      else:
-        start_y, stop_y, step_y = int(by), int(bY + 1), 1
-      grid_order.append([start_x, stop_x, step_x, start_y, stop_y, step_y])
-    return grid_order
-
-  def collectPoints(self):
+  def collectPoints(self, padme, guidelines):
     ''' collect the points intersecting the padded version of shape
         gridwalk the bounding box and collect Points() touching the guidelines
         grouped by the guidelines
     '''
-    padme      = self.pad()
-    guidelines = self.guidelines(padme)
-    grid_order = self.orderGrid(padme, guidelines)
     points     = []
     same       = 0
     for i, gl in enumerate(list(guidelines.geoms)):
       points.append([]) # template
-      start_x, stop_x, step_x, start_y, stop_y, step_y = grid_order[i]
+      start_x, stop_x, step_x, start_y, stop_y, step_y = self.orderGrid(gl)
       for y in range(start_y, stop_y, step_y):
         for x in range(start_x, stop_x, step_x):
           pt = Point(x, y)
@@ -92,11 +60,8 @@ class Meander():
           if padme.covers(pt):      # surface test for gnomons
             if gl.intersects(pt):   # collect the points on the guideline
               points[i].append((x,y))
-              t = '*'
-          #print(f" {x},{y}{t}", end='', flush=True)
-        #print('.')
       if i > 0 and len(points[i]) is not same:
-        raise TypeError(f"{self.direction[i]} has {len(points[i])} points which is not {same}")
+        raise ValueError(f"{i=} {len(points[i])} points is not the same {same}")
       same = len(points[i])
     return points
 
@@ -118,25 +83,37 @@ class Meander():
 
   def joinStripes(self, p1, p2):
     ''' orchestrate make stripes calls and join two points
-    writer = Plotter()
-    #last_p1 = p1[-1][-1] # last point in Gnomon boundary
-    writer.plotLine(s2, 'test_8')
-    #print(f"{last_p1=} {s2[0]=}")
-    #print(f"{list(s2.coords)=}")
     '''
-    s1  = self.makeStripes(p1)
-    last_p1 = list(s1.coords)[-1] # sort the points before marking the last
-    s2  = self.makeStripes(p2)
-    s2  = list(s2.coords)      # extract list from LineString
-    s2  = list(reversed(s2))
-    s2.insert(0, last_p1) # guess that last p1 matches first p2
-    s2  = LineString(s2)
-    mls = MultiLineString([s1, s2])
+    s1       = self.makeStripes(p1)
+    last_p1  = list(s1.coords)[-1] # sort the points before marking the last
+    s2       = self.makeStripes(p2)
+    s2       = list(s2.coords)      # extract list from LineString 
+    s2       = list(reversed(s2))   # 
+    first_p2 = s2[0]
+    s2.insert(0, last_p1)           # guess that last p1 matches first p2
+    s2       = LineString(s2)
+    mls      = MultiLineString([s1, s2])
 
     stripe  = line_merge(mls)
     if stripe.geom_type != 'LineString':
-      raise TypeError(f"line merge failed {stripe.geom_type}")
+      raise TypeError(f"""
+line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
+""")
     return stripe
+
+  def orderGrid(self, guideline):
+    ''' private method to simplify collectPoints()
+        calculate the grid order by converting LineString
+        into parameters for iteration
+    '''
+    start, stop      = list(guideline.coords)
+    start_x, start_y = [int(xy) for xy in start]
+    stop_x, stop_y   = [int(xy) for xy in stop]
+    step_x           = -1 if start_x > stop_x else 1
+    step_y           = -1 if start_y > stop_y else 1
+    stop_x          += step_x
+    stop_y          += step_y
+    return start_x, stop_x, step_x, start_y, stop_y, step_y
 
 class Plotter():
   ''' wrapper around matplot so we can see whats going on
