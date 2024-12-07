@@ -59,9 +59,9 @@ class LinearSvg(Svg):
     self.doc = dict()     # reset
     for d in done:
       d.meander()
-      print(f"{d.label=} {d.pencolor=}")
       xy = list(d.linefill.coords)
       ''' the culprits!
+      print(f"{d.label=} {d.pencolor=}")
       if d.label == 'R000    12  6 15  9' or d.label == 'R000    12  0 15  3':
         print(f"{d.label=} {d.pencolor=}")
         pp.pprint(xy)
@@ -140,11 +140,11 @@ class LinearSvg(Svg):
 gs  = 270
 cs  = 54
 #svg = LinearSvg(scale=.5, gridsize=gs, cellsize=cs)
-svg = LinearSvg(scale=1)
+svg = LinearSvg(scale=2)
 blocksize = (3, 1)
 svg.gridwalk(blocksize, config.positions, config.cells)
 svg.make()
-svg.write('tmp/minkscape.svg')
+svg.write('tmp/minkscape_s2.svg')
 '''
 the
 end
