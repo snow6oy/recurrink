@@ -5,18 +5,6 @@ from flatten import Rectangle, Flatten
 import pprint
 pp = pprint.PrettyPrinter(indent=2)
 
-'''
-    [(0, 0, 3, 3), 'CCC'],
-    [(3, 0, 3, 3), 'CCC'],
-    [(6, 0, 3, 3), 'CCC'],
-    [(0, 0, 3, 3), 'FFF'],
-    [(4, 0, 1, 3), '000'],
-    [(7, 1, 1, 1), '000'],
-    [(1, 1, 1, 1), '000'],
-    [(2, 1, 5, 1), 'FFF'] 
-'''
-#[print(c) for c in config.cells]
-
 class LinearSvg(Svg):
   ''' output design to a two dimensional SVG that a plotter can understand
   '''
@@ -25,6 +13,21 @@ class LinearSvg(Svg):
       super().__init__(unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize)
     else:
       super().__init__(unit='mm', scale=scale)
+
+  def make(self):
+    ''' orchestrate the transformation of incoming cells into SVG lines
+    '''
+    blocks   = self.blockify()
+    self.doc = dict()     # reset for regrouping by fill
+    for block in blocks:
+      todo = self.makeRectangles(block)
+      f = Flatten()
+      done = f.run(todo)
+      self.regroupColors(done)
+    ''' now that Flatten.done contains two-d cells sort them for SVG layers
+        and create SVG elements
+    '''
+    self.svgGroup()
  
   def blockify(self):
     ''' pack the cells back into their blocks
@@ -35,7 +38,7 @@ class LinearSvg(Svg):
     total_y = int(block_y * self.cellsize)
     grid_mm = int(self.cellnum * self.cellsize)
     blocks = []
-    print(f"{self.blocksize=} {self.cellnum=} {grid_mm=} {self.cellsize=} {total_x=} {total_y=}")
+    #print(f"{self.blocksize=} {self.cellnum=} {grid_mm=} {self.cellsize=} {total_x=} {total_y=}")
 
     for x in range(0, grid_mm, total_x):
       for y in range(0, grid_mm, total_y):
@@ -56,37 +59,14 @@ class LinearSvg(Svg):
     return blocks
 
   def regroupColors(self, done):
-    self.doc = dict()     # reset
     for d in done:
       d.meander()
       xy = list(d.linefill.coords)
-      ''' the culprits!
-      print(f"{d.label=} {d.pencolor=}")
-      if d.label == 'R000    12  6 15  9' or d.label == 'R000    12  0 15  3':
-        print(f"{d.label=} {d.pencolor=}")
-        pp.pprint(xy)
-        xy = []
-      '''
       if d.pencolor in self.doc:
         self.doc[d.pencolor].append(xy)
       else:
         self.doc[d.pencolor] = list()
         self.doc[d.pencolor].append(xy)
-
-  def _makeRectangles(self):
-    ''' convert all cells made by Layer() into Rectangle objects
-    '''
-    rectangles = list()
-
-    for group in self.doc:
-      for cell in group['shapes']:
-        style = group['style']  # each group has a uniq style
-        x, y = tuple([round(float(cell['x'])), round(float(cell['y']))])
-        w, h = tuple([round(float(cell['width'])), round(float(cell['height']))])
-        r = Rectangle(pencolor=self.trimStyle(group['style']), x=x, y=y, w=w, h=h)
-        rectangles.append(r)
-        #print(cell['x'], r.label)
-    return list(reversed(rectangles))  # top cells are done first
 
   def makeRectangles(self, block):
     ''' convert cells from blockify into Rectangle objects
@@ -101,22 +81,6 @@ class LinearSvg(Svg):
       rectangles.append(r)
       #print(cell['x'], r.label)
     return list(reversed(rectangles))  # top cells are done first
-
-  def make(self):
-    ''' orchestrate the transformation of incoming cells into SVG lines
-    '''
-    for block in self.blockify():
-      todo = self.makeRectangles(block)
-      f = Flatten()
-      done = f.run(todo)
-      #[print(r.label) for r in done]
-      ''' now that Flatten.done contains two-d cells sort them for SVG layers
-          and create SVG elements
-      '''
-      self.regroupColors(done)
-      #pp.pprint(self.doc)
-      #pp.pprint(self.doc['FFF'][0])
-      self.svgGroup()
 
   def svgGroup(self):
     uniqid = 0
@@ -137,14 +101,11 @@ class LinearSvg(Svg):
         polyln = ET.SubElement(g, f"{self.ns}polyline", id=str(uniqid))
         polyln.set("points", points)
 
-gs  = 270
-cs  = 54
-#svg = LinearSvg(scale=.5, gridsize=gs, cellsize=cs)
 svg = LinearSvg(scale=2)
 blocksize = (3, 1)
 svg.gridwalk(blocksize, config.positions, config.cells)
 svg.make()
-svg.write('tmp/minkscape_s2.svg')
+svg.write('tmp/minkscape_2.svg')
 '''
 the
 end
