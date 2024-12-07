@@ -3,7 +3,7 @@ import re
 import hmac
 
 class TmpFile():
-  ''' read and write data to /tmp
+  ''' read and write data to /tmp/recurrink
   '''
   def __init__(self):
     self.colnam = ['cell','shape','size','facing','top','fill','bg','fo','stroke','sw','sd','so']
@@ -38,7 +38,7 @@ class TmpFile():
     '''
     if len(celldata) == 0:
       raise ValueError(f"{model} celldata is empty")
-    with open(f"tmp/{model}.txt", 'w') as f:
+    with open(f"/tmp/recurrink/{model}.txt", 'w') as f:
       print("\t".join(self.colnam), file=f)
       for data in celldata:
         vals = [str(d) for d in data] # convert everything to string
@@ -85,7 +85,7 @@ class TmpFile():
     return cells
 
   def get_file(self, model):
-    with open(f"tmp/{model}.txt") as f:
+    with open(f"/tmp/recurrink/{model}.txt") as f:
       data = [line.rstrip() for line in f] # read and strip newlines
     data = [d.split() for d in data[1:]] # ignore header and split on space
     return data
@@ -114,24 +114,24 @@ class TmpFile():
     links = self.tmplinks()
     if len(links) == 1:
       link = links[0]
-      path = f'tmp/{link}'
+      path = f'/tmp/recurrink/{link}'
       if model and ver: # swap old and new
         os.unlink(path)
-        os.symlink(f'tmp/{model}.txt', f'/tmp/{ver}')
+        os.symlink(f'/tmp/recurrink/{model}.txt', f'/tmp/recurrink/{ver}')
         return None
       else: # read link
         path = os.readlink(path)
         model = re.findall(r"[a-z0-9]+", path)[1]
         return model, link
     elif len(links) == 0 and model and ver: # first time
-      os.symlink(f'tmp/{model}.txt', f'tmp/{ver}')
+      os.symlink(f'/tmp/recurrink/{model}.txt', f'/tmp/recurrink/{ver}')
     else:
       raise ValueError(f'unexpected number of links {len(links)}')
 
   def tmplinks(self):
     links = list()
-    for _, _, files in os.walk('tmp/'):
+    for _, _, files in os.walk('/tmp/recurrink'):
       for f in files:
-        if os.path.islink(f'tmp/{f}'):
+        if os.path.islink(f'/tmp/recurrink/{f}'):
           links.append(f)
     return links
