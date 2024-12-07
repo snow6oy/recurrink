@@ -5,7 +5,8 @@
 '''
 import unittest
 import pprint
-from flatten import Rectangle, Flatten, Parabola
+from shapes import Rectangle, Parabola
+from flatten import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
 ### topdown use cases for Minkscape

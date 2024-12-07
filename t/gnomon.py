@@ -1,6 +1,7 @@
 import unittest
 import pprint
-from flatten import Gnomon, Rectangle, Flatten
+from shapes import Gnomon, Rectangle
+from flatten import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
   ##########
@@ -15,9 +16,6 @@ class Test(unittest.TestCase):
 
   def test_1(self):
     ''' north west gnomon meander 
-    expect = [ 
-      (1, 1), (1, 6), (2, 6), (2, 5), (3, 5), (3, 6), (4, 6), (4, 5), (5, 5), (5, 6)
-    ]
     '''
     expect = [(2, 1), (2, 5), (6, 5), (6, 6), (1, 6), (1, 1)]
     seeker = Rectangle(x=1,y=1,w=5,h=5)
@@ -25,13 +23,13 @@ class Test(unittest.TestCase):
     nw.meander()
     nw.plotPoints(fn='gnomon_1', boundary=False)
     xy = list(nw.linefill.coords)
-    #self.assertEqual(expect, xy)
+    self.assertEqual(expect, xy)
 
   def test_2(self):
     ''' south east gnomon meander
     '''
-    expect = [ 
-      (2,1),(6,1),(6,2),(5,2),(5,3),(6,3),(6,4),(5,4),(5,5),(6,5)
+    expect = [
+      (2.0, 2.0), (5.0, 2.0), (5.0, 5.0), (6.0, 5.0), (6.0, 1.0), (2.0, 1.0)
     ]
     seeker = Rectangle(x=1,y=1,w=5,h=5)
     #self.done.plotPoints(seeker=seeker, fn='gnomon_2')
@@ -39,8 +37,7 @@ class Test(unittest.TestCase):
     se.meander()
     se.plotPoints(fn='gnomon_2', boundary=False)
     xy = list(se.linefill.coords)
-    pp.pprint(xy)
-    #self.assertEqual(expect, xy)
+    self.assertEqual(expect, xy)
 
   def test_3(self):
     ''' generate two gnomons from an embedded square and test boundary

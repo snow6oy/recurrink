@@ -1,6 +1,7 @@
 import unittest
 import pprint
-from flatten import Rectangle, Flatten
+from shapes import Rectangle
+from flatten import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
@@ -25,11 +26,7 @@ class Test(unittest.TestCase):
 
   def test_3(self):
     ''' east square linefill for Rectangle.meander()
-    expect = [
-      (1,1),(7,1),(7,2),(1,2),(1,3),(7,3),(7,4),(1,4),(1,5),(7,5),(7,6),(1,6),(1,7),(7,7)
-    ]
     '''
-    # expect padded
     expect = [ 
       (2, 2), (6, 2), (6, 3), (2, 3), (2, 4), (6, 4), (6, 5), (2, 5), (2, 6), (6, 6)
     ]
@@ -41,9 +38,7 @@ class Test(unittest.TestCase):
 
   def test_4(self):
     ''' north square
-    expect = [(0,0),(0,3),(1,3),(1,0),(2,0),(2,3),(3,3),(3,0)]
     '''
-    # expect padded
     expect = [ 
       (1,1),(1,8),(2,8),(2,1),(3,1),(3,8),(4,8),(4,1),
       (5,1),(5,8),(6,8),(6,1),(7,1),(7,8),(8,8),(8,1)
@@ -53,24 +48,6 @@ class Test(unittest.TestCase):
     xy = list(r.linefill.coords)
     r.plotPoints(fn='rectangle_4', boundary=False)
     self.assertEqual(expect, xy)
-
-  ''' north rectangle with uneven gaps
-  def test_5(self):
-    expect = [(0,0),(3,0),(3,1),(0,1),(0,2),(3,2),(3,3),(0,3)]
-    r = Rectangle(x=0, y=0, w=3, h=3, direction='E')
-    r.meander()
-    xy = list(r.linefill.coords)
-    r.plotPoints(fn='rectangle_5', boundary=False)
-    self.assertEqual(expect, xy)
-
-  def test_6(self):
-    expect = [(3,1),(3,14),(6,14),(6,1),(9,1),(9,14),(12,14),(12,1)]
-    r = Rectangle(x=3, y=1, w=8, h=13)
-    r.meander(gap=3)
-    xy = list(r.linefill.coords)
-    r.plotPoints(fn='rectangle_8', boundary=False)
-    self.assertEqual(expect, xy)
-  '''
 
   def test_7(self):
     ''' simple label check

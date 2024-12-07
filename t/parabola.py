@@ -63,46 +63,15 @@ class Test(unittest.TestCase):
     self.assertEqual(xy[0].tolist(), expect[0])
     self.assertEqual(xy[1].tolist(), expect[1])
 
-  def test_5(self):
-    ''' west parabola meander
-    expect = [
-      (7,1),(1,1),(1,2),(7,2),(7,3),(1,3),(1,4),(3,4),(3,5),(1,5),(1,6),(7,6),(7,7),(1,7)
-    ]
-    '''
-    expect = [
-      (7,7),(1,7),(1,1),(2,1),(2,6),(7,6),(7,5),(3,5),(3,1),
-      (3,3),(4,3),(4,1),(5,1),(5,3),(6,3),(6,1),(7,1),(7,3)
-    ]
-    done   = Rectangle(x=3,y=3,w=2,h=2)
-    seeker = Rectangle(x=1,y=1,w=6,h=6)
-    p      = Parabola(seeker, done, direction='W')
-    p.meander()
-    xy = list(p.linefill.coords)
-    p.plotPoints(fn='parabola_5', boundary=False)
-    self.assertEqual(expect, xy)
-
-  def test_8(self):
-    ''' west meander borken
-    '''
-    done   = Rectangle(x=5,y=5,w=10,h=5)
-    seeker = Rectangle(x=0,y=0,w=15,h=15)
-    #done.plotPoints(seeker=seeker, fn='parabola_8')
-    p = Parabola(seeker, done, direction='W')
-    p.meander()
-    xy = list(p.linefill.coords)
-    print(xy)
-    p.plotPoints(fn='parabola_8', boundary=False)
-    #self.assertEqual(expect, xy)
-
   def test_6(self):
-    ''' southern parabola 
+    ''' southern parabola CCW=False
     '''
     expect = [ 
-      (2, 6), (2, 6), (3, 6), (3, 2), (4, 2), (4, 4), (5, 4), 
-      (5, 2), (6, 2), (6, 4), (7, 4), (7, 2), (8, 2), (8, 6)
+      (5,15),(5,5),(15,5),(15,6),(6,6),(6,15),(7,15),(7,7),
+      (15,7),(15,9),(15,15),(14,15),(14,9),(13,9),(13,15)
     ]
-    done   = Rectangle(x=4,y=4,w=2,h=2)
-    seeker = Rectangle(x=2,y=2,w=6,h=4)
+    done   = Rectangle(x=8,y=8,w=4,h=8)
+    seeker = Rectangle(x=4,y=4,w=12,h=12)
     p = Parabola(seeker, done, direction='S')
     p.meander()
     p.plotPoints(fn='parabola_6', boundary=False)
@@ -110,23 +79,111 @@ class Test(unittest.TestCase):
     self.assertEqual(expect, xy)
 
   def test_7(self):
-    ''' eastern meander with padding
-      (2, 6), (2, 6), (3, 6), (3, 2), (4, 2), (4, 4), (5, 4), 
-      (5, 2), (6, 2), (6, 4), (7, 4), (7, 2), (8, 2), (8, 6)
+    ''' southern parabola CCW=True
     '''
     expect = [ 
-      (0,18),(18,18),(18,0),(17,0),(17,17),(0,17),(0,16),(16,16),(16,0),(15,0),(15,15),
-      (0,15),(0,14),(14,14),(14,0),(13,0),(13,13),(0,13),(0,12),(12,12),(12,0),(0,0),
-      (0,1),(12,1),(12,2),(0,2),(0,3),(12,3),(12,4),(0,4),(0,5),(12,5),(12,6),(0,6)
+      (15,2),(2,2),(2,15),(3,15),(3,3),(15,3),(15,4),(4,4),(4,15),(5,15),(5,5),
+      (15,5),(15,7),(15,15),(14,15),(14,7),(13,7),(13,15),(12,15),(12,7)
     ]
-    done   = Rectangle(x=0,y=6,w=12,h=6)
-    seeker = Rectangle(x=0,y=0,w=18,h=18)
-    p = Parabola(seeker, done, direction='E')
+    done   = Rectangle(x=6,y=6,w=5,h=10)
+    seeker = Rectangle(x=1,y=1,w=15,h=15)
+    p = Parabola(seeker, done, direction='S')
     p.meander()
     p.plotPoints(fn='parabola_7', boundary=False)
     xy = list(p.linefill.coords)
-    #pp.pprint(xy)
     self.assertEqual(expect, xy)
+
+  def test_8(self):
+    ''' eastern meander with CCW False
+    '''
+    expect = [ 
+      (1,17),(17,17),(17,1),(16,1),(16,16),(1,16),(1,15),(15,15),
+      (15,1),(14,1),(14,14),(1,14),(1,13),(13,13),(13,1),(11,1),
+      (1,1),(1,2),(11,2),(11,3),(1,3),(1,4),(11,4),(11,5),(1,5)
+    ]
+    done   = Rectangle(x=0,y=6,w=12,h=6)
+    seeker = Rectangle(x=0,y=0,w=18,h=18)
+    ''' CCW = True
+    done   = Rectangle(x=1,y=6,w=10,h=5)
+    seeker = Rectangle(x=1,y=1,w=15,h=15)
+    '''
+    p = Parabola(seeker, done, direction='E')
+    p.meander()
+    p.plotPoints(fn='parabola_8a', boundary=False)
+    xy = list(p.linefill.coords)
+    self.assertEqual(expect, xy)
+
+  def test_9(self):
+    ''' eastern meander with CCW True
+    '''
+    done   = Rectangle(x=1,y=6,w=10,h=5)
+    seeker = Rectangle(x=1,y=1,w=15,h=15)
+    p = Parabola(seeker, done, direction='E')
+    p.meander()
+    p.plotPoints(fn='parabola_9', boundary=False)
+    xy = list(p.linefill.coords)
+    self.assertEqual((15,2), xy[0])
+    self.assertEqual((10,5), xy[-1])
+
+  def test_10(self):
+    ''' west meander CCW = False
+    '''
+    done   = Rectangle(x=7,y=7,w=12,h=6)
+    seeker = Rectangle(x=1,y=1,w=18,h=18)
+    p = Parabola(seeker, done, direction='W')
+    p.meander()
+    p.plotPoints(fn='parabola_10', boundary=False)
+    xy = list(p.linefill.coords)
+    self.assertEqual(xy[0],  (18,18))
+    self.assertEqual(xy[-1], (18, 6))
+
+  def test_11(self):
+    ''' west parabola meander CCW = True
+    '''
+    expect = [
+      (1,1),(1,14),(14,14),(14,13),(2,13),(2,1),(3,1),(3,12),(14,12),(14,11),(4,11),(4,1),
+      (6,1),(6,4),(7,4),(7,1),(8,1),(8,4),(9,4),(9,1),(10,1),(10,4),(11,4),(11,1),(12,1),
+      (12,4),(13,4),(13,1),(14,1),(14,4)
+    ]
+    ''' 
+    done   = Rectangle(x=3,y=3,w=2,h=2)
+    seeker = Rectangle(x=1,y=1,w=6,h=6)
+    '''
+    done   = Rectangle(x=5,y=5,w=10,h=5)
+    seeker = Rectangle(x=0,y=0,w=15,h=15)
+    p      = Parabola(seeker, done, direction='W')
+    p.meander()
+    p.plotPoints(fn='parabola_11', boundary=False)
+    xy = list(p.linefill.coords)
+    self.assertEqual(expect, xy)
+
+  def test_5(self):
+    ''' north meander CCW False
+    '''
+    expect = [
+      (5,5),(5,15),(15,15),(15,14),(6,14),(6,5),(7,5),(7,13),
+      (15,13),(15,11),(15,5),(14,5),(14,11),(13,11),(13,5)
+    ]
+    done   = Rectangle(x=8,y=4,w=4,h=8)
+    seeker = Rectangle(x=4,y=4,w=12,h=12)
+    p = Parabola(seeker, done, direction='N')
+    p.meander()
+    p.plotPoints(fn='parabola_5', boundary=False)
+    xy = list(p.linefill.coords)
+    self.assertEqual(expect, xy)
+
+  def test_12(self):
+    ''' north meander CCW True
+    '''
+    done   = Rectangle(x=6,y=1,w=5,h=10)
+    seeker = Rectangle(x=1,y=1,w=15,h=15)
+    p = Parabola(seeker, done, direction='N')
+    p.meander()
+    p.plotPoints(fn='parabola_12', boundary=False)
+    xy = list(p.linefill.coords)
+    self.assertEqual((15,15), xy[0])
+    self.assertEqual((12,2), xy[-1])
+
 '''
 the
 end
