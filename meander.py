@@ -43,7 +43,7 @@ class Meander():
     [mls.append(guideline[d]) for d in direction]
     return MultiLineString(mls) 
 
-  def collectPoints(self, padme, guidelines):
+  def collectPoints(self, padme, guidelines, direction=tuple()):
     ''' collect the points intersecting the padded version of shape
         gridwalk the bounding box and collect Points() touching the guidelines
         grouped by the guidelines
@@ -61,7 +61,8 @@ class Meander():
             if gl.intersects(pt):   # collect the points on the guideline
               points[i].append((x,y))
       if i > 0 and len(points[i]) is not same:
-        raise ValueError(f"{i=} {len(points[i])} points is not the same {same}")
+        d = direction[i]
+        raise ValueError(f"{d=} {len(points[i])} points is not the same {same}")
       same = len(points[i])
     return points
 
@@ -115,24 +116,6 @@ line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
     stop_y          += step_y
     return start_x, stop_x, step_x, start_y, stop_y, step_y
 
-class Plotter():
-  ''' wrapper around matplot so we can see whats going on
-  '''
-  def plot(self, p1, p2, fn):
-    x1, y1 = p1.boundary.xy
-    x2, y2 = p2.boundary.xy
-    plt.plot(x1, y1, 'b-', x2, y2, 'r--')
-    plt.axis([0, 18, 0, 18])
-    plt.savefig(f'tmp/{fn}.svg', format="svg")
-
-  def plotLine(self, line, fn):
-    fig, ax = plt.subplots()
-    x = []
-    y = []
-    [x.append(c[0]) for c in line.coords]
-    [y.append(c[1]) for c in line.coords]
-    ax.plot(x, y)
-    plt.savefig(f'tmp/{fn}.svg', format="svg")
 '''
 the
 end
