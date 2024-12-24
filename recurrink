@@ -47,10 +47,6 @@ def inputs():
   )
   parser_p = subparsers.add_parser('release', help='add release date to db')
   parser_p.add_argument("-v", "--view", help='view to mark as released')
-  '''
-  parser_s = subparsers.add_parser('stencil', help='monochrome to etch screens')
-  parser_s.add_argument("-v", "--view", help='view to make stencils from')
-  '''
   return parser.parse_args()
 
 def stats():
@@ -220,21 +216,3 @@ the
 end
 '''
 '''
-def stencil(d):
-  model, _, scale = v.read(digest=d)
-  cells = v.read(digest=d, celldata=True)
-  blocksize = m.read(model=model)[2] # can get scale too
-  positions = m.read_positions(model)
-  scale = float(scale) if scale else m.get_scale(model)
-  lt = Layout(scale=scale)
-  s = Stencil(model, cells)
-  for colour in s.colours():
-    fn = f"{model}_{colour}"
-    #print(fn)
-    bwdata = s.monochrome(colour, cells)
-    #pp.pprint(bwdata)
-    lt.gridwalk(blocksize, positions, bwdata)
-    lt.write(f'/tmp/{fn}.svg')
-  return f"{WORKDIR}/{model}/{d}\n"
-'''
-
