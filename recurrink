@@ -7,7 +7,7 @@ import random
 import argparse
 import pprint
 from views import Views, Models
-from outfile import Svg, Stencil
+from outfile import Svg, Stencil, LinearSvg
 from tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 m = Models()
@@ -40,12 +40,17 @@ def inputs():
   parser_u.add_argument('-m', '--model', help='name of model to update')  # tf.conf, required=True)
   parser_u.add_argument("-s", "--scale",  help="zoom control 0.5 - 2.0")
   parser_u.add_argument("--mm",  help="output for plotter", action=argparse.BooleanOptionalAction)
-  parser_s = subparsers.add_parser('stencil', help='monochrome to etch screens')
-  parser_s.add_argument("-v", "--view", help='view to make stencils from')
-  parser_s = subparsers.add_parser('flatten', help='write svg formatted for plotter')
-  parser_s.add_argument("-m", "--model", help='model to plot', required=True)
+  parser_f = subparsers.add_parser('flatten', help='write svg formatted for plotter')
+  parser_f.add_argument("-s", "--scale", help='scale to plot clone .6 1 2', required=False)
+  parser_f.add_argument(
+    "-w", "--wireframe", help="flatten as wireframe", action=argparse.BooleanOptionalAction
+  )
   parser_p = subparsers.add_parser('release', help='add release date to db')
   parser_p.add_argument("-v", "--view", help='view to mark as released')
+  '''
+  parser_s = subparsers.add_parser('stencil', help='monochrome to etch screens')
+  parser_s.add_argument("-v", "--view", help='view to make stencils from')
+  '''
   return parser.parse_args()
 
 def stats():
@@ -108,7 +113,7 @@ def update(model, scale, mm=False):
   blocksize = m.read(model=model)[2] # can get scale too
   svgfile = f'tmp/{model}.svg'
   positions = m.read_positions(model)
-  # millimetres means prepare SVG for plotting
+  # TODO millimetres are handled by flatten()
   unit = 'mm' if mm else 'px'
   svg  = Svg(unit=unit, scale=s)
   #print(f"s {svg.scale} c {svg.cellsize} g {svg.cellnum}")
@@ -116,6 +121,27 @@ def update(model, scale, mm=False):
   v.validate(cells, ver=ver)
   svg.gridwalk(blocksize, positions, cells)
   svg.make()
+  svg.write(svgfile)
+  return f"{svgfile} {s}"
+
+def flatten(scale, wireframe=False):
+  ''' once cloned use flatten to make an SVG for plotting
+      testing '7e731bfc1863c186616d2b3de09a9b6b' 
+  '''
+  model, _ = tf.conf()  # ignore palette
+  s = float(scale) if scale else 1.0
+  blocksize = m.read(model=model)[2] # can get scale too
+  positions = m.read_positions(model)
+  svg  = LinearSvg(scale=s) # unit is millimetres
+  cells = tf.read(model, output=dict())
+  #pp.pprint(cells)
+  svg.gridwalk(blocksize, positions, cells)
+  if wireframe:
+    svgfile = f'tmp/{model}_wf.svg'
+    svg.wireframe()
+  else:
+    svgfile = f'tmp/{model}_mm.svg'
+    svg.make()
   svg.write(svgfile)
   return f"{svgfile} {s}"
 
@@ -148,7 +174,7 @@ def commit(model, scale, author):
   s = Stencil(cellhash)
   lc = len(s.colours())
   if os.path.isdir(f"{WORKDIR}/{model}"):
-    if v.create(tf.digest, celldata, model=model, author=author, ver=ver, scale=scale, colournum=lc):
+    if v.create(tf.digest, celldata, model=model, author=author, ver=ver, scale=scale,colournum=lc):
       #[c.create(tf.digest, row) for row in celldata]
       if os.path.isfile(f"tmp/{model}.svg"):
         svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
@@ -163,60 +189,9 @@ def commit(model, scale, author):
     raise FileNotFoundError(f"{model} not found in {WORKDIR}")
   return response
 
-def stencil(d):
-  model, _, scale = v.read(digest=d)
-  cells = v.read(digest=d, celldata=True)
-  blocksize = m.read(model=model)[2] # can get scale too
-  positions = m.read_positions(model)
-  scale = float(scale) if scale else m.get_scale(model)
-  lt = Layout(scale=scale)
-  s = Stencil(model, cells)
-  for colour in s.colours():
-    fn = f"{model}_{colour}"
-    #print(fn)
-    bwdata = s.monochrome(colour, cells)
-    #pp.pprint(bwdata)
-    lt.gridwalk(blocksize, positions, bwdata)
-    lt.write(f'/tmp/{fn}.svg')
-  return f"{WORKDIR}/{model}/{d}\n"
-
 def release(d):
   v.update(d)
   return f"released today: {d}"
-
-def flatten(model):
-  # used for testing '7e731bfc1863c186616d2b3de09a9b6b' 
-  raise NotImplementedError('flatten')
-  '''
-  src = 'file'
-  model, _, scale, _ = v.read_meta(digest=d) # ignore author palette
-  blocksize = m.read(model=model)[2] # can get scale too
-  positions = m.read_positions(model)
-  if os.path.isfile(f"/tmp/{model}.txt"):
-    cells = tf.read(model, output=dict()) # assume whatever is in /tmp is up to date
-  elif model and d: # hit the db
-    celldata = v.read(digest=d, output=list()) # cells without strokes are empty items
-    tf.write(model, celldata)  # writing is to ensure cells without strokes have keys
-    cells = tf.read(model, output=dict())
-    src = 'db'
-  else:
-    raise ValueError("model and digest are required")
-  s = Stencil(cells, gcode=True)
-  uniqcol = s.colours() # e.g ['fill:#000', 'fill:#00F', 'fill:#F00', 'fill:#FF0', 'fill:#FFF']
-  hw = 180 # height width are same even though A4 = 210x297 mm 
-  gc = Gcode(scale=1, gridpx=hw, cellsize=30)
-  if gc.A4_OK:
-    gc.gridwalk(blocksize, positions, cells)
-    gc.make(uniqcol)
-  else:
-    uniqcol = 0 # dropout 
-  print(gc.cellsum())
-  pp.pprint(gc.gcdata)
-  for f in uniqcol:
-    outfile = gc.write(model, fill=f)
-    print(outfile)
-  return f"\n{model} {d} was read from {src} and written to {hw}x{hw}mm grid\nnum of colours: {len(uniqcol)}"
-  '''
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == '__main__':
@@ -234,17 +209,32 @@ if __name__ == '__main__':
     print(delete(args.view))
   elif (args.keyword == 'update'):
     print(update(args.model, args.scale, mm=args.mm))
-  elif (args.keyword == 'stencil'):
-    print(stencil(args.view))
   elif (args.keyword == 'release'):
     print(release(args.view))
   elif (args.keyword == 'flatten'):
-    print(flatten(args.view))
+    print(flatten(args.scale, wireframe=args.wireframe))
   elif (args.keyword == 'clone'):
     print(clone(args.view))
-  else:
-    pass
 '''
 the 
 end
 '''
+'''
+def stencil(d):
+  model, _, scale = v.read(digest=d)
+  cells = v.read(digest=d, celldata=True)
+  blocksize = m.read(model=model)[2] # can get scale too
+  positions = m.read_positions(model)
+  scale = float(scale) if scale else m.get_scale(model)
+  lt = Layout(scale=scale)
+  s = Stencil(model, cells)
+  for colour in s.colours():
+    fn = f"{model}_{colour}"
+    #print(fn)
+    bwdata = s.monochrome(colour, cells)
+    #pp.pprint(bwdata)
+    lt.gridwalk(blocksize, positions, bwdata)
+    lt.write(f'/tmp/{fn}.svg')
+  return f"{WORKDIR}/{model}/{d}\n"
+'''
+
