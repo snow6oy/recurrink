@@ -16,7 +16,6 @@ class Flatten():
 
   def __init__(self):
     self.stencil = MultiPolygon([])
-    self.writer  = Plotter()
     self.stats   = [0, 0, 0, 0, 0] # add merge crop ignore punch
     self.done    = []
     self.labels  = dict()  # e.g. R:6 has label R06 as the sixth rectangle of the block
@@ -31,6 +30,7 @@ class Flatten():
       elif covering == 1: self.merge(seeker, shape)
       elif covering == 0: self.add(seeker, shape)
       else: raise NotImplementedError(covering)
+    print('.', end='', flush=True)
 
   def evalSeeker(self, seeker):
     ''' seeker evaluation can have 4 outcomes
@@ -171,24 +171,6 @@ class Flatten():
     """{assertion=} {count=} {outer=} {inner=}"""
     return False
     
-class Plotter():
-  ''' wrapper around matplot so we can see whats going on
-  ''' 
-  def plot(self, p1, p2, fn):
-    x1, y1 = p1.boundary.xy
-    x2, y2 = p2.boundary.xy
-    plt.plot(x1, y1, 'b-', x2, y2, 'r--')
-    #plt.axis([0, 18, 0, 18])
-    plt.savefig(f'tmp/{fn}.svg', format="svg")
-  
-  def plotLine(self, line, fn):
-    fig, ax = plt.subplots()
-    x = []
-    y = []
-    [x.append(c[0]) for c in line.coords] 
-    [y.append(c[1]) for c in line.coords] 
-    ax.plot(x, y)
-    plt.savefig(f'tmp/{fn}.svg', format="svg")
 
 if __name__ == '__main__':
   ''' e2e test to flatten minkscape
@@ -208,8 +190,6 @@ if __name__ == '__main__':
   todo = [Geomink(i[0], pencolor=i[1]) for i in reversed(data)]
   f.run(todo[:5])
   print('='*80)
-  f.writer.plot(f.stencil.geoms[0], f.stencil.geoms[1], 'fl8n')
-  #[print(d.label) for d in f.done]
   print(f"""
 add {f.stats[0]} merge {f.stats[1]} crop {f.stats[2]} ignore {f.stats[3]} punch {f.stats[4]}
 """)

@@ -1,6 +1,7 @@
 import unittest
 import pprint
-from meander import Meander, Plotter
+from meander import Meander
+from shapes import Plotter
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
