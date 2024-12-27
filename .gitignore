@@ -2,6 +2,7 @@
 TODO
 doc
 tmp
+conf
 rinks/*
 pubq/*
 sql/models/*
@@ -11,7 +12,7 @@ sql/palette/*
 Archive
 __pycache__/*
 t/__pycache__/*
-scripts/__pycache__/*
+scripts/*
 t/__init__.py
 recurrink.py
 v/*
