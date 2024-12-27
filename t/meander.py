@@ -161,10 +161,10 @@ class Test(unittest.TestCase):
     '''
 
   def test_9(self):
-    ''' draw a north meander as a U-shape
+    ''' can NOT draw a north meander as a U-shape
          NW NE
         W     E
-        fails because W and E are on the same plane
+        it draws criss-cross because W and E are on the same axis
     '''
     m     = Meander([(1,1),(1,13),(13,13),(13,1),(9,1),(9,9),(5,9),(5,1)])
     padme = m.pad()

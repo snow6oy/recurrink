@@ -7,7 +7,7 @@ import random
 import argparse
 import pprint
 from views import Views, Models
-from outfile import Svg, Stencil, LinearSvg
+from outfile import Svg, LinearSvg
 from tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 m = Models()
@@ -137,7 +137,8 @@ def flatten(scale, wireframe=False):
     svg.wireframe()
   else:
     svgfile = f'tmp/{model}_mm.svg'
-    svg.make()
+    mc      = tf.meanderConf(model)
+    svg.make(meander_conf=mc)
   svg.write(svgfile)
   return f"{svgfile} {s}"
 
@@ -214,5 +215,4 @@ if __name__ == '__main__':
 '''
 the 
 end
-'''
 '''

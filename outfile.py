@@ -26,6 +26,8 @@ class Shapes():
   #def foreground(self, x, y, cell, g):
   def foreground(self, x, y, cell):
     ''' create a shape from a cell for adding to a group
+  
+        fix for update --mm is to ignore stroke whenever it causes width to be less than one
     '''
     facing = cell['facing']
     shape = cell['shape']
@@ -33,14 +35,17 @@ class Shapes():
     hsw = (cell['stroke_width'] / 2) * self.scale
     sw = cell['stroke_width'] * self.scale
     p = Points(x, y, sw, self.cellsize)
-    # print(f"cell size:{self.cellsize} shape size:{size} shape:{shape} x:{x} y:{y} half stroke width:{hsw} stroke width:{sw}")
+    #print(f"cell size:{self.cellsize} shape size:{size} shape:{shape} x:{x} y:{y} half stroke width:{hsw} stroke width:{sw}")
     if shape == 'circle':
-      #self.circle(size, sw, p, g)
       s = self.circle(size, sw, p)
     elif shape == 'square':
       s = self.square(x, y, size, hsw, sw)
+      if s['width'] < 1 or s['height'] < 1:
+        s = self.square(x, y, size, hsw, 0)
     elif shape == 'line':
       s = self.line(x, y, facing, size, hsw, sw)
+      if s['width'] < 1 or s['height'] < 1:
+        s = self.line(x, y, facing, size, hsw, 0)
     elif shape == 'triangl':
       s = self.triangle(facing, p)
     elif shape == 'diamond':
@@ -50,7 +55,7 @@ class Shapes():
       s = self.text(shape, x, y)
 
     if 'width' in s and s['width'] < 1:
-      raise ValueError(f"square too small width: {s['width']}")
+      raise ValueError(f"square too small width: {s['width']} orig {cell['width']}")
     elif 'height' in s and s['height'] < 1:
       raise ValueError(f"square too small height: {s['height']}")
     s['name'] = shape
@@ -435,7 +440,7 @@ TOTAL {len(f.done)}""")
         outer  = list(gmk.shape.exterior.coords)
         inner  = list(gmk.shape.interiors)
         coords = outer 
-        inner_p.append(list(inner[0].coords))
+        [inner_p.append(list(lring.coords)) for lring in inner]
       else:
         coords = list(gmk.shape.boundary.coords)
       for c in coords:
@@ -471,7 +476,7 @@ TOTAL {len(f.done)}""")
       t.set('stroke', '#CCC')
       '''
 
-  def make(self):
+  def make(self, meander_conf=dict()):
     ''' orchestrate the transformation of incoming cells into SVG lines
     '''
     blocks   = self.blockify()
@@ -480,7 +485,7 @@ TOTAL {len(f.done)}""")
       todo = self.makeGeominks(block)
       f = Flatten()
       f.run(todo)
-      self.regroupColors(f.done)
+      self.regroupColors(f.done, meander_conf=meander_conf)
     ''' now that Flatten.done contains two-d cells sort them for SVG layers
         and create SVG elements
     pp.pprint(blocks[:1])
@@ -537,9 +542,9 @@ TOTAL {len(f.done)}""")
       geominks.append(gmk)
     return list(reversed(geominks))  # top cells are done first
 
-  def regroupColors(self, done):
+  def regroupColors(self, done, meander_conf):
     for d in done:
-      xy = d.meander.fill()
+      xy = d.meander.fill(conf=meander_conf)
       if d.pencolor in self.doc:
         self.doc[d.pencolor].append(xy)
       else:
@@ -556,10 +561,10 @@ TOTAL {len(f.done)}""")
       g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
       g.set('style', f"fill:none;stroke:#{pencolor}")
 
-      for coords in self.doc[pencolor]:
+      for line in self.doc[pencolor]:
         uniqid += 1
         points = str()
-        for c in coords:
+        for c in list(line.coords):
           x = c[0]
           y = c[1]
           points += f"{x},{y} "

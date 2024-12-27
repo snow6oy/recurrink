@@ -27,7 +27,7 @@ class Test(unittest.TestCase):
     gmk = Geomink(polygon=parabola.shape, label='P1')
     xy = gmk.meander.fill(direction='S')
     self.writer.plotLine(xy, fn='parabola_1')
-    self.assertEqual(expect, xy)
+    self.assertEqual(expect, list(xy.coords))
 
   def test_2(self):
     ''' southern parabola CCW=True
@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
     gmk = Geomink(polygon=parabola.shape, label='P1')
     xy = gmk.meander.fill(direction='S')
     self.writer.plotLine(xy, fn='parabola_2')
-    self.assertEqual(expect, xy)
+    self.assertEqual(expect, list(xy.coords))
 
   def test_3(self):
     ''' eastern meander with CCW False
@@ -60,7 +60,7 @@ class Test(unittest.TestCase):
     gmk = Geomink(polygon=parabola.shape, label='P1')
     xy = gmk.meander.fill(direction='E')
     self.writer.plotLine(xy, fn='parabola_3')
-    self.assertEqual(expect, xy)
+    self.assertEqual(expect, list(xy.coords))
     
   def test_4(self):
     ''' eastern meander with CCW True
@@ -72,8 +72,8 @@ class Test(unittest.TestCase):
     gmk = Geomink(polygon=parabola.shape, label='P1')
     xy = gmk.meander.fill(direction='E')
     self.writer.plotLine(xy, fn='parabola_4')
-    self.assertEqual((15,2), xy[0])
-    self.assertEqual((10,5), xy[-1])
+    self.assertEqual((15,2), list(xy.coords)[0])
+    self.assertEqual((10,5), list(xy.coords)[-1])
 
   def test_5(self):
     ''' west meander CCW = False
@@ -85,8 +85,8 @@ class Test(unittest.TestCase):
     gmk = Geomink(polygon=parabola.shape, label='P1')
     xy = gmk.meander.fill(direction='W')
     self.writer.plotLine(xy, fn='parabola_5')
-    self.assertEqual(xy[0],  (18,18))
-    self.assertEqual(xy[-1], (18, 6))
+    self.assertEqual(list(xy.coords)[0],  (18,18))
+    self.assertEqual(list(xy.coords)[-1], (18, 6))
 
   def test_6(self):
     ''' west parabola meander CCW = True
@@ -103,7 +103,7 @@ class Test(unittest.TestCase):
     gmk = Geomink(polygon=parabola.shape, label='P1')
     xy = gmk.meander.fill(direction='W')
     self.writer.plotLine(xy, fn='parabola_6')
-    self.assertEqual(expect, xy)
+    self.assertEqual(expect, list(xy.coords))
 
   def test_7(self):
     ''' north meander CCW False
@@ -119,7 +119,7 @@ class Test(unittest.TestCase):
     gmk = Geomink(polygon=parabola.shape, label='P1')
     xy = gmk.meander.fill(direction='N')
     self.writer.plotLine(xy, fn='parabola_7')
-    self.assertEqual(expect, xy)
+    self.assertEqual(expect, list(xy.coords))
 
   def test_8(self):
     ''' north meander CCW True
@@ -131,8 +131,8 @@ class Test(unittest.TestCase):
     gmk = Geomink(polygon=parabola.shape, label='P1')
     xy = gmk.meander.fill(direction='N')
     self.writer.plotLine(xy, fn='parabola_8')
-    self.assertEqual((15,15), xy[0])
-    self.assertEqual((12,2), xy[-1])
+    self.assertEqual((15,15), list(xy.coords)[0])
+    self.assertEqual((12,2), list(xy.coords)[-1])
 
 '''
 the

@@ -13,8 +13,8 @@ class Geomink():
       self.rectangl         = rectangl
       if label: self.label  = label
 
-    def fill(self, direction=None):
-      direction = direction if direction else Geomink.config(self)
+    def fill(self, direction=None, conf=dict()):
+      direction = direction if direction else conf[self.label]
 
       if direction in ['N', 'S']:
         d = ('EB','ET')
@@ -28,7 +28,7 @@ class Geomink():
       guides   = m.guidelines(padme, d)
       points   = m.collectPoints(padme, guides, direction=d)
       linefill = m.makeStripes(points)
-      return list(linefill.coords)
+      return linefill
 
   class Parabola():
     ''' u-shaped parallelograms
@@ -38,14 +38,14 @@ class Geomink():
       self.parabola = parabola
       self.label    = label
 
-    def fill(self, direction=None):
-      X, Y, W, H     = self.parabola.bounds
-      bounding_box   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
-      done           = bounding_box.difference(self.parabola)
-      x, y, w, h     = done.bounds
+    def fill(self, direction=None, conf=dict()):
+      X, Y, W, H = self.parabola.bounds
+      box_bounds = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
+      done       = box_bounds.difference(self.parabola)
+      x, y, w, h = done.bounds
+      clockwise  = self.setClock(X, Y, W, H)
+      direction  = direction if direction else conf[self.label]
       # print(f""" {X} {Y} {W} {H} {x} {y} {w} {h} """)
-      clockwise = self.setClock(X, Y, W, H)
-      direction = direction if direction else Geomink.config(self)
 
       if direction == 'N':
         gnomon   = [(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)]
@@ -97,7 +97,7 @@ class Geomink():
       p1 = g.collectPoints(gpad, gmls)
       p2 = r.collectPoints(rpad, rmls)
       linefill = r.joinStripes(p1, p2)
-      return list(linefill.coords)
+      return linefill
   
     def setClock(self, X, Y, W, H):
       ''' meandering an odd number of stripes requires direction order to be clockwise
@@ -138,8 +138,8 @@ class Geomink():
       self.gnomon = gnomon
       if label: self.label  = label
 
-    def fill(self, direction=None):
-      direction = direction if direction else self.Geomink.config(self)
+    def fill(self, direction=None, conf=dict()):
+      direction = direction if direction else conf[self.label]
       if direction == 'NW':
         d = ('WB', 'NW', 'NR')
       elif direction == 'SE':
@@ -152,7 +152,7 @@ class Geomink():
       guides   = m.guidelines(padme, d)
       points   = m.collectPoints(padme, guides, direction=d)
       linefill = m.makeStripes(points)
-      return list(linefill.coords)
+      return linefill
 
   class SquareRing:
     ''' Shapely Polygon with a hole innit
@@ -161,10 +161,12 @@ class Geomink():
       self.sqring = sqring
       self.label  = label
 
-    def fill(self):
+    def fill(self, conf=dict()):
+      ''' square ring is not currently accepting config
+      '''
       X, Y, W, H = self.sqring.bounds
-      bounds_box = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
-      done       = bounds_box.difference(self.sqring)
+      box_bounds = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
+      done       = box_bounds.difference(self.sqring)
       x, y, w, h = done.bounds
       nw         = Meander([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,Y)])
       se         = Meander([(x,Y), (x,y), (w,y), (w,h), (W,h), (W,Y)])
@@ -175,7 +177,7 @@ class Geomink():
       p1         = nw.collectPoints(nwp, nw_mls)
       p2         = se.collectPoints(sep, se_mls)
       linefill   = nw.joinStripes(p1, p2)
-      return list(linefill.coords)
+      return linefill
 
   def __init__(self, xywh=tuple(), polygon=None, pencolor='000', label=None):
     ''' a tuple with min and max coord will become a rectangle
@@ -205,56 +207,6 @@ class Geomink():
 
     self.pencolor = pencolor
 
-  def config(self):
-    ''' later use a YAML to externalise conf 
-    '''
-    i = self.label
-    '''
-minkscape
-      'R1': 'E', # 'R20,10': 'E',
-      'R2': 'E', # 'R10,10': 'E',
-      'R3': 'E', # 'R70,10': 'E',
-      'R4': 'N', # 'R40,0': 'N',
-      'R5': 'N', # 'R40,20': 'N',
-      'P1': 'W', # 'P0,0': 'W',
-      'P2': 'E', # 'P60,0': 'E',
-      'R6': 'N',
-      'R7': 'N',
-      'R8': 'N',
-      'R9': 'N'
-    '''
-    '''
-buleria
-    '''
-    conf = {
-      'R1': 'N',
-      'R2': 'N',
-      'R3': 'N',
-      'R4': 'N',
-      'R5': 'N',
-      'R6': 'N',
-      'R7': 'N',
-      'R8': 'N',
-      'R9': 'N',
-      'R10': 'N',
-      'R11': 'N',
-      'R12': 'N',
-      'S1': 'N',
-      'S2': 'N',
-      'S3': 'N',
-      'S4': 'N',
-      'S5': 'N',
-      'S6': 'N',
-      'S7': 'N',
-      'S8': 'N',
-      'S9': 'N',
-      'S10': 'N',
-      'S11': 'N',
-      'S12': 'N'
-    }
-    if i in conf:
-      return conf[i]
-
 class Plotter:
   ''' wrapper around matplot so we can see whats going on
   '''
@@ -266,11 +218,13 @@ class Plotter:
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
   def plotLine(self, line, fn):
+    if line.geom_type != 'LineString':
+      raise ValueError(f'wrong geometry {line.geom_type}')
     fig, ax = plt.subplots()
     x = []
     y = []
-    [x.append(c[0]) for c in line]
-    [y.append(c[1]) for c in line]
+    [x.append(c[0]) for c in list(line.coords)]
+    [y.append(c[1]) for c in list(line.coords)]
     ax.plot(x, y)
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 

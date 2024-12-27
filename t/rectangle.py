@@ -18,7 +18,7 @@ class Test(unittest.TestCase):
     ]
     gmk = Geomink(xywh=(1, 1, 7, 7))
     xy = gmk.meander.fill(direction='E')
-    self.assertEqual(expect, xy) 
+    self.assertEqual(expect, list(xy.coords)) 
     self.writer.plotLine(xy, fn='rectangle_1')
 
   def test_2(self):
@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
     ]
     gmk = Geomink(xywh=(0, 0, 9, 9))
     xy = gmk.meander.fill(direction='N')
-    self.assertEqual(expect, xy)
+    self.assertEqual(expect, list(xy.coords))
     self.writer.plotLine(xy, fn='rectangle_2')
 
 '''

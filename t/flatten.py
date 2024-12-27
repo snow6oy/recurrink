@@ -170,6 +170,21 @@ class Test(unittest.TestCase):
     r     = Polygon([(0, 0), (0, 1), (0, 3), (3, 3), (3, 0)])
     self.assertRaises(ValueError, Geomink, polygon=r)
 
+  def test_14(self):
+    ''' with many polys in stencil multiple touches are possible
+    '''
+    p1     = Polygon([(1, 1), (1, 9), (9, 9), (9, 1)])
+    seeker = Geomink(polygon=p1, label='R1')
+    p2     = Polygon([(9, 1), (9, 9), (17, 9), (17, 1)])
+    done1  = Geomink(polygon=p2, label='R2')
+    p3     = Polygon([(1, 9), (1, 17), (9, 17), (9, 9)])
+    done2  = Geomink(polygon=p3, label='R3')
+    self.f.add(done1)
+    self.f.add(done2)
+    self.f.run([seeker])
+    self.writer.plot(self.f.stencil.geoms[0], seeker.shape, fn='flatten_14')
+
+
 '''
 the
 end

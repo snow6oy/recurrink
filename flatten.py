@@ -21,14 +21,16 @@ class Flatten():
     self.labels  = dict()  # e.g. R:6 has label R06 as the sixth rectangle of the block
 
   def run(self, todo):
+    #print(len(todo)) 66
     for seeker in todo:
       covering, shape = self.evalSeeker(seeker)
-      if covering == 4: self.punch(seeker, shape)
+      if covering == 5: self.multiMerge(seeker, shape)
+      elif covering == 4: self.punch(seeker, shape)
       elif covering == 3:
         if self.VERBOSE: print(f"seeker ignored")
       elif covering == 2: self.crop(seeker, shape)
       elif covering == 1: self.merge(seeker, shape)
-      elif covering == 0: self.add(seeker, shape)
+      elif covering == 0: self.add(seeker)
       else: raise NotImplementedError(covering)
     print('.', end='', flush=True)
 
@@ -67,8 +69,9 @@ class Flatten():
         self.stencil = MultiPolygon([g for g in self.stencil.geoms if not g.equals(shape)])
     self.stats[covering] += 1
 
-    if len(touching) > 1:
-      raise NotImplementedError(f"multiple touches {len(touching)=}. Err ..") 
+    if len(touching) > 1: # with multiple touches all shapes must be added to stencil
+      covering = 5
+      shape = touching
     elif len(touching) == 1:
       shape = touching[0] # first touch
     else:
@@ -79,8 +82,16 @@ class Flatten():
     ''' punch a hole and make a square ring polygon
     '''
     diff  = seeker.shape.difference(shape) # the part of shape that differs from seeker
-    gmk  = Geomink(polygon=diff, pencolor=seeker.pencolor, label = self.identify(diff))
-    self.done.append(gmk)
+    if diff.is_empty: # treat empties as rectangles and add them
+      gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label=self.stickLabel('R'))
+      self.done.append(gmk)
+    elif diff.geom_type == 'MultiPolygon':
+      for p in diff.geoms:
+        gmk  = Geomink(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
+        self.done.append(gmk)
+    else:
+      gmk  = Geomink(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))
+      self.done.append(gmk)
     if self.VERBOSE: print(f"{gmk.label} punched hole")
 
   def crop(self, seeker, shape):
@@ -108,7 +119,16 @@ class Flatten():
     self.done.append(gmk)
     if self.VERBOSE: print(f"{gmk.label} merged")
 
-  def add(self, seeker, shape):
+  def multiMerge(self, seeker, shapes):
+    stretch = shapes[0].union(seeker.shape)
+    for shape in shapes[1:]:
+      stretch = stretch.union(shape)
+    self.mpAppend(stretch)
+    gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label=self.stickLabel('R'))
+    self.done.append(gmk)
+    if self.VERBOSE: print(f"{gmk.label} merged")
+
+  def add(self, seeker):
     self.mpAppend(seeker.shape)
     gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label=self.stickLabel('R'))
     self.done.append(gmk)
@@ -119,10 +139,17 @@ class Flatten():
         provide an append function by converting to list before adding new
     '''
     mp  = [p for p in self.stencil.geoms]
-    mp.append(new_polygon)
+    if new_polygon.geom_type == 'Polygon':
+      mp.append(new_polygon)
+    elif new_polygon.geom_type == 'MultiPolygon':
+      [mp.append(p) for p in new_polygon.geoms]
+    else:
+      raise ValueError(f"{new_polygon} what are you?")
     self.stencil = MultiPolygon(mp)
 
   def identify(self, shape):
+    if shape.geom_type == 'MultiPolygon':
+      raise ValueError(f'cannot identify {shape.geom_type}')
 
     if self.shapeTeller(shape, 'rectangle'):
       label   = 'R'
@@ -133,7 +160,7 @@ class Flatten():
     elif self.shapeTeller(shape, 'sqring'):
       label   = 'S'
     else:
-      raise ValueError(f'{shape} unknown shape')
+      raise ValueError(f'unidentified {shape.geom_type}')
     return self.stickLabel(label)
 
   def stickLabel(self, label):
@@ -145,8 +172,13 @@ class Flatten():
 
   def shapeTeller(self, shape, assertion):
     ''' count the points and decide if the asserted shape is correct
+
+        parabolas have shallow or deep ingress
+        should split 9 and 11 into Parabola.small and Large?
+        13 is a spade with danglers
+
+        simplify was not helpful 
         clean = self.shape.exterior.simplify(tolerance=1, preserve_topology=True)
-        outer = list(clean.coords)
     '''
     count = 0
 
@@ -159,18 +191,22 @@ class Flatten():
     else: # only the single part geometries are cleaned .. 
       count = len(outer)
 
-    if count == 5 and assertion == 'rectangle':
+    """{assertion=} {count=} {outer=} {inner=}"""
+    if assertion == 'rectangle' and count in [5, 6]: # 6 is for danglers
       return True
-    elif count == 7 and assertion == 'gnomon':
+    elif assertion == 'gnomon' and count in [7, 8]:
       return True
-    # TODO split 9 and 11 into Parabola.small and Large
-    elif assertion == 'parabola' and count in [9, 11]: # parabolas have shallow or deep ingress
+    elif assertion == 'parabola' and count in [9, 11, 12, 13]: 
       return True
     elif count == 10 and assertion == 'sqring':
       return True
-    """{assertion=} {count=} {outer=} {inner=}"""
+    else:
+      if self.VERBOSE: 
+        print(f'{assertion} has {count} coords')
+        print(f"""
+{outer=}
+{inner=}""")
     return False
-    
 
 if __name__ == '__main__':
   ''' e2e test to flatten minkscape

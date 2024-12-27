@@ -25,8 +25,8 @@ class Test(unittest.TestCase):
     gmk    = Geomink(polygon=gnomon.shape, label='G1')
     xy     = gmk.meander.fill(direction='NW')
     self.writer.plotLine(xy, fn='gnomon_1')
-    self.assertEqual(expect[0], xy[0])
-    self.assertEqual(expect[1], xy[-1])
+    self.assertEqual(expect[0], list(xy.coords)[0])
+    self.assertEqual(expect[1], list(xy.coords)[-1])
     '''
     self.writer.plot(gnomon.shape, seeker.shape, fn='gnomon_1')
     '''
@@ -41,8 +41,8 @@ class Test(unittest.TestCase):
     gmk    = Geomink(polygon=gnomon.shape, label='G1')
     xy     = gmk.meander.fill(direction='SE')
     self.writer.plotLine(xy, fn='gnomon_2')
-    self.assertEqual(expect[0], xy[0])
-    self.assertEqual(expect[1], xy[-1])
+    self.assertEqual(expect[0], list(xy.coords)[0])
+    self.assertEqual(expect[1], list(xy.coords)[-1])
 '''
 the
 end
