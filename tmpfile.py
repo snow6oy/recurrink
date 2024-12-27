@@ -1,6 +1,7 @@
 import os.path
 import re
 import hmac
+import yaml 
 
 class TmpFile():
   ''' read and write data to /tmp/recurrink
@@ -135,3 +136,11 @@ class TmpFile():
         if os.path.islink(f'/tmp/recurrink/{f}'):
           links.append(f)
     return links
+
+  def meanderConf(self, model):
+    with open(f'conf/meander.yaml', 'r') as yf:
+      conf = yaml.safe_load(yf)
+    if model in conf:
+      return conf[model]
+    else:
+      raise ValueError(f'unexpected yaml {conf}')
