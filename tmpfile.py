@@ -143,4 +143,4 @@ class TmpFile():
     if model in conf:
       return conf[model]
     else:
-      raise ValueError(f'unexpected yaml {conf}')
+      raise ValueError(f'unexpected yaml {model}')
