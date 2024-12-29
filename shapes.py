@@ -46,42 +46,57 @@ class Geomink:
     def __init__(self, parabola, label):
       self.parabola = parabola
       self.label    = label
+      self.writer   = Plotter()
 
     def fill(self, direction=None, conf=dict()):
       direction  = direction if direction else conf[self.label]
 
       X, Y, W, H = self.parabola.bounds
-      box_bounds = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
-      if box_bounds.is_valid:
-        done       = box_bounds.difference(self.parabola)
-        x, y, w, h = done.bounds
-        clockwise  = self.setClock(X, Y, W, H)
+      width      = W - X
+      height     = H - Y
+      surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
+
+      if surround.is_valid:
+        if width == height:
+          indivisible_by_3 = bool(width % 3)
+          if indivisible_by_3:
+            print(f"""{self.label} indivisible by 3 {width=} {indivisible_by_3=} """)
+            return LineString()
+          else:
+            done       = surround.difference(self.parabola)
+            x, y, w, h = done.bounds
+            clockwise  = self.setClock(width, height)
+        else:
+          print(f"""{self.label} not a square {width} {height} """)
+          return LineString()
       else:
-        print(f""" {X} {Y} {W} {H} {x} {y} {w} {h} """)
+        print(f"""{self.label} in valid bounds {X} {Y} {W} {H} {x} {y} {w} {h} """)
+        return LineString()
 
       if direction == 'N':
-        gnomon   = [(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)]
-        rectangl = [(w,y),(w,h),(W,h),(W,Y)]
+        gnomon   = Polygon([(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)])
+        rectangl = Polygon([(w,y),(w,h),(W,h),(W,Y)])
       elif direction == 'W': 
-        gnomon   = [(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)]
-        rectangl = [(x,Y),(x,y),(W,y),(W,Y)]
+        gnomon   = Polygon([(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)])
+        rectangl = Polygon([(x,Y),(x,y),(W,y),(W,Y)])
       elif direction == 'S':
-        gnomon   = [(X,Y),(X,H),(x,h),(x,y),(W,y),(W,Y)]
-        rectangl = [(w,y),(w,h),(W,H),(W,y)]
+        gnomon   = Polygon([(X,Y),(X,H),(x,h),(x,y),(W,y),(W,Y)])
+        rectangl = Polygon([(w,y),(w,h),(W,H),(W,y)])
       elif direction == 'E':
-        gnomon   = [(X,h),(X,H),(W,H),(W,Y),(w,Y),(w,h)]
-        rectangl = [(X,Y),(X,y),(w,y),(w,Y)]
+        gnomon   = Polygon([(X,h),(X,H),(W,H),(W,Y),(w,Y),(w,h)])
+        rectangl = Polygon([(X,Y),(X,y),(w,y),(w,Y)])
       else:
         raise NotImplementedError(f'all at sea > {direction} <')
 
-      ################################
-      # TODO TODO 
-      # rectangl is not always a valid Polygon
-
-      g    = Meander(Polygon(gnomon))
-      gpad = g.pad()
-      r    = Meander(Polygon(rectangl))
-      rpad = r.pad()
+      if gnomon.is_valid and rectangl.is_valid:
+        g    = Meander(gnomon)
+        gpad = g.pad()
+        r    = Meander(rectangl)
+        rpad = r.pad()
+      else:
+        print(f"{self.label} is not a good polygon")
+        if self.VERBOSE: self.writer.plot(surround, self.parabola, fn=self.label)
+        return LineString()
   
       if direction == 'N' and clockwise:  # t.parabola.Test.test_12
         gmls = g.guidelines(gpad, ('SR', 'SE', 'EB'))
@@ -112,15 +127,27 @@ class Geomink:
       #print(f""" {self.label=} {clockwise=} {direction=} {gnomon=} {gmls=} {rectangl=} {rmls=} """)
       p1, e1  = g.collectPoints(gpad, gmls)
       p2, e2  = r.collectPoints(rpad, rmls)
-      if e1 and self.VERBOSE or e2 and self.VERBOSE: # any error ?
-        raise ValueError(e1, e2, self.label, direction)
-      elif e1 or e2:
+      if e1 or e2:
+        print(f"{self.label} {e1=} {e2=} {direction}")
+        if self.VERBOSE: self.writer.plot(gpad, rpad, fn=self.label)
         linefill = LineString()
       else:
         linefill = r.joinStripes(p1, p2)
       return linefill
   
-    def setClock(self, X, Y, W, H):
+    def setClock(self, width, height):
+      ''' meandering an odd number of stripes requires direction order to be clockwise
+          even stripes must be anti-clockwise
+  
+          tests suggest that when num of stripes is 1 then clockwise should be True
+          ignoring that corner case for now ..
+      ''' 
+      raw_stripes   = (width - 1) / 3         # padding reduces width
+      numof_stripes = math.floor(raw_stripes) # round down
+      clockwise     = False if numof_stripes % 2 else True
+      return clockwise
+
+    def zzsetClock(self, X, Y, W, H, ww, hh):
       ''' meandering an odd number of stripes requires direction order to be clockwise
           even stripes must be anti-clockwise
   
@@ -132,16 +159,15 @@ class Geomink:
       clockwise = None     # difference between False and None is .. err
       if width == height:
         if width % 3:
-          print(f"expected seeker to be divisible by 3 {width=}")
+          raise Warning(f"expected seeker to be divisible by 3 {width=} {ww=} {hh=}")
         else:
           raw_stripes   = (width - 1) / 3         # padding reduces width
           numof_stripes = math.floor(raw_stripes) # round down
           clockwise     = False if numof_stripes % 2 else True
           #print(f"{round(numof_stripes)=} {clockwise=}")
       else:
-        pass
-        # TODO fix tests with non-square seekers
-        # raise ValueError(f"expected seeker to be square {width=} {height=}")
+        # non-square seekers will always fail ?
+        raise Warning(f"{self.label} expected seeker to be square {width=} {height=}")
       return clockwise
 
   class Gnomon:
@@ -201,23 +227,32 @@ class Geomink:
       ''' square ring is not currently accepting config
       '''
       X, Y, W, H = self.sqring.bounds
-      box_bounds = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
-      done       = box_bounds.difference(self.sqring)
+      surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
+      done       = surround.difference(self.sqring)
       x, y, w, h = done.bounds
-      nw         = Meander([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,Y)])
-      se         = Meander([(x,Y), (x,y), (w,y), (w,h), (W,h), (W,Y)])
-      nwp        = nw.pad()
-      sep        = se.pad()
-      nw_mls     = nw.guidelines(nwp, ('WB', 'NW', 'NR'))
-      se_mls     = se.guidelines(sep, ('SL', 'SE', 'ET'))
-      p1, err    = nw.collectPoints(nwp, nw_mls)
-      p2, err    = se.collectPoints(sep, se_mls)
+      nw         = Polygon([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,Y)])
+      se         = Polygon([(x,Y), (x,y), (w,y), (w,h), (W,h), (W,Y)])
+
+      if nw.is_valid and se.is_valid:
+        m1  = Meander(nw)
+        m2  = Meander(se)
+        nwp = m1.pad()
+        sep = m2.pad()
+      else:
+        print(f"{self.label} is not a good polygon")
+        if self.VERBOSE: self.writer.plot(surround, self.parabola, fn=self.label)
+        return LineString()
+
+      nw_mls     = m1.guidelines(nwp, ('WB', 'NW', 'NR'))
+      se_mls     = m2.guidelines(sep, ('SL', 'SE', 'ET'))
+      p1, err    = m1.collectPoints(nwp, nw_mls)
+      p2, err    = m2.collectPoints(sep, se_mls)
       if err and self.VERBOSE:
         raise ValueError(err + self.label)
       elif err:
         linefill = LineString()
       else:
-        linefill = nw.joinStripes(p1, p2)
+        linefill = m1.joinStripes(p1, p2)
       return linefill
 
   def __init__(self, xywh=tuple(), polygon=None, pencolor='000', label=None):

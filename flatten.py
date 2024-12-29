@@ -27,6 +27,7 @@ class Flatten():
       if covering == 5: self.multiMerge(seeker, shape)
       elif covering == 4: self.punch(seeker, shape)
       elif covering == 3:
+        self.stats[3] += 1
         if self.VERBOSE: print(f"seeker ignored")
       elif covering == 2: self.crop(seeker, shape)
       elif covering == 1: self.merge(seeker, shape)
@@ -67,7 +68,6 @@ class Flatten():
         covering = 1
         touching.append(shape)
         self.stencil = MultiPolygon([g for g in self.stencil.geoms if not g.equals(shape)])
-    self.stats[covering] += 1
 
     if len(touching) > 1: # with multiple touches all shapes must be added to stencil
       covering = 5
@@ -78,6 +78,7 @@ class Flatten():
       shape = None
     return covering, shape
 
+
   def punch(self, seeker, shape):
     ''' punch a hole and make a square ring polygon
     '''
@@ -85,14 +86,17 @@ class Flatten():
     if diff.is_empty: # treat empties as rectangles and add them
       gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label=self.stickLabel('R'))
       self.done.append(gmk)
+      self.stats[4] += 1
     elif diff.geom_type == 'MultiPolygon':
       for p in diff.geoms:
         gmk = Geomink(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
         self.done.append(gmk)
+        self.stats[4] += 1
     else:
       gmk  = Geomink(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))
       self.done.append(gmk)
     if self.VERBOSE: print(f"{gmk.label} punched hole")
+
 
   def crop(self, seeker, shape):
     ''' crop the seeker by removing areas that overlap shape
@@ -103,20 +107,24 @@ class Flatten():
         shape = shape.union(p)        # merge the remaining part(s) into the stencil
         gmk   = Geomink(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
         self.done.append(gmk)
+        self.stats[2] += 1
     elif diff.geom_type == 'Polygon':
       gmk   = Geomink(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))
       self.done.append(gmk)
+      self.stats[2] += 1
       shape = shape.union(diff)
     else:
       raise ValueError(f"{diff.geom_type=} was not expected")
     self.mpAppend(shape)
     if self.VERBOSE: print(f"{gmk.label} cropped")
 
+
   def merge(self, seeker, shape):
     stretch = shape.union(seeker.shape)
     self.mpAppend(stretch)
     gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label=self.stickLabel('R'))
     self.done.append(gmk)
+    self.stats[1] += 1
     if self.VERBOSE: print(f"{gmk.label} merged")
 
   def multiMerge(self, seeker, shapes):
@@ -126,12 +134,14 @@ class Flatten():
     self.mpAppend(stretch)
     gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label=self.stickLabel('R'))
     self.done.append(gmk)
+    self.stats[1] += 1
     if self.VERBOSE: print(f"{gmk.label} merged")
 
   def add(self, seeker):
     self.mpAppend(seeker.shape)
     gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label=self.stickLabel('R'))
     self.done.append(gmk)
+    self.stats[0] += 1
     if self.VERBOSE: print(f"{gmk.label} added")
 
   def mpAppend(self, new_polygon):

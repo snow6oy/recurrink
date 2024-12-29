@@ -543,6 +543,7 @@ TOTAL {len(f.done)}""")
     return list(reversed(geominks))  # top cells are done first
 
   def regroupColors(self, done, meander_conf):
+    # print('>'*100)
     for d in done:
       xy = d.meander.fill(conf=meander_conf)
       if xy.is_empty: # meander could not fill d
