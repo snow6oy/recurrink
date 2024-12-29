@@ -87,7 +87,7 @@ class Flatten():
       self.done.append(gmk)
     elif diff.geom_type == 'MultiPolygon':
       for p in diff.geoms:
-        gmk  = Geomink(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
+        gmk = Geomink(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
         self.done.append(gmk)
     else:
       gmk  = Geomink(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))

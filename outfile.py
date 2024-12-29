@@ -467,7 +467,7 @@ TOTAL {len(f.done)}""")
       '''
       tx = gmk.shape.bounds[0]
       ty = gmk.shape.bounds[1]
-      print(f"{gmk.label:>3} {int(tx):>3},{int(ty):>3}")
+      print(f"  {gmk.label}:N # {int(tx):>3},{int(ty):>3}")
       ''' stupid SVG text grr...
       t.set("x", str(tx))
       t.set("y", str(ty))
@@ -545,6 +545,8 @@ TOTAL {len(f.done)}""")
   def regroupColors(self, done, meander_conf):
     for d in done:
       xy = d.meander.fill(conf=meander_conf)
+      if xy.is_empty: # meander could not fill d
+        continue
       if d.pencolor in self.doc:
         self.doc[d.pencolor].append(xy)
       else:

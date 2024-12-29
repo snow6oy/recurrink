@@ -1,12 +1,15 @@
 import matplotlib.pyplot as plt
 import pprint
 from shapely import line_merge # set_precision
-from shapely.geometry import Polygon, LineString, MultiLineString, Point
+from shapely.geometry import Polygon, LineString, MultiLineString, Point, LinearRing
 pp = pprint.PrettyPrinter(indent=2)
 
 class Meander():
-  def __init__(self, xywh):
-    self.shape   = Polygon(xywh) # a Shapely polygon
+  def __init__(self, polygon):
+    if isinstance(polygon, list):
+      raise TypeError(polygon)
+    elif polygon.is_valid:
+      self.shape = Polygon(polygon) # only a valid Shapely polygon can be used to Meander
 
   def pad(self):
     ''' make a gap between cells by adding padding with Shapely.buffer
@@ -43,11 +46,12 @@ class Meander():
     [mls.append(guideline[d]) for d in direction]
     return MultiLineString(mls) 
 
-  def collectPoints(self, padme, guidelines, direction=tuple()):
+  def collectPoints(self, padme, guidelines):
     ''' collect the points intersecting the padded version of shape
         gridwalk the bounding box and collect Points() touching the guidelines
         grouped by the guidelines
     '''
+    err        = None
     points     = []
     same       = 0
     for i, gl in enumerate(list(guidelines.geoms)):
@@ -56,15 +60,17 @@ class Meander():
       for y in range(start_y, stop_y, step_y):
         for x in range(start_x, stop_x, step_x):
           pt = Point(x, y)
-          t  = ' '
           if padme.covers(pt):      # surface test for gnomons
             if gl.intersects(pt):   # collect the points on the guideline
               points[i].append((x,y))
+      ''' uneven polygons generate guidelines that cannot go around corners
+          the following condition tests whether point collecting can succeed
+      '''
       if i > 0 and len(points[i]) is not same:
-        d = direction[i]
-        raise ValueError(f"{d=} {len(points[i])} points is not the same {same}")
+        err = f"{i=} {len(points[i])} points is not the same {same} "
+        break
       same = len(points[i])
-    return points
+    return points, err
 
   def makeStripes(self, points):
     ''' sort the points into parallel stripes that join at alternate ends
@@ -115,6 +121,24 @@ line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
     stop_x          += step_x
     stop_y          += step_y
     return start_x, stop_x, step_x, start_y, stop_y, step_y
+
+  def checkGuide(self, guidelines):
+    err        = None
+    same       = 0
+    for i, gl in enumerate(list(guidelines.geoms)):
+      start_x, stop_x, step_x, start_y, stop_y, step_y = self.orderGrid(gl)
+      for y in range(start_y, stop_y, step_y):
+        for x in range(start_x, stop_x, step_x):
+          pt = Point(x, y)
+          t  = ' '
+          if padme.covers(pt):      # surface test for gnomons
+            if gl.intersects(pt):   # collect the points on the guideline
+              points[i].append((x,y))
+      if i > 0 and len(points[i]) is not same:
+        err = f"{i} {direction[i]=} {len(points[i])} points is not the same {same} "
+        break
+      same = len(points[i])
+    return points, err
 
 '''
 the

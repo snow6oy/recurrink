@@ -5,10 +5,12 @@ from shapely.geometry import LineString, Polygon, LinearRing
 from meander import Meander
 pp = pprint.PrettyPrinter(indent=2)
 
-class Geomink():
+class Geomink:
   ''' recurrink wrapper around Shapely geometries
   '''
-  class Rectangle():
+  class Rectangle:
+    VERBOSE = False
+
     def __init__(self, rectangl, label=None):
       self.rectangl         = rectangl
       if label: self.label  = label
@@ -26,26 +28,36 @@ class Geomink():
       m        = Meander(self.rectangl)
       padme    = m.pad()
       guides   = m.guidelines(padme, d)
-      points   = m.collectPoints(padme, guides, direction=d)
-      linefill = m.makeStripes(points)
+      points, err = m.collectPoints(padme, guides)
+      if err and self.VERBOSE:
+        raise ValueError(err + self.label, direction)
+      elif err:
+        linefill = LineString()
+      else:
+        linefill = m.makeStripes(points)
       return linefill
 
-  class Parabola():
+  class Parabola:
     ''' u-shaped parallelograms
         north n south u ... 
     '''
+    VERBOSE = False
+
     def __init__(self, parabola, label):
       self.parabola = parabola
       self.label    = label
 
     def fill(self, direction=None, conf=dict()):
+      direction  = direction if direction else conf[self.label]
+
       X, Y, W, H = self.parabola.bounds
       box_bounds = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
-      done       = box_bounds.difference(self.parabola)
-      x, y, w, h = done.bounds
-      clockwise  = self.setClock(X, Y, W, H)
-      direction  = direction if direction else conf[self.label]
-      # print(f""" {X} {Y} {W} {H} {x} {y} {w} {h} """)
+      if box_bounds.is_valid:
+        done       = box_bounds.difference(self.parabola)
+        x, y, w, h = done.bounds
+        clockwise  = self.setClock(X, Y, W, H)
+      else:
+        print(f""" {X} {Y} {W} {H} {x} {y} {w} {h} """)
 
       if direction == 'N':
         gnomon   = [(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)]
@@ -62,9 +74,13 @@ class Geomink():
       else:
         raise NotImplementedError(f'all at sea > {direction} <')
 
-      g    = Meander(gnomon)
+      ################################
+      # TODO TODO 
+      # rectangl is not always a valid Polygon
+
+      g    = Meander(Polygon(gnomon))
       gpad = g.pad()
-      r    = Meander(rectangl)
+      r    = Meander(Polygon(rectangl))
       rpad = r.pad()
   
       if direction == 'N' and clockwise:  # t.parabola.Test.test_12
@@ -92,11 +108,16 @@ class Geomink():
           gmls = g.guidelines(gpad, ('SR', 'SE', 'EB')) 
         rmls = r.guidelines(rpad, ('WT', 'WB'))
       else:
-        raise NotImplementedError(f'all at sea > {self.direction} <')
+        raise NotImplementedError(f'all at sea > {direction} <')
       #print(f""" {self.label=} {clockwise=} {direction=} {gnomon=} {gmls=} {rectangl=} {rmls=} """)
-      p1 = g.collectPoints(gpad, gmls)
-      p2 = r.collectPoints(rpad, rmls)
-      linefill = r.joinStripes(p1, p2)
+      p1, e1  = g.collectPoints(gpad, gmls)
+      p2, e2  = r.collectPoints(rpad, rmls)
+      if e1 and self.VERBOSE or e2 and self.VERBOSE: # any error ?
+        raise ValueError(e1, e2, self.label, direction)
+      elif e1 or e2:
+        linefill = LineString()
+      else:
+        linefill = r.joinStripes(p1, p2)
       return linefill
   
     def setClock(self, X, Y, W, H):
@@ -134,29 +155,44 @@ class Geomink():
         NW  +---  SE     |
             |         ---+
     '''
+    VERBOSE = False
+
     def __init__(self, gnomon, label=None):
       self.gnomon = gnomon
       if label: self.label  = label
+      self.writer   = Plotter()
 
     def fill(self, direction=None, conf=dict()):
       direction = direction if direction else conf[self.label]
-      if direction == 'NW':
+      if direction == 'N':
+        d = ('EB','ET')
+      elif direction == 'NW':
         d = ('WB', 'NW', 'NR')
       elif direction == 'SE':
         d = ('SL', 'SE', 'ET')
+      elif direction == 'E':
+        d = ('NL','NR')
       else:
-        raise NotImplementedError(f'all at sea > {self.direction} <')
+        raise NotImplementedError(f'all at sea > {direction} <')
 
-      m        = Meander(self.gnomon)
-      padme    = m.pad()
-      guides   = m.guidelines(padme, d)
-      points   = m.collectPoints(padme, guides, direction=d)
-      linefill = m.makeStripes(points)
+      m           = Meander(self.gnomon)
+      padme       = m.pad()
+      guides      = m.guidelines(padme, d)
+      points, err = m.collectPoints(padme, guides)
+      if err and self.VERBOSE:
+        raise ValueError(err + self.label, direction)
+        self.writer.plot(self.gnomon, padme, fn=self.label)
+      elif err:
+        linefill = LineString()
+      else:
+        linefill = m.makeStripes(points)
       return linefill
 
   class SquareRing:
     ''' Shapely Polygon with a hole innit
     '''
+    VERBOSE = False
+
     def __init__(self, sqring, label):
       self.sqring = sqring
       self.label  = label
@@ -174,9 +210,14 @@ class Geomink():
       sep        = se.pad()
       nw_mls     = nw.guidelines(nwp, ('WB', 'NW', 'NR'))
       se_mls     = se.guidelines(sep, ('SL', 'SE', 'ET'))
-      p1         = nw.collectPoints(nwp, nw_mls)
-      p2         = se.collectPoints(sep, se_mls)
-      linefill   = nw.joinStripes(p1, p2)
+      p1, err    = nw.collectPoints(nwp, nw_mls)
+      p2, err    = se.collectPoints(sep, se_mls)
+      if err and self.VERBOSE:
+        raise ValueError(err + self.label)
+      elif err:
+        linefill = LineString()
+      else:
+        linefill = nw.joinStripes(p1, p2)
       return linefill
 
   def __init__(self, xywh=tuple(), polygon=None, pencolor='000', label=None):
@@ -184,6 +225,7 @@ class Geomink():
         more complex shapes should be pre-generated and sent as a Geometry
         something of type: shapely.geometry.polygon.Polygon
     '''
+    self.pencolor = pencolor
     # label is mandatory when Geomink is made from polygon
     if polygon and label: # type: shapely.geometry.polygon.Polygon
       if list(label)[0] == 'R':  # rectangle
@@ -205,7 +247,6 @@ class Geomink():
     else:
       raise ValueError(f"{len(xywh)=} expected 4 or polygon and {label}")
 
-    self.pencolor = pencolor
 
 class Plotter:
   ''' wrapper around matplot so we can see whats going on
@@ -214,7 +255,7 @@ class Plotter:
     x1, y1 = p1.boundary.xy
     x2, y2 = p2.boundary.xy
     plt.plot(x1, y1, 'b-', x2, y2, 'r--')
-    plt.axis([0, 18, 0, 18])
+    #plt.axis([0, 18, 0, 18])
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
   def plotLine(self, line, fn):
