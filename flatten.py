@@ -96,7 +96,6 @@ class Flatten():
       self.done.append(gmk)
     if self.VERBOSE: print(f"{gmk.label} punched hole")
 
-
   def crop(self, seeker, shape):
     ''' crop the seeker by removing areas that overlap shape
     '''
@@ -203,26 +202,28 @@ class Flatten():
     else: # only the single part geometries are cleaned .. 
       count = len(outer)
 
-    """{assertion=} {count=} {outer=} {inner=}"""
     if assertion == 'rectangle' and count in [5, 6]: # 6 is for danglers
       return True
     elif assertion == 'gnomon' and count in [7, 8]:
       return True
     elif assertion == 'parabola' and count == 9: #in [9, 11, 12, 13]: 
-      surround = shape.bounds
-      width    = surround[2] - surround[0]
-      height   = surround[3] - surround[1]
-      if width == height:
-        if not width % 3:
-          return True
+      x, y, w, h = shape.bounds
+      width      = w - x
+      height     = h - y
+      if shape.is_valid:
+        if width == height:
+          if not width % 3:
+            return True
+          else:
+            if self.VERBOSE: print(f"""{assertion} indivisible by 3 {width=}""")
+        else:
+          if self.VERBOSE: print(f"""{assertion} not a square {width} {height}""")
+      else:
+        if self.VERBOSE: print(f"""{assertion} is not a valid polygon {x=} {y=} {w=} {h=}""")
     elif assertion == 'sqring' and count == 10:
       return True
     else:
-      if self.VERBOSE: 
-        print(f'not a {assertion} with {count} coords')
-        """
-{outer=}
-{inner=}"""
+      if self.VERBOSE: print(f'{assertion} with {count} coords was not found')
     return False
 
 if __name__ == '__main__':

@@ -17,25 +17,30 @@ class Geomink:
 
     def fill(self, direction=None, conf=dict()):
       direction = direction if direction else conf[self.label]
-
-      if direction in ['N', 'S']:
-        d = ('EB','ET')
-      elif direction in ['E', 'W']:
-        d = ('NL','NR')
-      else: # abandon if there are no guidelines defined
-        raise NotImplementedError(f'all at sea > {direction=} {self.label=} not found')
-      #print(direction, self.label, d)
-      m        = Meander(self.rectangl)
-      padme    = m.pad()
-      guides   = m.guidelines(padme, d)
-      points, err = m.collectPoints(padme, guides)
-      if err and self.VERBOSE:
+      d         = self.control(direction)
+      m         = Meander(self.rectangl)
+      padme     = m.pad()
+      guides    = m.guidelines(padme, d)
+      points, e = m.collectPoints(padme, guides)
+      if e and self.VERBOSE:
         raise ValueError(err + self.label, direction)
-      elif err:
+      elif e:
         linefill = LineString()
       else:
         linefill = m.makeStripes(points)
       return linefill
+
+    def control(self, direction):
+      control = {
+        'N': ('EB', 'ET'),
+        'S': ('EB', 'ET'),
+        'E': ('NL', 'NR'),
+        'W': ('NL', 'NR')
+      }
+      if direction in control:
+        return control[direction]
+      else: # abandon if there are no guidelines defined
+        raise KeyError(f'all at sea > {direction=} {self.label=} not found')
 
   class Parabola:
     ''' u-shaped parallelograms
@@ -50,28 +55,13 @@ class Geomink:
 
     def fill(self, direction=None, conf=dict()):
       direction  = direction if direction else conf[self.label]
-
       X, Y, W, H = self.parabola.bounds
       width      = W - X
       height     = H - Y
+      clockwise  = self.setClock(width, height)
       surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
-
-      if surround.is_valid:
-        if width == height:
-          indivisible_by_3 = bool(width % 3)
-          if indivisible_by_3:
-            print(f"""{self.label} indivisible by 3 {width=} {indivisible_by_3=} """)
-            return LineString()
-          else:
-            done       = surround.difference(self.parabola)
-            x, y, w, h = done.bounds
-            clockwise  = self.setClock(width, height)
-        else:
-          print(f"""{self.label} not a square {width} {height} """)
-          return LineString()
-      else:
-        print(f"""{self.label} in valid bounds {X} {Y} {W} {H} {x} {y} {w} {h} """)
-        return LineString()
+      done       = surround.difference(self.parabola)
+      x, y, w, h = done.bounds
 
       if direction == 'N':
         gnomon   = Polygon([(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)])
@@ -98,32 +88,11 @@ class Geomink:
         if self.VERBOSE: self.writer.plot(surround, self.parabola, fn=self.label)
         return LineString()
   
-      if direction == 'N' and clockwise:  # t.parabola.Test.test_12
-        gmls = g.guidelines(gpad, ('SR', 'SE', 'EB'))
-        rmls = r.guidelines(rpad, ('NL', 'NR'))
-      elif direction == 'N':                   # t.parabola.Test.test_5
-        gmls = g.guidelines(gpad, ('EB', 'SE', 'SR'))
-        rmls = r.guidelines(rpad, ('EB', 'ET'))
-      elif direction == 'S' and clockwise: # t.parabola.Test.test_7
-        gmls = g.guidelines(gpad, ('NR', 'NE', 'ET'))
-        rmls = r.guidelines(rpad, ('EB', 'ET'))
-      elif direction == 'S':                    # t.parabola.Test.test_6
-        gmls = g.guidelines(gpad, ('ET', 'NE', 'NR'))
-        rmls = r.guidelines(rpad, ('ET', 'EB'))
-      elif direction == 'E' and clockwise: # t.parabola.Test.test_9
-        gmls = g.guidelines(gpad, ('WB', 'SW', 'SL'))
-        rmls = r.guidelines(rpad, ('SR', 'SL'))
-      elif direction == 'E':                    # t.parabola.Test.test_8
-        gmls = g.guidelines(gpad, ('SL', 'SW', 'WB'))
-        rmls = r.guidelines(rpad, ('SL', 'SR'))
-      elif direction == 'W':                    # t.parabola.Test.test_11
-        if clockwise:
-          gmls = g.guidelines(gpad, ('EB', 'SE', 'SR'))
-        else:                                        # t.parabola.Test.test_10
-          gmls = g.guidelines(gpad, ('SR', 'SE', 'EB')) 
-        rmls = r.guidelines(rpad, ('WT', 'WB'))
-      else:
-        raise NotImplementedError(f'all at sea > {direction} <')
+      gcontrol = self.control('G', direction, clockwise)
+      rcontrol = self.control('R', direction, clockwise)
+      gmls     = g.guidelines(gpad, gcontrol)
+      rmls     = r.guidelines(rpad, rcontrol)
+
       #print(f""" {self.label=} {clockwise=} {direction=} {gnomon=} {gmls=} {rectangl=} {rmls=} """)
       p1, e1  = g.collectPoints(gpad, gmls)
       p2, e2  = r.collectPoints(rpad, rmls)
@@ -147,28 +116,33 @@ class Geomink:
       clockwise     = False if numof_stripes % 2 else True
       return clockwise
 
-    def zzsetClock(self, X, Y, W, H, ww, hh):
-      ''' meandering an odd number of stripes requires direction order to be clockwise
-          even stripes must be anti-clockwise
-  
-          tests suggest that when num of stripes is 1 then clockwise should be True
-          ignoring that corner case for now ..
-      ''' 
-      width     = W - X
-      height    = H - Y
-      clockwise = None     # difference between False and None is .. err
-      if width == height:
-        if width % 3:
-          raise Warning(f"expected seeker to be divisible by 3 {width=} {ww=} {hh=}")
-        else:
-          raw_stripes   = (width - 1) / 3         # padding reduces width
-          numof_stripes = math.floor(raw_stripes) # round down
-          clockwise     = False if numof_stripes % 2 else True
-          #print(f"{round(numof_stripes)=} {clockwise=}")
+    def control(self, shape, direction, clockwise):
+      ''' get the right guideline
+      '''
+      control = {
+        'G': { 'N': { True:  ('SR', 'SE', 'EB'),    # t.parabola.Test.test_12
+                      False: ('EB', 'SE', 'SR')},   # t.parabola.Test.test_7
+               'S': { True:  ('NR', 'NE', 'ET'),    # t.parabola.Test.test_5
+                      False: ('ET', 'NE', 'NR')},   # t.parabola.Test.test_6
+               'E': { True:  ('WB', 'SW', 'SL'),    # t.parabola.Test.test_9
+                      False: ('SL', 'SW', 'WB')},   # t.parabola.Test.test_8
+               'W': { True:  ('EB', 'SE', 'SR'),    # t.parabola.Test.test_11
+                      False: ('SR', 'SE', 'EB')}    # t.parabola.Test.test_10
+        },
+        'R': { 'N': { True:  ('NL', 'NR'),
+                      False: ('EB', 'ET')},
+               'S': { True:  ('EB', 'ET'),
+                      False: ('ET', 'EB')},
+               'E': { True:  ('SR', 'SL'),
+                      False: ('SL', 'SR')},
+               'W': { True:  ('WT', 'WB'),
+                      False: ('WT', 'WB')}
+        }
+      }
+      if shape in control and direction in control[shape] and clockwise in control[shape][direction]:
+        return control[shape][direction][clockwise]
       else:
-        # non-square seekers will always fail ?
-        raise Warning(f"{self.label} expected seeker to be square {width=} {height=}")
-      return clockwise
+        raise KeyError(f'all at sea > {shape} {direction} {clockwise} < without control')
 
   class Gnomon:
     ''' Gnomon has an area of IDGP that equals HPFB
@@ -190,29 +164,31 @@ class Geomink:
 
     def fill(self, direction=None, conf=dict()):
       direction = direction if direction else conf[self.label]
-      if direction == 'N':
-        d = ('EB','ET')
-      elif direction == 'NW':
-        d = ('WB', 'NW', 'NR')
-      elif direction == 'SE':
-        d = ('SL', 'SE', 'ET')
-      elif direction == 'E':
-        d = ('NL','NR')
-      else:
-        raise NotImplementedError(f'all at sea > {direction} <')
-
-      m           = Meander(self.gnomon)
-      padme       = m.pad()
-      guides      = m.guidelines(padme, d)
-      points, err = m.collectPoints(padme, guides)
-      if err and self.VERBOSE:
+      d         = self.control(direction)
+      m         = Meander(self.gnomon)
+      padme     = m.pad()
+      guides    = m.guidelines(padme, d)
+      points, e = m.collectPoints(padme, guides)
+      if e and self.VERBOSE:
         raise ValueError(err + self.label, direction)
         self.writer.plot(self.gnomon, padme, fn=self.label)
-      elif err:
+      elif e:
         linefill = LineString()
       else:
         linefill = m.makeStripes(points)
       return linefill
+
+    def control(self, direction):
+      control = {
+        'N':  ('EB','ET'),    # experimental, tidy ?
+        'E':  ('NL','NR'),
+        'NW': ('WB', 'NW', 'NR'),
+        'SE': ('SL', 'SE', 'ET')
+      }
+      if direction in control:
+        return control[direction]
+      else:
+        raise KeyError(f'all at sea > {direction} <')
 
   class SquareRing:
     ''' Shapely Polygon with a hole innit
@@ -263,7 +239,7 @@ class Geomink:
       self.irregular = irregular
       self.label     = label
  
-    def fill(self):
+    def fill(self, conf=None):
       ''' an empty LineString will leave a hole
       '''
       return LineString()
@@ -323,3 +299,6 @@ class Plotter:
 the
 end
 '''
+
+
+

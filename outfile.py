@@ -481,10 +481,12 @@ TOTAL {len(f.done)}""")
     '''
     blocks   = self.blockify()
     self.doc = dict()     # reset for regrouping by fill
-    for block in blocks:  # layout blocks across the grid
+    for block in blocks[:1]:  # layout blocks across the grid
       todo = self.makeGeominks(block)
       f = Flatten()
       f.run(todo)
+      print(len(f.done))
+      print(f.labels.keys())
       self.regroupColors(f.done, meander_conf=meander_conf)
     ''' now that Flatten.done contains two-d cells sort them for SVG layers
         and create SVG elements
@@ -543,7 +545,7 @@ TOTAL {len(f.done)}""")
     return list(reversed(geominks))  # top cells are done first
 
   def regroupColors(self, done, meander_conf):
-    # print('>'*100)
+    print('>'*100)
     for d in done:
       xy = d.meander.fill(conf=meander_conf)
       if xy.is_empty: # meander could not fill d
