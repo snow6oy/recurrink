@@ -255,6 +255,19 @@ class Geomink:
         linefill = m1.joinStripes(p1, p2)
       return linefill
 
+  class Irregular:
+    ''' Ideally Flatten would only produce Regular shapes
+        but it does not and then Meander fails badly 
+    '''
+    def __init__(self, irregular, label):
+      self.irregular = irregular
+      self.label     = label
+ 
+    def fill(self):
+      ''' an empty LineString will leave a hole
+      '''
+      return LineString()
+
   def __init__(self, xywh=tuple(), polygon=None, pencolor='000', label=None):
     ''' a tuple with min and max coord will become a rectangle
         more complex shapes should be pre-generated and sent as a Geometry
@@ -271,6 +284,8 @@ class Geomink:
         self.meander = self.Parabola(polygon, label)
       elif list(label)[0] == 'S': # sqring
        self.meander = self.SquareRing(polygon, label)
+      elif list(label)[0] == 'I': # irregular
+       self.meander = self.Irregular(polygon, label)
       else:
         raise ValueError(f'{label} unknown shape')
       self.shape  = Polygon(polygon)

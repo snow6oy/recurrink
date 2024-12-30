@@ -112,7 +112,7 @@ class Test(unittest.TestCase):
     '''
     add    = 1
     merge  = 2
-    crop   = 4
+    crop   = 8
     ignore = 1
     punch  = 0
 

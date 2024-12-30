@@ -1,5 +1,6 @@
 import unittest
 import pprint
+from shapely.geometry import Polygon
 from flatten import Flatten
 from shapes import Geomink, Plotter
 pp = pprint.PrettyPrinter(indent=2)
@@ -134,7 +135,32 @@ class Test(unittest.TestCase):
     self.assertEqual((15,15), list(xy.coords)[0])
     self.assertEqual((12,2), list(xy.coords)[-1])
 
+  def test_9(self):
+    ''' can shapeTeller tell if I am a parabola that can be meandered
+    '''
+    p = Polygon([(0,0), (0,9), (9,9), (9,0), (6,0), (6,3), (3,3), (3,0)])
+    self.assertTrue(self.f.shapeTeller(p, 'parabola'))
+
+  def test_10(self):
+    ''' same test as above but with identify
+    '''
+    p = Polygon([(0,0), (0,9), (9,9), (9,0), (6,0), (6,3), (3,3), (3,0)])
+    self.assertEqual('P1', self.f.identify(p))
+
+  def test_11(self):
+    ''' only divisible by three parabolas are irregular 
+    '''
+    p = Polygon([(0,0), (0,8), (8,8), (9,0), (6,0), (6,2), (2,2), (2,0)])
+    self.assertFalse(self.f.shapeTeller(p, 'parabola'))
+
+  def test_12(self):
+    ''' only divisible by three parabolas are irregular 
+    '''
+    p = Polygon([(0,0), (0,8), (8,8), (9,0), (6,0), (6,2), (2,2), (2,0)])
+    self.assertEqual('I1', self.f.identify(p))
+
 '''
 the
 end
 '''
+

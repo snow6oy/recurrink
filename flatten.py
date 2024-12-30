@@ -21,7 +21,6 @@ class Flatten():
     self.labels  = dict()  # e.g. R:6 has label R06 as the sixth rectangle of the block
 
   def run(self, todo):
-    #print(len(todo)) 66
     for seeker in todo:
       covering, shape = self.evalSeeker(seeker)
       if covering == 5: self.multiMerge(seeker, shape)
@@ -104,20 +103,20 @@ class Flatten():
     diff = seeker.shape.difference(shape) # the part of shape that differs from seeker
     if diff.geom_type == 'MultiPolygon':
       for p in diff.geoms:
-        shape = shape.union(p)        # merge the remaining part(s) into the stencil
         gmk   = Geomink(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
         self.done.append(gmk)
+        shape = shape.union(p)        # merge the remaining part(s) into the stencil
         self.stats[2] += 1
+        if self.VERBOSE: print(f"{gmk.label} cropped")
     elif diff.geom_type == 'Polygon':
       gmk   = Geomink(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))
       self.done.append(gmk)
-      self.stats[2] += 1
       shape = shape.union(diff)
+      self.stats[2] += 1
+      if self.VERBOSE: print(f"{gmk.label} cropped")
     else:
       raise ValueError(f"{diff.geom_type=} was not expected")
     self.mpAppend(shape)
-    if self.VERBOSE: print(f"{gmk.label} cropped")
-
 
   def merge(self, seeker, shape):
     stretch = shape.union(seeker.shape)
@@ -154,23 +153,26 @@ class Flatten():
     elif new_polygon.geom_type == 'MultiPolygon':
       [mp.append(p) for p in new_polygon.geoms]
     else:
-      raise ValueError(f"{new_polygon} what are you?")
+      raise TypeError(f"{new_polygon} what are you?")
     self.stencil = MultiPolygon(mp)
 
   def identify(self, shape):
+    ''' attempt to identify a shape that Meander.fill can handle 
+        default to Irregular if none 
+    '''
     if shape.geom_type == 'MultiPolygon':
-      raise ValueError(f'cannot identify {shape.geom_type}')
+      raise TypeError(f'cannot identify {shape.geom_type}')
 
     if self.shapeTeller(shape, 'rectangle'):
-      label   = 'R'
+      label = 'R'
     elif self.shapeTeller(shape, 'gnomon'):
-      label   = 'G'
+      label = 'G'
     elif self.shapeTeller(shape, 'parabola'):
-      label   = 'P'
+      label = 'P'
     elif self.shapeTeller(shape, 'sqring'):
       label   = 'S'
-    else:
-      raise ValueError(f'unidentified {shape.geom_type}')
+    else:  # raise TypeError(f'unidentified {shape.geom_type}')
+      label = 'I'   
     return self.stickLabel(label)
 
   def stickLabel(self, label):
@@ -206,16 +208,21 @@ class Flatten():
       return True
     elif assertion == 'gnomon' and count in [7, 8]:
       return True
-    elif assertion == 'parabola' and count in [9, 11, 12, 13]: 
-      return True
-    elif count == 10 and assertion == 'sqring':
+    elif assertion == 'parabola' and count == 9: #in [9, 11, 12, 13]: 
+      surround = shape.bounds
+      width    = surround[2] - surround[0]
+      height   = surround[3] - surround[1]
+      if width == height:
+        if not width % 3:
+          return True
+    elif assertion == 'sqring' and count == 10:
       return True
     else:
       if self.VERBOSE: 
-        print(f'{assertion} has {count} coords')
-        print(f"""
+        print(f'not a {assertion} with {count} coords')
+        """
 {outer=}
-{inner=}""")
+{inner=}"""
     return False
 
 if __name__ == '__main__':
