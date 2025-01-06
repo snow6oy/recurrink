@@ -144,3 +144,10 @@ class TmpFile():
       return conf[model]
     else:
       raise ValueError(f'unexpected yaml {model}')
+
+  def modelConf(self, model, index=None):
+    with open(f'conf/{model}.yaml', 'r') as yf:
+      conf = yaml.safe_load(yf)
+    if index and index in conf:
+      return conf[index]
+    return conf
