@@ -11,11 +11,12 @@ class Geomink:
   class Rectangle:
     VERBOSE = False
 
-    def __init__(self, rectangl, label=None):
-      self.rectangl         = rectangl
-      if label: self.label  = label
+    def __init__(self, rectangl): #, label=None):
+      self.rectangl = rectangl
+      #self.label    = label
 
-    def fill(self, direction=None, conf=dict()):
+    def fill(self, direction=None, conf=dict(), label=None):
+      self.label = label
       direction = direction if direction else conf[self.label]
       d         = self.control(direction)
       m         = Meander(self.rectangl)
@@ -53,7 +54,8 @@ class Geomink:
       self.label    = label
       self.writer   = Plotter()
 
-    def fill(self, direction=None, conf=dict()):
+    def fill(self, direction=None, conf=dict(), label=None):
+      self.label = label
       direction  = direction if direction else conf[self.label]
       X, Y, W, H = self.parabola.bounds
       width      = W - X
@@ -86,7 +88,7 @@ class Geomink:
       else:
         print(f"{self.label} is not a good polygon")
         if self.VERBOSE: self.writer.plot(surround, self.parabola, fn=self.label)
-        return LineString()
+        return self.parabola.boundary
   
       gcontrol = self.control('G', direction, clockwise)
       rcontrol = self.control('R', direction, clockwise)
@@ -162,7 +164,8 @@ class Geomink:
       if label: self.label  = label
       self.writer   = Plotter()
 
-    def fill(self, direction=None, conf=dict()):
+    def fill(self, direction=None, conf=dict(), label=None):
+      self.label = label
       direction = direction if direction else conf[self.label]
       d         = self.control(direction)
       m         = Meander(self.gnomon)
@@ -193,15 +196,16 @@ class Geomink:
   class SquareRing:
     ''' Shapely Polygon with a hole innit
     '''
-    VERBOSE = False
+    VERBOSE = True
 
     def __init__(self, sqring, label):
       self.sqring = sqring
       self.label  = label
 
-    def fill(self, conf=dict()):
+    def fill(self, conf=dict(), label=None):
       ''' square ring is not currently accepting config
-      '''
+      ''' 
+      self.label = label
       X, Y, W, H = self.sqring.bounds
       surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
       done       = surround.difference(self.sqring)
@@ -219,14 +223,22 @@ class Geomink:
         if self.VERBOSE: self.writer.plot(surround, self.parabola, fn=self.label)
         return LineString()
 
-      nw_mls     = m1.guidelines(nwp, ('WB', 'NW', 'NR'))
-      se_mls     = m2.guidelines(sep, ('SL', 'SE', 'ET'))
-      p1, err    = m1.collectPoints(nwp, nw_mls)
-      p2, err    = m2.collectPoints(sep, se_mls)
-      if err and self.VERBOSE:
-        raise ValueError(err + self.label)
-      elif err:
-        linefill = LineString()
+      nw_mls = m1.guidelines(nwp, ('WB', 'NW', 'NR'))
+      se_mls = m2.guidelines(sep, ('SL', 'SE', 'ET'))
+      p1, e1 = m1.collectPoints(nwp, nw_mls)
+      p2, e2 = m2.collectPoints(sep, se_mls)
+      if e1 or e2:  # silently fail
+        combined = list(nwp.exterior.coords) + list(sep.exterior.coords)
+        linefill = LinearRing(combined)
+        '''
+        inner  = list(self.sqring.interiors)
+        coords = outer
+        [inner_p.append(list(lring.coords)) for lring in inner]
+        '''
+        if e1 and self.VERBOSE:
+          print(f"{self.label} {e1}")
+        elif e2 and self.VERBOSE:
+          print(f"{self.label} {e2}")
       else:
         linefill = m1.joinStripes(p1, p2)
       return linefill
@@ -239,7 +251,7 @@ class Geomink:
       self.irregular = irregular
       self.label     = label
  
-    def fill(self, conf=None):
+    def fill(self, conf=None, label=None):
       ''' an empty LineString will leave a hole
       '''
       return LineString()
@@ -253,7 +265,7 @@ class Geomink:
     # label is mandatory when Geomink is made from polygon
     if polygon and label: # type: shapely.geometry.polygon.Polygon
       if list(label)[0] == 'R':  # rectangle
-        self.meander = self.Rectangle(polygon, label)
+        self.meander = self.Rectangle(polygon)
       elif list(label)[0] == 'G': # gnomon
         self.meander = self.Gnomon(polygon, label)
       elif list(label)[0] == 'P': # parabola
@@ -295,10 +307,30 @@ class Plotter:
     ax.plot(x, y)
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
+  def multiPlot(self, mpn, fn):
+    ''' multi polygon
+      print(f"{g.geom_type=}")
+      print(f"{list(g.exterior.coords)=}")
+      print(f"{list(g.interiors)=}")
+    '''
+    colours = list('bgrcmyk')
+    cindex  = 0
+    for g in mpn.geoms:
+      if len(list(g.interiors)):
+        print(f"skipping {g.bounds}")
+      else:
+        x, y = g.boundary.xy
+      format_str = str(f"{colours[cindex]}--")
+      plt.plot(x, y, format_str)
+      cindex += 1
+    #plt.axis([0, 90, 0, 30])
+    plt.savefig(f'tmp/{fn}.svg', format="svg")
+    '''
+    line.append([x, y, 'a']) #str(colours[cindex]])
+    line = []
+      x, y = geom.boundary.xy
+    '''
 '''
 the
 end
 '''
-
-
-
