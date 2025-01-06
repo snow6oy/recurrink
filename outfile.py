@@ -542,7 +542,6 @@ TOTAL {len(f.done)}""")
     geominks = list()
 
     if len(cells):
-      # print(row[:4], row[-1])
       todo = [Geomink(c[:4], pencolor=c[-1]) for c in cells]
     elif len(block):
       for cell in block:
@@ -558,42 +557,6 @@ TOTAL {len(f.done)}""")
         print(f"  - [{x}, {y}, {(x+w)}, {(y+h)}, '{fill}']")
         geominks.append(gmk)
       todo = list(reversed(geominks))  # top cells are done first
-    return todo
-
-  def _makeGeominks(self, block):
-    '''
-      [(60, 0, 75, 15),  'FFF'],
-      [(75, 0, 90, 15),  'FFF'],
-      [(60, 15, 75, 30), 'FFF'],
-      [(75, 15, 90, 30), 'FFF'],
-      [(0, 0, 15, 15),   'FFF'],
-      [(15, 0, 30, 15),  'FFF'],
-      [(0, 15, 15, 30),  'FFF'],
-      [(15, 15, 30, 30), 'FFF'],
-      [(30, 0, 45, 15),  'FFF']
-    '''
-    data = [
-      [(8, 8, 13, 13),   'FFA500'],
-      [(0, 0, 15, 15),   '4B0082'],
-      [(8, 24, 13, 29),  'FFA500'],
-      [(0, 15, 15, 30),  '4B0082'],
-      [(24, 10, 29, 15), '4B0082'],
-      [(15, 0, 30, 15),  'FFA500'],
-      [(24, 24, 29, 29), '4B0082'],
-      [(15, 15, 30, 30), 'FFA500'],
-      [(30, 5, 45, 10),  '4B0082'],
-      [(30, 20, 45, 25), 'FFA500'],
-      [(45, 5, 60, 10),  'FFA500'],
-      [(45, 0, 60, 15),  'FFF'],
-      [(45, 20, 60, 25), '4B0082'],
-      [(45, 15, 60, 30), 'FFF'],
-      [(60, 15, 75, 30), 'FFA500'],
-      [(60, 0, 75, 15),  'FFA500'],
-      [(75, 0, 90, 15),  'FFA500'],
-      [(75, 15, 90, 30), 'FFA500'],
-      [(30, 15, 45, 30), 'FFF']
-    ]
-    todo = [Geomink(i[0], pencolor=i[1]) for i in data]
     return todo
 
   def regroupColors(self, done, meander_conf):
