@@ -120,7 +120,7 @@ def update(model, scale, mm=False):
   svg.write(svgfile)
   return f"{svgfile} {s}"
 
-def flatten(scale, wireframe=False):
+def flatten(scale, wireframe=False, conf=True):
   ''' once cloned use flatten to make an SVG for plotting
       testing '7e731bfc1863c186616d2b3de09a9b6b' 
   '''
@@ -132,12 +132,20 @@ def flatten(scale, wireframe=False):
   cells = tf.read(model, output=dict())
   #pp.pprint(cells)
   svg.gridwalk(blocksize, positions, cells)
-  if wireframe:
+  if wireframe and conf:
+    svgfile = f'tmp/{model}_wf.svg'
+    cells   = tf.modelConf(model, 'cells')
+    svg.wireframe(cells=cells)
+  elif wireframe:
     svgfile = f'tmp/{model}_wf.svg'
     svg.wireframe()
+  elif conf:
+    svgfile = f'tmp/{model}_mm.svg'
+    conf    = tf.modelConf(model)
+    svg.make(meander_conf=conf['meander'], cell_conf=conf['cells'])
   else:
     svgfile = f'tmp/{model}_mm.svg'
-    mc      = tf.meanderConf(model)
+    mc      = tf.modelConf(model, 'meander')
     svg.make(meander_conf=mc)
   svg.write(svgfile)
   return f"{svgfile} {s}"
