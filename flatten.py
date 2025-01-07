@@ -133,7 +133,6 @@ class Flatten():
   def merge(self, seeker, shape):
     ''' only add seeker once when there are multiple touching events 
         otherwise the seeker will be added to done for each event
-    if False:
     '''
     gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label='R')
     if self.addSeeker(gmk):
@@ -245,70 +244,6 @@ class Flatten():
     else:
       pass # if self.VERBOSE: print(f'{assertion} with {count} coords was not found')
     return False
-
-  def ZZevalSeeker(self, seeker):
-    ''' seeker evaluation can have 4 outcomes
-      4. stencil is completely within seeker
-      3. stencil completely covers seeker THEN ignore the seeker and report a miss
-         OR stencil almost covers seeker, but one or more borders are aligned THEN as above
-      2. stencil overlaps (partially covers) seeker THEN
-          a. crop seeker and throw away the covered part
-          b. extend the stencil to include the remainder
-          c. add the remaining part to the done list
-      1. stencil touches the seeker but does not cover THEN
-          a. extend the stencil shape that touched to include the seeker
-          b. add the seeker to the done list
-      0. stencil neither covers nor touches the seeker THEN
-          a. add new shape to the stencil
-          b. add the seeker to the done list
-    '''
-    covering = 0
-    touching = []
-    for shape in self.stencil.geoms:
-      if shape.within(seeker.shape):
-        covering = 4
-        touching.append(shape)
-      elif shape.covers(seeker.shape):
-        covering = 3
-      elif shape.overlaps(seeker.shape):
-        covering = 2
-        touching.append(shape)
-        # remove shape from stencil by copying all the others
-        self.stencil = MultiPolygon([g for g in self.stencil.geoms if not g.equals(shape)])
-      elif shape.touches(seeker.shape):
-        covering = 1
-        touching.append(shape)
-        self.stencil = MultiPolygon([g for g in self.stencil.geoms if not g.equals(shape)])
-
-    if len(touching) > 1: # with multiple touches all shapes must be added to stencil
-      #covering = 5
-      #shape = touching
-      shape = touching[-1]
-    elif len(touching) == 1:
-      shape = touching[0] # first touch
-    else:
-      shape = None
-    return covering, shape
-
-  def ZZrun(self, todo):
-    ''' run once for each block
-    '''
-    for seeker in todo[:5]:
-      covering, shape = self.evalSeeker(seeker)
-      if covering == 5: self.multiMerge(seeker, shape)
-      elif covering == 4: self.punch(seeker, shape)
-      elif covering == 3:
-        self.stats[3] += 1
-        if self.VERBOSE: print(f"seeker ignored")
-      elif covering == 2: self.crop(seeker, shape)
-      elif covering == 1: self.merge(seeker, shape)
-      elif covering == 0: self.add(seeker)
-      else: raise NotImplementedError(covering)
-    #print('.', end='', flush=True)
-    self.writer.plot(self.stencil.geoms[0], todo[4].shape, fn='koto_done')
-    print(f"{len(self.stencil.geoms)=}")
-    if len(self.stencil.geoms) > 1:
-      self.writer.plot(self.stencil.geoms[0], self.stencil.geoms[1], fn='koto_stencil')
 
 if __name__ == '__main__':
   ''' e2e test to flatten minkscape
