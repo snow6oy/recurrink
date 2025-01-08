@@ -1,4 +1,4 @@
-from shapely import box, LinearRing, LineString, MultiLineString, Polygon, set_precision
+from shapely import box, LinearRing, LineString, MultiLineString, Polygon, Point, set_precision, transform
 import matplotlib.pyplot as plt
 
 def make_boxen(x, y, w, h):
@@ -42,7 +42,7 @@ b2 = LineString([(2, 2), (7, 2)])
 p1 = Polygon([(8.0, 2.0), (8.0, 1.0), (7.0, 1.0), (2.0, 1.0), (2.0, 2.0), (7.0, 2.0), (8.0, 2.0)])
 p2 = Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (7.0, 2.0), (7.0, 1.0), (2.0, 1.0), (1.0, 1.0)])
 
-case = 2
+case = 12
 
 if case == 1:
   ''' using overlap predicate with Polygons can detect difference 
@@ -155,6 +155,19 @@ elif case == 11:
   bx, by = b.boundary.xy
   plt.plot(px, py, 'blue', bx, by, 'r--')
   plt.show()
+elif case == 12:
+  '''
+  tx = transform(Point(0, 0), lambda x: x + 1)
+  tx = sq.boundary.transform(lambda x: x + 1)
+  print(tx)
+  '''
+  sq = Polygon([(1, 1), (1, 2), (2, 2), (2, 1), (1, 1)])
+  print(sq.boundary)
+  ls = LineString([(2, 2), (4, 4)])
+  l2 = transform(ls, lambda x: x * [2, 3])
+  print(ls, l2)
+
+
 
 
 
