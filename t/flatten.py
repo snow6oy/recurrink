@@ -243,6 +243,15 @@ class Test(unittest.TestCase):
     self.assertTrue(control)       # expect 1
     self.assertEqual(len(ev), 1)   # two remaining
 
+  def test_21(self):
+    ''' add seeker can tell when add succeeded
+    '''
+    self.todo[0].label = 'R'  # normally done by Flatten.identify()
+    ok = self.f.addSeeker(self.todo[0])
+    self.assertTrue(ok)
+    not_ok = self.f.addSeeker(self.todo[0])
+    self.assertFalse(not_ok)
+
 '''
 the
 end
