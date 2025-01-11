@@ -7,14 +7,14 @@ import random
 import argparse
 import pprint
 from views import Views, Models
-from outfile import Svg, LinearSvg
+from outfile import Svg, LinearSvg, Grid
 from tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()
 friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar']
-WORKDIR = '/home/gavin/Dropbox/familia/rinks'
-PUBDIR = '/home/gavin/Pictures/pubq'
+WORKDIR       = '/home/gavin/Dropbox/familia/rinks'
+PUBDIR        = '/home/gavin/Pictures/pubq'
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def inputs():
   ''' get inputs from command line
@@ -44,6 +44,9 @@ def inputs():
   parser_f.add_argument("-s", "--scale", help='scale to plot clone .6 1 2', required=False)
   parser_f.add_argument(
     "-w", "--wireframe", help="flatten as wireframe", action=argparse.BooleanOptionalAction
+  )
+  parser_f.add_argument(
+    "-y", "--yaml", help='init conf/MODEL.yaml', action=argparse.BooleanOptionalAction
   )
   parser_p = subparsers.add_parser('release', help='add release date to db')
   parser_p.add_argument("-v", "--view", help='view to mark as released')
@@ -120,7 +123,7 @@ def update(model, scale, mm=False):
   svg.write(svgfile)
   return f"{svgfile} {s}"
 
-def flatten(scale, wireframe=False, conf=True):
+def flatten(scale, yaml=False, wireframe=False):
   ''' once cloned use flatten to make an SVG for plotting
       testing '7e731bfc1863c186616d2b3de09a9b6b' 
   '''
@@ -129,26 +132,27 @@ def flatten(scale, wireframe=False, conf=True):
   blocksize = m.read(model=model)[2] # can get scale too
   positions = m.read_positions(model)
   svg  = LinearSvg(scale=s) # unit is millimetres
-  cells = tf.read(model, output=dict())
-  #pp.pprint(cells)
-  svg.gridwalk(blocksize, positions, cells)
-  if wireframe and conf:
-    svgfile = f'tmp/{model}_wf.svg'
-    cells   = tf.modelConf(model, 'cells')
-    svg.wireframe(cells=cells)
-  elif wireframe:
-    svgfile = f'tmp/{model}_wf.svg'
-    svg.wireframe()
-  elif conf:
-    svgfile = f'tmp/{model}_mm.svg'
-    conf    = tf.modelConf(model)
-    svg.make(meander_conf=conf['meander'], cell_conf=conf['cells'])
+  if yaml: # print conf
+    cells   = tf.read(model, output=dict())
+    #pp.pprint(cells)
+    svgfile = None
+    svg.gridwalk(blocksize, positions, cells)
+    block1 = svg.buildBlocks(writeconf=True)
+    svg.wireframe(block1, writeconf=True)
   else:
-    svgfile = f'tmp/{model}_mm.svg'
-    mc      = tf.modelConf(model, 'meander')
-    svg.make(meander_conf=mc)
-  svg.write(svgfile)
-  return f"{svgfile} {s}"
+    grid = Grid(scale=s)    # cellsize=3 gridsize=9
+    conf = tf.modelConf(model)
+    todo = grid.walk(blocksize, conf['cells'])
+    if wireframe:
+      block   = todo.pop(0)
+      svgfile = f'tmp/{model}_wf.svg'
+      svg.wireframe(block)  # first block only
+    else:                      # send all the blocks
+      svgfile = f'tmp/{model}_mm.svg'
+      svg.make(todo, meander_conf=conf['meander'])
+    svg.write(svgfile)
+    return f"{svgfile} {s}"
+  return str()
 
 def delete(view):
   ''' both svg and view must exist for the delete to succeed
@@ -176,8 +180,11 @@ def commit(model, scale, author):
   scale = scale if scale else m.get_scale(model)
   celldata = tf.read(model, output=list())
   cellhash = tf.read(model, output=dict()) # read the data again, but as a dictionary
+  '''
   s = Stencil(cellhash)
   lc = len(s.colours())
+  '''
+  lc = -1  # TODO need to redo these
   if os.path.isdir(f"{WORKDIR}/{model}"):
     if v.create(tf.digest, celldata, model=model, author=author, ver=ver, scale=scale,colournum=lc):
       #[c.create(tf.digest, row) for row in celldata]
@@ -217,7 +224,7 @@ if __name__ == '__main__':
   elif (args.keyword == 'release'):
     print(release(args.view))
   elif (args.keyword == 'flatten'):
-    print(flatten(args.scale, wireframe=args.wireframe))
+    print(flatten(args.scale, args.yaml, wireframe=args.wireframe))
   elif (args.keyword == 'clone'):
     print(clone(args.view))
 '''

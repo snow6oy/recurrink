@@ -12,7 +12,7 @@ class Flatten():
   ''' create a stencil as a MultiPolygon and a done list to contain Geomink shapes
       The first seeker will always be added because the stencil starts with a surface area of zero.
   '''
-  VERBOSE = True
+  VERBOSE = False
 
   def __init__(self):
     self.stencil = MultiPolygon([])

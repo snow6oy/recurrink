@@ -1,7 +1,8 @@
 import math
 import pprint
 import matplotlib.pyplot as plt
-from shapely.geometry import LineString, Polygon, LinearRing 
+from shapely.geometry import LineString, Polygon, LinearRing
+from shapely import transform
 from meander import Meander
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -285,6 +286,12 @@ class Geomink:
     else:
       raise ValueError(f"{len(xywh)=} expected 4 or polygon and {label}")
 
+  def tx(self, x, y):
+    ''' use Shapely transform to offset coordinates according to grid position
+    '''
+    boundary    = self.shape.boundary
+    line_string = transform(boundary, lambda a: a + [x, y])
+    self.shape  = Polygon(line_string)
 
 class Plotter:
   ''' wrapper around matplot so we can see whats going on
