@@ -404,6 +404,7 @@ class Svg(Layout):
 
 class Grid(Layout):
   ''' inherit from Layout for governance of inputs
+      same inputs must be shared with LinearSvg() see t.lineartest.Test.test_1 
   '''
   def __init__(self, unit='px', scale=1.0, gridsize=None, cellsize=None):
       super().__init__(unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize)
@@ -434,11 +435,14 @@ class Grid(Layout):
 class LinearSvg(Svg):
   ''' output design to a two dimensional SVG that a plotter can understand
   '''
-  def __init__(self, scale, gridsize=None, cellsize=None):
+  def __init__(self, scale=1.0, gridsize=None, cellsize=None):
+    super().__init__(unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize)
+    '''
     if gridsize and cellsize:
       super().__init__(unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize)
     else:
       super().__init__(unit='mm', scale=scale)
+    '''
     self.labels = list()
 
   def wireframe(self, todo, writeconf=False):
@@ -448,7 +452,8 @@ class LinearSvg(Svg):
     f = Flatten()
     f.run(todo)
     if writeconf: 
-      self.writeMeanderConf(f.done)
+      msg = self.writeMeanderConf(f.done)
+      return msg
     else:
       s = f.stats
       print(f"""
@@ -498,12 +503,13 @@ TOTAL {len(f.done)}""")
   def writeMeanderConf(self, done):
     ''' print to console an initial meander
     '''
-    print('meander:')
+    out = "meander:\n"
     for i in done:
       gmk = done[i]
       tx = gmk.shape.bounds[0]
       ty = gmk.shape.bounds[1]
-      print(f"  {gmk.label}: N # {int(tx):>3},{int(ty):>3}")
+      out += f"  {gmk.label}: N # {int(tx):>3},{int(ty):>3}\n"
+    return out
 
   def make(self, blocks, meander_conf=dict()):
     self.doc = dict()     # reset for regrouping by fill
@@ -511,18 +517,18 @@ TOTAL {len(f.done)}""")
       f = Flatten()
       f.run(block)
       self.regroupColors(f.done, meander_conf=meander_conf)
-      print('.', end='', flush=True)
+      print('_', end='', flush=True)
     self.svgGroup()
     print(f"""
 added {f.stats[0]} merged {f.stats[1]} cropped {f.stats[2]} ignored {f.stats[3]} punched {f.stats[4]}
 TOTAL {len(f.done)}""")
 
-  def buildBlocks(self, writeconf=False):
+  def blockOne(self):
     ''' get a single block of cells from db for conf print
     '''
-    blocks = self.blockify()
-    block1 = [self.makeGeominks(block) for block in blocks[:1]]
-    return block1[0]
+    blocks      = self.blockify()
+    msg, block1 = self.makeGeominks(blocks[0])
+    return msg, block1
  
   def blockify(self):
     ''' pack the cells back into their blocks
@@ -557,8 +563,7 @@ TOTAL {len(f.done)}""")
     ''' convert cells from either blockify or conf into Geomink objects
     '''
     geominks = list()
-    print('cells:')
-
+    out = 'cells:' + "\n"
     if len(block):
       for cell in block:
         fill = cell['style']  # e.g. FFF
@@ -570,10 +575,10 @@ TOTAL {len(f.done)}""")
         ]
         xywh = tuple([x, y, (x + w), (y + h)])
         gmk  = Geomink(xywh=xywh, pencolor=fill)
-        print(f"  - [{x}, {y}, {(x+w)}, {(y+h)}, '{fill}']")
+        out += f"  - [{x}, {y}, {(x+w)}, {(y+h)}, '{fill}']\n"
         geominks.append(gmk)
       todo = list(reversed(geominks))  # top cells are done first
-    return todo
+    return out, todo
 
   def regroupColors(self, done, meander_conf):
     for i in done:

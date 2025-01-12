@@ -27,36 +27,34 @@ class Flatten():
         beware of delicate logic, especially multiple touches!
     '''
     for seeker in todo: 
-      events     = self.evalSeeker(seeker)
+      events = self.evalSeeker(seeker)
       for outcome in events:
-        shape, covering = list(outcome.items())[0]
-        if covering == 5: self.multiMerge(seeker, shape)
-        elif covering == 4: self.punch(seeker, shape)
-        elif covering == 3:
+        shape, control = list(outcome.items())[0]
+        if control == 4: self.punch(seeker, shape)
+        elif control == 3:
           self.stats[3] += 1
           if self.VERBOSE: print(f"seeker ignored {seeker.shape.bounds}")
-        elif covering == 2: 
+        elif control == 2: 
           self.crop(seeker, shape)
           break # avoid touching events
-        elif covering == 1: self.merge(seeker, shape)
-        elif covering == 0: self.add(seeker)
-        else: raise NotImplementedError(covering)
+        elif control == 1: self.merge(seeker, shape)
+        elif control == 0: self.add(seeker)
+        else: raise NotImplementedError(control)
 
   def evalSeeker(self, seeker):
-    ''' seeker evaluation can have 4 outcomes
-      4. stencil is completely within seeker
-      3. stencil completely covers seeker THEN ignore the seeker and report a miss
-         OR stencil almost covers seeker, but one or more borders are aligned THEN as above
-      2. stencil overlaps (partially covers) seeker THEN
-          a. crop seeker and throw away the covered part
-          b. extend the stencil to include the remainder
-          c. add the remaining part to the done list
-      1. stencil touches the seeker but does not cover THEN
-          a. extend the stencil shape that touched to include the seeker
-          b. add the seeker to the done list
-      0. stencil neither covers nor touches the seeker THEN
-          a. add new shape to the stencil
-          b. add the seeker to the done list
+    ''' seeker evaluation can have 5 outcomes
+
+        | control  | transform | touches |
+        +----------+-----------+---------+
+        | 0 add    | -         | 0       |
+        | 1 merge  | -         | 0..n    |
+        | 2 crop   | yes       | 1..n    |
+        | 3 ignore | -         | 1       |
+        | 4 punch  | yes       | 1..n    |
+    
+        control is an int defining flow
+        target  is the geom in the stencil to be used in transforming the seeker
+        touches describes the impact of touching shapes stencil updates
     '''
     events = []
     for shape in self.stencil.geoms:
@@ -150,6 +148,11 @@ class Flatten():
     self.addSeeker(gmk)
     self.stats[0] += 1
     if self.VERBOSE: print(f"{gmk.label} added")
+
+  def get(self, label):
+    gmk = [d for d in self.done.values() if label == d.label]
+    if len(gmk) == 1:
+      return gmk[0]
 
   def mpList(self, strange):
     ''' some Geometry operations return scalars others collections
@@ -258,7 +261,7 @@ if __name__ == '__main__':
     [(4, 0, 5, 3), '000'],
     [(7, 1, 8, 2), '000'],
     [(1, 1, 2, 2), '000'],
-    [(2, 1, 6, 2), 'FFF']   # original value 2,1,5,1 tweaked for use-case covering:0
+    [(2, 1, 6, 2), 'FFF']   # original value 2,1,5,1 tweaked for use-case control:0
   ]
   todo = [Geomink(i[0], pencolor=i[1]) for i in reversed(data)]
   f.run(todo)

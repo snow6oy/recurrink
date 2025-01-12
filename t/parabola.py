@@ -24,8 +24,7 @@ class Test(unittest.TestCase):
     done   = Geomink(xywh=(8,8,12,16))
     seeker = Geomink(xywh=(4,4,16,16))
     self.f.crop(seeker, done.shape)
-    parabola = self.f.done[0]
-    gmk = Geomink(polygon=parabola.shape, label='P1')
+    gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='S')
     self.writer.plotLine(xy, fn='parabola_1')
     self.assertEqual(expect, list(xy.coords))
@@ -40,8 +39,7 @@ class Test(unittest.TestCase):
     done   = Geomink(xywh=(6,6,11,16))
     seeker = Geomink(xywh=(1,1,16,16))
     self.f.crop(seeker, done.shape)
-    parabola = self.f.done[0]
-    gmk = Geomink(polygon=parabola.shape, label='P1')
+    gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='S')
     self.writer.plotLine(xy, fn='parabola_2')
     self.assertEqual(expect, list(xy.coords))
@@ -57,8 +55,7 @@ class Test(unittest.TestCase):
     done   = Geomink(xywh=(0,6,12,12))
     seeker = Geomink(xywh=(0,0,18,18))
     self.f.crop(seeker, done.shape)
-    parabola = self.f.done[0]
-    gmk = Geomink(polygon=parabola.shape, label='P1')
+    gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='E')
     self.writer.plotLine(xy, fn='parabola_3')
     self.assertEqual(expect, list(xy.coords))
@@ -69,8 +66,7 @@ class Test(unittest.TestCase):
     done   = Geomink(xywh=(1,6,11,11))
     seeker = Geomink(xywh=(1,1,16,16))
     self.f.crop(seeker, done.shape)
-    parabola = self.f.done[0]
-    gmk = Geomink(polygon=parabola.shape, label='P1')
+    gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='E')
     self.writer.plotLine(xy, fn='parabola_4')
     self.assertEqual((15,2), list(xy.coords)[0])
@@ -82,8 +78,7 @@ class Test(unittest.TestCase):
     done   = Geomink(xywh=(7,7,19,13))
     seeker = Geomink(xywh=(1,1,19,19))
     self.f.crop(seeker, done.shape)
-    parabola = self.f.done[0]
-    gmk = Geomink(polygon=parabola.shape, label='P1')
+    gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='W')
     self.writer.plotLine(xy, fn='parabola_5')
     self.assertEqual(list(xy.coords)[0],  (18,18))
@@ -100,8 +95,7 @@ class Test(unittest.TestCase):
     done   = Geomink(xywh=(5,5,15,10))
     seeker = Geomink(xywh=(0,0,15,15))
     self.f.crop(seeker, done.shape)
-    parabola = self.f.done[0]
-    gmk = Geomink(polygon=parabola.shape, label='P1')
+    gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='W')
     self.writer.plotLine(xy, fn='parabola_6')
     self.assertEqual(expect, list(xy.coords))
@@ -116,8 +110,7 @@ class Test(unittest.TestCase):
     done   = Geomink(xywh=(8,4,12,12))
     seeker = Geomink(xywh=(4,4,16,16))
     self.f.crop(seeker, done.shape)
-    parabola = self.f.done[0]
-    gmk = Geomink(polygon=parabola.shape, label='P1')
+    gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='N')
     self.writer.plotLine(xy, fn='parabola_7')
     self.assertEqual(expect, list(xy.coords))
@@ -128,8 +121,7 @@ class Test(unittest.TestCase):
     done   = Geomink(xywh=(6,1,11,11))
     seeker = Geomink(xywh=(1,1,16,16))
     self.f.crop(seeker, done.shape)
-    parabola = self.f.done[0]
-    gmk = Geomink(polygon=parabola.shape, label='P1')
+    gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='N')
     self.writer.plotLine(xy, fn='parabola_8')
     self.assertEqual((15,15), list(xy.coords)[0])
@@ -145,7 +137,7 @@ class Test(unittest.TestCase):
     ''' same test as above but with identify
     '''
     p = Polygon([(0,0), (0,9), (9,9), (9,0), (6,0), (6,3), (3,3), (3,0)])
-    self.assertEqual('P1', self.f.identify(p))
+    self.assertEqual('P', self.f.identify(p))
 
   def test_11(self):
     ''' only divisible by three parabolas are irregular 
@@ -157,10 +149,9 @@ class Test(unittest.TestCase):
     ''' only divisible by three parabolas are irregular 
     '''
     p = Polygon([(0,0), (0,8), (8,8), (9,0), (6,0), (6,2), (2,2), (2,0)])
-    self.assertEqual('I1', self.f.identify(p))
+    self.assertEqual('I', self.f.identify(p))
 
 '''
 the
 end
 '''
-
