@@ -127,6 +127,7 @@ def flatten(scale, yaml=False, wireframe=False):
   ''' once cloned use flatten to make an SVG for plotting
       testing '7e731bfc1863c186616d2b3de09a9b6b' 
   '''
+  msg      = str()
   model, _ = tf.conf()  # ignore palette
   s = float(scale) if scale else 1.0
   blocksize = m.read(model=model)[2] # can get scale too
@@ -137,8 +138,8 @@ def flatten(scale, yaml=False, wireframe=False):
     #pp.pprint(cells)
     svgfile = None
     svg.gridwalk(blocksize, positions, cells)
-    block1 = svg.buildBlocks(writeconf=True)
-    svg.wireframe(block1, writeconf=True)
+    msg, block1 = svg.blockOne()
+    msg += svg.wireframe(block1, writeconf=True)
   else:
     grid = Grid(scale=s)    # cellsize=3 gridsize=9
     conf = tf.modelConf(model)
@@ -152,7 +153,7 @@ def flatten(scale, yaml=False, wireframe=False):
       svg.make(todo, meander_conf=conf['meander'])
     svg.write(svgfile)
     return f"{svgfile} {s}"
-  return str()
+  return msg
 
 def delete(view):
   ''' both svg and view must exist for the delete to succeed
