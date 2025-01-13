@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import pprint
 import argparse
-from cell import Palette
+from cells import Palette
 from palette import PaletteMaker
 from tmpfile import TmpFile
 from views import Views

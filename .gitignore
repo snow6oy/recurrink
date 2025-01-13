@@ -5,6 +5,7 @@ tmp
 conf
 rinks/*
 pubq/*
+scripts/*
 sql/models/*
 sql/palette/*
 *.swp
@@ -12,7 +13,8 @@ sql/palette/*
 Archive
 __pycache__/*
 t/__pycache__/*
-scripts/*
 t/__init__.py
 recurrink.py
 v/*
+cell/__init__.py
+cell/__pycache__/*

@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import math
 import pprint
 from tmpfile import TmpFile
-from cell import Palette, Strokes
+#from cell import Palette, Strokes
 from colorsys import rgb_to_hsv, hsv_to_rgb
 pp = pprint.PrettyPrinter(indent = 2)
 

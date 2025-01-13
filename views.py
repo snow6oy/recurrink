@@ -1,7 +1,7 @@
 import random
 import psycopg2
 from db import Db
-from cell import Cell
+from cells import Cell
 
 class Views(Db):
   ''' a View is a collection of Cells
