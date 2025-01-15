@@ -138,8 +138,9 @@ def flatten(scale, yaml=False, wireframe=False):
     #pp.pprint(cells)
     svgfile = None
     svg.gridwalk(blocksize, positions, cells)
-    msg, block1 = svg.blockOne()
-    msg += svg.wireframe(block1, writeconf=True)
+    cell_conf, block1 = svg.blockOne()
+    meander_conf      = svg.wireframe(block1, writeconf=True)
+    msg = cell_conf + meander_conf
   else:
     grid = Grid(scale=s)    # cellsize=3 gridsize=9
     conf = tf.modelConf(model)

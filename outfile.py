@@ -3,6 +3,7 @@ import pprint
 import xml.etree.ElementTree as ET
 from shapes import Geomink # Rectangle #, Flatten
 from flatten import Flatten
+from shapely import box
 pp = pprint.PrettyPrinter(indent = 2)
 
 class Points:
@@ -425,7 +426,7 @@ class Grid(Layout):
         block = list()
         for cell in block1:
           a      = cell.shape, cell.pencolor
-          clone  = Geomink(polygon=a[0], pencolor=a[1], label='R') # fake label
+          clone  = Geomink(polygon=a[0], pencolor=a[1], label='R') # initial label
           clone.tx(x, y)
           block.append(clone)
           cb     = clone.shape.bounds
@@ -525,9 +526,13 @@ TOTAL {len(f.done)}""")
 
   def blockOne(self):
     ''' get a single block of cells from db for conf print
+print(len(cells))
+sortw = sortWithin(cells)
+print(len(sortw))
     '''
-    blocks      = self.blockify()
-    msg, block1 = self.makeGeominks(blocks[0])
+    blocks        = self.blockify()
+    cells, block1 = self.makeGeominks(blocks[0])
+    msg           = self.formatYaml(cells)
     return msg, block1
  
   def blockify(self):
@@ -553,7 +558,7 @@ TOTAL {len(f.done)}""")
           for shape in d['shapes']:
             X, Y = shape['x'], shape['y']
             if X >= min_x and X < max_x and Y >= min_y and Y < max_y:
-              #print(tuple([X, Y]))
+              #print(tuple([X, Y])) print(shape['name'])
               shape['style'] = self.trimStyle(d['style']) # trim style from parent
               shapes.append(shape)
         blocks.append(shapes)
@@ -562,8 +567,8 @@ TOTAL {len(f.done)}""")
   def makeGeominks(self, block=list()):
     ''' convert cells from either blockify or conf into Geomink objects
     '''
-    geominks = list()
-    out = 'cells:' + "\n"
+    geominks = list() # geometry object
+    cells    = list() # list of dimensions
     if len(block):
       for cell in block:
         fill = cell['style']  # e.g. FFF
@@ -575,10 +580,19 @@ TOTAL {len(f.done)}""")
         ]
         xywh = tuple([x, y, (x + w), (y + h)])
         gmk  = Geomink(xywh=xywh, pencolor=fill)
-        out += f"  - [{x}, {y}, {(x+w)}, {(y+h)}, '{fill}']\n"
+        cells.append([x, y, (x+w), (y+h), fill])
         geominks.append(gmk)
-      todo = list(reversed(geominks))  # top cells are done first
-    return out, todo
+      #todo = list(reversed(geominks))  # top cells are done first
+    return cells, geominks
+
+  def formatYaml(self, cells):
+    ''' after sorting within write yaml as input to Flatten()
+    '''
+    out = 'cells:' + "\n"
+    for c in cells:
+      x, y, w, h, fill = c
+      out += f"  - [{x}, {y}, {w}, {h}, '{fill}']\n"
+    return out
 
   def regroupColors(self, done, meander_conf):
     for i in done:
