@@ -1,6 +1,6 @@
 import unittest
 import pprint
-from shapes import Geomink, Plotter
+from cell.geomink import Geomink, Plotter
 from flatten import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
