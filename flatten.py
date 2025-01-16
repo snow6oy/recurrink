@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, MultiPolygon, LinearRing
-from shapes import Geomink, Plotter
+from cell.geomink import Geomink, Plotter
 
 # TODO
 '''

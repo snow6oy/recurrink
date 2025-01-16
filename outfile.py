@@ -2,7 +2,7 @@
 #from shapely import box
 import pprint
 import xml.etree.ElementTree as ET
-from shapes import Geomink # Rectangle #, Flatten
+from cell.geomink import Geomink
 from cell.shapes import Shapes
 from flatten import Flatten
 pp = pprint.PrettyPrinter(indent = 2)

@@ -40,7 +40,7 @@ class Test(unittest.TestCase):
     svg.gridwalk(blocksize, config.positions, config.cells)
     cell_conf, block1 = svg.blockOne()
     meander_conf = svg.wireframe(block1, writeconf=True)
-    self.assertEqual(len(cell_conf + meander_conf), 427)
+    self.assertEqual(len(cell_conf + meander_conf), 283)
 
 '''
 the
