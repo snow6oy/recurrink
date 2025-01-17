@@ -10,11 +10,9 @@ sql/models/*
 sql/palette/*
 *.swp
 .DS_Store
-Archive
-__pycache__/*
-t/__pycache__/*
-t/__init__.py
-recurrink.py
 v/*
-cell/__init__.py
-cell/__pycache__/*
+Archive
+recurrink.py
+__pycache__/*
+*/__pycache__/*
+*/__init__.py

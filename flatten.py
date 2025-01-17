@@ -12,7 +12,9 @@ class Flatten():
   ''' create a stencil as a MultiPolygon and a done list to contain Geomink shapes
       The first seeker will always be added because the stencil starts with a surface area of zero.
   '''
-  VERBOSE = False
+  VERBOSE  = False
+  scale    = 1.0
+  cellsize = 30
 
   def __init__(self):
     self.stencil = MultiPolygon([])
@@ -85,18 +87,20 @@ class Flatten():
         merge with stencil whenever addSeeker succeeds
     #self.writer.plot(shape, seeker.shape, fn='S2')
     '''
+    gmk   = Geomink(self.scale, self.cellsize)
     diff  = seeker.shape.difference(shape) # the part of shape that differs from seeker
     if diff.is_empty: # treat empties as rectangles and add them
-      gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label='R')
+      gmk.set(polygon=seeker.shape, pencolor=seeker.pencolor, label='R')
       if self.addSeeker(gmk): self.mpAppend(seeker.shape)
     elif diff.geom_type == 'MultiPolygon':
       for p in diff.geoms:
-        gmk = Geomink(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
+        gmk = Geomink(self.scale, self.cellsize)
+        gmk.set(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
         if self.addSeeker(gmk):
           self.stats[4] += 1
           if self.VERBOSE: print(f"{gmk.label} mp punched hole")
     else:
-      gmk = Geomink(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))
+      gmk.set(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))
       if self.addSeeker(gmk):
         self.stencil = MultiPolygon([g for g in self.stencil.geoms if not g.equals(shape)])
         self.mpAppend(diff)
@@ -110,7 +114,8 @@ class Flatten():
     diff = seeker.shape.difference(shape) # the part of shape that differs from seeker
     if diff.geom_type == 'MultiPolygon':
       for p in diff.geoms:
-        gmk   = Geomink(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
+        gmk = Geomink(self.scale, self.cellsize)
+        gmk.set(polygon=p, pencolor=seeker.pencolor, label=self.identify(p))
         if self.addSeeker(gmk):
           self.stencil = MultiPolygon([g for g in self.stencil.geoms if not g.equals(shape)])
           shape = shape.union(p)        # merge the remaining part(s) into the stencil
@@ -118,7 +123,8 @@ class Flatten():
           self.stats[2] += 1
           if self.VERBOSE: print(f"{gmk.label} mp cropped")
     elif diff.geom_type == 'Polygon':
-      gmk   = Geomink(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))
+      gmk = Geomink(self.scale, self.cellsize)
+      gmk.set(polygon=diff, pencolor=seeker.pencolor, label=self.identify(diff))
       if self.addSeeker(gmk):
         self.stencil = MultiPolygon([g for g in self.stencil.geoms if not g.equals(shape)])
         shape = shape.union(diff)
@@ -132,7 +138,8 @@ class Flatten():
     ''' only add seeker once when there are multiple touching events 
         otherwise the seeker will be added to done for each event
     '''
-    gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label='R')
+    gmk = Geomink(self.scale, self.cellsize)
+    gmk.set(polygon=seeker.shape, pencolor=seeker.pencolor, label='R')
     if self.addSeeker(gmk):
       self.stencil = MultiPolygon([g for g in self.stencil.geoms if not g.equals(shape)])
       stretch = shape.union(seeker.shape)
@@ -144,7 +151,8 @@ class Flatten():
 
   def add(self, seeker):
     self.mpAppend(seeker.shape)
-    gmk = Geomink(polygon=seeker.shape, pencolor=seeker.pencolor, label='R')
+    gmk = Geomink(self.scale, self.cellsize)
+    gmk.set(polygon=seeker.shape, pencolor=seeker.pencolor, label='R')
     self.addSeeker(gmk)
     self.stats[0] += 1
     if self.VERBOSE: print(f"{gmk.label} added")

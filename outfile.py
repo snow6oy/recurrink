@@ -290,13 +290,13 @@ class LinearSvg(Svg):
     f.run(todo)
     if writeconf: 
       msg = self.writeMeanderConf(f.done)
-      return msg
     else:
       s = f.stats
-      print(f"""
+      msg = f"""
 added {s[0]} merged {s[1]} cropped {s[2]} ignored {s[3]} punched {s[4]}
-TOTAL {len(f.done)}""")
+TOTAL {len(f.done)}"""
       self.markup(f.done)
+    return msg
 
   def markup(self, done):
     inner_p = list()

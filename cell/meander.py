@@ -4,7 +4,7 @@ from shapely import line_merge # set_precision
 from shapely.geometry import Polygon, LineString, MultiLineString, Point, LinearRing
 pp = pprint.PrettyPrinter(indent=2)
 
-class Meander():
+class Meander:
   def __init__(self, polygon):
     if isinstance(polygon, list):
       raise TypeError(polygon)

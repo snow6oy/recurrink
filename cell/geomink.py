@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 from shapely.geometry import LineString, Polygon, LinearRing
 from shapely import transform
 from cell.meander import Meander
+from cell.shapes import Shapes
 pp = pprint.PrettyPrinter(indent=2)
 
-class Geomink:
+class Geomink(Shapes):
   ''' recurrink wrapper around Shapely geometries
   '''
   class Rectangle:
@@ -257,7 +258,11 @@ class Geomink:
       '''
       return LineString()
 
-  def __init__(self, xywh=tuple(), polygon=None, pencolor='000', label=None):
+  def __init__(self, scale, cellsize):
+    ''' expose Shapes.* '''
+    super().__init__(scale, cellsize)
+
+  def set(self, xywh=tuple(), polygon=None, pencolor='000', label=None):
     ''' a tuple with min and max coord will become a rectangle
         more complex shapes should be pre-generated and sent as a Geometry
         something of type: shapely.geometry.polygon.Polygon

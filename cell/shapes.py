@@ -24,7 +24,7 @@ class Points:
     self.sw = [x + stroke_width,          y + size - stroke_width]
     self.mid= [x + size / 2,              y + size / 2]
 
-class Shapes():
+class Shapes:
   def __init__(self, scale, cellsize):
     self.scale    = scale
     self.cellsize = cellsize
