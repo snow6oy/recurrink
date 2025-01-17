@@ -2,7 +2,7 @@
 import pprint
 import argparse
 from cells import Palette
-from palette import PaletteMaker
+from block.palette import PaletteMaker
 from tmpfile import TmpFile
 from views import Views
 pp = pprint.PrettyPrinter(indent=2)

@@ -1,0 +1,21 @@
+@startuml
+title: Layout
+
+' inherit    <|.. 
+' implement  <--
+
+recurrink --> model.LinearSvg
+recurrink --> model.Svg
+model.Svg <|.. model.LinearSvg
+model.Layout <|.. model.Svg
+
+recurrink --> block.Grid
+recurrink --> block.TmpFile
+palette   --> block.PaletteMaker
+block.Flatten <|.. block.Grid
+
+block.Flatten --> cell.Geomink
+cell.Meander <|.. cell.Shapes
+cell.Shapes <|.. cell.Geomink 
+
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+title: Layout
+
+' inherit    <|.. 
+' implement  <--
+
+recurrink --> LinearSvg
+recurrink --> Grid
+LinearSvg --> Flatten
+LinearSvg --> Geomink
+Geomink   --> cell.Meander
+
+Svg <|.. LinearSvg
+Layout <|.. Grid
+Layout <|.. Svg
+
+Shapes <|.. Layout
+@enduml

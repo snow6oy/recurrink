@@ -4,7 +4,7 @@ import filecmp
 import unittest
 from views import Views, Models, Blocks
 from outfile import Svg
-from tmpfile import TmpFile
+from block.tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 class TestE2E(unittest.TestCase):
   ''' test to check the end to end life cycle of a rink
@@ -24,7 +24,7 @@ class TestE2E(unittest.TestCase):
     self.assertTrue(scale)
     tf = TmpFile()
     tf.write(model, celldata)
-    ok = filecmp.cmp(f'/tmp/{model}.txt', f't/{model}.txt')
+    ok = filecmp.cmp(f'tmp/{model}.txt', f't/{model}.txt')
     self.assertTrue(ok)
   def test_2(self):
     ''' update -m MODEL
@@ -47,9 +47,10 @@ class TestE2E(unittest.TestCase):
     v.validate(cells, ver=ver)
     svg.gridwalk(blocksize, positions, cells)
     svg.make()
-    svg.write(f'/tmp/{model}.svg')
-    ok = filecmp.cmp(f'/tmp/{model}.svg', f't/{model}.svg')
+    svg.write(f'tmp/{model}.svg')
+    ok = filecmp.cmp(f'tmp/{model}.svg', f't/{model}.svg')
     self.assertTrue(ok)
+
   def test_3(self):
     ''' delete -v DIGEST
     '''
@@ -57,6 +58,7 @@ class TestE2E(unittest.TestCase):
     v.delete(self.digest) 
     data = v.read_celldata(self.digest)
     self.assertFalse(data)
+
   def test_4(self):
     ''' commit and force digest to be the same for next time
     '''

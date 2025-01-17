@@ -258,11 +258,10 @@ class Geomink(Shapes):
       '''
       return LineString()
 
-  def __init__(self, scale, cellsize):
+  def __init__(self, scale, cellsize, xywh=tuple(), polygon=None, pencolor='000', label=None):
     ''' expose Shapes.* '''
     super().__init__(scale, cellsize)
 
-  def set(self, xywh=tuple(), polygon=None, pencolor='000', label=None):
     ''' a tuple with min and max coord will become a rectangle
         more complex shapes should be pre-generated and sent as a Geometry
         something of type: shapely.geometry.polygon.Polygon
@@ -288,6 +287,14 @@ class Geomink(Shapes):
       x, y, w, h  = xywh
       self.shape  = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
       self.meander = self.Rectangle(self.shape) # , label)
+    else:
+      pass # init with scale/cellsize then call self.set once xywh is known
+
+  def set(self, xywh, pencolor, label):
+    if len(xywh) == 4: # defined by cells
+      x, y, w, h  = xywh
+      self.shape  = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
+      self.meander = self.Rectangle(self.shape)
     else:
       raise ValueError(f"{len(xywh)=} expected 4 or polygon and {label}")
 

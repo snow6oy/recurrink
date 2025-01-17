@@ -247,7 +247,7 @@ class Grid(Layout):
       super().__init__(unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize)
 
   def walk(self, blocksize, cells):
-    block1  = [Geomink(c[:4], pencolor=c[-1]) for c in cells]
+    block1  = [Geomink(self.scale, self.cellsize, c[:4], pencolor=c[-1]) for c in cells]
     b0, b1  = blocksize
     total_x = int(b0 * self.cellsize)
     total_y = int(b1 * self.cellsize)
@@ -262,7 +262,9 @@ class Grid(Layout):
         block = list()
         for cell in block1:
           a      = cell.shape, cell.pencolor
-          clone  = Geomink(polygon=a[0], pencolor=a[1], label='R') # initial label
+          clone  = Geomink(
+            self.scale, self.cellsize, polygon=a[0], pencolor=a[1], label='R'
+          ) # initial label
           clone.tx(x, y)
           block.append(clone)
           cb     = clone.shape.bounds
@@ -354,11 +356,11 @@ TOTAL {len(f.done)}"""
       f = Flatten()
       f.run(block)
       self.regroupColors(f.done, meander_conf=meander_conf)
-      print('_', end='', flush=True)
+      # print('_', end='', flush=True)
     self.svgGroup()
-    print(f"""
+    return f"""
 added {f.stats[0]} merged {f.stats[1]} cropped {f.stats[2]} ignored {f.stats[3]} punched {f.stats[4]}
-TOTAL {len(f.done)}""")
+TOTAL {len(f.done)}"""
 
   def blockOne(self):
     ''' get a single block of cells from db for conf print
@@ -415,7 +417,7 @@ print(len(sortw))
           round(float(cell['height']))
         ]
         xywh = tuple([x, y, (x + w), (y + h)])
-        gmk  = Geomink(xywh=xywh, pencolor=fill)
+        gmk  = Geomink(self.scale, self.cellsize, xywh=xywh, pencolor=fill)
         cells.append([x, y, (x+w), (y+h), fill])
         geominks.append(gmk)
       #todo = list(reversed(geominks))  # top cells are done first

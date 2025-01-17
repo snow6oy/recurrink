@@ -1,39 +1,42 @@
 from views import Views, Blocks
-from tmpfile import TmpFile
+from block.tmpfile import TmpFile
 import unittest
 import pprint
 import os.path
 pp = pprint.PrettyPrinter(indent=2)
 
-class TestTmpFile(unittest.TestCase):
+class Test(unittest.TestCase):
 
   def setUp(self):
     self.tf = TmpFile()
     self.model = 'soleares'
 
-  def test_0(self):
+  def test_1(self):
     ''' Write soleares.txt in tmp might cause a false positive
     '''
-    v = Views()
-    b = Blocks()
-    model, src, celldata = v.generate(self.model)
+    v   = Views()
+    b   = Blocks()
+    ver = 1
+    model, src, celldata = v.generate(ver, self.model)
     #pp.pprint(celldata)
     celldata = self.tf.convert_to_list(celldata)
     self.tf.write(self.model, celldata)
-    self.assertTrue(os.path.isfile('/tmp/soleares.txt'))
+    self.assertTrue(os.path.isfile('tmp/soleares.txt'))
 
-  def testRead(self):
+  def test_2(self):
+    ''' read '''
     celldata = self.tf.read(self.model)
     #pp.pprint(celldata)
     self.assertEqual(len(celldata.keys()), 4)
     self.assertEqual(len(self.tf.digest), 32)
 
-  def testReadAsList(self):
+  def test_3(self):
+    ''' Read As List '''
     celldata = self.tf.read(self.model, output=list())
     #pp.pprint(celldata)
     self.assertTrue(len(celldata))
   
-  def testTopOk2Commit(self):
+  def test_4(self):
     ''' check vals from csv are correctly poured, e.g. top reordering
         shape size facing top fill bg fo stroke sw sd so
     '''
@@ -49,19 +52,21 @@ class TestTmpFile(unittest.TestCase):
     sorted_by_top = list(cells.keys())
     self.assertEqual(sorted_by_top, ['a', 'c', 'd', 'b'])
 
-  def testGetCellValues(self):
-    ''' ./recurrink.py -m ${model} --cell ${cell}
+  def test_5(self):
+    ''' Get Cell Values
+    ./recurrink.py -m ${model} --cell ${cell}
     0 1        2      3      4    5    6               7   8    9 0 1   2
     a soleares circle medium west #fff mediumvioletred 1.0 #000 0 0 1.0 True
     '''
-    if os.path.isfile('/tmp/soleares.txt'):
+    if os.path.isfile('tmp/soleares.txt'):
       cells = self.tf.read('soleares')
       # pp.pprint(cells['a'])
       self.assertTrue(isinstance(cells['a']['shape'], str))
     else:
-      pass
+      raise RuntimeError('missing test dependency')
 
-  def testConvertToList(self):
+  def test_6(self):
+    ''' Convert To List '''
     celldata = { 
       'a': { 
          'facing': 'south', 
@@ -95,7 +100,9 @@ class TestTmpFile(unittest.TestCase):
     self.assertEqual(celllist[0][0], 'a')
     self.assertEqual(celllist[1][8], '') # sw is empty
 
-  def testReadText(self):
+  def test_7(self):
+    ''' Read Text to pass to Inkscape. Really ??
+    '''
     soleares_txt = """cell shape size facing top fill bg fo stroke sw sd so
 a line medium south False #FFF #32CD32 1.0 #000 0 0 1.5
 b square medium all False #FFF #FFA500 1.0 #000 0 0 1.0
@@ -106,7 +113,9 @@ d diamond medium south False #CCC #32CD32 1.0 #000 0 0 1.0
     self.assertEqual(len(celldata.keys()), 4)
     self.assertEqual(len(self.tf.digest), 32)
 
-  def testConf(self):
+  def test_8(self):
+    ''' Conf
+    '''
     self.tf.conf('mambo', 'htmstarter') # set conf
     model, ver = self.tf.conf() # read conf
     self.assertEqual(model, 'mambo')

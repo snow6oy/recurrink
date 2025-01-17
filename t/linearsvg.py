@@ -1,6 +1,6 @@
 import unittest
 import pprint
-from tmpfile import TmpFile
+from block.tmpfile import TmpFile
 from outfile import LinearSvg, Grid
 from config import *
 pp = pprint.PrettyPrinter(indent=2)
