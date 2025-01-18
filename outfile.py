@@ -452,7 +452,7 @@ print(len(sortw))
     for pencolor in self.doc:
       uniqid += 1
       g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-      g.set('style', f"fill:none;stroke:#{pencolor}")
+      g.set('style', f"fill:none;stroke:{pencolor}")
 
       for line in self.doc[pencolor]:
         uniqid += 1

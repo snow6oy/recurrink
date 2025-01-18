@@ -292,9 +292,10 @@ class Geomink(Shapes):
 
   def set(self, xywh, pencolor, label):
     if len(xywh) == 4: # defined by cells
-      x, y, w, h  = xywh
-      self.shape  = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
-      self.meander = self.Rectangle(self.shape)
+      x, y, w, h    = xywh
+      self.shape    = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
+      self.meander  = self.Rectangle(self.shape)
+      self.pencolor = pencolor
     else:
       raise ValueError(f"{len(xywh)=} expected 4 or polygon and {label}")
 

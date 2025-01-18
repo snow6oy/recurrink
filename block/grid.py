@@ -11,10 +11,11 @@ import pprint
 from config import *
 from cell.geomink import Geomink
 from outfile import LinearSvg
+from block.tmpfile import TmpFile
 
 class Grid:
   scale = 1
-  cellsize = 30
+  cellsize = 15
 
   def walk(self, blocksize, cells, positions):
     block  = []
@@ -47,36 +48,59 @@ class Grid:
       fill   = cell['bg']
     else:
       shape = gmk.foreground(x, y, cell)
-      fill   = cell['fill']
+      fill  = cell['fill']
     x, y, w, h = list(shape.values())[:4]  # drop the name val cos we already know its square
     w += x
     h += y 
     gmk.set(xywh=(x, y, w, h), pencolor=fill, label=label)
     return gmk
 
-    '''
-    block1  = [Geomink(c[:4], pencolor=c[-1]) for c in cells]
-    grid_mm = int(self.cellnum * self.cellsize)
+class Model: 
+  ''' to be installed as model.grid.walk
+      class vars to be replaced once Layout() is parent
+  '''
+  scale    = 1.0
+  gridsize = 270
+  cellsize = 15
+
+  def walk(self, block1, blocksize):
     blocks  = []
-    print(f"{len(cells)=}")
-    print(f"{blocksize=} {self.cellnum=} {grid_mm=} {self.cellsize=} {total_x=} {total_y=}")
-    for x in range(0, grid_mm, total_x):
-      for y in range(0, grid_mm, total_y):
+    b0, b1  = blocksize
+    cellnum = round(self.gridsize / (self.cellsize * self.scale))
+    grid_mm = int(cellnum * self.cellsize)
+    x_block = int(b0 * self.cellsize)
+    y_block = int(b1 * self.cellsize)
+    print(f"{len(block1)=}")
+    print(f"{blocksize=} {cellnum=} {grid_mm=} {self.cellsize=} {x_block=} {y_block=}")
+    for y in range(0, grid_mm, y_block):
+      for x in range(0, grid_mm, x_block):
         block = list()
         for cell in block1:
           a      = cell.shape, cell.pencolor
-          clone  = Geomink(polygon=a[0], pencolor=a[1], label='R') # initial label
+          clone  = Geomink(
+            self.scale, self.cellsize, polygon=a[0], pencolor=a[1], label='R'
+          ) # initial label
           clone.tx(x, y)
           block.append(clone)
           cb     = clone.shape.bounds
         blocks.append(block)
     return blocks
-    '''
 
 g       = Grid()
-lsvg    = LinearSvg(scale=1, cellsize=30)
+m       = Model()
+tf      = TmpFile()
+lsvg    = LinearSvg(scale=1, cellsize=15)
 blocksz = (3,1)
 block1  = g.walk(blocksz, config.cells, config.positions)
 
+blox    = m.walk(block1, blocksz)
+mc      = tf.modelConf('minkscape', 'meander')
+
+'''
 lsvg.wireframe(block1)
-lsvg.write('tmp/grid.svg')
+lsvg.write('tmp/grid_w.svg')
+'''
+lsvg.make(blox, meander_conf=mc)
+lsvg.write('tmp/grid_m.svg')
+
+
