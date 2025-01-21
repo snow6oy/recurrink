@@ -1,9 +1,8 @@
 import unittest
 import pprint
 from shapely.geometry import Polygon
-from shapes import Geomink, Plotter
-from flatten import Flatten
-#from fl8n import Flatten
+from cell.geomink import Geomink, Plotter
+from block.flatten import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
 # topdown use cases for Minkscape
@@ -14,15 +13,16 @@ class Test(unittest.TestCase):
     pass
 
   def setUp(self):
+    cs = 15 # cellsize for mm
     self.todo = [
-      Geomink(pencolor='FFF', xywh=(2, 1, 7, 2)),
-      Geomink(pencolor='000', xywh=(1, 1, 2, 2)),
-      Geomink(pencolor='000', xywh=(7, 1, 8, 2)),
-      Geomink(pencolor='000', xywh=(4, 0, 5, 3)), 
-      Geomink(pencolor='FFF', xywh=(0, 0, 3, 3)),
-      Geomink(pencolor='CCC', xywh=(6, 0, 9, 3)),
-      Geomink(pencolor='CCC', xywh=(3, 0, 6, 3)),
-      Geomink(pencolor='CCC', xywh=(0, 0, 3, 3)) 
+      Geomink(cs, pencolor='FFF', xywh=(2, 1, 7, 2)),
+      Geomink(cs, pencolor='000', xywh=(1, 1, 2, 2)),
+      Geomink(cs, pencolor='000', xywh=(7, 1, 8, 2)),
+      Geomink(cs, pencolor='000', xywh=(4, 0, 5, 3)), 
+      Geomink(cs, pencolor='FFF', xywh=(0, 0, 3, 3)),
+      Geomink(cs, pencolor='CCC', xywh=(6, 0, 9, 3)),
+      Geomink(cs, pencolor='CCC', xywh=(3, 0, 6, 3)),
+      Geomink(cs, pencolor='CCC', xywh=(0, 0, 3, 3)) 
     ]
     self.f = Flatten()
     self.writer = Plotter()
@@ -82,8 +82,8 @@ class Test(unittest.TestCase):
   def test_5(self):
     ''' can Flatten.split handle seekers after cropping
     '''
-    done   = Geomink(xywh=(3,0,6,1))
-    seeker = Geomink(xywh=(4,0,5,1))
+    done   = Geomink(cellsize=15, xywh=(3,0,6,1))
+    seeker = Geomink(cellsize=15, xywh=(4,0,5,1))
     self.writer.plot(done.shape, seeker.shape, fn='flatten_5')
     self.f.add(done)
     events = list(self.f.evalSeeker(seeker))
@@ -135,7 +135,7 @@ class Test(unittest.TestCase):
     ''' rectangle
     '''
     r     = Polygon([(1, 1), (1, 2), (2, 2), (2, 1)])
-    gmk   = Geomink(polygon=r, label='R1')
+    gmk   = Geomink(cellsize=15, polygon=r, label='R1')
     shape = self.f.shapeTeller(gmk.shape, 'rectangle')
     self.assertTrue(shape)
 
@@ -143,7 +143,7 @@ class Test(unittest.TestCase):
     ''' gnomon
     '''
     g = Polygon([(0, 0), (0, 3), (3, 3), (3, 2), (1, 2), (1, 0)])
-    gmk   = Geomink(polygon=g, label='G1')
+    gmk   = Geomink(cellsize=15, polygon=g, label='G1')
     shape = self.f.shapeTeller(gmk.shape, 'gnomon')
     self.assertTrue(shape)
 
@@ -151,7 +151,7 @@ class Test(unittest.TestCase):
     ''' parabola
     '''
     pb = Polygon([(0, 0), (0, 3), (3, 3), (3, 2), (1, 2), (1, 1), (3, 1), (3, 0)])
-    gmk   = Geomink(polygon=pb, label='P1')
+    gmk   = Geomink(cellsize=15, polygon=pb, label='P1')
     shape = self.f.shapeTeller(gmk.shape, 'parabola')
     self.assertTrue(shape)
 
@@ -161,7 +161,7 @@ class Test(unittest.TestCase):
     hole  = [(1, 1), (1, 2), (2, 2), (2, 1)]
     outer = [(0, 0), (0, 3), (3, 3), (3, 0)]
     sr    = Polygon(outer, holes=[hole])
-    gmk   = Geomink(polygon=sr, label='S1')
+    gmk   = Geomink(cellsize=15, polygon=sr, label='S1')
     shape = self.f.shapeTeller(gmk.shape, 'sqring')
     self.assertTrue(shape)
 
@@ -175,7 +175,7 @@ class Test(unittest.TestCase):
         this test documents the risk of shapeTeller being fooled by the danglers
     '''
     r     = Polygon([(0, 0), (0, 1), (0, 3), (3, 3), (3, 0)])
-    self.assertRaises(ValueError, Geomink, polygon=r)
+    self.assertRaises(ValueError, Geomink, cellsize=15, polygon=r)
 
   def test_14(self):
     ''' with many polys in stencil multiple touches are possible

@@ -8,7 +8,7 @@ import argparse
 import pprint
 from views import Views, Models
 from outfile import Svg, LinearSvg, Grid
-from tmpfile import TmpFile
+from block.tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
 m = Models()
 v = Views()

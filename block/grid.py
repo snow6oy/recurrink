@@ -12,9 +12,10 @@ from config import *
 from cell.geomink import Geomink
 from outfile import LinearSvg
 from block.tmpfile import TmpFile
+from views import Models # old model for metadata
 
 class Grid:
-  scale = 1
+  scale = 1.0
   cellsize = 15
 
   def walk(self, blocksize, cells, positions):
@@ -35,27 +36,28 @@ class Grid:
   def getShape(self, label, coord, cell, layer):
     '''
     print(label, layer)
-    '''
-    if cell['shape'] not in ['square', 'line']: 
-      print(f"this {cell['shape']} is going to be interesting")
-    shape = dict()
-    x = int(coord[0] * self.cellsize)
-    y = int(coord[1] * self.cellsize)
-    gmk = Geomink(self.scale, self.cellsize)
-    if layer == 'bg':
-      bgcell = { 'facing': 'all', 'shape': 'square', 'size': 'medium', 'stroke_width': 0 }
       shape  = gmk.foreground(x, y, bgcell)
-      fill   = cell['bg']
+    shape = dict()
+    bgcell = { 'facing': 'all', 'shape': 'square', 'size': 'medium', 'stroke_width': 0 }
     else:
       shape = gmk.foreground(x, y, cell)
-      fill  = cell['fill']
+      gmk = Geomink(self.cellsize, scale=self.scale, xywh=(x, y, w, h), pencolor=fill, label=label)
     x, y, w, h = list(shape.values())[:4]  # drop the name val cos we already know its square
     w += x
-    h += y 
-    gmk.set(xywh=(x, y, w, h), pencolor=fill, label=label)
-    return gmk
+    h += y
+    '''
+    x = int(coord[0] * self.cellsize)
+    y = int(coord[1] * self.cellsize)
+    if cell['shape'] not in ['square', 'line']: 
+      print(f"this {cell['shape']} is going to be interesting")
+    fill = cell['bg'] if layer == 'bg' else cell['fill']
+    if list(fill)[0] == '#': fill = fill[1:]
+    return Geomink(
+      self.cellsize, scale=self.scale, coord=(x, y), cell=cell, 
+      layer=layer, pencolor=fill, label=label
+    )
 
-class Model: 
+class NewModel: 
   ''' to be installed as model.grid.walk
       class vars to be replaced once Layout() is parent
   '''
@@ -87,20 +89,30 @@ class Model:
     return blocks
 
 g       = Grid()
-m       = Model()
+m       = Models()
+nm      = NewModel()
 tf      = TmpFile()
 lsvg    = LinearSvg(scale=1, cellsize=15)
-blocksz = (3,1)
-block1  = g.walk(blocksz, config.cells, config.positions)
+models  = ['eflat', 'sonny', 'koto', 'buleria', 'minkscape']
+test_case = 0
+model   = models[test_case]
 
-blox    = m.walk(block1, blocksz)
-mc      = tf.modelConf('minkscape', 'meander')
+if model == 'minkscape':
+  blocksz = (3,1)
+  block1  = g.walk(blocksz, config.cells, config.positions)
+else:
+  blocksz   = m.read(model=model)[2] # can get scale too
+  positions = m.read_positions(model)
+  cells     = tf.read(model, output=dict())
+  block1    = g.walk(blocksz, cells, positions)
 
-'''
-lsvg.wireframe(block1)
-lsvg.write('tmp/grid_w.svg')
-'''
-lsvg.make(blox, meander_conf=mc)
-lsvg.write('tmp/grid_m.svg')
+blox    = nm.walk(block1, blocksz)
+mc      = tf.modelConf(model, 'meander')
 
+if False:
+  lsvg.wireframe(block1)
+  lsvg.write('tmp/grid_w.svg')
+else:
+  lsvg.make(blox, meander_conf=mc)
+  lsvg.write('tmp/grid_m.svg')
 

@@ -277,7 +277,7 @@ if __name__ == '__main__':
     [(1, 1, 2, 2), '000'],
     [(2, 1, 6, 2), 'FFF']   # original value 2,1,5,1 tweaked for use-case control:0
   ]
-  todo = [Geomink(f.scale, f.cellsize, i[0], pencolor=i[1]) for i in reversed(data)]
+  todo = [Geomink(f.cellsize, xywh=i[0], pencolor=i[1]) for i in reversed(data)]
   f.run(todo)
   print('='*80)
   print(f"""

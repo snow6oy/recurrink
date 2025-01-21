@@ -4,7 +4,7 @@ import pprint
 import xml.etree.ElementTree as ET
 from cell.geomink import Geomink
 from cell.shapes import Shapes
-from flatten import Flatten
+from block.flatten import Flatten
 pp = pprint.PrettyPrinter(indent = 2)
 
 class Layout():
@@ -247,7 +247,7 @@ class Grid(Layout):
       super().__init__(unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize)
 
   def walk(self, blocksize, cells):
-    block1  = [Geomink(self.scale, self.cellsize, c[:4], pencolor=c[-1]) for c in cells]
+    block1  = [Geomink(self.cellsize, scale=self.scale, xywh=c[:4], pencolor=c[-1]) for c in cells]
     b0, b1  = blocksize
     total_x = int(b0 * self.cellsize)
     total_y = int(b1 * self.cellsize)
@@ -263,7 +263,7 @@ class Grid(Layout):
         for cell in block1:
           a      = cell.shape, cell.pencolor
           clone  = Geomink(
-            self.scale, self.cellsize, polygon=a[0], pencolor=a[1], label='R'
+            self.cellsize, scale=self.scale, polygon=a[0], pencolor=a[1], label='R'
           ) # initial label
           clone.tx(x, y)
           block.append(clone)
@@ -452,7 +452,7 @@ print(len(sortw))
     for pencolor in self.doc:
       uniqid += 1
       g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-      g.set('style', f"fill:none;stroke:{pencolor}")
+      g.set('style', f"fill:none;stroke:#{pencolor}")
 
       for line in self.doc[pencolor]:
         uniqid += 1

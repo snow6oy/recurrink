@@ -19,7 +19,10 @@ class Geomink(Shapes):
 
     def fill(self, direction=None, conf=dict(), label=None):
       self.label = label
-      direction = direction if direction else conf[self.label]
+      if direction is None and self.label in conf:
+        direction = conf[self.label]
+      else:
+        direction = 'N'
       d         = self.control(direction)
       m         = Meander(self.rectangl)
       padme     = m.pad()
@@ -258,38 +261,63 @@ class Geomink(Shapes):
       '''
       return LineString()
 
-  def __init__(self, scale, cellsize, xywh=tuple(), polygon=None, pencolor='000', label=None):
-    ''' expose Shapes.* '''
-    super().__init__(scale, cellsize)
-
+  # def __init__(self, scale, cellsize, xywh=tuple(), polygon=None, pencolor='000', label=None):
+  def __init__(self, cellsize, scale=1.0, pencolor='000', **kwargs):
     ''' a tuple with min and max coord will become a rectangle
         more complex shapes should be pre-generated and sent as a Geometry
         something of type: shapely.geometry.polygon.Polygon
+        OR with x,y coords and celldata generate a rectangle using Shapes
+        then generate polygon once xywh is known
+        label is mandatory when Geomink is made from polygon
+
+    print(f"{scale=} {pencolor=} {kwargs=}")
+    print(f"{kwargs['xywh']=}, {kwargs['polygon']=}")
     '''
+    super().__init__(scale, cellsize)
     self.pencolor = pencolor
-    # label is mandatory when Geomink is made from polygon
-    if polygon and label: # type: shapely.geometry.polygon.Polygon
-      if list(label)[0] == 'R':  # rectangle
+    if 'xywh' in kwargs:
+      xywh = kwargs['xywh']
+    elif 'coord' in kwargs and 'cell' in kwargs and 'layer'in kwargs: 
+      x, y = kwargs['coord']
+      if kwargs['layer'] == 'bg': # override cell
+        bg_cell = { 'facing': 'all', 'shape': 'square', 'size': 'medium', 'stroke_width': 0 }
+        fg   = self.foreground(x, y, bg_cell)
+        fill = kwargs['cell']['bg']
+      else:
+        fg   = self.foreground(x, y, kwargs['cell'])
+        fill = kwargs['cell']['fill']
+      x, y, w, h = list(fg.values())[:4]  # drop the name val cos we already know its square
+      w += x
+      h += y
+      xywh=(x, y, w, h)
+    else:
+      xywh = tuple()
+
+    if len(xywh) == 4: # defined by cells
+      x, y, w, h  = xywh
+      self.shape  = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
+      self.meander = self.Rectangle(self.shape)
+    elif 'polygon' in kwargs and 'label' in kwargs:
+      label = list(kwargs['label'])[0] # first char of string
+      polygon = kwargs['polygon'] # of type: shapely.geometry.polygon.Polygon
+      if label == 'R':  # rectangle
         self.meander = self.Rectangle(polygon)
-      elif list(label)[0] == 'G': # gnomon
+      elif label == 'G': # gnomon
         self.meander = self.Gnomon(polygon, label)
-      elif list(label)[0] == 'P': # parabola
+      elif label == 'P': # parabola
         self.meander = self.Parabola(polygon, label)
-      elif list(label)[0] == 'S': # sqring
+      elif label == 'S': # sqring
        self.meander = self.SquareRing(polygon, label)
-      elif list(label)[0] == 'I': # irregular
+      elif label == 'I': # irregular
        self.meander = self.Irregular(polygon, label)
       else:
         raise ValueError(f'{label} unknown shape')
       self.shape  = Polygon(polygon)
       self.label  = label
-    elif len(xywh) == 4: # defined by cells
-      x, y, w, h  = xywh
-      self.shape  = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
-      self.meander = self.Rectangle(self.shape) # , label)
     else:
-      pass # init with scale/cellsize then call self.set once xywh is known
+      raise ValueError(f"{len(xywh)=} needs 4 OR polygon with label OR coord with cell and layer")
 
+  '''
   def set(self, xywh, pencolor, label):
     if len(xywh) == 4: # defined by cells
       x, y, w, h    = xywh
@@ -297,8 +325,7 @@ class Geomink(Shapes):
       self.meander  = self.Rectangle(self.shape)
       self.pencolor = pencolor
     else:
-      raise ValueError(f"{len(xywh)=} expected 4 or polygon and {label}")
-
+  '''
   def tx(self, x, y):
     ''' use Shapely transform to offset coordinates according to grid position
     '''
