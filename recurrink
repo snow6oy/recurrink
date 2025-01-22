@@ -6,11 +6,12 @@ import re
 import random
 import argparse
 import pprint
-from views import Views, Models
+from block.data import BlockData, Views
+from model.data import ModelData
 from outfile import Svg, LinearSvg, Grid
 from block.tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent=2)
-m = Models()
+m = ModelData()
 v = Views()
 friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar']
 WORKDIR       = '/home/gavin/Dropbox/familia/rinks'
@@ -64,8 +65,9 @@ def info(model=None, digest=None):
   '''
   out = str()
   if model:
+    b  = BlockData(model)
     xy = m.read(model=model)[2]
-    positions = m.read_positions(model)
+    positions = b.readPositions(model)
     for y in range(xy[1]):
       for x in range(xy[0]):
         p = tuple([x, y])
@@ -74,7 +76,7 @@ def info(model=None, digest=None):
         print(cell + top, end=' ')
       print()
   elif digest:
-    view = v.read_meta(digest=digest)
+    view = v.readMeta(digest=digest)
     out = " ".join(view[:2])
   else:
     pass # expected either a model or digest as input but whatever ..
@@ -84,7 +86,7 @@ def clone(digest):
   ''' generate tmp files from existing database entry
   '''
   celldata = v.read(digest=digest, output=list())
-  model, _, scale, ver = v.read_meta(digest=digest) # author is for publishng only
+  model, _, scale, ver = v.readMeta(digest=digest) # author is for publishng only
   palette = friendly_name[ver]
   tf.conf(model, palette) # conf state is a symlink
   tf.write(model, celldata)
@@ -110,8 +112,9 @@ def update(model, scale, mm=False):
   ver = friendly_name.index(palette)
   s = float(scale) if scale else m.get_scale(model)
   blocksize = m.read(model=model)[2] # can get scale too
+  b = BlockData(model)
   svgfile = f'tmp/{model}.svg'
-  positions = m.read_positions(model)
+  positions = b.readPositions(model)
   # TODO millimetres are handled by flatten()
   unit = 'mm' if mm else 'px'
   svg  = Svg(unit=unit, scale=s)
@@ -129,9 +132,10 @@ def flatten(scale, yaml=False, wireframe=False):
   '''
   msg      = str()
   model, _ = tf.conf()  # ignore palette
+  b        = BlockData(model)
   s = float(scale) if scale else 1.0
   blocksize = m.read(model=model)[2] # can get scale too
-  positions = m.read_positions(model)
+  positions = b.readPositions(model)
   svg  = LinearSvg(scale=s) # unit is millimetres
   if yaml: # print conf
     cells   = tf.read(model, output=dict())
@@ -159,7 +163,7 @@ def flatten(scale, yaml=False, wireframe=False):
 def delete(view):
   ''' both svg and view must exist for the delete to succeed
   '''
-  viewdata = v.read_meta(view)
+  viewdata = v.readMeta(view)
   if len(viewdata):
     v.delete(view) 
     model = viewdata[0]
