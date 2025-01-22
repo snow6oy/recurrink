@@ -1,6 +1,6 @@
 import random
 import psycopg2
-from db import Db
+from model.db import Db
 
 class Geometry(Db):
   ''' Generate a geometry by selecting existing geometries from db
@@ -444,7 +444,7 @@ ORDER BY random() LIMIT 1;""", [ver, opacity])
       if sw < min(self.zeroten) or sw > max(self.zeroten):
         raise ValueError(f"validation error: stroke width >{cell}<")
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Cell(Strokes):
+class CellData(Strokes):
   ''' a cell is a member of a block and contains geometries, shapes and strokes
   '''
   def __init__(self, ver=None):

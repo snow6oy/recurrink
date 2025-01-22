@@ -5,13 +5,13 @@
 import os.path
 import unittest
 import pprint
-from cell import Cell
+from cell.data import CellData
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestCell(unittest.TestCase):
 
   def setUp(self):
-    self.c = Cell(2) # colour45 inherit Stroke() class
+    self.c = CellData(2) # colour45 inherit Stroke() class
 
   def testGenerateOne(self):
     ''' called with axis cell generate along ONE axis
@@ -46,7 +46,7 @@ class TestCell(unittest.TestCase):
     ''' send line from /tmp/MODEL.txt to update an existing view
         cell shape size facing top fill bg fo stroke sw sd so
     '''
-    c = Cell(ver=2)  # htmstarter
+    c = CellData(ver=2)  # htmstarter
     self.assertFalse(c.create(
       'e4681aa9b7aef66efc6290f320b43e55',
       ['a','triangl','medium','west',False,'#FFF','#000',1.0,'#000',1,0,1]

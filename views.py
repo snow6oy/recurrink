@@ -1,10 +1,10 @@
 import random
 import psycopg2
-from db import Db
-from cells import Cell
+from model.db import Db
+from cell.data import CellData
 
 class Views(Db):
-  ''' a View is a collection of Cells
+  ''' a View is an instance of a model, composed from a collection of blocks 
   '''
   def __init__(self):
     self.view = dict() # cell data goes here
@@ -195,7 +195,8 @@ WHERE model = %s;""", [model])
     return pair, facing
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Blocks(Db):
-
+  ''' a Block is a collection of Cells
+  '''
   def __init__(self):
     super().__init__()
 
