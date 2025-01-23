@@ -382,7 +382,7 @@ print(len(sortw))
     total_y = int(block_y * self.cellsize)
     grid_mm = int(self.cellnum * self.cellsize)
     blocks = []
-    #print(f"{self.blocksize=} {self.cellnum=} {grid_mm=} {self.cellsize=} {total_x=} {total_y=}")
+    # print(f"{self.blocksize=} {self.cellnum=} {grid_mm=} {self.cellsize=} {total_x=} {total_y=}")
 
     for x in range(0, grid_mm, total_x):
       for y in range(0, grid_mm, total_y):
@@ -391,9 +391,11 @@ print(len(sortw))
         max_x  = x + total_x
         min_y  = y
         max_y  = y + total_y
-        #print(f"{min_x=} {max_x=} {min_y=} {max_y=}")
+        # print(f"{min_x=} {max_x=} {min_y=} {max_y=}")
         for d in self.doc:
           for shape in d['shapes']:
+            if shape['name'] not in ['square', 'line']:
+              continue  # blockify only knows so much
             X, Y = shape['x'], shape['y']
             if X >= min_x and X < max_x and Y >= min_y and Y < max_y:
               #print(tuple([X, Y])) print(shape['name'])
