@@ -7,7 +7,8 @@ import random
 import argparse
 import pprint
 from block import BlockData, Views, TmpFile
-from model import ModelData, Svg, LinearSvg, Grid
+from model import ModelData, Grid
+from model.svg import Svg, LinearSvg
 pp = pprint.PrettyPrinter(indent=2)
 m = ModelData()
 v = Views()
@@ -108,7 +109,7 @@ def update(model, scale, mm=False):
   model_conf, palette = tf.conf()
   model = model_conf if model is None else model
   ver = friendly_name.index(palette)
-  s = float(scale) if scale else m.get_scale(model)
+  s = float(scale) if scale else m.getScale(model)
   blocksize = m.read(model=model)[2] # can get scale too
   b = BlockData(model)
   svgfile = f'tmp/{model}.svg'
