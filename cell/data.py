@@ -1,6 +1,7 @@
 import random
 import psycopg2
-from model.db import Db
+from model import Db
+#from model.db import Db
 
 class Geometry(Db):
   ''' Generate a geometry by selecting existing geometries from db

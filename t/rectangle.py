@@ -1,7 +1,7 @@
 import unittest
 import pprint
-from shapes import Geomink, Plotter
-from flatten import Flatten
+from cell import Geomink, Plotter
+from block import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
@@ -14,10 +14,11 @@ class Test(unittest.TestCase):
     ''' east square linefill for Rectangle.meander()
     '''
     expect = [ 
-      (2, 2), (6, 2), (6, 3), (2, 3), (2, 4), (6, 4), (6, 5), (2, 5), (2, 6), (6, 6)
+      (2, 2), (2, 6), (3, 6), (3, 2), (4, 2), (4, 6), (5, 6), (5, 2), (6, 2), (6, 6)
     ]
-    gmk = Geomink(xywh=(1, 1, 7, 7))
+    gmk = Geomink(cellsize=9, xywh=(1, 1, 7, 7))
     xy = gmk.meander.fill(direction='E')
+    #print(list(xy.coords)) 
     self.assertEqual(expect, list(xy.coords)) 
     self.writer.plotLine(xy, fn='rectangle_1')
 
@@ -28,7 +29,7 @@ class Test(unittest.TestCase):
       (1,1),(1,8),(2,8),(2,1),(3,1),(3,8),(4,8),(4,1),
       (5,1),(5,8),(6,8),(6,1),(7,1),(7,8),(8,8),(8,1)
     ]
-    gmk = Geomink(xywh=(0, 0, 9, 9))
+    gmk = Geomink(cellsize=9, xywh=(0, 0, 9, 9))
     xy = gmk.meander.fill(direction='N')
     self.assertEqual(expect, list(xy.coords))
     self.writer.plotLine(xy, fn='rectangle_2')

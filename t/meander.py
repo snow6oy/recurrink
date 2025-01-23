@@ -1,8 +1,7 @@
 import unittest
 import pprint
 from shapely.geometry import Polygon
-from cell.meander import Meander
-from shapes import Plotter
+from cell import Meander, Plotter
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):

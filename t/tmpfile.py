@@ -1,5 +1,4 @@
-from views import Views, Blocks
-from block.tmpfile import TmpFile
+from block import Views, TmpFile
 import unittest
 import pprint
 import os.path
@@ -14,8 +13,7 @@ class Test(unittest.TestCase):
   def test_1(self):
     ''' Write soleares.txt in tmp might cause a false positive
     '''
-    v   = Views()
-    b   = Blocks()
+    v = Views()
     ver = 1
     model, src, celldata = v.generate(ver, self.model)
     #pp.pprint(celldata)

@@ -1,7 +1,8 @@
 import unittest
 import pprint
-from block.tmpfile import TmpFile
-from outfile import LinearSvg, Grid
+from block import TmpFile
+from model.svg import LinearSvg # explicit import due to circular dependency
+from model import Grid
 from config import *
 pp = pprint.PrettyPrinter(indent=2)
 

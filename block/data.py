@@ -1,8 +1,9 @@
 import random
 import psycopg2
-from model.db import Db
-from cell.data import CellData
-from model.data import ModelData
+from model import Db, ModelData
+from cell import CellData
+#from model.db import Db
+#from model.data import ModelData
 
 class Views(Db):
   ''' a View is an instance of a model, composed from a collection of blocks 
@@ -118,7 +119,7 @@ WHERE view = %s;""", [digest])
     b = BlockData(model)
     #ver = ver if ver else random.choice(range(1, 6)) 
     compass = Compass(model) # compass.conf will be None for unknown models
-    uniqcells = b.read_positions(model, output=list())
+    uniqcells = b.readPositions(model, output=list())
     topcells = b.topcells(model)
     c = CellData(ver=ver) 
     for cell in uniqcells:

@@ -1,7 +1,7 @@
 import unittest
 import pprint
-from outfile import Svg
-from cell.shapes import Shapes
+from model.svg import Svg
+from cell import Shapes
 from config import *
 pp = pprint.PrettyPrinter(indent = 2)
 

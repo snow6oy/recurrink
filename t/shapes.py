@@ -1,7 +1,7 @@
 import unittest
 import pprint
-from outfile import Layout
-from cell.shapes import Shapes
+from model import Layout
+from cell import Shapes
 from config import *
 pp = pprint.PrettyPrinter(indent = 2)
 

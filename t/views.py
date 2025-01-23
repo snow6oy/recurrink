@@ -3,7 +3,7 @@
 ''' see recurrink-ddl and recurrink-dml sql
 '''
 import unittest
-from views import Views
+from block import Views
 
 import pprint
 pp = pprint.PrettyPrinter(indent=2)
@@ -29,7 +29,7 @@ class TestViews(unittest.TestCase):
   def testReadMeta(self):
     ''' handle View metadata
     '''
-    (model, author, scale, ver) = self.v.read_meta(digest=self.view)
+    (model, author, scale, ver) = self.v.readMeta(digest=self.view)
     self.assertEqual(author, 'machine')
     self.assertEqual(model, 'soleares')
     self.assertEqual(scale, 1.0)
@@ -58,7 +58,8 @@ class TestViews(unittest.TestCase):
   def testGenerate(self):
     ''' test a model without compass
     '''
-    self.v.generate('afroclave')  
+
+    self.v.generate(1, model='afroclave')  
     #pp.pprint(self.v.view)
     self.assertEqual(len(self.v.view.keys()), 14)
 
@@ -66,7 +67,8 @@ class TestViews(unittest.TestCase):
     ''' fourfour model has compass defined
         generate_one and generate_all should be called
     '''
-    self.v.generate('fourfour', ver=2) # 'htmstarter') # 'arpeggio'
+    ver = 2
+    self.v.generate(ver, model='fourfour') # 'htmstarter') # 'arpeggio'
     #pp.pprint(self.v.view)
     self.assertTrue(self.v.view['a']['facing'], 'all')
 

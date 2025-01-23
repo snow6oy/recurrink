@@ -1,7 +1,7 @@
 import unittest
 import pprint
-from shapes import Geomink, Plotter
-from flatten import Flatten
+from cell import Geomink, Plotter
+from block import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
   ##########
@@ -12,14 +12,14 @@ class Test(unittest.TestCase):
 
   def setUp(self):
     self.f      = Flatten()
-    self.done   = Geomink(xywh=(2,2,5,5))
+    self.done   = Geomink(cellsize=9, xywh=(2,2,5,5))
     self.writer = Plotter()
 
   def test_1(self):
     ''' north west gnomon meander 
     '''
     expect = [(2, 2), (1, 2)]
-    seeker = Geomink(xywh=(1,2,5,6))
+    seeker = Geomink(cellsize=9, xywh=(1,2,5,6))
     self.f.crop(seeker, self.done.shape)
     gmk = self.f.get('G1')
     xy  = gmk.meander.fill(direction='NW')
@@ -32,7 +32,7 @@ class Test(unittest.TestCase):
     ''' south east gnomon meander
     '''
     expect = [(2, 2), (2, 1)]
-    seeker = Geomink(xywh=(2,1,6,5))
+    seeker = Geomink(cellsize=9, xywh=(2,1,6,5))
     self.f.crop(seeker, self.done.shape)
     gmk    = self.f.get('G1')
     xy     = gmk.meander.fill(direction='SE')

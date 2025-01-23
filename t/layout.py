@@ -1,6 +1,6 @@
 import unittest
 import pprint
-from outfile import Layout
+from model import Layout
 from config import *
 pp = pprint.PrettyPrinter(indent = 2)
 

@@ -1,8 +1,8 @@
 import unittest
 import pprint
 from shapely.geometry import Polygon
-from flatten import Flatten
-from shapes import Geomink, Plotter
+from cell import Geomink, Plotter
+from block import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
 ############
@@ -21,8 +21,8 @@ class Test(unittest.TestCase):
       (5,15),(5,5),(15,5),(15,6),(6,6),(6,15),(7,15),(7,7),
       (15,7),(15,9),(15,15),(14,15),(14,9),(13,9),(13,15)
     ]
-    done   = Geomink(xywh=(8,8,12,16))
-    seeker = Geomink(xywh=(4,4,16,16))
+    done   = Geomink(cellsize=15, xywh=(8,8,12,16))
+    seeker = Geomink(cellsize=15, xywh=(4,4,16,16))
     self.f.crop(seeker, done.shape)
     gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='S')
@@ -36,8 +36,8 @@ class Test(unittest.TestCase):
       (15,2),(2,2),(2,15),(3,15),(3,3),(15,3),(15,4),(4,4),(4,15),(5,15),(5,5),
       (15,5),(15,7),(15,15),(14,15),(14,7),(13,7),(13,15),(12,15),(12,7)
     ]
-    done   = Geomink(xywh=(6,6,11,16))
-    seeker = Geomink(xywh=(1,1,16,16))
+    done   = Geomink(cellsize=15, xywh=(6,6,11,16))
+    seeker = Geomink(cellsize=15, xywh=(1,1,16,16))
     self.f.crop(seeker, done.shape)
     gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='S')
@@ -52,8 +52,8 @@ class Test(unittest.TestCase):
       (15,1),(14,1),(14,14),(1,14),(1,13),(13,13),(13,1),(11,1),
       (1,1),(1,2),(11,2),(11,3),(1,3),(1,4),(11,4),(11,5),(1,5)
     ]
-    done   = Geomink(xywh=(0,6,12,12))
-    seeker = Geomink(xywh=(0,0,18,18))
+    done   = Geomink(cellsize=15, xywh=(0,6,12,12))
+    seeker = Geomink(cellsize=15, xywh=(0,0,18,18))
     self.f.crop(seeker, done.shape)
     gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='E')
@@ -63,8 +63,8 @@ class Test(unittest.TestCase):
   def test_4(self):
     ''' eastern meander with CCW True
     '''
-    done   = Geomink(xywh=(1,6,11,11))
-    seeker = Geomink(xywh=(1,1,16,16))
+    done   = Geomink(cellsize=15, xywh=(1,6,11,11))
+    seeker = Geomink(cellsize=15, xywh=(1,1,16,16))
     self.f.crop(seeker, done.shape)
     gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='E')
@@ -75,8 +75,8 @@ class Test(unittest.TestCase):
   def test_5(self):
     ''' west meander CCW = False
     '''
-    done   = Geomink(xywh=(7,7,19,13))
-    seeker = Geomink(xywh=(1,1,19,19))
+    done   = Geomink(cellsize=15, xywh=(7,7,19,13))
+    seeker = Geomink(cellsize=15, xywh=(1,1,19,19))
     self.f.crop(seeker, done.shape)
     gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='W')
@@ -92,8 +92,8 @@ class Test(unittest.TestCase):
       (6,1),(6,4),(7,4),(7,1),(8,1),(8,4),(9,4),(9,1),(10,1),(10,4),(11,4),(11,1),(12,1),
       (12,4),(13,4),(13,1),(14,1),(14,4)
     ]
-    done   = Geomink(xywh=(5,5,15,10))
-    seeker = Geomink(xywh=(0,0,15,15))
+    done   = Geomink(cellsize=15, xywh=(5,5,15,10))
+    seeker = Geomink(cellsize=15, xywh=(0,0,15,15))
     self.f.crop(seeker, done.shape)
     gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='W')
@@ -107,8 +107,8 @@ class Test(unittest.TestCase):
       (5,5),(5,15),(15,15),(15,14),(6,14),(6,5),(7,5),(7,13),
       (15,13),(15,11),(15,5),(14,5),(14,11),(13,11),(13,5)
     ]
-    done   = Geomink(xywh=(8,4,12,12))
-    seeker = Geomink(xywh=(4,4,16,16))
+    done   = Geomink(cellsize=15, xywh=(8,4,12,12))
+    seeker = Geomink(cellsize=15, xywh=(4,4,16,16))
     self.f.crop(seeker, done.shape)
     gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='N')
@@ -118,8 +118,8 @@ class Test(unittest.TestCase):
   def test_8(self):
     ''' north meander CCW True
     '''
-    done   = Geomink(xywh=(6,1,11,11))
-    seeker = Geomink(xywh=(1,1,16,16))
+    done   = Geomink(cellsize=15, xywh=(6,1,11,11))
+    seeker = Geomink(cellsize=15, xywh=(1,1,16,16))
     self.f.crop(seeker, done.shape)
     gmk = self.f.get('P1')
     xy = gmk.meander.fill(direction='N')

@@ -3,8 +3,8 @@ import pprint
 import matplotlib.pyplot as plt
 from shapely.geometry import LineString, Polygon, LinearRing
 from shapely import transform
-from cell.meander import Meander
-from cell.shapes import Shapes
+from .meander import Meander
+from .shapes import Shapes
 pp = pprint.PrettyPrinter(indent=2)
 
 class Geomink(Shapes):

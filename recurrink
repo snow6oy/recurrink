@@ -6,10 +6,8 @@ import re
 import random
 import argparse
 import pprint
-from block.data import BlockData, Views
-from model.data import ModelData
-from outfile import Svg, LinearSvg, Grid
-from block.tmpfile import TmpFile
+from block import BlockData, Views, TmpFile
+from model import ModelData, Svg, LinearSvg, Grid
 pp = pprint.PrettyPrinter(indent=2)
 m = ModelData()
 v = Views()

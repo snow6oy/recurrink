@@ -2,8 +2,8 @@
 import os.path
 import unittest
 import pprint
-from cells import Palette
-from block.palette import PaletteMaker
+from cell import Palette
+from block import PaletteMaker
 pp = pprint.PrettyPrinter(indent=2)
 
 class TestPalette(unittest.TestCase):

@@ -15,4 +15,5 @@ Archive
 recurrink.py
 __pycache__/*
 */__pycache__/*
-*/__init__.py
+t/__init__.py
+t/zz/*
