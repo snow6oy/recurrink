@@ -201,7 +201,7 @@ class Geomink(Shapes):
   class SquareRing:
     ''' Shapely Polygon with a hole innit
     '''
-    VERBOSE = True
+    VERBOSE = False
 
     def __init__(self, sqring, label):
       self.sqring = sqring

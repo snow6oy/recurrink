@@ -156,7 +156,7 @@ TOTAL {len(f.done)}"""
       out += f"  {gmk.label}: N # {int(tx):>3},{int(ty):>3}\n"
     return out
 
-  def make(self, blocks, meander_conf=dict()):
+  def make(self, model, blocks, meander_conf=dict()):
     '''
     return f"""
 added {f.stats[0]} merged {f.stats[1]} cropped {f.stats[2]} ignored {f.stats[3]} punched {f.stats[4]}
@@ -172,6 +172,7 @@ TOTAL {len(f.done)}"""
       self.regroupColors(block, meander_conf=meander_conf)
       print('.', end='', flush=True)
     self.svgGroup()
+    return f'tmp/{model}_mm.svg'
 
   def blockOne(self):
     ''' get a single block of cells from db for conf print

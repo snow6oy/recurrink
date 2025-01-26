@@ -163,10 +163,14 @@ class Grid(Layout):
   ''' inherit from Layout for governance of inputs
       same inputs must be shared with LinearSvg() see t.lineartest.Test.test_1 
   '''
+  scale    = 1.0
+  gridsize = 270
+  cellsize = 15
+
   def __init__(self, unit='px', scale=1.0, gridsize=None, cellsize=None):
       super().__init__(unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize)
 
-  def walk(self, blocksize, cells):
+  def _walk(self, blocksize, cells):
     block1  = [Geomink(self.cellsize, scale=self.scale, xywh=c[:4], pencolor=c[-1]) for c in cells]
     b0, b1  = blocksize
     total_x = int(b0 * self.cellsize)
@@ -184,6 +188,31 @@ class Grid(Layout):
           a      = cell.shape, cell.pencolor
           clone  = Geomink(
             self.cellsize, scale=self.scale, polygon=a[0], pencolor=a[1], label='R'
+          ) # initial label
+          clone.tx(x, y)
+          block.append(clone)
+          cb     = clone.shape.bounds
+        blocks.append(block)
+    return blocks
+
+  def walk(self, blocksize, block1):
+    ''' traverse the grid and use Shapely transform function to stamp block1 into position
+    '''
+    blocks  = []
+    b0, b1  = blocksize
+    cellnum = round(self.gridsize / (self.cellsize * self.scale))
+    grid_mm = int(cellnum * self.cellsize)
+    x_block = int(b0 * self.cellsize)
+    y_block = int(b1 * self.cellsize)
+    print(f"{len(block1)=}")
+    print(f"{blocksize=} {cellnum=} {grid_mm=} {self.cellsize=} {x_block=} {y_block=}")
+    for y in range(0, grid_mm, y_block):
+      for x in range(0, grid_mm, x_block):
+        block = list()
+        for cell in block1:
+          a      = cell.shape, cell.pencolor
+          clone  = Geomink(
+            self.scale, self.cellsize, polygon=a[0], pencolor=a[1], label='R'
           ) # initial label
           clone.tx(x, y)
           block.append(clone)
