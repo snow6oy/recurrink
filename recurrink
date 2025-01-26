@@ -6,7 +6,7 @@ import re
 import random
 import argparse
 import pprint
-from block import BlockData, Views, TmpFile
+from block import BlockData, Views, TmpFile, Flatten
 from model import ModelData, Grid
 from model.svg import Svg, LinearSvg
 pp = pprint.PrettyPrinter(indent=2)
@@ -60,7 +60,7 @@ def stats():
 def info(model=None, digest=None):
   ''' accept a view id e.g. c364ab54ff542adb322dc5c1d6aa4cc8
       return view meta data for publisher to use
-      OR a pretty text visualation of a model
+      OR a text visualisation of a model
   '''
   out = str()
   if model:
@@ -129,34 +129,39 @@ def flatten(scale, yaml=False, wireframe=False):
   ''' once cloned use flatten to make an SVG for plotting
       testing '7e731bfc1863c186616d2b3de09a9b6b' 
   '''
-  msg      = str()
-  model, _ = tf.conf()  # ignore palette
-  b        = BlockData(model)
-  s = float(scale) if scale else 1.0
+  msg       = str()
+  model, _  = tf.conf()  # ignore palette
+  b         = BlockData(model)
+  f         = Flatten()
+  s         = float(scale) if scale else 1.0
   blocksize = m.read(model=model)[2] # can get scale too
   positions = b.readPositions(model)
-  svg  = LinearSvg(scale=s) # unit is millimetres
+  svg       = LinearSvg(scale=s) # unit is millimetres
   if yaml: # print conf
     cells   = tf.read(model, output=dict())
     #pp.pprint(cells)
-    svgfile = None
     svg.gridwalk(blocksize, positions, cells)
     cell_conf, block1 = svg.blockOne()
-    meander_conf      = svg.wireframe(block1, writeconf=True)
-    msg = cell_conf + meander_conf
+    f.run(block1)
+    meander_conf      = svg.wireframe(f.done, writeconf=True)
+    msg               = cell_conf + meander_conf
   else:
     grid = Grid(scale=s)    # cellsize=3 gridsize=9
     conf = tf.modelConf(model)
     todo = grid.walk(blocksize, conf['cells'])
-    if wireframe:
-      block   = todo.pop(0)
+    if wireframe:             # first block only
       svgfile = f'tmp/{model}_wf.svg'
-      svg.wireframe(block)  # first block only
-    else:                      # send all the blocks
+      block1  = todo.pop(0)
+      f.run(block1)
+      msg = f"""
+added {f.stats[0]} merged {f.stats[1]} cropped {f.stats[2]} ignored {f.stats[3]} punched {f.stats[4]}
+TOTAL {len(f.done)}"""
+      svg.wireframe(f.done)
+    else:                     # send all the blocks
       svgfile = f'tmp/{model}_mm.svg'
       svg.make(todo, meander_conf=conf['meander'])
     svg.write(svgfile)
-    return f"{svgfile} {s}"
+    msg = f"{svgfile} {s}"
   return msg
 
 def delete(view):

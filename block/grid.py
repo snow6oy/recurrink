@@ -10,9 +10,9 @@ this version will be the same as outfile.Grid but take cells from db and include
 import pprint
 from config import *
 from cell.geomink import Geomink
-from outfile import LinearSvg
-from block.tmpfile import TmpFile
-from views import Models # old model for metadata
+from model.svg import LinearSvg
+from block import TmpFile
+from model.data import ModelData # old model for metadata
 
 class Grid:
   scale = 1.0
@@ -25,9 +25,9 @@ class Grid:
       for x in range(b0):
         coord = (x, y)
         c, t = positions[coord]
-        # print(cells[c])
+        #print(cells[c])
         for layer in ['top', 'fg', 'bg']:
-          # print(f"{c=} {t=} {layer=}")
+          #print(f"{c=} {t=} {layer=}")
           if layer == 'top': 
             if t: block.append(self.getShape(t, coord, cells[t], layer='top'))
           else: block.append(self.getShape(c, coord, cells[c], layer=layer))
@@ -88,31 +88,32 @@ class NewModel:
         blocks.append(block)
     return blocks
 
-g       = Grid()
-m       = Models()
-nm      = NewModel()
-tf      = TmpFile()
-lsvg    = LinearSvg(scale=1, cellsize=15)
-models  = ['eflat', 'sonny', 'koto', 'buleria', 'minkscape']
-test_case = 0
-model   = models[test_case]
+if __name__ == 'main':
+  g       = Grid()
+  m       = Models()
+  nm      = NewModel()
+  tf      = TmpFile()
+  lsvg    = LinearSvg(scale=1, cellsize=15)
+  models  = ['eflat', 'sonny', 'koto', 'buleria', 'minkscape']
+  test_case = 0
+  model   = models[test_case]
 
-if model == 'minkscape':
-  blocksz = (3,1)
-  block1  = g.walk(blocksz, config.cells, config.positions)
-else:
-  blocksz   = m.read(model=model)[2] # can get scale too
-  positions = m.read_positions(model)
-  cells     = tf.read(model, output=dict())
-  block1    = g.walk(blocksz, cells, positions)
-
-blox    = nm.walk(block1, blocksz)
-mc      = tf.modelConf(model, 'meander')
-
-if False:
-  lsvg.wireframe(block1)
-  lsvg.write('tmp/grid_w.svg')
-else:
-  lsvg.make(blox, meander_conf=mc)
-  lsvg.write('tmp/grid_m.svg')
+  if model == 'minkscape':
+    blocksz = (3,1)
+    block1  = g.walk(blocksz, config.cells, config.positions)
+  else:
+    blocksz   = m.read(model=model)[2] # can get scale too
+    positions = m.read_positions(model)
+    cells     = tf.read(model, output=dict())
+    block1    = g.walk(blocksz, cells, positions)
+  
+  blox    = nm.walk(block1, blocksz)
+  mc      = tf.modelConf(model, 'meander')
+  
+  if False:
+    lsvg.wireframe(block1)
+    lsvg.write('tmp/grid_w.svg')
+  else:
+    lsvg.make(blox, meander_conf=mc)
+    lsvg.write('tmp/grid_m.svg')
 

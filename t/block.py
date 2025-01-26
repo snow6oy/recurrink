@@ -1,14 +1,20 @@
-#!/usr/bin/env python3
-
-from block.data import BlockData
 import unittest
 import pprint
+from block import BlockData
+from block.grid import Grid # TODO package me
+from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
 
   def setUp(self):
     self.b = BlockData('soleares') 
+
+  def test_1(self):
+    g = Grid()
+    blocksz = (3,1)
+    block1  = g.walk(blocksz, config.cells, config.positions)
+    self.assertEqual(block1[0].pencolor, '000')
 
   def test_4(self):
     ''' key value pair with position as the key
@@ -72,3 +78,9 @@ class Test(unittest.TestCase):
     uniqcells = self.b.readPositions(model, output=list())
     topcells = self.b.topcells(model)
     self.assertEqual(topcells[0], 'd')
+
+'''
+the 
+end
+'''
+
