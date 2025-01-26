@@ -14,11 +14,13 @@ from model.svg import LinearSvg
 from block import TmpFile
 from model.data import ModelData # old model for metadata
 
-class Grid:
+class GeoMaker:
   scale = 1.0
   cellsize = 15
 
-  def walk(self, blocksize, cells, positions):
+  def make(self, blocksize, positions, cells):
+    ''' given block and cell metadata make a geometry object for each position on the block
+    '''
     block  = []
     b0, b1  = blocksize
     for y in range(b1):

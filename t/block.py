@@ -1,7 +1,7 @@
 import unittest
 import pprint
 from block import BlockData
-from block.grid import Grid # TODO package me
+from block.make import GeoMaker # TODO package me
 from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -11,9 +11,9 @@ class Test(unittest.TestCase):
     self.b = BlockData('soleares') 
 
   def test_1(self):
-    g = Grid()
+    gm = GeoMaker()
     blocksz = (3,1)
-    block1  = g.walk(blocksz, config.cells, config.positions)
+    block1  = gm.make(blocksz, config.positions, config.cells)
     self.assertEqual(block1[0].pencolor, '000')
 
   def test_4(self):

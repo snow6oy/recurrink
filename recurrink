@@ -7,6 +7,7 @@ import random
 import argparse
 import pprint
 from block import BlockData, Views, TmpFile, Flatten
+from block.make import GeoMaker
 from model import ModelData, Grid
 from model.svg import Svg, LinearSvg
 pp = pprint.PrettyPrinter(indent=2)
@@ -140,11 +141,16 @@ def flatten(scale, yaml=False, wireframe=False):
   if yaml: # print conf
     cells   = tf.read(model, output=dict())
     #pp.pprint(cells)
+    gm      = GeoMaker()
+    block1  = gm.make(blocksize, positions, cells)
+    '''
     svg.gridwalk(blocksize, positions, cells)
     cell_conf, block1 = svg.blockOne()  # TODO remove cell_conf
+    msg               = cell_conf + meander_conf
+    '''
     f.run(block1)
     meander_conf      = svg.wireframe(f.done, writeconf=True)
-    msg               = cell_conf + meander_conf
+    msg               = meander_conf
   else:
     grid = Grid(scale=s)    # cellsize=3 gridsize=9
     conf = tf.modelConf(model)
