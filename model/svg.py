@@ -1,7 +1,7 @@
 import pprint
 import xml.etree.ElementTree as ET
 from cell import Geomink
-from block.flatten import Flatten # importing directly gave t.linearsvg circular import
+#from block.flatten import Flatten # importing directly gave t.linearsvg circular import
 from model import Layout
 pp = pprint.PrettyPrinter(indent = 2)
 
@@ -157,16 +157,21 @@ TOTAL {len(f.done)}"""
     return out
 
   def make(self, blocks, meander_conf=dict()):
-    self.doc = dict()     # reset for regrouping by fill
-    for block in blocks:
-      f = Flatten()
-      f.run(block)
-      self.regroupColors(f.done, meander_conf=meander_conf)
-      # print('_', end='', flush=True)
-    self.svgGroup()
+    '''
     return f"""
 added {f.stats[0]} merged {f.stats[1]} cropped {f.stats[2]} ignored {f.stats[3]} punched {f.stats[4]}
 TOTAL {len(f.done)}"""
+    '''
+    self.doc = dict()     # reset for regrouping by fill
+    for block in blocks:
+      '''
+      f = Flatten()
+      f.run(block)
+      self.regroupColors(f.done, meander_conf=meander_conf)
+      '''
+      self.regroupColors(block, meander_conf=meander_conf)
+      print('.', end='', flush=True)
+    self.svgGroup()
 
   def blockOne(self):
     ''' get a single block of cells from db for conf print

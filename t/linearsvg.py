@@ -15,12 +15,16 @@ class Test(unittest.TestCase):
   def test_1(self):
     ''' write minkscape as 2d SVG
     '''
+    todo      = []
     grid      = Grid(scale=2, gridsize=90)
     svg       = LinearSvg(scale=2, gridsize=90)
     blocksize = (3, 1)
     conf      = self.tf.modelConf('minkscape')
     blocks    = grid.walk(blocksize, conf['cells'])
-    svg.make(blocks, meander_conf=conf['meander'])
+    for b in blocks:
+      f = Flatten()
+      todo.append(f.run(b))
+    svg.make(todo, meander_conf=conf['meander'])
     svg.write('tmp/linearsvg_1.svg')
 
   def test_2(self):

@@ -141,7 +141,7 @@ def flatten(scale, yaml=False, wireframe=False):
     cells   = tf.read(model, output=dict())
     #pp.pprint(cells)
     svg.gridwalk(blocksize, positions, cells)
-    cell_conf, block1 = svg.blockOne()
+    cell_conf, block1 = svg.blockOne()  # TODO remove cell_conf
     f.run(block1)
     meander_conf      = svg.wireframe(f.done, writeconf=True)
     msg               = cell_conf + meander_conf
@@ -153,15 +153,20 @@ def flatten(scale, yaml=False, wireframe=False):
       svgfile = f'tmp/{model}_wf.svg'
       block1  = todo.pop(0)
       f.run(block1)
-      msg = f"""
-added {f.stats[0]} merged {f.stats[1]} cropped {f.stats[2]} ignored {f.stats[3]} punched {f.stats[4]}
-TOTAL {len(f.done)}"""
       svg.wireframe(f.done)
     else:                     # send all the blocks
       svgfile = f'tmp/{model}_mm.svg'
-      svg.make(todo, meander_conf=conf['meander'])
+      blocks = []
+      for t in todo:
+        f = Flatten()    # runs slow without new instance
+        blocks.append(f.run(t))
+      print(f"{len(blocks)=}")
+      svg.make(blocks, meander_conf=conf['meander'])
     svg.write(svgfile)
-    msg = f"{svgfile} {s}"
+    msg = f"""
+added {f.stats[0]} merged {f.stats[1]} cropped {f.stats[2]} ignored {f.stats[3]} punched {f.stats[4]}
+TOTAL {len(f.done)} {svgfile} {s}
+"""
   return msg
 
 def delete(view):

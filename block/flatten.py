@@ -42,6 +42,7 @@ class Flatten():
         elif control == 1: self.merge(seeker, shape)
         elif control == 0: self.add(seeker)
         else: raise NotImplementedError(control)
+    return self.done
 
   def evalSeeker(self, seeker):
     ''' seeker evaluation can have 5 outcomes
