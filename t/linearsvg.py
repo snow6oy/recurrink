@@ -1,6 +1,7 @@
 import unittest
 import pprint
 from block import TmpFile, Flatten
+from block.make import GeoMaker
 from model.svg import LinearSvg # explicit import due to circular dependency
 from model import Grid
 from config import *
@@ -11,64 +12,50 @@ class Test(unittest.TestCase):
   def setUp(self):
     self.tf  = TmpFile()
     self.f   = Flatten()
+    self.gm  = GeoMaker()
 
   def test_1(self):
-    ''' write minkscape as 2d SVG
+    ''' load minkscape and check block has correct number of shapes
     '''
-    todo      = []
-    grid      = Grid(scale=2, gridsize=90)
-    svg       = LinearSvg(scale=2, gridsize=90)
     blocksize = (3, 1)
-    conf      = self.tf.modelConf('minkscape')
-    blocks    = grid.walk(blocksize, conf['cells'])
-    for b in blocks:
-      f = Flatten()
-      todo.append(f.run(b))
-    svg.make(todo, meander_conf=conf['meander'])
-    svg.write('tmp/linearsvg_1.svg')
+    block1    = self.gm.make(blocksize, config.positions, config.cells)
+    self.assertEqual(len(block1), 8)
 
   def test_2(self):
     ''' write preview of flatten as a wireframe
     '''
-    grid      = Grid(scale=2, gridsize=90)
     svg       = LinearSvg(scale=2)
     blocksize = (3, 1)
-    conf      = self.tf.modelConf('minkscape')
-    blocks    = grid.walk(blocksize, conf['cells'])
-    self.f.run(blocks[0])
+    block1    = self.gm.make(blocksize, config.positions, config.cells)
+    self.f.run(block1)
     svg.wireframe(self.f.done)
     svg.write('tmp/linearsvg_2.svg')
 
   def test_3(self):
-    ''' write minkscape wireframe using conf/
+    ''' generate config for meander
     '''
     svg = LinearSvg()
     blocksize = (3, 1)
-    svg.gridwalk(blocksize, config.positions, config.cells)
-    cell_conf, block1 = svg.blockOne()
+    block1    = self.gm.make(blocksize, config.positions, config.cells)
     self.f.run(block1)
     meander_conf = svg.wireframe(self.f.done, writeconf=True)
-    self.assertEqual(len(cell_conf + meander_conf), 283)
+    self.assertEqual(len(meander_conf), 207)
 
   def test_4(self):
-    ''' write preview of flatten as a wireframe
-        1. obtain cells from tmp
-        2. flatten cells and send flatten object 
+    ''' write minkscape as 2d SVG
     '''
-    grid      = Grid(scale=2, gridsize=90)
-    svg       = LinearSvg(scale=2)
+    todo      = []
+    grid      = Grid(scale=1, gridsize=90)
+    svg       = LinearSvg(scale=1, gridsize=90)
     blocksize = (3, 1)
-    cells     = self.tf.modelConf('minkscape', 'cells')
-    '''
-    pp.pprint(config.cells)
-    '''
-    blocks    = grid.walk(blocksize, config.cells)
-    pp.pprint(blocks)
-    '''
-    svg.wireframe(blocks[0])
-    svg.write('tmp/linearsvg_2.svg')
-    '''
-
+    conf      = self.tf.modelConf('minkscape')
+    block1    = self.gm.make(blocksize, config.positions, config.cells)
+    blocks    = grid.walk(blocksize, block1)
+    for b in blocks:
+      f = Flatten()
+      todo.append(f.run(b))
+    svgfile = svg.make('linearsvg_1', todo, meander_conf=conf['meander'])
+    svg.write(svgfile)
 '''
 the
 end
