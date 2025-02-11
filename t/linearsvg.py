@@ -1,7 +1,7 @@
 import unittest
 import pprint
-from block import TmpFile, Flatten
-from block.make import GeoMaker
+from block import TmpFile, Flatten, GeoMaker
+#from block.make import GeoMaker
 from model import LinearSvg, Grid
 from config import *
 pp = pprint.PrettyPrinter(indent=2)

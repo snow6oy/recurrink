@@ -1,11 +1,7 @@
-import pprint
-from config import *
 from cell.geomink import Geomink
-from model.svg import LinearSvg
-from block import TmpFile
-from model.data import ModelData # old model for metadata
 
 class GeoMaker:
+  # TODO set these with __init__ ?
   scale = 1.0
   cellsize = 15
 
@@ -39,36 +35,6 @@ class GeoMaker:
       self.cellsize, scale=self.scale, coord=(x, y), cell=cell, 
       layer=layer, pencolor=fill, label=label
     )
-
-if __name__ == 'main':
-  g       = Grid()
-  m       = Models()
-  nm      = NewModel() # TODO newmodel moved to model already ..
-  tf      = TmpFile()
-  lsvg    = LinearSvg(scale=1, cellsize=15)
-  models  = ['eflat', 'sonny', 'koto', 'buleria', 'minkscape']
-  test_case = 0
-  model   = models[test_case]
-
-  if model == 'minkscape':
-    blocksz = (3,1)
-    block1  = g.walk(blocksz, config.cells, config.positions)
-  else:
-    blocksz   = m.read(model=model)[2] # can get scale too
-    positions = m.read_positions(model)
-    cells     = tf.read(model, output=dict())
-    block1    = g.walk(blocksz, cells, positions)
-  
-  blox    = nm.walk(block1, blocksz)
-  mc      = tf.modelConf(model, 'meander')
-  
-  if False:
-    lsvg.wireframe(block1)
-    lsvg.write('tmp/grid_w.svg')
-  else:
-    lsvg.make(blox, meander_conf=mc)
-    lsvg.write('tmp/grid_m.svg')
-
 '''
 the
 end
