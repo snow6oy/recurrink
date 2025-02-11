@@ -8,8 +8,11 @@ import argparse
 import pprint
 from block import BlockData, Views, TmpFile, Flatten
 from block.make import GeoMaker
+from model import ModelData, Grid, Svg, LinearSvg
+'''
 from model import ModelData, Grid
 from model.svg import Svg, LinearSvg
+'''
 pp = pprint.PrettyPrinter(indent=2)
 m = ModelData()
 v = Views()
