@@ -41,6 +41,21 @@ class Test(unittest.TestCase):
     self.assertEqual(len(meander_conf), 207)
 
   def test_4(self):
+    ''' Layout.Grid transforms a block into blocks according to position
+    '''
+    expectedx = [5, 50, 5, 50, 5, 50, 5, 50, 5, 50, 5, 50]
+    expectedy = [5, 5, 20, 20, 35, 35, 50, 50, 65, 65, 80, 80]
+    grid      = Grid(scale=1, gridsize=90)
+    svg       = LinearSvg(scale=1, gridsize=90)
+    blocksize = (3, 1)
+    block1    = self.gm.make(blocksize, config.positions, config.cells)
+    blocks    = grid.walk(blocksize, block1)
+    for i, block in enumerate(blocks):
+      x, y = block[0].shape.bounds[:2]
+      self.assertEqual(expectedx[i], x)
+      self.assertEqual(expectedy[i], y)
+
+  def test_5(self):
     ''' write minkscape as 2d SVG
     '''
     todo      = []
@@ -53,7 +68,7 @@ class Test(unittest.TestCase):
     for b in blocks:
       f = Flatten()
       todo.append(f.run(b))
-    svgfile = svg.make('linearsvg_1', todo, meander_conf=conf['meander'])
+    svgfile = svg.make('linearsvg_5', todo, meander_conf=conf['meander'])
     svg.write(svgfile)
 '''
 the

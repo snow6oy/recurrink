@@ -14,7 +14,7 @@ class Test(unittest.TestCase):
     gm = GeoMaker()
     blocksz = (3,1)
     block1  = gm.make(blocksz, config.positions, config.cells)
-    self.assertEqual(block1[0].pencolor, '000')
+    self.assertEqual(block1[0].pencolor, '00F')
 
   def test_4(self):
     ''' key value pair with position as the key

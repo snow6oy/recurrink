@@ -1,3 +1,4 @@
+import copy
 from cell.shapes import Shapes
 from cell.geomink import Geomink
 
@@ -210,10 +211,13 @@ class Grid(Layout):
       for x in range(0, grid_mm, x_block):
         block = list()
         for cell in block1:
+          clone  = copy.copy(cell)
+          '''
           a      = cell.shape, cell.pencolor
           clone  = Geomink(
             self.scale, self.cellsize, polygon=a[0], pencolor=a[1], label='R'
           ) # initial label
+          '''
           clone.tx(x, y)
           block.append(clone)
           cb     = clone.shape.bounds

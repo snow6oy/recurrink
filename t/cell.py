@@ -69,3 +69,12 @@ class TestCell(unittest.TestCase):
     }
     #self.c.validate(cells) # does it raise an error
     self.assertRaises(ValueError, self.c.validate, cells)
+
+  def test_1(self):
+    '''
+    c = Cell() 
+    c.name='a' 
+    c.bft[0].layer='bg' 
+    c.bft[1].fill='FFF' 
+    c.bft[2].stroke['width']=.5
+    '''

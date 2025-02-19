@@ -261,7 +261,6 @@ class Geomink(Shapes):
       '''
       return LineString()
 
-  # def __init__(self, scale, cellsize, xywh=tuple(), polygon=None, pencolor='000', label=None):
   def __init__(self, cellsize, scale=1.0, pencolor='000', **kwargs):
     ''' a tuple with min and max coord will become a rectangle
         more complex shapes should be pre-generated and sent as a Geometry
@@ -274,29 +273,32 @@ class Geomink(Shapes):
     print(f"{kwargs['xywh']=}, {kwargs['polygon']=}")
     '''
     super().__init__(scale, cellsize)
-    self.pencolor = pencolor
+    # switching between fg and bg fills should happen before
+    self.pencolor = pencolor 
     if 'xywh' in kwargs:
       xywh = kwargs['xywh']
     elif 'coord' in kwargs and 'cell' in kwargs and 'layer'in kwargs: 
-      x, y = kwargs['coord']
-      if kwargs['layer'] == 'bg': # override cell
-        bg_cell = { 'facing': 'all', 'shape': 'square', 'size': 'medium', 'stroke_width': 0 }
-        fg   = self.foreground(x, y, bg_cell)
-        fill = kwargs['cell']['bg']
+      x, y = self.setCell(cellsize, kwargs)
+      self.pencolor = self.fill
+      if self.layer == 'bg': # override cell
+        fg = self.foreground(x, y, { 
+          'facing': 'all', 'shape': 'square', 'size': 'medium', 'stroke_width': 0 
+        })
       else:
-        fg   = self.foreground(x, y, kwargs['cell'])
-        fill = kwargs['cell']['fill']
+        fg = self.foreground(x, y, kwargs['cell']) # TODO obtain Cell vals from self instead
       x, y, w, h = list(fg.values())[:4]  # drop the name val cos we already know its square
       w += x
       h += y
-      xywh=(x, y, w, h)
+      xywh = (x, y, w, h)
     else:
       xywh = tuple()
+
 
     if len(xywh) == 4: # defined by cells
       x, y, w, h  = xywh
       self.shape  = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
       self.meander = self.Rectangle(self.shape)
+      self.label   = 'R'
     elif 'polygon' in kwargs and 'label' in kwargs:
       label = list(kwargs['label'])[0] # first char of string
       polygon = kwargs['polygon'] # of type: shapely.geometry.polygon.Polygon
@@ -316,6 +318,28 @@ class Geomink(Shapes):
       self.label  = label
     else:
       raise ValueError(f"{len(xywh)=} needs 4 OR polygon with label OR coord with cell and layer")
+
+  def setCell(self, cellsize, cell):
+    ''' encapsulate cell data from db
+    '''
+    if cell['cell']['shape'] not in ['square', 'line']:
+      print(f"this {cell['shape']} is going to be interesting")
+
+    c            = cell['cell']
+    coord        = cell['coord']
+    x            = int(coord[0] * cellsize)
+    y            = int(coord[1] * cellsize)
+    self.layer   = cell['layer']
+    self.fill    = c['bg'] if self.layer == 'bg' else c['fill']
+    self.opacity = c['fill_opacity']
+    self.stroke  = {
+      'fill':      c['stroke'],
+      'dasharray': c['stroke_dasharray'],
+      'opacity':   c['stroke_opacity'],
+      'width':     c['stroke_width']
+    }
+    if list(self.fill)[0] == '#': self.fill = self.fill[1:] # remove # for consistency
+    return x, y
 
   '''
   def set(self, xywh, pencolor, label):
