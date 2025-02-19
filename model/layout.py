@@ -1,6 +1,6 @@
 import copy
 from cell.shapes import Shapes
-from cell.geomink import Geomink
+#from cell.geomink import Geomink
 
 class Layout():
   ''' the below cell sizes were calculated as
