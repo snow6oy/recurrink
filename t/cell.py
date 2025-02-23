@@ -5,10 +5,11 @@
 import os.path
 import unittest
 import pprint
-from cell.data import CellData
+from cell import CellData, Cell
+from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
-class TestCell(unittest.TestCase):
+class Test(unittest.TestCase):
 
   def setUp(self):
     self.c = CellData(2) # colour45 inherit Stroke() class
@@ -71,10 +72,26 @@ class TestCell(unittest.TestCase):
     self.assertRaises(ValueError, self.c.validate, cells)
 
   def test_1(self):
+    ''' create a cell for first position of block with top
     '''
-    c = Cell() 
-    c.name='a' 
-    c.bft[0].layer='bg' 
-    c.bft[1].fill='FFF' 
-    c.bft[2].stroke['width']=.5
+    cellsize = 60
+    coord    = (0, 0)
+    cn, tn   = config.positions[coord]
+    c        = Cell(cn, cellsize, coord, config.cells[cn])
+    self.assertEqual(c.bft[0].layer, 'bg')
+    self.assertEqual(c.bft[1].layer, 'fg')
+    c.addTop(tn, config.cells[tn])
+    self.assertEqual(c.bft[2].layer, 'top')
+
+  def test_2(self):
+    ''' cells keep their names
     '''
+    cellsize = 60
+    coord    = (2, 0)
+    cn, tn   = config.positions[coord]
+    c        = Cell(cn, cellsize, coord, config.cells[cn])
+    self.assertEqual(c.names[1], 'c')
+'''
+the
+end
+'''

@@ -293,7 +293,6 @@ class Geomink(Shapes):
     else:
       xywh = tuple()
 
-
     if len(xywh) == 4: # defined by cells
       x, y, w, h  = xywh
       self.shape  = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
@@ -341,21 +340,32 @@ class Geomink(Shapes):
     if list(self.fill)[0] == '#': self.fill = self.fill[1:] # remove # for consistency
     return x, y
 
-  '''
-  def set(self, xywh, pencolor, label):
-    if len(xywh) == 4: # defined by cells
-      x, y, w, h    = xywh
-      self.shape    = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
-      self.meander  = self.Rectangle(self.shape)
-      self.pencolor = pencolor
-    else:
-  '''
   def tx(self, x, y):
     ''' use Shapely transform to offset coordinates according to grid position
     '''
     boundary    = self.shape.boundary
     line_string = transform(boundary, lambda a: a + [x, y])
     self.shape  = Polygon(line_string)
+
+class Cell():
+  '''
+  a Cell is comprised of up to three layers
+  each layer is a Geomink wrapper around a Shapely geometry object
+  '''
+  def __init__(self, name, cellsize, coord, cell):
+   self.bft      = list()
+   self.names    = list()
+   self.cellsize = cellsize
+   self.coord    = coord
+   self.bft.append(Geomink(cellsize, coord=coord, cell=cell, layer='bg'))
+   self.bft.append(Geomink(cellsize, coord=coord, cell=cell, layer='fg'))
+   [self.names.append(name) for i in range(2)]
+
+  def addTop(self, name, cell):
+    if cell['top']:
+      gmk = Geomink(self.cellsize, coord=self.coord, cell=cell, layer='top') 
+      self.bft.append(gmk)
+      self.names.append(name)
 
 class Plotter:
   ''' wrapper around matplot so we can see whats going on
