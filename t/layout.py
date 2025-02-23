@@ -1,6 +1,7 @@
 import unittest
 import pprint
 from model import Layout
+from block import GeoMaker
 from config import *
 pp = pprint.PrettyPrinter(indent = 2)
 
@@ -27,43 +28,13 @@ class Test(unittest.TestCase):
     self.assertEqual(bg['name'], 'square')
 
   def test_3(self):
-    ''' copy from cells into styles and check they arrived ok
+    ''' cells are layered geominks
     '''
-    for layer in ['bg', 'fg', 'top']:
-      for cell in self.data:
-        self.lt.uniqstyle(cell, layer, self.data[cell]['top'],
-          bg=self.data[cell]['bg'],
-          fill=self.data[cell]['fill'],
-          fo=self.data[cell]['fill_opacity'],
-          stroke=self.data[cell]['stroke'],
-          sd=self.data[cell]['stroke_dasharray'],
-          so=self.data[cell]['stroke_opacity'],
-          sw=self.data[cell]['stroke_width']
-        )
-      if layer == 'bg':
-        self.assertTrue("fill:#CCC;stroke-width:0" in self.lt.styles)
-        self.assertEqual(self.lt.styles["fill:#CCC;stroke-width:0"], [ 'a', 'b', 'c', 'd' ])
-      elif layer ==  'fg' and self.data[cell]['stroke_width']:
-        self.assertTrue(
-          "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0" in self.lt.styles
-        )
-        self.assertEqual(
-          self.lt.styles[
-            "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0"
-          ], [ 'a', 'd' ]
-        )
-      elif layer ==  'fg':
-        self.assertTrue("fill:#FFF;fill-opacity:1.0" in self.lt.styles)
-      #  "fill:#000;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0": [ 'b', 'c' ]
-      elif layer == 'top' and self.data[cell]['stroke_width']:
-        self.assertEqual(
-          self.lt.styles[
-            "fill:#FFF;fill-opacity:1.0;stroke:#000;stroke-width:0;stroke-dasharray:0;stroke-opacity:0"
-          ], [ 'd' ]
-        )
-      elif layer == 'top':
-        self.assertTrue("fill:#FFF;fill-opacity:1.0" in self.lt.styles)
-      self.lt.styles.clear()
+    gm = GeoMaker()
+    blocksz = (3,1)
+    block1  = gm.makeCells(blocksz, self.positions, self.data)
+    self.lt.gridwalk2((3, 1), self.positions, block1)
+    self.assertTrue("fill:#00F;fill-opacity:1.0" in self.lt.styles)
 
   def test_4(self):
     ''' find style '''
@@ -113,13 +84,59 @@ class Test(unittest.TestCase):
     '''
     self.assertRaises(ValueError, Layout, unit='zz')
 
-  def test_0(self):
+  def test_11(self):
     ''' size will be divided by scale
     '''
     self.assertEqual(self.lt.cellsize, 60)
 
+  def test_12(self):
+    ''' copy bg styles from cells into uniq styles
+    '''
+    layer = 'bg'
+    for cell in self.data:
+      self.lt.uniqstyle(cell, layer, self.data[cell]['top'],
+        bg=self.data[cell]['bg'],
+        fill=self.data[cell]['fill'],
+        fo=self.data[cell]['fill_opacity'],
+        stroke=self.data[cell]['stroke'],
+        sd=self.data[cell]['stroke_dasharray'],
+        so=self.data[cell]['stroke_opacity'],
+        sw=self.data[cell]['stroke_width']
+      )
+    self.assertTrue("fill:#F00;stroke-width:0" in self.lt.styles)
+
+  def test_13(self):
+    ''' copy bg from cells into styles and check they arrived ok
+    '''
+    layer = 'fg'
+    for cell in self.data:
+      self.lt.uniqstyle(cell, layer, self.data[cell]['top'],
+        bg=self.data[cell]['bg'],
+        fill=self.data[cell]['fill'],
+        fo=self.data[cell]['fill_opacity'],
+        stroke=self.data[cell]['stroke'],
+        sd=self.data[cell]['stroke_dasharray'],
+        so=self.data[cell]['stroke_opacity'],
+        sw=self.data[cell]['stroke_width']
+      )
+    self.assertTrue("fill:#FF0;fill-opacity:1.0" in self.lt.styles)
+
+  def test_14(self):
+    ''' copy from top cells into styles and check they arrived ok
+    '''
+    layer = 'top'
+    for cell in self.data:
+      self.lt.uniqstyle(cell, layer, self.data[cell]['top'],
+        bg=self.data[cell]['bg'],
+        fill=self.data[cell]['fill'],
+        fo=self.data[cell]['fill_opacity'],
+        stroke=self.data[cell]['stroke'],
+        sd=self.data[cell]['stroke_dasharray'],
+        so=self.data[cell]['stroke_opacity'],
+        sw=self.data[cell]['stroke_width']
+      )
+    self.assertTrue("fill:#00F;fill-opacity:1.0" in self.lt.styles)
 '''
 the
 end
 '''
-

@@ -1,6 +1,5 @@
 import copy
-from cell.shapes import Shapes
-#from cell.geomink import Geomink
+from cell import Shapes
 
 class Layout():
   ''' the below cell sizes were calculated as
@@ -79,6 +78,15 @@ class Layout():
                 self.rendercell(layer, cell, c, t, gx, x, gy, y)
       self.styles.clear() # empty self.styles before next layer
 
+  def gridwalk2(self, blocksize, positions, block1):
+    ''' traverse the grid once for each block, populating ET elems as we go
+    '''
+    self.blocksize = blocksize         # pass blocksize to LinearSvg()
+    for cell in block1:
+      for i, gmk in enumerate(cell.bft):
+        style = cell.getStyle(i)
+        self.addStyle(style, cell.names[i])
+    #print(self.styles.keys())
 
   def getgroup(self, layer, cell):
     ''' combine style and counter to make a group
@@ -130,6 +138,15 @@ class Layout():
     elif style:
       self.styles[style] = list()
       self.styles[style].append(cell)
+
+  def addStyle(self, style, name):
+    ''' styles are unique for each layer in order to group geometries in SVG
+    '''
+    if style and style in self.styles:
+      self.styles[style].append(name)
+    elif style:
+      self.styles[style] = list()
+      self.styles[style].append(name)
 
   def findstyle(self, cell):
     ''' find a style saved in uniqstyle

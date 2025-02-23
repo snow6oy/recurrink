@@ -1,4 +1,5 @@
-from cell.geomink import Geomink
+#from cell.geomink import Geomink
+from cell import Geomink, Cell
 
 class GeoMaker:
   # TODO set these with __init__ ?
@@ -20,6 +21,20 @@ class GeoMaker:
           if layer == 'top':
             if t: block.append(self.getShape(t, coord, cells[t], layer='top'))
           else: block.append(self.getShape(c, coord, cells[c], layer=layer))
+    return block
+
+  def makeCells(self, blocksize, positions, cells):
+    ''' given block and cell metadata wrap geominks for each block position 
+    '''
+    block  = []
+    b0, b1  = blocksize
+    for y in range(b1):
+      for x in range(b0):
+        coord  = (x, y)
+        cn, tn = positions[coord]
+        c      = Cell(cn, self.cellsize, coord, cells[cn])
+        if tn in cells: c.addTop(tn, cells[tn])
+        block.append(c)
     return block
 
   def getShape(self, label, coord, cell, layer):

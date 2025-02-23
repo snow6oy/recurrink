@@ -1,7 +1,6 @@
 import unittest
 import pprint
-from block import BlockData
-from block.make import GeoMaker # TODO package me
+from block import BlockData, GeoMaker
 from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -15,6 +14,12 @@ class Test(unittest.TestCase):
     blocksz = (3,1)
     block1  = gm.make(blocksz, config.positions, config.cells)
     self.assertEqual(block1[0].pencolor, '00F')
+
+  def test_2(self):
+    gm = GeoMaker()
+    blocksz = (3,1)
+    block1  = gm.makeCells(blocksz, config.positions, config.cells)
+    self.assertEqual(block1[0].names[-1], 'c')
 
   def test_4(self):
     ''' key value pair with position as the key
@@ -62,15 +67,6 @@ class Test(unittest.TestCase):
       cells = positions[(2, 0)]
     self.assertEqual(cells[1], 'c')
 
-  def test_10(self):
-    ''' top or not
-    '''
-    model = 'soleares'
-    uniqcells = self.b.readPositions(model, output=list())
-    topcells = self.b.topcells(model)
-    self.assertEqual(topcells, ['a', 'c'])
-
-
   def test_9(self):
     ''' top or not with four four
     '''
@@ -79,8 +75,17 @@ class Test(unittest.TestCase):
     topcells = self.b.topcells(model)
     self.assertEqual(topcells[0], 'd')
 
+  def test_10(self):
+    ''' top or not
+    '''
+    model = 'soleares'
+    uniqcells = self.b.readPositions(model, output=list())
+    topcells = self.b.topcells(model)
+    self.assertEqual(topcells, ['a', 'c'])
 '''
 the 
 end
 '''
+
+
 

@@ -367,6 +367,29 @@ class Cell():
       self.bft.append(gmk)
       self.names.append(name)
 
+  def getStyle(self, i):
+    ''' construct a CSS style 
+    '''
+    if self.bft[i].layer == 'bg': # force sw:0 hide cracks between backgrounds
+      style = f"fill:#{self.bft[i].fill};stroke-width:0" 
+    else:
+      style = (f"fill:#{self.bft[i].fill};" +
+        f"fill-opacity:{self.bft[i].opacity}")
+      if self.bft[i].stroke['width']:
+        style += (f";stroke:#{self.bft[i].stroke['fill']};" +
+          f"stroke-width:{self.bft[i].stroke['width']};" +
+          f"stroke-dasharray:{self.bft[i].stroke['dasharray']};" +
+          f"stroke-opacity:{self.bft[i].stroke['opacity']}")
+    return style
+    '''
+    elif layer == 'top' and top and sw:
+      style = (f"fill:{fill};fill-opacity:{fo};" +
+        f"stroke:{stroke};stroke-width:{sw};" +
+        f"stroke-dasharray:{sd};stroke-opacity:{so}")
+    elif layer == 'top' and top:
+      style = f"fill:{fill};fill-opacity:{fo}"
+    '''
+
 class Plotter:
   ''' wrapper around matplot so we can see whats going on
   '''
