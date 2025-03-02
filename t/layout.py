@@ -23,28 +23,23 @@ class Test(unittest.TestCase):
   def test_2(self):
     self.lt.uniqstyle(cell='a', layer='bg', top=False, bg='000') 
     self.lt.cells = self.data
-    self.lt.rendercell('bg', 'a', 'a', False, 0, 0, 0, 0) # layer, cell, c, t, gx, x, gy, y
+    # layer, cell, c, t, gx, x, gy, y
+    self.lt.rendercell('bg', 'a', 'a', False, 0, 0, 0, 0) 
     bg = self.lt.doc[0]['shapes'][0]
     self.assertEqual(bg['name'], 'square')
 
-  def test_3(self):
-    ''' cells are layered geominks
-    '''
-    gm = GeoMaker()
-    blocksz = (3,1)
-    block1  = gm.makeCells(blocksz, self.positions, self.data)
-    self.lt.gridwalk2((3, 1), self.positions, block1)
-    self.assertTrue("fill:#00F;fill-opacity:1.0" in self.lt.styles)
-
   def test_4(self):
-    ''' find style '''
-    [self.lt.uniqstyle(c, 'bg', self.data[c]['top'], bg='CCC') for c in self.data]
+    ''' find style 
+    '''
+    [self.lt.uniqstyle(
+      c, 'bg', self.data[c]['top'], bg='CCC'
+    ) for c in self.data]
     #pp.pprint(self.lt.styles)
     style = self.lt.findstyle('a')
     self.assertTrue("fill:#CCC;stroke-width:0", style)
 
   def test_5(self):
-    ''' walk the grid and test if the number of background cells matches gridsize 
+    ''' walk the grid and test if the num of background cells matches gridsize 
     '''
     expected_bg = self.lt.cellnum * self.lt.cellnum
     numof_bg = 0
@@ -65,14 +60,16 @@ class Test(unittest.TestCase):
     '''
     lt = Layout(scale=1.0, gridsize=18, cellsize=6)
     lt.gridwalk((3, 1), self.positions, self.data)
-    # pp.pprint(lt.doc[2])
+    pp.pprint(lt.doc[2])
     self.assertEqual(lt.doc[2]['shapes'][0]['width'], 2)
  
   def test_8(self):
     ''' is the given scale within range
     '''
-    self.assertRaises(ValueError, Layout, scale=2.9, gridsize=1080, cellsize=60) # scale 2.9
-    self.assertRaises(ValueError, Layout, scale=0.6, gridsize=180, cellsize=24)  # is not valid
+    # scale 2.9
+    self.assertRaises(ValueError, Layout, scale=2.9, gridsize=1080, cellsize=60)
+    # is not valid
+    self.assertRaises(ValueError, Layout, scale=0.6, gridsize=180, cellsize=24)
 
   def test_9(self):
     ''' cell size must be divisble by 3 for cubes
@@ -136,6 +133,46 @@ class Test(unittest.TestCase):
         sw=self.data[cell]['stroke_width']
       )
     self.assertTrue("fill:#00F;fill-opacity:1.0" in self.lt.styles)
+
+  def test_15(self):
+    ''' style is a dictionary of style:cell names
+    '''
+    gm = GeoMaker()
+    blocksz = (3, 1)
+    block1  = gm.makeCells(blocksz, self.positions, self.data)
+    self.lt.styleGuide(block1)
+    self.assertEqual(self.lt.lstyles[2]['c'], "fill:#00F;fill-opacity:1.0")
+
+  def test_16(self):
+    ''' continue from previous test and then walk the grid
+    '''
+    gm = GeoMaker()
+    blocksz = (3, 1)
+    block1  = gm.makeCells(blocksz, self.positions, self.data)
+    self.lt.stampBlocks(blocksz, block1, grid_xy=(0, 0))
+    self.assertEqual(list(self.lt.lgmk[0].keys()), ['a','b','c'])
+
+  def test_17(self):
+    ''' explode blocks across the grid
+    '''
+    gm = GeoMaker()
+    blocksz = (3, 1)
+    block1  = gm.makeCells(blocksz, self.positions, self.data)
+    self.lt.gridWalk(blocksz, block1) # , self.positions, block1)
+    self.assertEqual(list(self.lt.lgmk[2].keys())[1], 'd')
+
+  def test_18(self):
+    ''' make a doc for input to Svg()
+    '''
+    gm = GeoMaker()
+    blocksz = (3, 1)
+    block1  = gm.makeCells(blocksz, self.positions, self.data)
+    self.lt.styleGuide(block1)
+    self.lt.gridWalk(blocksz, block1)
+    self.lt.svgDoc()
+    self.assertEqual(len(self.lt.doc), 5)
+
+
 '''
 the
 end

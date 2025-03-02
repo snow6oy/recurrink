@@ -4,10 +4,11 @@ from cell import Geomink, Cell
 class GeoMaker:
   # TODO set these with __init__ ?
   scale = 1.0
-  cellsize = 15
+  cellsize = 60
 
   def make(self, blocksize, positions, cells):
-    ''' given block and cell metadata make a geometry object for each position on the block
+    ''' given block and cell metadata make a geometry object 
+        for each position on the block
     '''
     block  = []
     b0, b1  = blocksize
@@ -26,15 +27,16 @@ class GeoMaker:
   def makeCells(self, blocksize, positions, cells):
     ''' given block and cell metadata wrap geominks for each block position 
     '''
-    block  = []
-    b0, b1  = blocksize
+    block  = {}
+    b0, b1 = blocksize
     for y in range(b1):
       for x in range(b0):
         coord  = (x, y)
         cn, tn = positions[coord]
         c      = Cell(cn, self.cellsize, coord, cells[cn])
         if tn in cells: c.addTop(tn, cells[tn])
-        block.append(c)
+        #print(coord, c.names)
+        block[coord] = c
     return block
 
   def getShape(self, label, coord, cell, layer):

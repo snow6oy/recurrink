@@ -337,7 +337,9 @@ class Geomink(Shapes):
       'opacity':   c['stroke_opacity'],
       'width':     c['stroke_width']
     }
-    if list(self.fill)[0] == '#': self.fill = self.fill[1:] # remove # for consistency
+    self.name    = c['shape']
+    # remove hash for consistency
+    if list(self.fill)[0] == '#': self.fill = self.fill[1:] 
     return x, y
 
   def tx(self, x, y):

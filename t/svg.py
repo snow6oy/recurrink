@@ -2,6 +2,7 @@ import unittest
 import pprint
 from model import Svg
 from cell import Shapes
+from block import GeoMaker
 from config import *
 pp = pprint.PrettyPrinter(indent = 2)
 
@@ -58,8 +59,8 @@ class Test(unittest.TestCase):
     self.svg.gridwalk((3, 1), self.positions, self.data)
     self.svg.make()
     #pp.pprint(self.svg.doc)
-    self.svg.write('/tmp/minkscape.svg')
-    with open('/tmp/minkscape.svg') as f:
+    self.svg.write('tmp/minkscape.svg')
+    with open('tmp/minkscape.svg') as f:
       written = len(f.readlines()) 
     self.assertEqual(written, 35)
 
@@ -68,6 +69,22 @@ class Test(unittest.TestCase):
     '''
     svg = Svg(scale=1, inkscape=True)
     self.assertTrue(svg.inkscape)
+
+  def test_5(self):
+    ''' make a doc for input to Svg()
+    '''
+    gm = GeoMaker()
+    blocksz = (3, 1)
+    block1  = gm.makeCells(blocksz, self.positions, self.data)
+    self.svg.styleGuide(block1)
+    self.svg.gridWalk(blocksz, block1)
+    self.svg.svgDoc()
+    #pp.pprint(self.svg.doc)
+    self.svg.make()
+    self.svg.write('tmp/minkscape2.svg')
+    with open('tmp/minkscape2.svg') as f:
+      written = len(f.readlines()) 
+    self.assertEqual(written, 37)
 
 '''
 the
