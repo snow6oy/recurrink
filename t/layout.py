@@ -60,7 +60,7 @@ class Test(unittest.TestCase):
     '''
     lt = Layout(scale=1.0, gridsize=18, cellsize=6)
     lt.gridwalk((3, 1), self.positions, self.data)
-    pp.pprint(lt.doc[2])
+    #pp.pprint(lt.doc[2])
     self.assertEqual(lt.doc[2]['shapes'][0]['width'], 2)
  
   def test_8(self):
@@ -171,7 +171,6 @@ class Test(unittest.TestCase):
     self.lt.gridWalk(blocksz, block1)
     self.lt.svgDoc()
     self.assertEqual(len(self.lt.doc), 5)
-
 
 '''
 the

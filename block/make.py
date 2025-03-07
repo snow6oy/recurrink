@@ -3,8 +3,9 @@ from cell import Geomink, Cell
 
 class GeoMaker:
   # TODO set these with __init__ ?
-  scale = 1.0
-  cellsize = 60
+  def __init__(self, scale=1.0, cellsize=60):
+    self.scale    = scale
+    self.cellsize = cellsize
 
   def make(self, blocksize, positions, cells):
     ''' given block and cell metadata make a geometry object 

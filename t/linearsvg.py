@@ -11,7 +11,7 @@ class Test(unittest.TestCase):
   def setUp(self):
     self.tf  = TmpFile()
     self.f   = Flatten()
-    self.gm  = GeoMaker()
+    self.gm  = GeoMaker(scale=1, cellsize=15)
 
   def test_1(self):
     ''' load minkscape and check block has correct number of shapes
