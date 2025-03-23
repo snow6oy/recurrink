@@ -1,7 +1,7 @@
 import math
 import pprint
 import matplotlib.pyplot as plt
-from shapely.geometry import LineString, Polygon, LinearRing
+from shapely.geometry import LineString, Polygon, LinearRing, Point
 from shapely import transform
 from .meander import Meander
 from .shapes import Shapes
@@ -282,14 +282,22 @@ class Geomink(Shapes):
       self.pencolor = self.fill
       if self.layer == 'bg': # override cell
         fg = self.foreground(x, y, { 
-          'facing': 'all', 'shape': 'square', 'size': 'medium', 'stroke_width': 0 
+          'facing': 'all', 'shape': 'square', 
+          'size': 'medium', 'stroke_width': 0 
         })
       else:
-        fg = self.foreground(x, y, kwargs['cell']) # TODO obtain Cell vals from self instead
-      x, y, w, h = list(fg.values())[:4]  # drop the name val cos we already know its square
-      w += x
-      h += y
-      xywh = (x, y, w, h)
+        # TODO obtain Cell vals from self instead
+        fg = self.foreground(x, y, kwargs['cell']) 
+      #print(f"{self.layer=} {self.name=} {len(fg.keys())=}")
+      if self.name in ['square', 'line']:
+        x, y, w, h = list(fg.values())[:4] # drop the name val assume its square
+        w += x
+        h += y
+        xywh = (x, y, w, h)
+      # make a boundary for gmk.tx but use cell.Shape for SVG
+      # TODO Remove This once Shapely can do all shapes
+      else: 
+        xywh = (x, y, x + cellsize, y + cellsize)
     else:
       xywh = tuple()
 
@@ -316,13 +324,12 @@ class Geomink(Shapes):
       self.shape  = Polygon(polygon)
       self.label  = label
     else:
-      raise ValueError(f"{len(xywh)=} needs 4 OR polygon with label OR coord with cell and layer")
+      raise ValueError(f"""
+{len(xywh)=} needs 4 OR polygon with label OR coord with cell and layer""")
 
   def setCell(self, cellsize, cell):
     ''' encapsulate cell data from db
     '''
-    if cell['cell']['shape'] not in ['square', 'line']:
-      print(f"this {cell['shape']} is going to be interesting")
 
     c            = cell['cell']
     coord        = cell['coord']
@@ -338,6 +345,8 @@ class Geomink(Shapes):
       'width':     c['stroke_width']
     }
     self.name    = c['shape']
+    self.facing  = c['facing']  # facing and size are for legacy mode
+    self.size    = c['size']
     # remove hash for consistency
     if list(self.fill)[0] == '#': self.fill = self.fill[1:] 
     return x, y
@@ -349,13 +358,35 @@ class Geomink(Shapes):
     line_string = transform(boundary, lambda a: a + [x, y])
     self.shape  = Polygon(line_string)
 
+  def getShape(self, legacy=False):
+    ''' return a shape dict from a Shapely object
+        unless in legacy and then
+        return a shape dict directly from Shape
+    '''
+    #print(legacy, self.layer)
+    if legacy: # and self.layer in ['fg', 'top']: # use cell.Shape with circle
+      x, y, _, _ = self.shape.bounds
+      shape = self.foreground(x, y, {
+        'facing': self.facing,
+        'shape':  self.name,
+        'size':   self.size,
+        'stroke_width' : self.stroke['width']
+      }) 
+    else:                              # use geomink.Shapely without circle
+      keys = ['width', 'height', 'x', 'y', 'name']
+      x, y, W, H = self.shape.bounds
+      w = W - x
+      h = H - y
+      shape = dict(zip(keys, [w, h, x, y, self.name]))
+    return shape
+
 class Cell():
   '''
   a Cell is comprised of up to three layers
   each layer is a Geomink wrapper around a Shapely geometry object
   '''
   def __init__(self, name, cellsize, coord, cell):
-   self.bft      = list()
+   self.bft      = list()  # Background Foreground Top
    self.names    = list()
    self.cellsize = cellsize
    self.coord    = coord

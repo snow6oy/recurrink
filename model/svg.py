@@ -35,6 +35,7 @@ class Svg(Layout):
   def make(self):
     ''' expand the doc from gridwalk and convert to XML
     '''
+    #pp.pprint(self.doc)
     uniqid = 0 # xml elements must have unique IDs
     for group in self.doc:
       uniqid += 1
@@ -46,7 +47,7 @@ class Svg(Layout):
       for s in group['shapes']:
         uniqid += 1
         name = s['name']
-        #print(name, str(uniqid))
+        #print(f"{name=} {str(uniqid)} {s.keys()=}")
         if name == 'circle':
           circle = ET.SubElement(g, f"{self.ns}circle", id=str(uniqid))
           circle.set('cx', f"{s['cx']:g}")

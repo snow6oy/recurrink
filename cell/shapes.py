@@ -31,8 +31,8 @@ class Shapes:
 
   def foreground(self, x, y, cell):
     ''' create a shape from a cell for adding to a group
-  
-        fix for update --mm is to ignore stroke whenever it causes width to be less than one
+        fix for update --mm is to ignore stroke 
+        whenever it causes width to be less than one
     '''
     facing = cell['facing']
     shape = cell['shape']
@@ -40,9 +40,10 @@ class Shapes:
     hsw = (cell['stroke_width'] / 2) * self.scale
     sw = cell['stroke_width'] * self.scale
     p = Points(x, y, sw, self.cellsize)
-    #print(f"{self.cellsize=} {size=} {shape=} {x=} {y=} half stroke width:{hsw=} stroke width:{sw=}")
+    #print(f"{self.cellsize=} {size=} {shape=} {x=} {y=} {hsw=} {sw=}")
     if shape == 'circle':
       s = self.circle(size, sw, p)
+      #print(s)
     elif shape == 'square':
       s = self.square(x, y, size, hsw, sw)
       if s['width'] < 1 or s['height'] < 1:

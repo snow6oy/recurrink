@@ -230,7 +230,7 @@ class Layout():
       self.lgmk[layer][name] = list()
       self.lgmk[layer][name].append(clone)
 
-  def svgDoc(self):
+  def __svgDoc(self):
     ''' pull objects from self and construct inputs to Svg()
         [ { shapes: [ {} {} ], style: fill:#00F } ]
     '''
@@ -255,6 +255,38 @@ class Layout():
           #print(f"layer {li} {w=} {h=} {x=} {y=}")
           shape = dict(zip(keys, [w, h, x, y, gmk.name]))
           sdoc[dj]['shapes'].append(shape)
+    self.doc = sdoc
+
+  def svgDoc(self, legacy=False):
+    ''' pull objects from self and construct inputs to Svg()
+        [ { shapes: [ {} {} ], style: fill:#00F } ]
+    '''
+    keys = ['width', 'height', 'x', 'y', 'name']
+    sdoc = list()
+    di   = 0      # doc index
+    for li in range(3):               # layer index
+      seen = dict()                   # uniq style
+      for cn in self.lgmk[li]:        # cell names in layer
+	#print(cn)
+        style = self.lstyles[li][cn]
+        if style not in seen:
+          seen[style] = di
+          sdoc.append(dict())
+          sdoc[di]['shapes'] = list()
+          sdoc[di]['style']  = style
+          di += 1
+        dj = seen[style]
+        # TODO decouple lgmk from Shapely 
+        for gmk in self.lgmk[li][cn]:
+          shape = gmk.getShape(legacy)
+          sdoc[dj]['shapes'].append(shape)
+          '''
+          x, y, W, H = gmk.shape.bounds
+          w = W - x
+          h = H - y
+          #print(f"layer {li} {w=} {h=} {x=} {y=}")
+          shape = dict(zip(keys, [w, h, x, y, gmk.name]))
+          '''
     self.doc = sdoc
 
 class Grid(Layout):
