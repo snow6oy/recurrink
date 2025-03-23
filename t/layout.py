@@ -10,9 +10,11 @@ class Test(unittest.TestCase):
   def setUp(self):
     ''' celldata for minkscape 
     '''
-    self.lt = Layout(scale=1.0, gridsize=180)
+    self.lt        = Layout(scale=1.0, gridsize=180)
+    self.gm        = GeoMaker()
     self.positions = config.positions
-    self.data = config.cells
+    self.data      = config.cells
+    self.blocksize = (3, 1)
 
   def test_1(self):
     expected = [36, 18, 12, 9]
@@ -137,41 +139,69 @@ class Test(unittest.TestCase):
   def test_15(self):
     ''' style is a dictionary of style:cell names
     '''
-    gm = GeoMaker()
-    blocksz = (3, 1)
-    block1  = gm.makeCells(blocksz, self.positions, self.data)
+    block1  = self.gm.makeCells(self.blocksize, self.positions, self.data)
     self.lt.styleGuide(block1)
     self.assertEqual(self.lt.lstyles[2]['c'], "fill:#00F;fill-opacity:1.0")
 
   def test_16(self):
     ''' continue from previous test and then walk the grid
     '''
-    gm = GeoMaker()
-    blocksz = (3, 1)
-    block1  = gm.makeCells(blocksz, self.positions, self.data)
-    self.lt.stampBlocks(blocksz, block1, grid_xy=(0, 0))
+    block1  = self.gm.makeCells(self.blocksize, self.positions, self.data)
+    self.lt.stampBlocks(self.blocksize, block1, grid_xy=(0, 0))
     self.assertEqual(list(self.lt.lgmk[0].keys()), ['a','b','c'])
 
   def test_17(self):
     ''' explode blocks across the grid
     '''
-    gm = GeoMaker()
-    blocksz = (3, 1)
-    block1  = gm.makeCells(blocksz, self.positions, self.data)
-    self.lt.gridWalk(blocksz, block1) # , self.positions, block1)
+    block1  = self.gm.makeCells(self.blocksize, self.positions, self.data)
+    self.lt.gridWalk(self.blocksize, block1)
     self.assertEqual(list(self.lt.lgmk[2].keys())[1], 'd')
 
   def test_18(self):
     ''' make a doc for input to Svg()
     '''
-    gm = GeoMaker()
-    blocksz = (3, 1)
-    block1  = gm.makeCells(blocksz, self.positions, self.data)
+    block1  = self.gm.makeCells(self.blocksize, self.positions, self.data)
     self.lt.styleGuide(block1)
-    self.lt.gridWalk(blocksz, block1)
+    self.lt.gridWalk(self.blocksize, block1)
     self.lt.svgDoc()
     self.assertEqual(len(self.lt.doc), 5)
 
+  def test_19(self):
+    '''
+    check circles are supported by makeCells
+    { 'cx': 75.0, 'cy': 15.0, 'name': 'circle', 'r': 21}
+    '''
+    has_circle = False
+    self.data['c']['shape'] = 'circle'  # force it for testing
+    #self.data['c']['shape'] = 'diamond'  # force it for testing
+    block1 = self.gm.makeCells(self.blocksize, self.positions, self.data)
+    self.lt.styleGuide(block1)
+    self.lt.gridWalk(self.blocksize, block1)
+    self.lt.svgDoc(legacy=True)
+    for group in self.lt.doc:
+      for shape in group['shapes']:
+        if shape['name'] == 'circle'and 'cx' in shape:
+          has_circle = True
+          break
+    self.assertTrue(has_circle)
+
+  def test_20(self):
+    ''' triangles
+    { 'name': 'triangl',
+      'points': '990.0,1065.0,1020.0,1050.0,1020.0,1080.0,990.0,1065.0'},
+    '''
+    has_triangl = False
+    self.data['b']['shape'] = 'triangl'  # force it for testing
+    block1 = self.gm.makeCells(self.blocksize, self.positions, self.data)
+    self.lt.styleGuide(block1)
+    self.lt.gridWalk(self.blocksize, block1)
+    self.lt.svgDoc(legacy=True)
+    for group in self.lt.doc:
+      for shape in group['shapes']:
+        if shape['name'] == 'triangl'and 'points' in shape:
+          has_triangl = True
+          break
+    self.assertTrue(has_triangl)
 '''
 the
 end
