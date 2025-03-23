@@ -31,26 +31,40 @@ def inputs():
   parser_r.add_argument("-v", "--view", help='hex name with 32 char')
   parser_i = subparsers.add_parser('init', help='set config for new image')
   parser_i.add_argument('-m', '--model', help='name of base model')
-  parser_i.add_argument("-p", "--palette", help='palette version', type=int, choices=range(1, 10))
+  parser_i.add_argument(
+   "-p", "--palette", help='palette version', type=int, choices=range(1, 10)
+  )
   parser_k = subparsers.add_parser('clone', help='get copy of config')
   parser_k.add_argument("-v", "--view", help='view to clone', required=True)
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_c.add_argument('-m', '--model', help='name of base model')
-  parser_c.add_argument("-a", "--author", choices=['human', 'machine'], required=True)
-  parser_c.add_argument("-s", "--scale", help="zoom control 0.5 - 2.0", required=True)
+  parser_c.add_argument( 
+    "-a", "--author", choices=['human', 'machine'], required=True
+  )
+  parser_c.add_argument(
+    "-s", "--scale", help="zoom control 0.5 - 2.0", required=True
+  )
   parser_d = subparsers.add_parser('delete')
   parser_d.add_argument("-v", "--view", help='view to remove from db')
   parser_u = subparsers.add_parser('update', help='update svg from config')
-  parser_u.add_argument('-m', '--model', help='name of model to update')  # tf.conf, required=True)
+  parser_u.add_argument('-m', '--model', help='name of model to update')
   parser_u.add_argument("-s", "--scale",  help="zoom control 0.5 - 2.0")
-  parser_u.add_argument("--mm",  help="output for plotter", action=argparse.BooleanOptionalAction)
-  parser_f = subparsers.add_parser('flatten', help='write svg formatted for plotter')
-  parser_f.add_argument("-s", "--scale", help='scale to plot clone .6 1 2', required=False)
-  parser_f.add_argument(
-    "-w", "--wireframe", help="flatten as wireframe", action=argparse.BooleanOptionalAction
+  parser_u.add_argument(
+    "--mm",  help="output for plotter", action=argparse.BooleanOptionalAction
+  )
+  parser_f = subparsers.add_parser(
+    'flatten', help='write svg formatted for plotter'
   )
   parser_f.add_argument(
-    "-y", "--yaml", help='init conf/MODEL.yaml', action=argparse.BooleanOptionalAction
+    "-s", "--scale", help='scale to plot clone .6 1 2', required=False
+  )
+  parser_f.add_argument(
+    "-w", "--wireframe", help="flatten as wireframe", 
+    action=argparse.BooleanOptionalAction
+  )
+  parser_f.add_argument(
+    "-y", "--yaml", help='init conf/MODEL.yaml', 
+    action=argparse.BooleanOptionalAction
   )
   parser_p = subparsers.add_parser('release', help='add release date to db')
   parser_p.add_argument("-v", "--view", help='view to mark as released')
@@ -125,6 +139,7 @@ def update(model, scale, mm=False):
   cells = tf.read(model, output=dict())
   v.validate(cells, ver=ver)
   svg.gridwalk(blocksize, positions, cells)
+  pp.pprint(svg.doc)
   svg.make()
   svg.write(svgfile)
   return f"{svgfile} {s}"
