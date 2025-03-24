@@ -269,11 +269,10 @@ class Geomink(Shapes):
         then generate polygon once xywh is known
         label is mandatory when Geomink is made from polygon
 
-    print(f"{scale=} {pencolor=} {kwargs=}")
     print(f"{kwargs['xywh']=}, {kwargs['polygon']=}")
+    print(f"{scale=} {pencolor=} {kwargs=}")
     '''
     super().__init__(scale, cellsize)
-    # switching between fg and bg fills should happen before
     self.pencolor = pencolor 
     if 'xywh' in kwargs:
       xywh = kwargs['xywh']
@@ -344,7 +343,7 @@ class Geomink(Shapes):
       'opacity':   c['stroke_opacity'],
       'width':     c['stroke_width']
     }
-    self.name    = c['shape']
+    self.name    = 'square' if self.layer == 'bg' else c['shape']
     self.facing  = c['facing']  # facing and size are for legacy mode
     self.size    = c['size']
     # remove hash for consistency
@@ -364,7 +363,7 @@ class Geomink(Shapes):
         return a shape dict directly from Shape
     '''
     #print(legacy, self.layer)
-    if legacy: # and self.layer in ['fg', 'top']: # use cell.Shape with circle
+    if legacy: # use cell.Shape for non-sq line shapes
       x, y, _, _ = self.shape.bounds
       shape = self.foreground(x, y, {
         'facing': self.facing,

@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
       self.assertEqual(fg['width'], expected_width[i])
 
   def test_4(self):
-    ''' test a 180 layout calculates stroke_with and Northern Point for each scale
+    ''' test 180 layout calculates stroke_with and Northern Point for each scale
     expected_width = [9.5, 14.25, 19.0, 28.5, 38.0]
     '''
     expected_width = [21.5, 20.25, 19.0, 16.5, 14.0]
@@ -66,6 +66,18 @@ class Test(unittest.TestCase):
       self.data['a']['stroke_width'] = 5
       fg = shapes.foreground(0, 0, self.data['a'])
       self.assertEqual(fg['width'], expected_width[i])
+
+  def test_5(self):
+    ''' bad size 
+    '''
+    geometry = {
+      'shape':'square',
+      'size':'tiny',      # wrong!
+      'facing':'north',
+      'stroke_width': 0
+    }
+    with self.assertRaises(ValueError):
+      self.shapes.foreground(x=0, y=0, cell=geometry)
 
 '''
 the

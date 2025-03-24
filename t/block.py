@@ -16,10 +16,13 @@ class Test(unittest.TestCase):
     self.assertEqual(block1[0].pencolor, '00F')
 
   def test_2(self):
-    gm = GeoMaker()
+    ''' cell names are kept in block1
+    '''
+    gm      = GeoMaker()
     blocksz = (3,1)
+    pos     = (0,0)
     block1  = gm.makeCells(blocksz, config.positions, config.cells)
-    self.assertEqual(block1[0].names[-1], 'c')
+    self.assertEqual(block1[pos].names[-1], 'c')
 
   def test_4(self):
     ''' key value pair with position as the key

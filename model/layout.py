@@ -1,5 +1,5 @@
 import copy
-from cell import Shapes
+#from cell import Shapes
 
 class Layout():
   ''' the below cell sizes were calculated as
@@ -44,12 +44,12 @@ class Layout():
     #print(f"{self.cellnum=} {gridsize=} {cellsize=} {scale=}")
     self.cellsize = round(cellsize * scale)
     self.gridsize = gridsize
-    self.styles   = dict() # unique style associated with many cells
+    #self.styles   = dict() # unique style associated with many cells
     self.lstyles  = [{} for _ in range(3)] # unique style for each layer
     self.lgmk     = [{} for _ in range(3)] # unique gmk   for each layer
     self.seen     = str()    # have we seen this style before
     self.doc      = list()
-    self.shapes   = Shapes(self.scale, self.cellsize)
+    #self.shapes   = Shapes(self.scale, self.cellsize)
     if False:           # run with gridsize=60 cellsize=6 to get a demo
       for col in range(self.cellnum):
         for row in range(self.cellnum):
@@ -57,7 +57,7 @@ class Layout():
           print(xy, end=' ', flush=True)
         print()
 
-  def gridwalk(self, blocksize, positions, cells):
+  def __gridwalk(self, blocksize, positions, cells):
     ''' traverse the grid once for each block, populating ET elems as we go
     '''
     self.cells = cells
@@ -92,7 +92,7 @@ class Layout():
       self.doc.append({ 'style': style, 'shapes': list() })
     return self.doc[-1]['shapes']
 
-  def rendercell(self, layer, cell, c, t, gx, x, gy, y):
+  def __rendercell(self, layer, cell, c, t, gx, x, gy, y):
     ''' gather inputs call Shapes() and add shape to group
     '''
     X = (gx + x) * self.cellsize # this logic is the base for Points
@@ -110,7 +110,7 @@ class Layout():
       g = self.getgroup('top', cell)
       g.append(self.shapes.foreground(X, Y, self.cells[cell]))
 
-  def uniqstyle(self, cell, layer, top, bg=None, fill=None, fo=1, stroke=None, sw=0, sd=0, so=1):
+  def __uniqstyle(self, cell, layer, top, bg=None, fill=None, fo=1, stroke=None, sw=0, sd=0, so=1):
     ''' remember what style to use for this cell and that layer
         as None is invalid XML we use 0 as default for: fo sw sd so
     '''
@@ -134,7 +134,7 @@ class Layout():
       self.styles[style] = list()
       self.styles[style].append(cell)
 
-  def findstyle(self, cell):
+  def __findstyle(self, cell):
     ''' find a style saved in uniqstyle
     '''
     found = None
@@ -218,17 +218,17 @@ class Layout():
         if len(cell.bft) == 2: continue # topless (.)(.) 
         self.addGeomink(2, XY, cell.names[2], cell.bft[2]) # top
 
-  def addGeomink(self, layer, pos, name, gmk):
+  def addGeomink(self, layer, pos, cn, gmk):
     ''' clone geominks then stash by layer and name
     '''
     clone  = copy.copy(gmk)
     clone.tx(pos[0], pos[1])
-    #print(f"{clone.shape.bounds} {pos=}")
-    if name in self.lgmk[layer]:
-      self.lgmk[layer][name].append(clone)
+    #print(f"{clone.shape.bounds} {pos=} {cn=}")
+    if cn in self.lgmk[layer]:
+      self.lgmk[layer][cn].append(clone)
     else:
-      self.lgmk[layer][name] = list()
-      self.lgmk[layer][name].append(clone)
+      self.lgmk[layer][cn] = list()
+      self.lgmk[layer][cn].append(clone)
 
   def __svgDoc(self):
     ''' pull objects from self and construct inputs to Svg()
@@ -267,7 +267,7 @@ class Layout():
     for li in range(3):               # layer index
       seen = dict()                   # uniq style
       for cn in self.lgmk[li]:        # cell names in layer
-	#print(cn)
+        #print(cn, li)
         style = self.lstyles[li][cn]
         if style not in seen:
           seen[style] = di

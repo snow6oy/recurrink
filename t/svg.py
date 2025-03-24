@@ -1,7 +1,7 @@
 import unittest
 import pprint
 from model import Svg
-from cell import Shapes
+from cell import Geomink
 from block import GeoMaker
 from config import *
 pp = pprint.PrettyPrinter(indent = 2)
@@ -10,37 +10,28 @@ class Test(unittest.TestCase):
 
   def setUp(self):
     self.svg    = Svg(scale=1, gridsize=180, cellsize=60)
-    self.shapes = Shapes(scale=1, cellsize=60)
-    self.geometry = {
-      'shape':'square',
-      'size':'medium',
-      'facing':'north',
-      'stroke_width': 0
+    self.cell = {
+      'bg':'000', 
+      'fill': 'FFF',
+      'fill_opacity':1, 
+      'stroke':'FFF', 
+      'stroke_dasharray':0,
+      'stroke_opacity':0, 
+      'stroke_width':0, 
+      'facing': 'north', 
+      'size':'medium'
     }
     self.data = config.cells
     self.positions = config.positions
 
-  def test_0(self):
-    ''' triangle
-    create a style so cell 'a' has a group to belong to
-    '''
-    self.svg.uniqstyle('a', 'fg', False, bg='#000', fill='#FFF') 
-    self.group = self.svg.getgroup('fg', 'a')
-    self.geometry['shape'] = 'triangl'
-    triangl = self.shapes.foreground(x=0, y=0, cell=self.geometry)
-    self.svg.doc[0]['shapes'].append(triangl)
-    self.svg.make()
-    self.assertTrue(list(self.svg.root.iter(tag=f"{self.svg.ns}polygon")))
-
   def test_1(self):
-    ''' diamond
-        are diamonds drawn correctly, excepting formatting differences ?
+    ''' are diamonds drawn correctly
     '''
-    self.svg.uniqstyle('a', 'fg', False, bg='#000', fill='#FFF')
-    self.group = self.svg.getgroup('fg', 'a')
-    self.geometry['shape'] = 'diamond'
-    diamond = self.shapes.foreground(x=0, y=0, cell=self.geometry)
-    self.svg.doc[0]['shapes'].append(diamond)
+    self.cell['shape'] = 'diamond'
+    gmk = Geomink(cellsize=60, layer='fg', cell=self.cell, coord=(0, 0))
+    self.svg.addStyle('fill:#000', 'a', 1)
+    self.svg.addGeomink(1, (0,0), 'a', gmk)
+    self.svg.svgDoc(legacy=True)
     self.svg.make()
     el = list(self.svg.root.iter(tag=f"{self.svg.ns}polygon"))[0]
     p = el.get("points").split(',')
@@ -48,29 +39,17 @@ class Test(unittest.TestCase):
     self.assertEqual(points, [0.0, 30.0, 30.0, 0.0, 60.0, 30.0, 0.0, 30.0])
 
   def test_2(self):
-    ''' bad size '''
-    self.geometry['size'] = 'very tiny'
-    with self.assertRaises(ValueError):
-      self.shapes.foreground(x=0, y=0, cell=self.geometry)
+    ''' triangle
+    '''
+    self.cell['shape'] = 'triangl'
+    triangl = Geomink(cellsize=60, layer='fg', cell=self.cell, coord=(0, 0))
+    self.svg.addStyle('style', 'a', 1)
+    self.svg.addGeomink(1, (0,0), 'a', triangl)
+    self.svg.svgDoc(legacy=True)
+    self.svg.make()
+    self.assertTrue(list(self.svg.root.iter(tag=f"{self.svg.ns}polygon")))
 
   def test_3(self):
-    ''' from config.py make a minkscape.svg in /tmp
-    '''
-    self.svg.gridwalk((3, 1), self.positions, self.data)
-    self.svg.make()
-    #pp.pprint(self.svg.doc)
-    self.svg.write('tmp/minkscape.svg')
-    with open('tmp/minkscape.svg') as f:
-      written = len(f.readlines()) 
-    self.assertEqual(written, 35)
-
-  def test_4(self):
-    ''' toggle inkscape tags for plotter
-    '''
-    svg = Svg(scale=1, inkscape=True)
-    self.assertTrue(svg.inkscape)
-
-  def test_5(self):
     ''' make a doc for input to Svg()
     '''
     gm = GeoMaker()
@@ -78,14 +57,19 @@ class Test(unittest.TestCase):
     block1  = gm.makeCells(blocksz, self.positions, self.data)
     self.svg.styleGuide(block1)
     self.svg.gridWalk(blocksz, block1)
-    self.svg.svgDoc()
+    self.svg.svgDoc(legacy=False)
     #pp.pprint(self.svg.doc)
     self.svg.make()
-    self.svg.write('tmp/minkscape2.svg')
-    with open('tmp/minkscape2.svg') as f:
+    self.svg.write('tmp/svgtest_2.svg')
+    with open('tmp/svgtest_2.svg') as f:
       written = len(f.readlines()) 
     self.assertEqual(written, 37)
 
+  def test_4(self):
+    ''' toggle inkscape tags for plotter
+    '''
+    svg = Svg(scale=1, inkscape=True)
+    self.assertTrue(svg.inkscape)
 '''
 the
 end

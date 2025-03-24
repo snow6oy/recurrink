@@ -2,7 +2,6 @@
 from cell import Geomink, Cell
 
 class GeoMaker:
-  # TODO set these with __init__ ?
   def __init__(self, scale=1.0, cellsize=60):
     self.scale    = scale
     self.cellsize = cellsize

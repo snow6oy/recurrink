@@ -18,7 +18,11 @@ class Test(unittest.TestCase):
   def test_2(self):
     ''' create geomink from cell db 
     '''
-    gmk = Geomink(cellsize=15, layer='bg', cell={'bg':'000'}, coord=(2, 2))
+    c   = {
+      'bg':'000', 'fill_opacity':1, 'stroke':'FFF', 'stroke_dasharray':0,
+      'stroke_opacity':0, 'stroke_width':100, 'facing': 'all', 'size':'medium'
+    }
+    gmk = Geomink(cellsize=15, layer='bg', cell=c, coord=(2, 2))
     self.assertTrue(gmk.shape.bounds, (2.0, 2.0, 17.0, 17.0))
 
   def test_3(self):
