@@ -103,7 +103,7 @@ def clone(digest):
   ''' generate tmp files from existing database entry
   '''
   celldata = v.read(digest=digest, output=list())
-  model, _, scale, ver = v.readMeta(digest=digest) # author is for publishng only
+  model, _, scale, ver = v.readMeta(digest=digest) # author for publishng only
   palette = friendly_name[ver]
   tf.conf(model, palette) # conf state is a symlink
   tf.write(model, celldata)
@@ -188,7 +188,7 @@ def flatten(scale, yaml=False, wireframe=False):
   positions = b.readPositions(model)
   svg       = LinearSvg(scale=s) # unit is millimetres
   cells     = tf.read(model, output=dict())
-  gm      = GeoMaker()
+  gm      = GeoMaker(cellsize=15)
   block1  = gm.make(blocksize, positions, cells)
   #pp.pprint(cells)
   if yaml: # print conf

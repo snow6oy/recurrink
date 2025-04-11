@@ -85,6 +85,15 @@ class Test(unittest.TestCase):
     uniqcells = self.b.readPositions(model, output=list())
     topcells = self.b.topcells(model)
     self.assertEqual(topcells, ['a', 'c'])
+
+  def test_11(self):
+    ''' cells made with Shapely
+    '''
+    gm      = GeoMaker()
+    blocksz = (3,1)
+    pos     = (0,0)
+    block1  = gm.makeShapelyCells(blocksz, config.positions, config.cells)
+    #self.assertEqual(block1[pos].names[-1], 'c')
 '''
 the 
 end

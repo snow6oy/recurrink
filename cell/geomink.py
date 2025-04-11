@@ -433,7 +433,7 @@ class Plotter:
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
   def plotLine(self, line, fn):
-    if line.geom_type != 'LineString':
+    if line.geom_type not in ['LineString', 'LinearRing']:
       raise ValueError(f'wrong geometry {line.geom_type}')
     fig, ax = plt.subplots()
     x = []
@@ -441,6 +441,7 @@ class Plotter:
     [x.append(c[0]) for c in list(line.coords)]
     [y.append(c[1]) for c in list(line.coords)]
     ax.plot(x, y)
+    plt.title(fn)
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
   def multiPlot(self, mpn, fn):

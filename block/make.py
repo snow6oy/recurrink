@@ -1,5 +1,5 @@
 #from cell.geomink import Geomink
-from cell import Geomink, Cell
+from cell import Geomink, Cell, ShapelyCell
 
 class GeoMaker:
   def __init__(self, scale=1.0, cellsize=60):
@@ -43,8 +43,22 @@ class GeoMaker:
     ''' create a geometry object from cell data
     '''
     return Geomink(
-      self.cellsize, scale=self.scale, coord=coord, cell=cell, layer=layer, label=label
+      self.cellsize, scale=self.scale, coord=coord, 
+      cell=cell, layer=layer, label=label
     )
+
+  def makeShapelyCells(self, blocksize, positions, cells):
+    block  = {}
+    b0, b1 = blocksize
+    for y in range(b1):
+      for x in range(b0):
+        pos    = (x, y)
+        cn, tn = positions[pos]
+        cell   = ShapelyCell(cn, pos, self.cellsize)
+        cell.background()
+        cell.foreground(cells[cn])
+        if tn: cell.foreground(cells[tn])
+        print(cell.name, len(cell.bft))
 '''
 the
 end
