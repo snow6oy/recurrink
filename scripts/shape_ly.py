@@ -166,6 +166,13 @@ elif case == 12:
   ls = LineString([(2, 2), (4, 4)])
   l2 = transform(ls, lambda x: x * [2, 3])
   print(ls, l2)
+elif case == 13:
+  ''' svg
+  '''
+  print(blue.geom_type)
+  print(blue.svg())
+  blue.svg(scale_factor=2.0, fill_color='#FF0', opacity=0.5)
+  print(blue.svg())
 
 
 
