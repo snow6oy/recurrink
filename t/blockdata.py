@@ -1,6 +1,6 @@
 import unittest
 import pprint
-from block import BlockData, GeoMaker
+from block import BlockData
 from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -8,21 +8,6 @@ class Test(unittest.TestCase):
 
   def setUp(self):
     self.b = BlockData('soleares') 
-
-  def test_1(self):
-    gm = GeoMaker()
-    blocksz = (3,1)
-    block1  = gm.make(blocksz, config.positions, config.cells)
-    self.assertEqual(block1[0].pencolor, '00F')
-
-  def test_2(self):
-    ''' cell names are kept in block1
-    '''
-    gm      = GeoMaker()
-    blocksz = (3,1)
-    pos     = (0,0)
-    block1  = gm.makeCells(blocksz, config.positions, config.cells)
-    self.assertEqual(block1[pos].names[-1], 'c')
 
   def test_4(self):
     ''' key value pair with position as the key
@@ -86,18 +71,7 @@ class Test(unittest.TestCase):
     topcells = self.b.topcells(model)
     self.assertEqual(topcells, ['a', 'c'])
 
-  def test_11(self):
-    ''' cells made with Shapely
-    '''
-    gm      = GeoMaker()
-    blocksz = (3,1)
-    pos     = (0,0)
-    block1  = gm.makeShapelyCells(blocksz, config.positions, config.cells)
-    #self.assertEqual(block1[pos].names[-1], 'c')
 '''
 the 
 end
 '''
-
-
-
