@@ -44,7 +44,8 @@ class Test(unittest.TestCase):
     self.cell['shape'] = 'triangl'
     triangl = Geomink(cellsize=60, layer='fg', cell=self.cell, coord=(0, 0))
     self.svg.addStyle('style', 'a', 1)
-    self.svg.addGeomink(1, (0,0), 'a', triangl)
+    #self.svg.addGeomink(1, (0,0), 'a', triangl)
+    self.svg.addGeomink(1, (0,0), triangl)
     self.svg.svgDoc(legacy=True)
     self.svg.make()
     self.assertTrue(list(self.svg.root.iter(tag=f"{self.svg.ns}polygon")))
@@ -57,6 +58,7 @@ class Test(unittest.TestCase):
     block1  = gm.makeCells(blocksz, self.positions, self.data)
     self.svg.styleGuide(block1)
     self.svg.gridWalk(blocksz, block1)
+    
     self.svg.svgDoc(legacy=False)
     #pp.pprint(self.svg.doc)
     self.svg.make()
@@ -70,6 +72,29 @@ class Test(unittest.TestCase):
     '''
     svg = Svg(scale=1, inkscape=True)
     self.assertTrue(svg.inkscape)
+
+  def test_5(self):
+    ''' make a doc for input to Svg() using ShapelyCell
+    cell    = block1[(0,0)] 
+    for layer in cell.bft:
+      print(layer.shape.data.boundary)
+    '''
+    gm      = GeoMaker()
+    blocksz = (3, 1)
+    block1  = gm.makeShapelyCells(blocksz, self.positions, self.data)
+    self.svg.styleGuide(block1)         # hydrate svg.lstyles
+    self.svg.gridWalk(blocksz, block1)  #         svg.lgmk
+    self.svg.svgDoc(legacy=False)
+    '''
+    pp.pprint(self.svg.doc)
+    pp.pprint(self.svg.lgmk)
+    '''
+    self.svg.make()
+    self.svg.write('tmp/svgtest_5.svg')
+    with open('tmp/svgtest_5.svg') as f:
+      written = len(f.readlines()) 
+    self.assertEqual(written, 37)
+
 '''
 the
 end

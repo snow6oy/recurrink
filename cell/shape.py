@@ -1,11 +1,10 @@
 import math
 from .geomink import Plotter
 from shapely.geometry import Point, LinearRing, Polygon
-
+from shapely import transform
 '''
-rename Geomink to Layer
-x consider layer[0].points() as conversion from Shape
-convert Points to Shapely
+Shape is the lowest level geometry
+Cell is a collection of shapes organised by layer
 '''
 
 class Points:
@@ -110,6 +109,8 @@ class Shape:
       return self.data.boundary, self.name
 
   class Rectangle():
+    ''' TODO default size is medium
+    '''
     def __init__(self, name):
       self.name = name
 
@@ -120,7 +121,7 @@ class Shape:
       sw  = width
       hsw = width / 2 # TODO scale half stroke width
       cs  = clen  
-      t3  = cs / 3    # three times bigger
+      t3  = cs / 3    # three times smaller
       ''' input can be any of the four cardinal directions
           but only two are used so we silently collapse the others
       '''
@@ -172,10 +173,13 @@ class Shape:
                     (cs / 2 - sw),
                     (cs / 3 - sw)]
         }
-
       if size in sizes:
         x, y, w, h = sizes[size]
-        self.data  = Polygon([(x,y), (x,h), (w,h), (w,y)]) # four corners
+        self.data  = Polygon([
+          (x, y), (x, y + h), (x + w, y + h), (x + w, y)
+        ]) # 4 corners
+        #print(f"{self.name=} {size=} {x} {y} {w} {h}")
+        #print(list(self.data.boundary.coords))
       else:
         raise IndexError(f"Cannot make {self.name} with {size}")
 
@@ -185,49 +189,111 @@ class Shape:
     def svg(self):
       ''' markup a square
       '''
-      x, y, width, height = self.data.bounds
-      return { 'x': x, 'y': y, 'width': width, 'height': height }
+      coords = list(self.data.boundary.coords)
+      x      = coords[0][0]
+      y      = coords[0][1]
+      width  = coords[2][0] - x
+      height = coords[2][1] - y
+      #print(x, y, width, height)
+      return { 
+        'name': self.name, 'x': x, 'y': y, 'width': width, 'height': height 
+      }
   
-  def __init__(self, n=str()):
-    ''' scale is no longer applied to shapes
+  def __init__(self, label, celldata):
+    ''' create a Shapely shape
     '''
+    if 'shape' in celldata:
+      name = celldata['shape']
+    else:
+      name = 'square' 
     shapes = { 
       'circle': self.Circle(), 
       'diamond': self.Diamond(),
       'triangl': self.Triangl(), 
-      'line': self.Rectangle(n), 
-      'square': self.Rectangle(n) 
+      'line': self.Rectangle(name), 
+      'square': self.Rectangle(name) 
     }
-    self.shape = shapes[n]
+    self.shape = shapes[name]
+    self.label = label
+    self.setCell(celldata)
+
+  def setCell(self, c):
+    ''' encapsulate cell data from db
+    '''
+    self.fill    = c['fill'] if c['fill'] else 'FFF'
+    # remove hash for consistency
+    if list(self.fill)[0] == '#': self.fill = self.fill[1:] 
+    self.opacity = c['fill_opacity']
+    if 'stroke' in c:
+      self.stroke  = {
+        'fill':      c['stroke'],
+        'dasharray': c['stroke_dasharray'],
+        'opacity':   c['stroke_opacity'],
+        'width':     c['stroke_width']
+      }
+    else:
+      self.stroke = None
 
   def plot(self):
     p = Plotter()
     data, name = self.shape.plotData()
     p.plotLine(data, name)
 
+  def tx(self, x, y):
+    ''' use Shapely transform to offset coordinates according to grid position
+    '''
+    boundary        = self.shape.data.boundary 
+    line_string     = transform(boundary, lambda a: a + [x, y])
+    #print(f"{x} {y} {self.label} {line_string}")
+    self.shape.data = Polygon(line_string)
+
+  def getShape(self, legacy=False):
+    ''' return Shapely as markup
+    '''
+    return self.shape.svg()
+
 class ShapelyCell:
-  def __init__(self, name, pos, clen):
-    self.name = name
-    self.pos  = pos
+  def __init__(self, pos, clen):
+    self.x    = int(pos[0] * clen)
+    self.y    = int(pos[1] * clen)
     self.clen = clen
     self.bft  = list() # b0 background f1 foreground t2 top
 
-  def background(self):
-    ''' TODO add colour
+  def background(self, label, cell):
+    ''' basic square with colour
     '''
-    x, y = self.pos
-    bg   = Shape('square')
-    bg.shape.draw(x, y, 0, self.clen, size='medium', facing='all')
+    bg_cell = { 'shape': 'square', 'fill': cell['bg'], 'fill_opacity': 1 }
+    bg      = Shape(label, bg_cell)
+    bg.shape.draw(self.x, self.y, 0, self.clen, size='medium', facing='all')
     self.bft.append(bg)
 
-  def foreground(self, cell):
-    x, y = self.pos
-    fg   = Shape(cell['shape'])
+  def foreground(self, label, cell):
+    fg = Shape(label, cell)
     fg.shape.draw(
-      x, y, cell['stroke_width'], self.clen, 
+      self.x, self.y, cell['stroke_width'], self.clen, 
       size=cell['size'], facing=cell['facing']
     )
     self.bft.append(fg)
+
+  def top(self, label, cell):
+    ''' alias for clarity
+    '''
+    self.foreground(label, cell)
+
+  def getStyle(self, i): # layer index
+    ''' construct a CSS style 
+    '''
+    if i == 0: # force stroke width zero to hide cracks between backgrounds
+      style = f"fill:#{self.bft[0].fill};stroke-width:0" 
+    else:
+      style = (f"fill:#{self.bft[i].fill};" +
+        f"fill-opacity:{self.bft[i].opacity}")
+      if self.bft[i].stroke['width']:
+        style += (f";stroke:#{self.bft[i].stroke['fill']};" +
+          f"stroke-width:{self.bft[i].stroke['width']};" +
+          f"stroke-dasharray:{self.bft[i].stroke['dasharray']};" +
+          f"stroke-opacity:{self.bft[i].stroke['opacity']}")
+    return style
 '''
 the
 end

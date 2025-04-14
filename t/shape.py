@@ -13,7 +13,9 @@ class Test(unittest.TestCase):
   def test_1(self):
     ''' draw a triangle
     '''
-    triangl = Shape('triangl')
+    cell_a = self.data['a']
+    cell_a['shape'] = 'triangl'
+    triangl = Shape('a', cell_a)
     self.assertEqual(triangl.shape.name, 'triangl')
     triangl.shape.draw(0, 0, 0, self.clen, facing='north')
     self.assertEqual(triangl.shape.svg(), '0.0,0.0,15.0,0.0,7.5,15.0,0.0,0.0')
@@ -22,7 +24,9 @@ class Test(unittest.TestCase):
   def test_2(self):
     ''' circle
     '''
-    circle = Shape('circle')
+    cell_c = self.data['c']
+    cell_c['shape'] = 'circle'
+    circle = Shape('c', cell_c)
     self.assertEqual(circle.shape.name, 'circle')
     circle.shape.draw(3, 3, 0, 12, size='large')
     svg = circle.shape.svg()
@@ -30,23 +34,23 @@ class Test(unittest.TestCase):
     # circle.plot()
 
   def test_3(self):
-    ''' square draw x, y, stroke_width, border, size=, facing=
-        {'x': 0.5, 'y': 0.5, 'width': 14.0, 'height': 14.0}
+    ''' test defaults 
+        square draw x, y, stroke_width, border, size=, facing=
     '''
-    square = Shape(n=self.data['a']['shape'])
+    square = Shape('a', {'fill':'FFF','fill_opacity':None})
     self.assertEqual(square.shape.name, 'square')
     sw     = self.data['a']['stroke_width']
     f      = self.data['a']['facing']
     s      = self.data['a']['size']
     square.shape.draw(0, 0, 1, self.clen, size=s, facing=f)
     svg = square.shape.svg()
-    self.assertEqual(svg['width'], 14) 
+    self.assertEqual(svg['width'], 14.5) 
     #square.plot()
 
   def test_4(self):
     ''' line
     '''
-    line = Shape(self.data['b']['shape'])
+    line = Shape('b', self.data['b'])
     sw   = self.data['b']['stroke_width']
     f    = self.data['b']['facing']
     s    = self.data['b']['size']
@@ -59,7 +63,8 @@ class Test(unittest.TestCase):
   def test_5(self):
     ''' triangle
     '''
-    diamond = Shape('diamond')
+    self.data['d']['shape'] = 'diamond'
+    diamond = Shape('d', self.data['d'])
     self.assertEqual(diamond.shape.name, 'diamond')
     diamond.shape.draw(0, 0, 0, self.clen, facing='all')
     coords = list(diamond.shape.data.coords)

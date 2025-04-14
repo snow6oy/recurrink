@@ -177,7 +177,8 @@ class Layout():
     for pos in block1:
       cell = block1[pos]
       for li in range(len(cell.bft)): # li layer index
-        self.addStyle(cell.getStyle(li), cell.names[li], li)
+        self.addStyle(cell.getStyle(li), cell.bft[li].label, li)
+        #print(f"{li=} {cell.names[li]}")
     #print(self.lstyles[2]['c'])
 
   def addStyle(self, style, name, layer):
@@ -212,23 +213,26 @@ class Layout():
     for col in range(blocksize[1]):
       for row in range(blocksize[0]):
         xy   = tuple([row, col])
-        cell = block1[xy]
-        self.addGeomink(0, XY, cell.names[0], cell.bft[0]) # background
-        self.addGeomink(1, XY, cell.names[1], cell.bft[1]) # foreground
-        if len(cell.bft) == 2: continue # topless (.)(.) 
-        self.addGeomink(2, XY, cell.names[2], cell.bft[2]) # top
+        clone  = copy.deepcopy(block1)  # copy cells or blocks ?
+        #print(f"{XY=} {xy=}")
+        cell = clone[xy]
+        #self.addGeomink(0, XY, cell.names[0], cell.bft[0]) # background
+        self.addGeomink(0, XY, cell.bft[0]) # background
+        self.addGeomink(1, XY, cell.bft[1]) # foreground
+        if len(cell.bft) == 2: continue     # topless (.)(.) 
+        self.addGeomink(2, XY, cell.bft[2]) # top
 
-  def addGeomink(self, layer, pos, cn, gmk):
+  def addGeomink(self, layer, pos, gmk):
     ''' clone geominks then stash by layer and name
     '''
-    clone  = copy.copy(gmk)
-    clone.tx(pos[0], pos[1])
-    #print(f"{clone.shape.bounds} {pos=} {cn=}")
+    cn = gmk.label
+    #print(f" {cn=} {pos=} {clone.shape.data.bounds} ")
+    gmk.tx(pos[0], pos[1])
     if cn in self.lgmk[layer]:
-      self.lgmk[layer][cn].append(clone)
+      self.lgmk[layer][cn].append(gmk)
     else:
       self.lgmk[layer][cn] = list()
-      self.lgmk[layer][cn].append(clone)
+      self.lgmk[layer][cn].append(gmk)
 
   def __svgDoc(self):
     ''' pull objects from self and construct inputs to Svg()
@@ -252,7 +256,7 @@ class Layout():
           x, y, W, H = gmk.shape.bounds
           w = W - x
           h = H - y
-          #print(f"layer {li} {w=} {h=} {x=} {y=}")
+          print(f"layer {li} {w=} {h=} {x=} {y=}")
           shape = dict(zip(keys, [w, h, x, y, gmk.name]))
           sdoc[dj]['shapes'].append(shape)
     self.doc = sdoc

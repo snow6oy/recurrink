@@ -24,6 +24,14 @@ class GeoMaker:
           else: block.append(self.getShape(c, coord, cells[c], layer=layer))
     return block
 
+  def getShape(self, label, coord, cell, layer):
+    ''' create a geometry object from cell data
+    '''
+    return Geomink(
+      self.cellsize, scale=self.scale, coord=coord, 
+      cell=cell, layer=layer, label=label
+    )
+
   def makeCells(self, blocksize, positions, cells):
     ''' given block and cell metadata wrap geominks for each block position 
     '''
@@ -39,14 +47,6 @@ class GeoMaker:
         block[coord] = c
     return block
 
-  def getShape(self, label, coord, cell, layer):
-    ''' create a geometry object from cell data
-    '''
-    return Geomink(
-      self.cellsize, scale=self.scale, coord=coord, 
-      cell=cell, layer=layer, label=label
-    )
-
   def makeShapelyCells(self, blocksize, positions, cells):
     block  = {}
     b0, b1 = blocksize
@@ -54,11 +54,13 @@ class GeoMaker:
       for x in range(b0):
         pos    = (x, y)
         cn, tn = positions[pos]
-        cell   = ShapelyCell(cn, pos, self.cellsize)
-        cell.background()
-        cell.foreground(cells[cn])
-        if tn: cell.foreground(cells[tn])
-        print(cell.name, len(cell.bft))
+        cell   = ShapelyCell(pos, self.cellsize)
+        cell.background(cn, cells[cn])
+        cell.foreground(cn, cells[cn])
+        if tn: cell.top(tn, cells[tn])
+        #print(f"{cell.bft[0].label=} {len(cell.bft)=}")
+        block[pos] = cell
+    return block
 '''
 the
 end
