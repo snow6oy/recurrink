@@ -18,7 +18,7 @@ class CellMaker:
     bg.this.draw(self.x, self.y, 0, self.clen, size='medium', facing='all')
     self.bft.append(bg)
 
-  def foreground(self, label, cell):
+  def foreground(self, label, cell=dict()):
     fg = Shape(label, cell)
     sw = fg.stroke['width'] if fg.stroke else 0
     fg.this.draw(self.x, self.y, sw, self.clen, 

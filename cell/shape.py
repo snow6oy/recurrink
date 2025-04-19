@@ -199,11 +199,11 @@ class Shape:
     def plotData(self):
       return self.data.boundary, self.name
 
-    def svg(self, meander=False):
+    def svg(self, meander=False, direction=None):
       ''' markup a square
       '''
       if meander:
-        return self.fill()
+        return self.fill(direction)
       coords = list(self.data.boundary.coords)
       x      = coords[0][0]
       y      = coords[0][1]
@@ -218,8 +218,11 @@ class Shape:
       self.label = label
       if direction is None and self.label in conf:
         direction = conf[self.label]
+      elif direction:
+        pass # por ejemplo E
       else:
         direction = 'N'
+
       d         = self.control(direction)
       #m         = Meander(self.rectangl)
       m         = Meander(self.data)
@@ -255,7 +258,7 @@ class Shape:
     def draw(self, shape):
       self.data = shape
   
-  def __init__(self, label, celldata):
+  def __init__(self, label, celldata=dict()):
     ''' create a Shapely shape to put in a layered Cell
     '''
     name = celldata['shape'] if 'shape' in celldata else 'square' 
