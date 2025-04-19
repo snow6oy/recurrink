@@ -24,6 +24,7 @@ class Test(unittest.TestCase):
     self.data = config.cells
     self.positions = config.positions
 
+  # TODO convert to use ShapelyCell
   def test_1(self):
     ''' are diamonds drawn correctly
     '''
@@ -90,8 +91,8 @@ class Test(unittest.TestCase):
     pp.pprint(self.svg.lgmk)
     '''
     self.svg.make()
-    self.svg.write('tmp/svgtest_5.svg')
-    with open('tmp/svgtest_5.svg') as f:
+    self.svg.write('tmp/svgtest_51.svg')
+    with open('tmp/svgtest_51.svg') as f:
       written = len(f.readlines()) 
     self.assertEqual(written, 37)
 

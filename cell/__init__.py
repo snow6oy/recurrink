@@ -3,4 +3,5 @@ from .geomink import Geomink, Plotter, Cell
 from .shapes import Shapes
 from .meander import Meander
 # to replace shapes
-from .shape import Shape, ShapelyCell
+from .shape import Shape
+from .cellmaker import CellMaker

@@ -63,6 +63,36 @@ class Test(unittest.TestCase):
     self.assertEqual(len(self.expected), len(to_test))
     for e in self.expected:
       self.assertEqual(self.expected[e], to_test[e])
+
+  def test_6(self):
+    ''' filter block1 so that only cells with large shapes remain
+    '''
+    gm = GeoMaker()
+    blocksz = (3,1)
+    block1  = gm.makeShapelyCells(blocksz, config.positions, config.cells)
+    large   = gm.discoverDanglers(block1)
+    self.assertEqual('MultiPolygon', large[0].geom_type)
+    '''
+    large   = gm.largeShapes(block1)
+    self.assertFalse(len(block1[(0,0)].bft))
+    self.assertTrue(len(block1[(1,0)].bft))   # cell b is a large line
+    self.assertFalse(len(block1[(2,0)].bft))
+    '''
+
+  def test_7(self):
+    ''' extract overlap
+    '''
+    gm      = GeoMaker()
+    blocksz = (3,1)
+    block1  = gm.makeShapelyCells(blocksz, config.positions, config.cells)
+    large   = gm.discoverDanglers(block1)
+    found   = gm.findNeighbours(block1, large)
+    p0, p1  = list(found.keys())
+    self.assertEqual((0, 0), p0)
+    self.assertEqual((2, 0), p1)
+
+
+
 '''
 the 
 end

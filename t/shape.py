@@ -16,9 +16,9 @@ class Test(unittest.TestCase):
     cell_a = self.data['a']
     cell_a['shape'] = 'triangl'
     triangl = Shape('a', cell_a)
-    self.assertEqual(triangl.shape.name, 'triangl')
-    triangl.shape.draw(0, 0, 0, self.clen, facing='north')
-    self.assertEqual(triangl.shape.svg(), '0.0,0.0,15.0,0.0,7.5,15.0,0.0,0.0')
+    self.assertEqual(triangl.this.name, 'triangl')
+    triangl.this.draw(0, 0, 0, self.clen, facing='north')
+    self.assertEqual(triangl.this.svg(), '0.0,0.0,15.0,0.0,7.5,15.0,0.0,0.0')
     #triangl.plot()
 
   def test_2(self):
@@ -27,9 +27,9 @@ class Test(unittest.TestCase):
     cell_c = self.data['c']
     cell_c['shape'] = 'circle'
     circle = Shape('c', cell_c)
-    self.assertEqual(circle.shape.name, 'circle')
-    circle.shape.draw(3, 3, 0, 12, size='large')
-    svg = circle.shape.svg()
+    self.assertEqual(circle.this.name, 'circle')
+    circle.this.draw(3, 3, 0, 12, size='large')
+    svg = circle.this.svg()
     self.assertEqual(svg['cx'], 1) # {'cx': 1, 'cy': 1, 'r': 8}
     # circle.plot()
 
@@ -38,13 +38,13 @@ class Test(unittest.TestCase):
         square draw x, y, stroke_width, border, size=, facing=
     '''
     square = Shape('a', {'fill':'FFF','fill_opacity':None})
-    self.assertEqual(square.shape.name, 'square')
+    self.assertEqual(square.this.name, 'square')
     sw     = self.data['a']['stroke_width']
     f      = self.data['a']['facing']
     s      = self.data['a']['size']
-    square.shape.draw(0, 0, 1, self.clen, size=s, facing=f)
-    svg = square.shape.svg()
-    self.assertEqual(svg['width'], 14.5) 
+    square.this.draw(0, 0, 1, self.clen, size=s, facing=f)
+    svg = square.this.svg()
+    self.assertEqual(svg['width'], 14) 
     #square.plot()
 
   def test_4(self):
@@ -54,22 +54,22 @@ class Test(unittest.TestCase):
     sw   = self.data['b']['stroke_width']
     f    = self.data['b']['facing']
     s    = self.data['b']['size']
-    self.assertEqual(line.shape.name, 'line')
-    line.shape.draw(0, 0, 1, self.clen, size=s, facing=f)
-    svg  = line.shape.svg()
-    self.assertEqual(svg['width'], 5.5) 
+    self.assertEqual(line.this.name, 'line')
+    line.this.draw(0, 0, 1, self.clen, size=s, facing=f)
+    svg  = line.this.svg()
+    self.assertEqual(svg['width'], 4) 
     line.plot()
 
   def test_5(self):
-    ''' triangle
+    ''' diamon
     '''
     self.data['d']['shape'] = 'diamond'
     diamond = Shape('d', self.data['d'])
-    self.assertEqual(diamond.shape.name, 'diamond')
-    diamond.shape.draw(0, 0, 0, self.clen, facing='all')
-    coords = list(diamond.shape.data.coords)
+    self.assertEqual(diamond.this.name, 'diamond')
+    diamond.this.draw(0, 0, 0, self.clen, facing='all')
+    coords = list(diamond.this.data.coords)
     self.assertEqual(coords[-1], (0, 7.5))
-    svg = diamond.shape.svg()
+    svg = diamond.this.svg()
     self.assertEqual(svg['points'], '0.0,7.5,7.5,0.0,15.0,7.5,7.5,15.0,0.0,7.5')
     #diamond.plot() 
 

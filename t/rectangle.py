@@ -1,6 +1,7 @@
 import unittest
 import pprint
 from cell import Geomink, Plotter
+from cell import ShapelyCell
 from block import Flatten
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -11,6 +12,23 @@ class Test(unittest.TestCase):
     self.writer = Plotter()
 
   def test_1(self):
+    ''' poc to see if meander can be called from ShapelyCell
+    '''
+    expect = [ 
+      (1, 1), (1, 5), (2, 5), (2, 1), (3, 1), 
+      (3, 5), (4, 5), (4, 1), (5, 1), (5, 5)
+    ]
+    sc = ShapelyCell((0, 0), clen=6)
+    sc.background('z', {'bg': 'FFF'}) # increment sc.bft
+    sc.foreground('z', 
+      {'shape':None, 'fill':'F00', 'size':'medium', 'facing':'a'}
+    )
+    xy = sc.bft[1].this.svg(meander=True)
+    self.writer.plotLine(xy, fn='rectangle_0')
+    self.assertEqual(expect, list(xy.coords)) 
+
+
+  def _test_1(self):
     ''' east square linefill for Rectangle.meander()
     '''
     expect = [ 

@@ -141,6 +141,7 @@ def update(model, scale, mm=False):
   v.validate(cells, ver=ver)
 
   gm = GeoMaker(scale=s, cellsize=svg.cellsize)
+  # TODO use gm.makeShapelyCells
   block1  = gm.makeCells(blocksize, positions, cells)
   svg.styleGuide(block1)
   svg.gridWalk(blocksize, block1)
