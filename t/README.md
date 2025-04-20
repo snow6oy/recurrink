@@ -4,3 +4,42 @@ source v/bin/activate
 screen -S rink
 python -m unittest t.Test.test_n
 ```
+
+# Test Coverage
+
+## Cell
+
+13 cellMaker
+ 0 geometry
+ 2 strokes
+ 0 cellData
+ 0 plotter
+10 meander
+ 0 points
+ 5 shape
+ 0 shapeTriangl
+ 0 shapeDiamond
+ 0 shapeCircle
+ 3 shapeRectangle
+ 0 shapeVoid
+12 shapeParabola
+ 0 shapeSquareRing
+
+## Model
+
+ 5 modelData
+ 0 db
+16 layout
+ 0 grid
+ 9 svg
+ 5 linearSvg
+
+## Block
+
+ 0 views
+ 2 compass
+ 7 blockData
+21 flatten
+ 7 geoMaker
+12 paletteMaker
+ 8 tmpFile
