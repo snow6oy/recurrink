@@ -36,8 +36,8 @@ class Shape:
     def __init__(self):
       self.name = 'triangl'
 
-    def draw(self, x, y, stroke_width, clen, facing=str()):
-      super().__init__(x, y, stroke_width, clen)
+    def draw(self, x, y, clen, swidth=0, facing=str()):
+      super().__init__(x, y, swidth, clen)
       rings = {
         'north': LinearRing((self.nw, self.ne, self.s)),
         'south': LinearRing((self.sw, self.n, self.se)),
@@ -60,8 +60,8 @@ class Shape:
     def __init__(self):
       self.name = 'diamond'
 
-    def draw(self, x, y, stroke_width, clen, facing=str()):
-      super().__init__(x, y, stroke_width, clen)
+    def draw(self, x, y, clen, swidth=0, facing=str()):
+      super().__init__(x, y, swidth, clen)
       rings = {
         'all': LinearRing((self.w, self.n, self.e, self.s)),
        'west': LinearRing((self.w, self.n, self.s)),
@@ -85,16 +85,16 @@ class Shape:
     def __init__(self):
       self.name = 'circle'
 
-    def draw(self, x, y, stroke_width, clen, size=str()):
+    def draw(self, x, y, clen, swidth=0, size=str()):
       ''' pythagoras was a pythonista :)
       '''
-      super().__init__(x, y, stroke_width, clen)
+      super().__init__(x, y, swidth, clen)
       large = clen / 2
       sum_two_sides = (large**2 + large**2)
       sizes = {
-         'large': (math.sqrt(sum_two_sides) - stroke_width),
-        'medium': (clen / 2 - stroke_width),
-         'small': (clen / 3 - stroke_width)
+         'large': (math.sqrt(sum_two_sides) - swidth),
+        'medium': (clen / 2 - swidth),
+         'small': (clen / 3 - swidth)
       }
       if size in sizes:
         radius    = sizes[size]
@@ -113,15 +113,17 @@ class Shape:
   class Rectangle():
     ''' squares and lines
     '''
+    VERBOSE = True
+
     def __init__(self, name):
       self.name = name
 
-    def draw(self, x, y, width, clen, size=str(), facing=str()):
+    def draw(self, x, y, clen, swidth=0, size=str(), facing=str()):
       ''' generate a shapely polygon
       '''
       sizes = dict()
-      sw  = width
-      hsw = width / 2 # TODO scale half stroke width
+      sw  = swidth
+      hsw = swidth / 2 # TODO scale half stroke width
       cs  = clen  
       t3  = cs / 3    # three times smaller
       ''' input can be any of the four cardinal directions
@@ -230,7 +232,7 @@ class Shape:
       guides    = m.guidelines(padme, d)
       points, e = m.collectPoints(padme, guides)
       if e and self.VERBOSE:
-        raise ValueError(err + self.label, direction)
+        raise ValueError(f"{e=} {self.label=} {direction=}")
       elif e:
         linefill = LineString()
       else:
@@ -255,8 +257,184 @@ class Shape:
     def __init__(self):
       self.name = 'void'
 
-    def draw(self, shape):
-      self.data = shape
+    def draw(self, x, y, clen, data=None):
+      self.data = data
+
+  class Parabola:
+    ''' u-shaped parallelograms
+        north n south u ... 
+    '''
+    VERBOSE = False
+    def __init__(self):
+      self.name = 'parabola'
+      #self.writer   = Plotter() TODO add plotData()
+
+    def draw(self, x, y, clen, data=None):
+      ''' ignore co-ordinates for now
+          just need the shape data for meander
+      '''
+      self.data = data
+
+    def svg(self, meander=True, direction=None):
+      ''' make u-shaped svg path 
+      '''
+      return self.fill(direction)
+
+    def fill(self, direction=None, conf=dict(), label=None):
+      self.label = label  # TODO is label a-z or P1-n ??
+      direction  = direction if direction else conf[self.label]
+      X, Y, W, H = self.data.bounds
+      width      = W - X
+      height     = H - Y
+      clockwise  = self.setClock(width, height)
+      surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
+      done       = surround.difference(self.data)
+      x, y, w, h = done.bounds
+
+      if direction == 'N':
+        gnomon   = Polygon([(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)])
+        rectangl = Polygon([(w,y),(w,h),(W,h),(W,Y)])
+      elif direction == 'W': 
+        gnomon   = Polygon([(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)])
+        rectangl = Polygon([(x,Y),(x,y),(W,y),(W,Y)])
+      elif direction == 'S':
+        gnomon   = Polygon([(X,Y),(X,H),(x,h),(x,y),(W,y),(W,Y)])
+        rectangl = Polygon([(w,y),(w,h),(W,H),(W,y)])
+      elif direction == 'E':
+        gnomon   = Polygon([(X,h),(X,H),(W,H),(W,Y),(w,Y),(w,h)])
+        rectangl = Polygon([(X,Y),(X,y),(w,y),(w,Y)])
+      else:
+        raise NotImplementedError(f'all at sea > {direction} <')
+
+      if gnomon.is_valid and rectangl.is_valid:
+        g    = Meander(gnomon)
+        gpad = g.pad()
+        r    = Meander(rectangl)
+        rpad = r.pad()
+      else:
+        if self.VERBOSE:
+          print(f"{gnomon.is_valid=} is not a good polygon")
+          print(f"{rectangl.is_valid=} is not a good polygon")
+        return self.data.boundary # fallback to outline
+  
+      gcontrol = self.control('G', direction, clockwise)
+      rcontrol = self.control('R', direction, clockwise)
+      gmls     = g.guidelines(gpad, gcontrol)
+      rmls     = r.guidelines(rpad, rcontrol)
+
+      p1, e1  = g.collectPoints(gpad, gmls)
+      p2, e2  = r.collectPoints(rpad, rmls)
+      if e1 or e2:
+        if self.VERBOSE: 
+          print(f"{self.label} {e1=} {e2=} {direction}")
+          print(f"""{self.label=} {clockwise=} {direction=} 
+{gnomon=} 
+{gmls=} 
+{rectangl=} 
+{rmls=} """)
+          #self.writer.plot(gpad, rpad, fn=self.label)
+        linefill = self.data.boundary
+      else:
+        linefill = r.joinStripes(p1, p2)
+      return linefill
+  
+    def setClock(self, width, height):
+      ''' meandering an odd number of stripes requires 
+          direction order to be clockwise
+          even stripes must be anti-clockwise
+  
+          tests suggest that when num of stripes is 1 then 
+          clockwise should be True
+          ignoring that corner case for now ..
+      ''' 
+      raw_stripes   = (width - 1) / 3         # padding reduces width
+      numof_stripes = math.floor(raw_stripes) # round down
+      clockwise     = False if numof_stripes % 2 else True
+      return clockwise
+
+    def control(self, shape, direction, clockwise):
+      ''' get the right guideline
+      '''
+      control = {
+        'G': { 'N': { True:  ('SR', 'SE', 'EB'),    # t.parabola.Test.test_12
+                      False: ('EB', 'SE', 'SR')},   # t.parabola.Test.test_7
+               'S': { True:  ('NR', 'NE', 'ET'),    # t.parabola.Test.test_5
+                      False: ('ET', 'NE', 'NR')},   # t.parabola.Test.test_6
+               'E': { True:  ('WB', 'SW', 'SL'),    # t.parabola.Test.test_9
+                      False: ('SL', 'SW', 'WB')},   # t.parabola.Test.test_8
+               'W': { True:  ('EB', 'SE', 'SR'),    # t.parabola.Test.test_11
+                      False: ('SR', 'SE', 'EB')}    # t.parabola.Test.test_10
+        },
+        'R': { 'N': { True:  ('NL', 'NR'),
+                      False: ('EB', 'ET')},
+               'S': { True:  ('EB', 'ET'),
+                      False: ('ET', 'EB')},
+               'E': { True:  ('SR', 'SL'),
+                      False: ('SL', 'SR')},
+               'W': { True:  ('WT', 'WB'),
+                      False: ('WT', 'WB')}
+        }
+      }
+      if (shape in control 
+        and direction in control[shape] 
+        and clockwise in control[shape][direction]):
+        return control[shape][direction][clockwise]
+      else:
+        raise KeyError(f'''
+all at sea > {shape} {direction} {clockwise} < without control''')
+
+  class SquareRing:
+    ''' Shapely Polygon with a hole innit
+    '''
+    VERBOSE = False
+
+    def __init__(self):
+      self.name = 'sqring'
+
+    def draw(self, x, y, clen, data=None):
+      self.data = data
+
+    def fill(self, conf=dict(), label=None):
+      ''' square ring is not currently accepting config
+      ''' 
+      self.label = label
+      X, Y, W, H = self.sqring.bounds
+      surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
+      done       = surround.difference(self.sqring)
+      x, y, w, h = done.bounds
+      nw         = Polygon([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,Y)])
+      se         = Polygon([(x,Y), (x,y), (w,y), (w,h), (W,h), (W,Y)])
+
+      if nw.is_valid and se.is_valid:
+        m1  = Meander(nw)
+        m2  = Meander(se)
+        nwp = m1.pad()
+        sep = m2.pad()
+      else:
+        if self.VERBOSE: 
+          print(f"{self.label} is not a good polygon")
+          self.writer.plot(surround, self.parabola, fn=self.label)
+        return LineString()
+
+      nw_mls = m1.guidelines(nwp, ('WB', 'NW', 'NR'))
+      se_mls = m2.guidelines(sep, ('SL', 'SE', 'ET'))
+      p1, e1 = m1.collectPoints(nwp, nw_mls)
+      p2, e2 = m2.collectPoints(sep, se_mls)
+      if e1 or e2:  # silently fail
+        combined = list(nwp.exterior.coords) + list(sep.exterior.coords)
+        linefill = LinearRing(combined)
+        '''
+        inner  = list(self.sqring.interiors)
+        coords = outer
+        [inner_p.append(list(lring.coords)) for lring in inner]
+        '''
+        if e1 and self.VERBOSE:
+          print(f"{self.label} {e1}")
+        elif e2 and self.VERBOSE:
+          print(f"{self.label} {e2}")
+      else:
+        linefill = m1.joinStripes(p1, p2)
+      return linefill
   
   def __init__(self, label, celldata=dict()):
     ''' create a Shapely shape to put in a layered Cell
@@ -268,7 +446,9 @@ class Shape:
       'triangl': self.Triangl(), 
       'line': self.Rectangle(name), 
       'square': self.Rectangle(name),
-      'void': self.Void()
+      'void': self.Void(),
+      'parabola': self.Parabola(),
+      'sqring': self.SquareRing()
     }
     self.this  = shapes[name]
     self.label = label

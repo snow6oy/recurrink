@@ -1,5 +1,5 @@
 #from cell.geomink import Geomink
-from cell import Geomink, Cell, ShapelyCell
+from cell import Geomink, Cell, CellMaker
 
 class GeoMaker:
   def __init__(self, scale=1.0, cellsize=60):

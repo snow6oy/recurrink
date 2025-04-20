@@ -117,11 +117,11 @@ class Test(unittest.TestCase):
     a2 = self.cells['a'].bft[2] # top
     a1 = self.cells['a'].bft[1] # foreground
     a0 = self.cells['a'].bft[0] # background
+    if self.VERBOSE: self.writer.plot(a3.this.data, a1.this.data, fn='cflat_6')
     self.assertEqual('void',      a3.this.name)
     self.assertEqual('square',    a2.this.name)
     self.assertEqual('parabola',  a1.this.name)
     self.assertEqual('invisible', a0.this.name)
-    if self.VERBOSE: self.writer.plot(a2.this.data, a1.this.data, fn='cflat_6')
     #self.assertFalse(seeker)
 
   def test_7(self):

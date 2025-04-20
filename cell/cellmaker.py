@@ -5,6 +5,10 @@ class CellMaker:
   VERBOSE = False
  
   def __init__(self, pos, clen):
+    ''' TODO 
+        pos  default (0,0)
+        clen default to 60
+    '''
     self.x    = int(pos[0] * clen)
     self.y    = int(pos[1] * clen)
     self.clen = clen
@@ -15,14 +19,14 @@ class CellMaker:
     '''
     bg_cell = { 'shape': 'square', 'fill': cell['bg'], 'fill_opacity': 1 }
     bg      = Shape(label, bg_cell)
-    bg.this.draw(self.x, self.y, 0, self.clen, size='medium', facing='all')
+    bg.this.draw(self.x, self.y, self.clen, size='medium', facing='all')
     self.bft.append(bg)
 
   def foreground(self, label, cell=dict()):
     fg = Shape(label, cell)
     sw = fg.stroke['width'] if fg.stroke else 0
-    fg.this.draw(self.x, self.y, sw, self.clen, 
-      size=fg.size, facing=fg.facing
+    fg.this.draw(
+      self.x, self.y, self.clen, swidth=sw, size=fg.size, facing=fg.facing
     )
     self.bft.append(fg)
 
@@ -45,7 +49,7 @@ class CellMaker:
     ''' place for danglers to hang
     '''
     void = Shape(label, { 'shape': 'void' })
-    void.this.draw(shape)
+    void.this.draw(self.x, self.y, self.clen, data=shape)
     self.bft.append(void)
 
   def getStyle(self, i): # layer index
@@ -86,21 +90,29 @@ class CellMaker:
         seekers may be included, depends on what overlaps with done
         return seeker either modified, emptied or as-is
     ''' 
-    if self.VERBOSE: print(f"{len(self.bft)=} {len(done)=} {len(seek)=}")
+    if self.VERBOSE: 
+      print(f"""
+{len(self.bft)=} 
+{done.this.name=} {done.this.data.bounds}
+{seek.this.name=} {seek.this.data.bounds}""")
     if done.this.data.equals(seek.this.data): # fg completely covers bg
       seek.this.data = None
       seek.this.name = 'invisible'
-    else:
+    else:     # if done.this.data.crosses(seek.this.data): 
       diff = seek.this.data.difference(done.this.data)
       if self.VERBOSE: print(f"{done.label=} {seek.this.name=} {diff.bounds}")
       if diff.is_empty:   # nothing overlapped
         pass              # return seek as it came
+      elif diff.equals(seek.this.data):
+        pass # return seek unchanged
       else:
         if diff.geom_type == 'MultiPolygon':
           seek.this.name = 'multipolygon'
+          seek.this.data = diff
         else:
-          seek.this.name = self.identify(diff)
-        seek.this.data = diff
+          rename = seek.this.name = self.identify(diff)
+          seek = Shape(seek.label, { 'shape': rename })
+          seek.this.draw(self.x, self.y, self.clen, data=diff)
     return seek
 
   def identify(self, shape):
