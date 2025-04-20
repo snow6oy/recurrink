@@ -80,6 +80,8 @@ class CellMaker:
       self.bft[2] = self.evalSeeker(self.bft[3], self.bft[2])
       self.bft[1] = self.evalSeeker(self.bft[3], self.bft[1])
       self.bft[0] = self.evalSeeker(self.bft[3], self.bft[0])
+      self.bft[1] = self.evalSeeker(self.bft[2], self.bft[1])
+      self.bft[0] = self.evalSeeker(self.bft[2], self.bft[0])
     elif len(self.bft) == 3:
       self.bft[1] = self.evalSeeker(self.bft[2], self.bft[1])
       self.bft[0] = self.evalSeeker(self.bft[2], self.bft[0])
@@ -179,6 +181,24 @@ class CellMaker:
       return True
     elif self.VERBOSE: print(f'{assertion} with {count} coords was not found')
     return False
+
+  def areaSum(self):
+    expected_area = self.clen * self.clen
+    total_area = 0
+    print(f"{expected_area=}")
+    for layer in self.bft:
+      shape = layer.this
+      if shape.name == 'invisible':
+        print(f"{layer.label} {shape.name} omitted")
+        continue
+      elif shape.name == 'void':
+        print(f"{layer.label} {shape.name} {shape.data.area} reducing expected")
+        expected_area -= shape.data.area
+      else:
+        print(f"{layer.label} {shape.name} {shape.data.area}")
+        total_area += shape.data.area
+    return (total_area, expected_area)
+
 '''
 the
 end

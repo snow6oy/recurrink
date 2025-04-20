@@ -19,7 +19,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
 
   def setUp(self):
-    self.VERBOSE = False
+    self.VERBOSE = True
     self.writer  = Plotter()
     clen         = 3
     self.cells   = {
@@ -117,7 +117,7 @@ class Test(unittest.TestCase):
     a2 = self.cells['a'].bft[2] # top
     a1 = self.cells['a'].bft[1] # foreground
     a0 = self.cells['a'].bft[0] # background
-    if self.VERBOSE: self.writer.plot(a3.this.data, a1.this.data, fn='cflat_6')
+    if self.VERBOSE: self.writer.plot(a2.this.data, a1.this.data, fn='cflat_6')
     self.assertEqual('void',      a3.this.name)
     self.assertEqual('square',    a2.this.name)
     self.assertEqual('parabola',  a1.this.name)
@@ -174,6 +174,21 @@ class Test(unittest.TestCase):
     r = Polygon([(0, 0), (0, 1), (0, 3), (3, 3), (3, 0)])
     shape = self.cells['a'].shapeTeller(r, 'rectangle')
     self.assertTrue(shape)
+
+  def test_14(self):
+    ''' audit flatten by summing up Polygon.area
+    '''
+    dangler = Polygon([(2, 1), (2, 2), (3, 2,), (3, 1), (2, 1)])
+    self.cells['a'].background('a', { 'bg': 'F00' })
+    self.cells['a'].foreground('a', { 'fill': 'FF0' })
+    self.cells['a'].top('c', { 'fill': 'FF0', 'size': 'small' })
+    self.cells['a'].void('b', dangler)
+    sum_layered = self.cells['a'].areaSum()
+    self.assertEqual((19,8), sum_layered)
+    self.cells['a'].flatten()
+    sum_flatter = self.cells['a'].areaSum()
+    self.assertFalse(sum_flatter[1] - sum_flatter[0])
+
 '''
 the
 end
