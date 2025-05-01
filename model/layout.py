@@ -1,7 +1,9 @@
 import copy
 #from cell import Shapes
 
-class Layout():
+class Layout:
+
+  VERBOSE = False
   ''' the below cell sizes were calculated as
       gridsize / scale / cellnum
       18 was chosen as the preferred number of cells
@@ -44,6 +46,15 @@ class Layout():
     #print(f"{self.cellnum=} {gridsize=} {cellsize=} {scale=}")
     self.cellsize = round(cellsize * scale)
     self.gridsize = gridsize
+    '''
+    cell.bft[0] # background
+    cell.bft[1] # foreground  USER GENERATED
+    cell.bft[2] # or topless (.)(.) 
+    cell.bft[n] #             MACHINE GENERATED 
+
+    User-generated are layered (z axis) and constrained to MAX 3
+    Machine-generated are 2D and constrained only by cellsize
+    '''
     self.lstyles  = [{} for _ in range(3)] # unique style for each layer
     self.lgmk     = [{} for _ in range(3)] # unique gmk   for each layer
     self.seen     = str()    # have we seen this style before
@@ -77,7 +88,7 @@ class Layout():
   2. stampBlocks to hydrate layer:cell:[gmk] each gmk has pos in grid
   3. compileDoc to combine style and [gmk] ordered by layer
   '''
-  def styleGuide(self, block1):
+  def styleGuide(self, block1, linear=False):
     ''' create a dict of styles:[cellnames]
         that are unique within each layer
         l0: a:s1 b: s2
@@ -85,15 +96,18 @@ class Layout():
     '''
     for pos in block1:
       cell = block1[pos]
+      # print(f"{pos} {cell.x}")
       for li in range(len(cell.bft)): # li layer index
-        self.addStyle(cell.getStyle(li), cell.bft[li].label, li)
-        #print(f"{li=} {cell.names[li]}")
-    #print(self.lstyles[2]['c'])
+        style = cell.getStyle(li, linear)
+        # print(f"  {li=} {style} {cell.bft[li].label}")
+        self.addStyle(style, cell.bft[li].label, li)
 
   def addStyle(self, style, name, layer):
     ''' group geometries in SVG
         styles are unique for each layer 
     '''
+    if layer >= len(self.lstyles):
+      self.lstyles.append(dict()) # magically grow to accomodate computed shapes
     self.lstyles[layer][name] = style
 
   def gridWalk(self, blocksize, block1):
@@ -109,39 +123,41 @@ class Layout():
     XY = tuple([(grid_xy[0] * self.cellsize), (grid_xy[1] * self.cellsize)])
     for col in range(blocksize[1]):
       for row in range(blocksize[0]):
-        xy   = tuple([row, col])
-        clone  = copy.deepcopy(block1)  # copy cells or blocks ?
-        #print(f"{XY=} {xy=}")
-        cell = clone[xy]
-        #self.addGeomink(0, XY, cell.names[0], cell.bft[0]) # background
-        self.addGeomink(0, XY, cell.bft[0]) # background
-        self.addGeomink(1, XY, cell.bft[1]) # foreground
-        if len(cell.bft) == 2: continue     # topless (.)(.) 
-        self.addGeomink(2, XY, cell.bft[2]) # top
+        xy    = tuple([row, col])
+        clone = copy.deepcopy(block1)  # copy whole block with nested objects
+        cell  = clone[xy]
+        [self.addGeomink(li, XY, layer) for li, layer in enumerate(cell.bft)]
 
-  def addGeomink(self, layer, pos, gmk):
+  def addGeomink(self, li, pos, shape):
     ''' clone geominks then stash by layer and name
+      print(f"{len(self.lgmk)=}")
     '''
-    cn = gmk.label
-    #print(f" {cn=} {pos=} {clone.shape.data.bounds} ")
-    gmk.tx(pos[0], pos[1])
-    if cn in self.lgmk[layer]:
-      self.lgmk[layer][cn].append(gmk)
-    else:
-      self.lgmk[layer][cn] = list()
-      self.lgmk[layer][cn].append(gmk)
+    cn = shape.label
+    if li >= len(self.lgmk): self.lgmk.append(dict())
 
-  def svgDoc(self, legacy=False):
+    if shape.this.data is None: # avoid the void
+      # print(f"avoiding {cn=} {pos=} {li=} ")
+      self.lgmk[li][cn] = list()
+      return
+    shape.tx(pos[0], pos[1])
+    if cn in self.lgmk[li]:
+      self.lgmk[li][cn].append(shape)
+    else:
+      self.lgmk[li][cn] = list()
+      self.lgmk[li][cn].append(shape)
+
+  def svgDoc(self, meander=False):
     ''' pull objects from self and construct inputs to Svg()
         [ { shapes: [ {} {} ], style: fill:#00F } ]
     '''
     keys = ['width', 'height', 'x', 'y', 'name']
     sdoc = list()
     di   = 0      # doc index
-    for li in range(3):               # layer index
+    #for li in range(3):               # layer index
+    for li, layer in enumerate(self.lgmk): # layer index
       seen = dict()                   # uniq style
-      for cn in self.lgmk[li]:        # cell names in layer
-        #print(cn, li)
+      #for cn in self.lgmk[li]:        # cell names in layer
+      for cn in layer:        # cell names in layer
         style = self.lstyles[li][cn]
         if style not in seen:
           seen[style] = di
@@ -151,9 +167,11 @@ class Layout():
           di += 1
         dj = seen[style]
         for gmk in self.lgmk[li][cn]:
-          shape = gmk.getShape(legacy)
+          name   = gmk.this.name
+          shape  = gmk.svg(meander)  #, facing=gmk.facing)
           sdoc[dj]['shapes'].append(shape)
-    self.doc = sdoc
+        if self.VERBOSE: print(cn, li, name, gmk.facing)
+    return sdoc
 
 # TODO update Flatten to source block1 from Geomaker instead of here
 class Grid(Layout):

@@ -11,6 +11,7 @@ class Meander:
     elif polygon.is_valid:
       self.shape = Polygon(polygon) # only a valid Shapely polygon can be used to Meander
 
+  # TODO migrate consumers to Geomaker().padBlock
   def pad(self):
     ''' make a gap between cells by adding padding with Shapely.buffer
         a small Polygon may end up empty. Then silently return the original

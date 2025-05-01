@@ -7,94 +7,83 @@ class Test(unittest.TestCase):
   def setUp(self):
     ''' celldata for minkscape 
     '''
-    self.data = config.cells
-    self.clen = 15 # cell length
+    self.VERBOSE = False
+    self.data    = config.cells
+    self.clen    = 15 # cell length
 
-  def test_1(self):
-    ''' draw a triangle
-    '''
-    cell_a = self.data['a']
-    cell_a['shape'] = 'triangl'
-    triangl = Shape('a', cell_a)
-    self.assertEqual(triangl.this.name, 'triangl')
-    triangl.this.draw(0, 0, 0, self.clen, facing='north')
-    self.assertEqual(triangl.this.svg(), '0.0,0.0,15.0,0.0,7.5,15.0,0.0,0.0')
-    #triangl.plot()
-
-  def test_2(self):
+  def test_a(self):
     ''' circle
     '''
-    cell_c = self.data['c']
+    cell_c          = self.data['c']
     cell_c['shape'] = 'circle'
+    cell_c['size']  = 'large'
     circle = Shape('c', cell_c)
     self.assertEqual(circle.this.name, 'circle')
-    circle.this.draw(3, 3, 0, 12, size='large')
-    svg = circle.this.svg()
+
+    circle.draw(3, 3, 12)
+    svg = circle.svg()
     self.assertEqual(svg['cx'], 1) # {'cx': 1, 'cy': 1, 'r': 8}
-    # circle.plot()
+    if self.VERBOSE: circle.plot()
 
-  def test_3(self):
-    ''' test defaults 
-        square draw x, y, stroke_width, border, size=, facing=
+  def test_b(self):
+    ''' small square with width
     '''
-    square = Shape('a', {'fill':'FFF','fill_opacity':None})
-    self.assertEqual(square.this.name, 'square')
-    sw     = self.data['a']['stroke_width']
-    f      = self.data['a']['facing']
-    s      = self.data['a']['size']
-    square.this.draw(0, 0, 1, self.clen, size=s, facing=f)
-    svg = square.this.svg()
-    self.assertEqual(svg['width'], 14) 
-    #square.plot()
+    square = Shape('c', {'stroke_width':1, 'size':'small'})
+    square.draw(0, 0, 12)
+    svg = square.svg()
+    self.assertEqual(svg['width'], 4) 
+    if self.VERBOSE: square.plot()
 
-  def test_4(self):
+  def test_c(self):
+    ''' draw a triangle
+    '''
+    cell_a           = self.data['a']
+    cell_a['shape']  = 'triangl'  # override
+    cell_a['facing'] = 'north'
+    triangl          = Shape('a', cell_a)
+    self.assertEqual(triangl.this.name, 'triangl')
+
+    triangl.draw(0, 0, self.clen)
+    svg = triangl.this.svg()
+    self.assertEqual('0.0,0.0,15.0,0.0,7.5,15.0,0.0,0.0', svg)
+    if self.VERBOSE: triangl.plot()
+
+  def test_d(self):
     ''' line
     '''
+    self.data['b']['stroke_width'] = 1
     line = Shape('b', self.data['b'])
-    sw   = self.data['b']['stroke_width']
-    f    = self.data['b']['facing']
-    s    = self.data['b']['size']
     self.assertEqual(line.this.name, 'line')
-    line.this.draw(0, 0, 1, self.clen, size=s, facing=f)
-    svg  = line.this.svg()
-    self.assertEqual(svg['width'], 4) 
-    line.plot()
 
-  def test_5(self):
+    line.draw(0, 0, self.clen)  #, size=s, facing=f)
+    svg  = line.svg()
+    self.assertEqual(svg['width'], 4) 
+    if self.VERBOSE: line.plot()
+
+  def test_e(self):
     ''' diamon
     '''
-    self.data['d']['shape'] = 'diamond'
+    self.data['d']['shape']  = 'diamond'
+    self.data['d']['facing'] = 'all'
     diamond = Shape('d', self.data['d'])
     self.assertEqual(diamond.this.name, 'diamond')
-    diamond.this.draw(0, 0, 0, self.clen, facing='all')
+    diamond.draw(0, 0, self.clen)
     coords = list(diamond.this.data.coords)
     self.assertEqual(coords[-1], (0, 7.5))
-    svg = diamond.this.svg()
+    svg = diamond.svg()
     self.assertEqual(svg['points'], '0.0,7.5,7.5,0.0,15.0,7.5,7.5,15.0,0.0,7.5')
-    #diamond.plot() 
+    if self.VERBOSE: diamond.plot() 
+
+  def test_f(self):
+    ''' transform a triangle
+    '''
+    triangl = Shape('a', {'shape': 'triangl','facing':'north'})
+    triangl.draw(0, 0, self.clen)
+    self.assertTrue(triangl.this.data.is_valid)
+    # TODO throws MultiPoint error
+    # triangl.tx(15, 0)
 
 '''
-GEOMINK has inner classes
-self.meander = self.Rectangle(polygon)
-self.meander = self.Gnomon(polygon, label)
-self.meander = self.Parabola(polygon, label)
-self.meander = self.SquareRing(polygon, label)
-self.meander = self.Irregular(polygon, label)
-
-SHAPE HAS FUNCTIONS
-s = self.circle(size, sw, p)
-s = self.square(x, y, size, hsw, sw)
-s = self.square(x, y, size, hsw, 0)
-s = self.line(x, y, facing, size, hsw, sw)
-s = self.line(x, y, facing, size, hsw, 0)
-s = self.triangle(facing, p)
-s = self.diamond(facing, p)
-s = self.text(shape, x, y)
-
-triangl x, y, stroke_width, border, facing=, 
-circle 	x, y, stroke_width, border, size=
-square 	x, y, stroke_width, border, size=, facing=:
-
 the
 end
 '''

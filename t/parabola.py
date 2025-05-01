@@ -28,7 +28,9 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, direction='S')
+    xy = a.bft[0].this.svg(meander=True, facing='south')
+    # front door
+    #xy = a.svg(layer=0, meander=True, facing='south')
     if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_1')
     self.assertEqual(expect, list(xy.coords))
 
@@ -46,7 +48,7 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, direction='S')
+    xy = a.bft[0].this.svg(meander=True, facing='south')
     if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_2')
     self.assertEqual(expect, list(xy.coords))
 
@@ -64,7 +66,7 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, direction='E')
+    xy = a.bft[0].this.svg(meander=True, facing='east')
     if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_3')
     self.assertEqual(expect, list(xy.coords))
 
@@ -77,7 +79,7 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, direction='E')
+    xy = a.bft[0].this.svg(meander=True, facing='east')
     if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_4')
     self.assertEqual((14,1), list(xy.coords)[0])
     self.assertEqual((9,4), list(xy.coords)[-1])
@@ -91,7 +93,7 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, direction='W')
+    xy = a.bft[0].this.svg(meander=True, facing='west')
     if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_5')
     self.assertEqual((17,17), list(xy.coords)[0])
     self.assertEqual((17,5),  list(xy.coords)[-1])
@@ -111,7 +113,7 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, direction='W')
+    xy = a.bft[0].this.svg(meander=True, facing='west')
     if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_6')
     self.assertEqual(expect, list(xy.coords))
 
@@ -128,7 +130,7 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, direction='N')
+    xy = a.bft[0].this.svg(meander=True, facing='north')
     if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_7')
     self.assertEqual(expect, list(xy.coords))
 
@@ -141,38 +143,10 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, direction='N')
+    xy = a.bft[0].this.svg(meander=True, facing='north')
     if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_8')
     self.assertEqual((14,14), list(xy.coords)[0])
     self.assertEqual((11,1), list(xy.coords)[-1])
-
-  def test_9(self):
-    ''' can shapeTeller tell if I am a parabola that can be meandered
-    '''
-    p = Polygon([(0,0), (0,9), (9,9), (9,0), (6,0), (6,3), (3,3), (3,0)])
-    a = CellMaker((0,0), clen=3)
-    self.assertTrue(a.shapeTeller(p, 'parabola'))
-
-  def test_10(self):
-    ''' same test as above but with identify
-    '''
-    p = Polygon([(0,0), (0,9), (9,9), (9,0), (6,0), (6,3), (3,3), (3,0)])
-    a = CellMaker((0,0), clen=3)
-    self.assertEqual('parabola', a.identify(p))
-
-  def test_11(self):
-    ''' only divisible by three parabolas are irregular 
-    '''
-    p = Polygon([(0,0), (0,8), (8,8), (9,0), (6,0), (6,2), (2,2), (2,0)])
-    a = CellMaker((0,0), clen=3)
-    self.assertFalse(a.shapeTeller(p, 'parabola'))
-
-  def test_12(self):
-    ''' only divisible by three parabolas are irregular 
-    '''
-    p = Polygon([(0,0), (0,8), (8,8), (9,0), (6,0), (6,2), (2,2), (2,0)])
-    a = CellMaker((0,0), clen=3)
-    self.assertEqual('I', a.identify(p))
 
 '''
 the

@@ -19,7 +19,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
 
   def setUp(self):
-    self.VERBOSE = True
+    self.VERBOSE = False
     self.writer  = Plotter()
     clen         = 3
     self.cells   = {
@@ -84,6 +84,7 @@ class Test(unittest.TestCase):
     c1 = self.cells['c'].bft[1]
     if self.VERBOSE: self.writer.plot(c1.this.data, c0.this.data, fn='cflat_4')
     self.cells['c'].flatten()
+    c0 = self.cells['c'].bft[0]
     self.assertEqual('sqring', c0.this.name)
 
   def test_5(self):
@@ -125,7 +126,18 @@ class Test(unittest.TestCase):
     #self.assertFalse(seeker)
 
   def test_7(self):
-    pass
+    ''' check that facing is preserved by compute
+    '''
+    dangler  = Polygon([(2, 1), (2, 2), (3, 2,), (3, 1), (2, 1)])
+    self.cells['a'].background('a', { 'bg': 'F00' })
+    self.cells['a'].foreground('a', { 'fill': 'FF0', 'facing': 'west' })
+    self.cells['a'].top('c', { 'fill': 'FF0', 'size': 'small' })
+    self.cells['a'].void('b', dangler)
+    self.cells['a'].flatten()
+    self.assertEqual('west', self.cells['a'].bft[1].facing)
+    meander = self.cells['a'].bft[1].svg(meander=True)
+    # check first two co-ordinates
+    self.assertEqual('0.0,0.0,0.0,3.0,3.0,3.0,3.0', meander['points'][:27])
 
   def test_8(self):
     pass

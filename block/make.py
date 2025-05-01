@@ -1,7 +1,11 @@
 #from cell.geomink import Geomink
-from cell import Geomink, Cell, CellMaker
+# from cell import Geomink, Cell, CellMaker
+from cell import CellMaker, Shape
 
 class GeoMaker:
+
+  VERBOSE = True
+
   def __init__(self, scale=1.0, cellsize=60):
     self.scale    = scale
     self.cellsize = cellsize
@@ -56,7 +60,7 @@ class GeoMaker:
       for x in range(b0):
         pos    = (x, y)
         cn, tn = positions[pos]
-        cell   = ShapelyCell(pos, self.cellsize)
+        cell   = CellMaker(pos, self.cellsize)
         cell.background(cn, cells[cn])
         cell.foreground(cn, cells[cn])
         if tn: cell.top(tn, cells[tn])
@@ -65,8 +69,6 @@ class GeoMaker:
     return block
 
   ''' to discover the danglers first gather overlaps from the large shapes
-  '''
-  def largeShapes(self, block1):
     for pos, cell in block1.items():
       large = list()
       bg    = cell.bft[0].this.data
@@ -77,9 +79,17 @@ class GeoMaker:
           large.append(shape)
       cell.bft = large
     return block1
+  '''
+  def danglers(self, block1):
+    ''' orchestrate two dangler functions
+    '''
+    large    = self.largeShapes(block1)
+    danglers = self.findNeighbours(block1, large)
+    return danglers
+
   ''' to discover the danglers first gather overlaps from the large shapes
   '''
-  def discoverDanglers(self, block1):
+  def largeShapes(self, block1):
     large = list()
     for pos, cell in block1.items():
       bg    = cell.bft[0].this.data
@@ -106,8 +116,51 @@ class GeoMaker:
             danglers[pos] = p
     return danglers
 
+  # TODO a single multigeom for each pos is not enough !
+  def splitMultigeoms(self, block1):
+    ''' split multi geoms and create new shapes
+    '''
+    found  = None
+    shapes = list()
+    for pos, cell in block1.items():
+      for layer in cell.bft:
+        shape = layer.this
+        if shape.name == 'multipolygon':
+          if self.VERBOSE: 
+            print(f"{pos} {layer.label} {layer.facing} {shape.name}")
+          found = pos
+          for p in shape.data.geoms:
+            rename    = cell.bless(p)
+            rename, f = cell.direct(rename, p)
+            conf      = {'shape': rename, 'fill': layer.fill, 'facing':f }
+            piece     = Shape(layer.label, conf)
+            piece.this.compute(p)
+            shapes.append(piece)
+
+    pos = found # e.g (1,0)
+    if pos: keep = [x for x in block1[pos].bft if x.this.name != 'multipolygon']
+    block1[pos].bft = keep + shapes
+
+    return block1
+
+
+  def padBlock(self, block1, padsize=-1):
+    ''' make a gap between cells by adding padding with Shapely.buffer
+        a small Polygon may end up empty. Then silently return the original
+        Shapely.set_precision did not help
+    '''
+    for pos, cell in block1.items():
+      padded = list()
+      for layer in cell.bft:
+        shape           = layer.this.data
+        if shape is None: continue
+        b               = shape.buffer(padsize, single_sided=True)
+        layer.this.data = shape if b.is_empty else b
+        padded.append(layer)
+      cell.bft = padded
+ 
+    return block1
 '''
 the
 end
 '''
-

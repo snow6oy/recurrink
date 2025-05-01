@@ -36,7 +36,7 @@ class Shape:
     def __init__(self):
       self.name = 'triangl'
 
-    def draw(self, x, y, clen, swidth=0, facing=str()):
+    def draw(self, x, y, clen, swidth=0, facing=str(), size='medium'):
       super().__init__(x, y, swidth, clen)
       rings = {
         'north': LinearRing((self.nw, self.ne, self.s)),
@@ -49,7 +49,11 @@ class Shape:
       else:
         raise IndexError(f"Cannot face triangle {facing}")
 
-    def svg(self):
+    def svg(self, meander=False, facing=None):
+      ''' return Meander, fallback or fill
+      '''
+      if meander or facing:
+        raise NotImplementedError()
       p = [f"{c[0]},{c[1]}" for c in list(self.data.coords)]
       return ','.join(map(str, list(p)))
 
@@ -60,7 +64,7 @@ class Shape:
     def __init__(self):
       self.name = 'diamond'
 
-    def draw(self, x, y, clen, swidth=0, facing=str()):
+    def draw(self, x, y, clen, swidth=0, facing=str(), size='medium'):
       super().__init__(x, y, swidth, clen)
       rings = {
         'all': LinearRing((self.w, self.n, self.e, self.s)),
@@ -74,7 +78,9 @@ class Shape:
       else:
         raise IndexError(f"Cannot face diamond {facing}")
 
-    def svg(self):
+    # TODO make this re-usable for any SVG polygon
+    def svg(self, meander=False, facing=None):
+      if meander or facing: raise NotImplementedError
       p = [f"{c[0]},{c[1]}" for c in list(self.data.coords)]
       return { 'points': ','.join(map(str, p)) }
 
@@ -85,7 +91,7 @@ class Shape:
     def __init__(self):
       self.name = 'circle'
 
-    def draw(self, x, y, clen, swidth=0, size=str()):
+    def draw(self, x, y, clen, swidth=0, facing='all', size=str()):
       ''' pythagoras was a pythonista :)
       '''
       super().__init__(x, y, swidth, clen)
@@ -102,7 +108,8 @@ class Shape:
       else:
         raise IndexError(f"Cannot set circle to {size} size")
 
-    def svg(self):
+    def svg(self, meander=False, facing=None):
+      if meander or facing: raise NotImplementedError
       x, y, w, h = self.data.bounds
       r = round(self.data.centroid.x - x)
       return { 'cx': round(x), 'cy': round(y), 'r': r }
@@ -187,52 +194,53 @@ class Shape:
       else:
         raise IndexError(f"Cannot make {self.name} with {size}")
 
-    ''' return a box for Cell to flatten
-    
-    use Void() instead
-
-    def make(self, x, y, w, h):
-      self.data = Polygon([(x, y), (x, h), (w, h), (w, y)])
-
-    def update(self, polygon):
+    def compute(self, polygon): 
+      ''' experimental!
+          idea is .draw() is the interface for user-generated cell
+          .compute() is for machine-generated i.e. Shapely diff
+      '''
       self.data = polygon
-    '''
 
     def plotData(self):
       return self.data.boundary, self.name
 
-    def svg(self, meander=False, direction=None):
+    def svg(self, meander=False, facing=None):
       ''' markup a square
       '''
-      if meander:
-        return self.fill(direction)
-      coords = list(self.data.boundary.coords)
-      x      = coords[0][0]
-      y      = coords[0][1]
-      width  = coords[2][0] - x
-      height = coords[2][1] - y
-      #print(x, y, width, height)
-      return { 
-        'name': self.name, 'x': x, 'y': y, 'width': width, 'height': height 
-      }
+      if meander and facing:
+        return self.lineFill(facing)
+      elif meander:   # TODO duplicate code, see parabola
+        x = [x for x in list(self.data.boundary.xy)[0]]
+        y = [y for y in list(self.data.boundary.xy)[1]]
+        p = [f"{x[i]},{y[i]}" for i in range(len(x))]
+        points = ' '.join(map(str, p))
+        return { 'points': points, 'name': self.name }
+      else:
+        coords = list(self.data.boundary.coords)
+        x      = coords[0][0]
+        y      = coords[0][1]
+        width  = coords[2][0] - x
+        height = coords[2][1] - y
+        #print(x, y, width, height)
+        return { 'x': x, 'y': y, 'width': width, 'height': height }
 
-    def fill(self, direction=None, conf=dict(), label=None):
+    def lineFill(self, facing, conf=dict(), label=None):
+      '''
       self.label = label
-      if direction is None and self.label in conf:
+      if facing is None and self.label in conf:
         direction = conf[self.label]
       elif direction:
         pass # por ejemplo E
       else:
         direction = 'N'
-
-      d         = self.control(direction)
-      #m         = Meander(self.rectangl)
+      '''
+      d         = self.control(facing)
       m         = Meander(self.data)
       padme     = m.pad()
       guides    = m.guidelines(padme, d)
       points, e = m.collectPoints(padme, guides)
       if e and self.VERBOSE:
-        raise ValueError(f"{e=} {self.label=} {direction=}")
+        raise ValueError(f"{e=} {self.label=} {facing=}")
       elif e:
         linefill = LineString()
       else:
@@ -242,8 +250,11 @@ class Shape:
     def control(self, direction):
       control = {
         'N': ('EB', 'ET'),
+        'north': ('EB', 'ET'),
+        'all': ('EB', 'ET'),
         'S': ('EB', 'ET'),
         'E': ('NL', 'NR'),
+        'east': ('NL', 'NR'),
         'W': ('NL', 'NR')
       }
       if direction in control:
@@ -254,11 +265,11 @@ class Shape:
   class Void():
     ''' minimal class so flatten can handle danglers
     '''
-    def __init__(self):
-      self.name = 'void'
+    def __init__(self): self.name = 'void'
 
-    def draw(self, x, y, clen, data=None):
-      self.data = data
+    def compute(self, polygon): self.data = polygon
+
+    def lineFill(self, facing): return None # signal that no markup is required
 
   class Parabola:
     ''' u-shaped parallelograms
@@ -269,20 +280,26 @@ class Shape:
       self.name = 'parabola'
       #self.writer   = Plotter() TODO add plotData()
 
-    def draw(self, x, y, clen, data=None):
-      ''' ignore co-ordinates for now
-          just need the shape data for meander
-      '''
-      self.data = data
+    def compute(self, polygon): self.data =  polygon
 
-    def svg(self, meander=True, direction=None):
+    def svg(self, meander=False, facing=None):
       ''' make u-shaped svg path 
+      return boundary until meander from computed shape is ready
       '''
-      return self.fill(direction)
-
-    def fill(self, direction=None, conf=dict(), label=None):
+      if meander and facing:
+        return self.lineFill(direction=facing)
+      elif meander:
+        x = [x for x in list(self.data.boundary.xy)[0]]
+        y = [y for y in list(self.data.boundary.xy)[1]]
+        p = [f"{x[i]},{y[i]}" for i in range(len(x))]
+        points = ' '.join(map(str, p))
+        return { 'points': points, 'name': self.name }
+      else: raise NotImplementedError
+        
+    def lineFill(self, facing, conf=dict(), label=None):
       self.label = label  # TODO is label a-z or P1-n ??
-      direction  = direction if direction else conf[self.label]
+      #direction  = direction if direction else conf[self.label]
+      direction  = facing
       X, Y, W, H = self.data.bounds
       width      = W - X
       height     = H - Y
@@ -291,16 +308,16 @@ class Shape:
       done       = surround.difference(self.data)
       x, y, w, h = done.bounds
 
-      if direction == 'N':
+      if direction == 'north':   # used to be N
         gnomon   = Polygon([(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)])
         rectangl = Polygon([(w,y),(w,h),(W,h),(W,Y)])
-      elif direction == 'W': 
+      elif direction == 'west': 
         gnomon   = Polygon([(X,Y),(X,H),(W,H),(W,h),(x,h),(x,Y)])
         rectangl = Polygon([(x,Y),(x,y),(W,y),(W,Y)])
-      elif direction == 'S':
+      elif direction == 'south':
         gnomon   = Polygon([(X,Y),(X,H),(x,h),(x,y),(W,y),(W,Y)])
         rectangl = Polygon([(w,y),(w,h),(W,H),(W,y)])
-      elif direction == 'E':
+      elif direction == 'east':
         gnomon   = Polygon([(X,h),(X,H),(W,H),(W,Y),(w,Y),(w,h)])
         rectangl = Polygon([(X,Y),(X,y),(w,y),(w,Y)])
       else:
@@ -311,11 +328,16 @@ class Shape:
         gpad = g.pad()
         r    = Meander(rectangl)
         rpad = r.pad()
-      else:
-        if self.VERBOSE:
-          print(f"{gnomon.is_valid=} is not a good polygon")
-          print(f"{rectangl.is_valid=} is not a good polygon")
-        return self.data.boundary # fallback to outline
+      elif not rectangl.is_valid and self.VERBOSE:
+        raise ValueError(f"{rectangl.is_valid=} is not a good polygon")
+        # { 'points': self.data.boundary } # fallback to outline
+        '''
+        p = [f"{c[0]},{c[1]}" for c in list(self.data.boundary.xy)]
+        p = [f"{c[0]},{c[1]}" for c in list(self.data.boundary.xy)]
+        return { 'points': ','.join(map(str, p)) }
+        '''
+      elif not gnomon.is_valid and self.VERBOSE:
+        raise ValueError(f"{gnomon.is_valid=} {gnomon.boundary}")
   
       gcontrol = self.control('G', direction, clockwise)
       rcontrol = self.control('R', direction, clockwise)
@@ -333,7 +355,7 @@ class Shape:
 {rectangl=} 
 {rmls=} """)
           #self.writer.plot(gpad, rpad, fn=self.label)
-        linefill = self.data.boundary
+        linefill = list(self.data.boundary.xy)
       else:
         linefill = r.joinStripes(p1, p2)
       return linefill
@@ -356,23 +378,17 @@ class Shape:
       ''' get the right guideline
       '''
       control = {
-        'G': { 'N': { True:  ('SR', 'SE', 'EB'),    # t.parabola.Test.test_12
-                      False: ('EB', 'SE', 'SR')},   # t.parabola.Test.test_7
-               'S': { True:  ('NR', 'NE', 'ET'),    # t.parabola.Test.test_5
-                      False: ('ET', 'NE', 'NR')},   # t.parabola.Test.test_6
-               'E': { True:  ('WB', 'SW', 'SL'),    # t.parabola.Test.test_9
-                      False: ('SL', 'SW', 'WB')},   # t.parabola.Test.test_8
-               'W': { True:  ('EB', 'SE', 'SR'),    # t.parabola.Test.test_11
-                      False: ('SR', 'SE', 'EB')}    # t.parabola.Test.test_10
+        'G': { 
+          'north': { True:  ('SR', 'SE', 'EB'), False: ('EB', 'SE', 'SR')}, 
+          'south': { True:  ('NR', 'NE', 'ET'), False: ('ET', 'NE', 'NR')},
+           'east': { True:  ('WB', 'SW', 'SL'), False: ('SL', 'SW', 'WB')},
+           'west': { True:  ('EB', 'SE', 'SR'), False: ('SR', 'SE', 'EB')} 
         },
-        'R': { 'N': { True:  ('NL', 'NR'),
-                      False: ('EB', 'ET')},
-               'S': { True:  ('EB', 'ET'),
-                      False: ('ET', 'EB')},
-               'E': { True:  ('SR', 'SL'),
-                      False: ('SL', 'SR')},
-               'W': { True:  ('WT', 'WB'),
-                      False: ('WT', 'WB')}
+        'R': {
+          'north': { True: ('NL', 'NR'), False: ('EB', 'ET')},
+          'south': { True: ('EB', 'ET'), False: ('ET', 'EB')},
+           'east': { True: ('SR', 'SL'), False: ('SL', 'SR')},
+           'west': { True: ('WT', 'WB'), False: ('WT', 'WB')}
         }
       }
       if (shape in control 
@@ -391,10 +407,11 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     def __init__(self):
       self.name = 'sqring'
 
-    def draw(self, x, y, clen, data=None):
-      self.data = data
+    ''' for machine generated shapes
+    '''
+    def compute(self, polygon): self.data = polygon
 
-    def fill(self, conf=dict(), label=None):
+    def lineFill(self, conf=dict(), label=None):
       ''' square ring is not currently accepting config
       ''' 
       self.label = label
@@ -481,18 +498,56 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     data, name = self.this.plotData()
     p.plotLine(data, name)
 
+  def compute(self, data):
+    '''
+    mc = {'a':'west', 'c':'east'}
+    self.facing = mc[self.label] # TODO experimental machine-gen attribute
+    '''
+    self.this.compute(data)
+
+  def draw(self, x, y, clen):
+    ''' wrapper to this.draw
+    '''
+    stroke_width = 0 if not self.stroke else self.stroke['width']
+    self.this.draw(
+      x, y, clen, swidth=stroke_width, facing=self.facing, size=self.size
+    )
+  ''' convert to compute
+    def draw(self, x, y, clen, data=None): self.data = data
+    def draw(self, x, y, clen, data=None):
+    def draw(self, x, y, clen, data=None): self.data = data
+  '''
+
   def tx(self, x, y):
     ''' use Shapely transform to offset coordinates according to grid position
     '''
     boundary        = self.this.data.boundary 
     line_string     = transform(boundary, lambda a: a + [x, y])
-    #print(f"{x} {y} {self.label} {line_string}")
-    self.this.data = Polygon(line_string)
+    # print(f"{x} {y} {self.label} {line_string}")
+    if line_string.geom_type == 'LineString':
+      self.this.data = Polygon(line_string)
+    else:
+      raise TypeError(f"{line_string.geom_type} not expected'")
 
-  def getShape(self, legacy=False):
-    ''' return Shapely as markup
+  def svg(self, meander=False):
+    ''' expose shape SVG methods 
+        return Shapely as markup in three formats
+        1. polyline with Meander 
+        2. polyline from Shapely.boundary
+        3. polygon
     '''
-    return self.this.svg()
+    if meander and self.facing:
+      linefill = self.this.lineFill(facing=self.facing)
+      if linefill:  # void returns None
+        p = [f"{c[0]},{c[1]}" for c in list(linefill.coords)]
+        return { 'points': ','.join(map(str, p)), 'name': self.this.name }
+      else:
+        return { 'points': 'none', 'name': self.this.name }
+    else:
+      svg = self.this.svg()
+      if 'name' in svg: print(self.this.name)
+      svg['name'] = self.this.name
+      return svg
 '''
 the
 end

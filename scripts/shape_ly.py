@@ -42,7 +42,7 @@ b2 = LineString([(2, 2), (7, 2)])
 p1 = Polygon([(8.0, 2.0), (8.0, 1.0), (7.0, 1.0), (2.0, 1.0), (2.0, 2.0), (7.0, 2.0), (8.0, 2.0)])
 p2 = Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (7.0, 2.0), (7.0, 1.0), (2.0, 1.0), (1.0, 1.0)])
 
-case = 12
+case = 14
 
 if case == 1:
   ''' using overlap predicate with Polygons can detect difference 
@@ -173,8 +173,19 @@ elif case == 13:
   print(blue.svg())
   blue.svg(scale_factor=2.0, fill_color='#FF0', opacity=0.5)
   print(blue.svg())
-
-
-
-
-
+elif case == 14:
+  ''' convert a boundary for SVG polygon
+  '''
+  p = Polygon([
+    (35,5), (40,5), (40,10), (35,10), (30,10), 
+    (30,15), (45,15), (45,0), (30,0), (30,5), (35,5)
+  ])
+  x = [x for x in list(p.boundary.xy)[0]]
+  y = [y for y in list(p.boundary.xy)[1]]
+  p = [f"{x[i]},{y[i]}" for i in range(len(x))]
+  points = ' '.join(map(str, p))
+  print(points)
+  '''
+      p = [f"{c[0]},{c[1]}" for c in list(self.data.boundary.xy)]
+      p = list(self.data.boundary.xy)
+  '''

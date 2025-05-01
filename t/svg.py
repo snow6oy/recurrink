@@ -1,7 +1,7 @@
 import unittest
 import pprint
 from model import Svg
-from cell import Geomink
+from cell import CellMaker
 from block import GeoMaker
 from config import *
 pp = pprint.PrettyPrinter(indent = 2)
@@ -9,7 +9,7 @@ pp = pprint.PrettyPrinter(indent = 2)
 class Test(unittest.TestCase):
 
   def setUp(self):
-    self.svg    = Svg(scale=1, gridsize=180, cellsize=60)
+    self.svg  = Svg(scale=1, gridsize=180, cellsize=60)
     self.cell = {
       'bg':'000', 
       'fill': 'FFF',
@@ -24,77 +24,58 @@ class Test(unittest.TestCase):
     self.data = config.cells
     self.positions = config.positions
 
-  # TODO convert to use ShapelyCell
-  def test_1(self):
+  # TODO fix transform Layout.addGeomink
+  def test_a(self):
     ''' are diamonds drawn correctly
     '''
     self.cell['shape'] = 'diamond'
-    gmk = Geomink(cellsize=60, layer='fg', cell=self.cell, coord=(0, 0))
+    #gmk = Geomink(cellsize=60, layer='fg', cell=self.cell, coord=(0, 0))
+    cell_a = CellMaker(pos=(0, 0), clen=60)
+    cell_a.background('a', self.cell)
+    cell_a.foreground('a', self.cell)
     self.svg.addStyle('fill:#000', 'a', 1)
-    self.svg.addGeomink(1, (0,0), 'a', gmk)
-    self.svg.svgDoc(legacy=True)
+    self.svg.addGeomink(1, (0,0), cell_a.bft[1])
+    self.svg.svgDoc()
     self.svg.make()
     el = list(self.svg.root.iter(tag=f"{self.svg.ns}polygon"))[0]
     p = el.get("points").split(',')
     points = list(map(float, p))
     self.assertEqual(points, [0.0, 30.0, 30.0, 0.0, 60.0, 30.0, 0.0, 30.0])
 
-  def test_2(self):
+  def test_b(self):
     ''' triangle
     '''
     self.cell['shape'] = 'triangl'
-    triangl = Geomink(cellsize=60, layer='fg', cell=self.cell, coord=(0, 0))
+    cell_a = CellMaker(pos=(0, 0), clen=60)
+    cell_a.background('a', self.cell)
+    cell_a.foreground('a', self.cell)
     self.svg.addStyle('style', 'a', 1)
-    #self.svg.addGeomink(1, (0,0), 'a', triangl)
-    self.svg.addGeomink(1, (0,0), triangl)
-    self.svg.svgDoc(legacy=True)
-    self.svg.make()
+    self.svg.addGeomink(1, (0,0), cell_a.bft[1])
+    doc = self.svg.svgDoc()
+    self.svg.make(doc)
     self.assertTrue(list(self.svg.root.iter(tag=f"{self.svg.ns}polygon")))
 
-  def test_3(self):
+  def test_c(self):
     ''' make a doc for input to Svg()
-    '''
-    gm = GeoMaker()
-    blocksz = (3, 1)
-    block1  = gm.makeCells(blocksz, self.positions, self.data)
-    self.svg.styleGuide(block1)
-    self.svg.gridWalk(blocksz, block1)
-    
-    self.svg.svgDoc(legacy=False)
-    #pp.pprint(self.svg.doc)
-    self.svg.make()
-    self.svg.write('tmp/svgtest_2.svg')
-    with open('tmp/svgtest_2.svg') as f:
-      written = len(f.readlines()) 
-    self.assertEqual(written, 37)
-
-  def test_4(self):
-    ''' toggle inkscape tags for plotter
-    '''
-    svg = Svg(scale=1, inkscape=True)
-    self.assertTrue(svg.inkscape)
-
-  def test_5(self):
-    ''' make a doc for input to Svg() using ShapelyCell
-    cell    = block1[(0,0)] 
-    for layer in cell.bft:
-      print(layer.shape.data.boundary)
     '''
     gm      = GeoMaker()
     blocksz = (3, 1)
     block1  = gm.makeShapelyCells(blocksz, self.positions, self.data)
-    self.svg.styleGuide(block1)         # hydrate svg.lstyles
-    self.svg.gridWalk(blocksz, block1)  #         svg.lgmk
-    self.svg.svgDoc(legacy=False)
-    '''
-    pp.pprint(self.svg.doc)
-    pp.pprint(self.svg.lgmk)
-    '''
-    self.svg.make()
-    self.svg.write('tmp/svgtest_51.svg')
-    with open('tmp/svgtest_51.svg') as f:
+    self.svg.styleGuide(block1)
+    self.svg.gridWalk(blocksz, block1)
+    
+    doc = self.svg.svgDoc()
+    self.svg.make(doc)
+    self.svg.write('tmp/t_svg_e.svg')
+    with open('tmp/t_svg_e.svg') as f:
       written = len(f.readlines()) 
-    self.assertEqual(written, 37)
+    self.assertEqual(written, 39)
+
+  def test_d(self):
+    ''' toggle inkscape tags for plotter
+    '''
+    svg = Svg(scale=1, inkscape=True)
+    self.assertTrue(svg.inkscape)
 
 '''
 the
