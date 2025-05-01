@@ -3,7 +3,7 @@ class config:
   cells = {
     'a': {
       'bg': '#F00', 
-      'fill': '#FF0', 
+      'fill': '#090', 
       'fill_opacity': 1.0,
       'shape': 'square', 
       'facing': 'all', 
@@ -42,7 +42,7 @@ class config:
     },
     'd': {
       'bg': '#F00', 
-      'fill': '#FF0', 
+      'fill': '#090', 
       'fill_opacity': 1.0,
       'shape': 'line', 
       'facing': 'east', 
