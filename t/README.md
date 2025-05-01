@@ -5,11 +5,26 @@ screen -S rink
 python -m unittest t.Test.test_n
 ```
 
+# Order of Execution
+Not numeric after all *face palm*
+```
+t.layout.Test.test_1
+t.layout.Test.test_10
+t.layout.Test.test_11
+t.layout.Test.test_12
+t.layout.Test.test_13
+t.layout.Test.test_14
+t.layout.Test.test_15
+t.layout.Test.test_16
+t.layout.Test.test_2
+t.layout.Test.test_3
+```
+
 # Test Coverage
 
 ## Cell
 
-13 cellMaker
+14 cellMaker
  0 geometry
  2 strokes
  0 cellData
