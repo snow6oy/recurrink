@@ -30,7 +30,7 @@ class Identify:
       elif shape.covers(right) and shape.covers(bottom):
         facing = 'SE'
       else:
-        facing = None  # TODO what next ?
+        raise NotImplementedError('gnomon has to face somewhere')
     elif name == 'parabola':
       if shape.covers(left) and shape.covers(top) and shape.covers(right):
         facing = 'north'
@@ -40,8 +40,10 @@ class Identify:
         facing = 'south'
       else:
         facing = 'west'
+    elif name == 'sqring':
+      facing = 'all'
     else:
-      facing = None
+      raise NotImplementedError(f'{name} has to face somewhere')
     return name, facing
 
   def bless(self, shape):
@@ -156,15 +158,8 @@ class CellMaker(Identify):
     ''' place for danglers to hang
     '''
     void = Shape(label, { 'shape': 'void' })
-    void.this.draw(self.x, self.y, self.clen, data=shape)
+    void.compute(shape)
     self.bft.append(void)
-
-  '''
-  def svg(self, layer, meander=False, facing=None):
-    linefill = self.bft[layer].this.svg(meander, facing)
-    p = [f"{c[0]},{c[1]}" for c in list(linefill.coords)]
-    return { 'points': ','.join(map(str, p)), 'name': self.name }
-  '''
 
   def getStyle(self, i, linear=False): # layer index
     ''' construct a CSS style 
@@ -214,12 +209,12 @@ class CellMaker(Identify):
 {len(self.bft)=} 
 {done.this.name=} {done.this.data.bounds}
 {seek.this.name=} {seek.this.data.bounds}""")
-    if done.this.data.equals(seek.this.data): # fg completely covers bg
+    if done.this.data.equals(seek.this.data) or seek.this.data is None:
       seek.this.data = None
-      seek.this.name = 'invisible'
+      seek.this.name = 'invisible' # fg completely covers bg or was empty
     else:     # if done.this.data.crosses(seek.this.data): 
       diff = seek.this.data.difference(done.this.data)
-      if self.VERBOSE: print(f"{done.label=} {seek.this.name=} {diff.bounds}")
+      if self.VERBOSE: print(f"{done.label=} {seek.this.name=} {diff}")
       if diff.is_empty:   # nothing overlapped
         pass              # return seek as it came
       elif diff.equals(seek.this.data):

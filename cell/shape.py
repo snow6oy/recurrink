@@ -33,6 +33,9 @@ class Shape:
   ''' Shape needs exactly one inner class defined during init
   '''
   class Triangl(Points):
+    ''' a linear ring wrapped in a Polygon 
+        the wrapper is needed by transform
+    '''
     def __init__(self):
       self.name = 'triangl'
 
@@ -45,7 +48,7 @@ class Shape:
          'west': LinearRing((self.w, self.ne, self.se))
       }
       if facing in rings:
-        self.data = rings[facing]
+        self.data = Polygon(rings[facing])
       else:
         raise IndexError(f"Cannot face triangle {facing}")
 
@@ -54,11 +57,10 @@ class Shape:
       '''
       if meander or facing:
         raise NotImplementedError()
-      p = [f"{c[0]},{c[1]}" for c in list(self.data.coords)]
-      return ','.join(map(str, list(p)))
+      p = [f"{c[0]},{c[1]}" for c in list(self.data.boundary.coords)]
+      return { 'points': ','.join(map(str, list(p))) }
 
-    def plotData(self):
-      return self.data, self.name
+    def plotData(self): return self.data.boundary, self.name
 
   class Diamond(Points):
     def __init__(self):
@@ -74,18 +76,17 @@ class Shape:
       'south': LinearRing((self.w, self.e, self.s))
       }
       if facing in rings:
-        self.data = rings[facing]
+        self.data = Polygon(rings[facing])
       else:
         raise IndexError(f"Cannot face diamond {facing}")
 
     # TODO make this re-usable for any SVG polygon
     def svg(self, meander=False, facing=None):
       if meander or facing: raise NotImplementedError
-      p = [f"{c[0]},{c[1]}" for c in list(self.data.coords)]
+      p = [f"{c[0]},{c[1]}" for c in list(self.data.boundary.coords)]
       return { 'points': ','.join(map(str, p)) }
 
-    def plotData(self):
-      return self.data, self.name
+    def plotData(self): return self.data.boundary, self.name
 
   class Circle(Points):
     def __init__(self):
@@ -409,15 +410,24 @@ all at sea > {shape} {direction} {clockwise} < without control''')
 
     ''' for machine generated shapes
     '''
-    def compute(self, polygon): self.data = polygon
+    def compute(self, polygon): 
+      if len(polygon.interiors) == 1:
+        self.data = polygon
+      else: raise TypeError(f"{len(polygon.interiors)=} not a sqring")
 
-    def lineFill(self, conf=dict(), label=None):
+    def svg(self):
+      '''
+      p = [f"{x[i]},{y[i]}" for i in range(len(x))]
+      points = ' '.join(map(str, p))
+      '''
+
+    def lineFill(self, facing, conf=dict(), label=None):
       ''' square ring is not currently accepting config
       ''' 
       self.label = label
-      X, Y, W, H = self.sqring.bounds
+      X, Y, W, H = self.data.bounds
       surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
-      done       = surround.difference(self.sqring)
+      done       = surround.difference(self.data)
       x, y, w, h = done.bounds
       nw         = Polygon([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,Y)])
       se         = Polygon([(x,Y), (x,y), (w,y), (w,h), (W,h), (W,Y)])
@@ -499,11 +509,17 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     p.plotLine(data, name)
 
   def compute(self, data):
+    ''' facing is supposed to be inherited
+    but as we already know where square rings face
+    it is hard coded here
     '''
-    mc = {'a':'west', 'c':'east'}
-    self.facing = mc[self.label] # TODO experimental machine-gen attribute
-    '''
-    self.this.compute(data)
+    if self.facing:
+      self.this.compute(data)
+    elif self.this.name == 'sqring':  # TODO see direct() sqring have no face
+      self.facing = 'all'
+      self.this.compute(data)
+    else:
+      raise ValueError('faceless cannot compute')
 
   def draw(self, x, y, clen):
     ''' wrapper to this.draw
@@ -512,22 +528,27 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     self.this.draw(
       x, y, clen, swidth=stroke_width, facing=self.facing, size=self.size
     )
-  ''' convert to compute
-    def draw(self, x, y, clen, data=None): self.data = data
-    def draw(self, x, y, clen, data=None):
-    def draw(self, x, y, clen, data=None): self.data = data
-  '''
 
   def tx(self, x, y):
-    ''' use Shapely transform to offset coordinates according to grid position
-    '''
-    boundary        = self.this.data.boundary 
-    line_string     = transform(boundary, lambda a: a + [x, y])
-    # print(f"{x} {y} {self.label} {line_string}")
+    ''' use Shapely transform to offset coordinates 
+        according to grid position
     if line_string.geom_type == 'LineString':
-      self.this.data = Polygon(line_string)
-    else:
-      raise TypeError(f"{line_string.geom_type} not expected'")
+    '''
+    if self.this.data.geom_type == 'Polygon':
+      if len(self.this.data.interiors) == 0:
+        boundary       = self.this.data.boundary 
+        line_string    = transform(boundary, lambda a: a + [x, y])
+        self.this.data = Polygon(line_string)
+        # print(f"{x} {y} {self.label} {line_string}")
+      elif len(self.this.data.interiors) == 1: # deal with sqring
+        lse = transform(self.this.data.exterior, lambda a: a + [x, y])
+        lsi = transform(self.this.data.interiors[0], lambda a: a + [x, y])
+        # print(f"{x} {y} {self.label} {list(lsi.coords)}")
+        self.this.data = Polygon(lse, holes=[list(lsi.coords)])
+      else:
+        raise NotImplementedError
+    else: raise TypeError(f"""
+{self.this.data.geom_type} unexpected: '{self.label}' {self.this.name}""")
 
   def svg(self, meander=False):
     ''' expose shape SVG methods 
@@ -545,7 +566,7 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         return { 'points': 'none', 'name': self.this.name }
     else:
       svg = self.this.svg()
-      if 'name' in svg: print(self.this.name)
+      if 'name' in svg: print(f"{self.this.name} double handled")
       svg['name'] = self.this.name
       return svg
 '''

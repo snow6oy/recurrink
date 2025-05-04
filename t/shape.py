@@ -7,7 +7,7 @@ class Test(unittest.TestCase):
   def setUp(self):
     ''' celldata for minkscape 
     '''
-    self.VERBOSE = False
+    self.VERBOSE = True
     self.data    = config.cells
     self.clen    = 15 # cell length
 
@@ -68,7 +68,7 @@ class Test(unittest.TestCase):
     diamond = Shape('d', self.data['d'])
     self.assertEqual(diamond.this.name, 'diamond')
     diamond.draw(0, 0, self.clen)
-    coords = list(diamond.this.data.coords)
+    coords = list(diamond.this.data.boundary.coords)
     self.assertEqual(coords[-1], (0, 7.5))
     svg = diamond.svg()
     self.assertEqual(svg['points'], '0.0,7.5,7.5,0.0,15.0,7.5,7.5,15.0,0.0,7.5')
@@ -81,7 +81,8 @@ class Test(unittest.TestCase):
     triangl.draw(0, 0, self.clen)
     self.assertTrue(triangl.this.data.is_valid)
     # TODO throws MultiPoint error
-    # triangl.tx(15, 0)
+    t2 = triangl.tx(15, 0)
+    self.assertEqual(15, triangl.this.data.bounds[0])
 
 '''
 the

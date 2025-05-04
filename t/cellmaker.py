@@ -19,7 +19,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
 
   def setUp(self):
-    self.VERBOSE = False
+    self.VERBOSE = True
     self.writer  = Plotter()
     clen         = 3
     self.cells   = {
@@ -75,17 +75,22 @@ class Test(unittest.TestCase):
     self.assertEqual(p2.boundary.xy[0].tolist(), expect[0][0])
     self.assertEqual(p2.boundary.xy[1].tolist(), expect[0][1])
 
-  def test_4(self):
+  def test_d(self):
     ''' c1 flattens c0
+        and transform understands a polygon with a hole
     '''
     self.cells['c'].background('c', { 'bg': 'F00' })
     self.cells['c'].foreground('c', { 'fill': 'FF0', 'size': 'small' })
     c0 = self.cells['c'].bft[0]
     c1 = self.cells['c'].bft[1]
-    if self.VERBOSE: self.writer.plot(c1.this.data, c0.this.data, fn='cflat_4')
+    if self.VERBOSE: 
+      self.writer.plot(c1.this.data, c0.this.data, fn='t_cellmaker_d')
     self.cells['c'].flatten()
     c0 = self.cells['c'].bft[0]
     self.assertEqual('sqring', c0.this.name)
+    c0.tx(4, 4)
+    self.assertEqual((10,7), c0.this.data.exterior.coords[0])
+    self.assertEqual((13,7), c0.this.data.exterior.coords[1])
 
   def test_5(self):
     ''' a3 is a dangler from neighbour b2
