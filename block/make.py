@@ -4,7 +4,7 @@ from cell import CellMaker, Shape
 
 class GeoMaker:
 
-  VERBOSE = True
+  VERBOSE = False
 
   def __init__(self, scale=1.0, cellsize=60):
     self.scale    = scale
@@ -116,34 +116,6 @@ class GeoMaker:
             danglers[pos] = p
     return danglers
 
-  # TODO a single multigeom for each pos is not enough !
-  def splitMultigeoms(self, block1):
-    ''' split multi geoms and create new shapes
-    '''
-    found  = None
-    shapes = list()
-    for pos, cell in block1.items():
-      for layer in cell.bft:
-        shape = layer.this
-        if shape.name == 'multipolygon':
-          if self.VERBOSE: 
-            print(f"{pos} {layer.label} {layer.facing} {shape.name}")
-          found = pos
-          for p in shape.data.geoms:
-            rename    = cell.bless(p)
-            rename, f = cell.direct(rename, p)
-            conf      = {'shape': rename, 'fill': layer.fill, 'facing':f }
-            piece     = Shape(layer.label, conf)
-            piece.this.compute(p)
-            shapes.append(piece)
-
-    pos = found # e.g (1,0)
-    if pos: keep = [x for x in block1[pos].bft if x.this.name != 'multipolygon']
-    block1[pos].bft = keep + shapes
-
-    return block1
-
-
   def padBlock(self, block1, padsize=-1):
     ''' make a gap between cells by adding padding with Shapely.buffer
         a small Polygon may end up empty. Then silently return the original
@@ -160,7 +132,42 @@ class GeoMaker:
       cell.bft = padded
  
     return block1
+
+  def splitMultigeoms(self, block1):
+    ''' split multi geoms across the block
+    '''
+    for pos in block1:
+      block1[pos] = self.splitByCell(block1[pos]) 
+    return block1
+
+  def splitByCell(self, cell):
+    ''' update cell by converting multipolygon into new shapes
+    '''
+    found = True
+    keep  = shapes = list()
+
+    for layer in cell.bft:
+      shape = layer.this
+      if shape.name == 'multipolygon':
+        if self.VERBOSE: 
+          print(f"found: {layer.label} {layer.facing} {shape.name}")
+        found = True
+        for p in shape.data.geoms:
+          rename    = cell.bless(p)
+          rename, f = cell.direct(rename, p)
+          conf      = {'shape': rename, 'fill': layer.fill, 'facing':f }
+          piece     = Shape(layer.label, conf)
+          piece.this.compute(p)
+          shapes.append(piece)
+      elif self.VERBOSE: print(f'ignored: {layer.label} {shape.name}')
+
+    if found: # merge new shapes with anything other than a multi
+      keep = [x for x in cell.bft if x.this.name != 'multipolygon']
+      cell.bft = keep + shapes
+
+    return cell
 '''
 the
 end
 '''
+
