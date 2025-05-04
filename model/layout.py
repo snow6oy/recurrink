@@ -43,7 +43,7 @@ class Layout:
     self.unit     = unit
     self.scale    = float(scale)
     self.cellnum  = round(gridsize / (cellsize * scale))
-    #print(f"{self.cellnum=} {gridsize=} {cellsize=} {scale=}")
+    print(f"{self.cellnum=} {gridsize=} {cellsize=} {scale=}")
     self.cellsize = round(cellsize * scale)
     self.gridsize = gridsize
     '''
@@ -150,28 +150,25 @@ class Layout:
     ''' pull objects from self and construct inputs to Svg()
         [ { shapes: [ {} {} ], style: fill:#00F } ]
     '''
-    keys = ['width', 'height', 'x', 'y', 'name']
-    sdoc = list()
-    di   = 0      # doc index
-    #for li in range(3):               # layer index
+    keys     = ['width', 'height', 'x', 'y', 'name']
+    self.doc = list()
+    di       = 0      # doc index
     for li, layer in enumerate(self.lgmk): # layer index
-      seen = dict()                   # uniq style
-      #for cn in self.lgmk[li]:        # cell names in layer
-      for cn in layer:        # cell names in layer
+      seen = dict()                        # uniq style
+      for cn in layer:                     # cell names in layer
         style = self.lstyles[li][cn]
         if style not in seen:
           seen[style] = di
-          sdoc.append(dict())
-          sdoc[di]['shapes'] = list()
-          sdoc[di]['style']  = style
+          self.doc.append(dict())
+          self.doc[di]['shapes'] = list()
+          self.doc[di]['style']  = style
           di += 1
         dj = seen[style]
         for gmk in self.lgmk[li][cn]:
           name   = gmk.this.name
+          if self.VERBOSE: print(f"{cn} {li} {name} {gmk.facing=}")
           shape  = gmk.svg(meander)  #, facing=gmk.facing)
-          sdoc[dj]['shapes'].append(shape)
-        if self.VERBOSE: print(cn, li, name, gmk.facing)
-    return sdoc
+          self.doc[dj]['shapes'].append(shape)
 
 # TODO update Flatten to source block1 from Geomaker instead of here
 class Grid(Layout):

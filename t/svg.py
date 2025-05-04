@@ -51,8 +51,8 @@ class Test(unittest.TestCase):
     cell_a.foreground('a', self.cell)
     self.svg.addStyle('style', 'a', 1)
     self.svg.addGeomink(1, (0,0), cell_a.bft[1])
-    doc = self.svg.svgDoc()
-    self.svg.make(doc)
+    self.svg.svgDoc()
+    self.svg.make()
     self.assertTrue(list(self.svg.root.iter(tag=f"{self.svg.ns}polygon")))
 
   def test_c(self):
@@ -64,8 +64,8 @@ class Test(unittest.TestCase):
     self.svg.styleGuide(block1)
     self.svg.gridWalk(blocksz, block1)
     
-    doc = self.svg.svgDoc()
-    self.svg.make(doc)
+    self.svg.svgDoc()
+    self.svg.make()
     self.svg.write('tmp/t_svg_e.svg')
     with open('tmp/t_svg_e.svg') as f:
       written = len(f.readlines()) 
