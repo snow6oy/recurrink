@@ -110,11 +110,20 @@ class Layout:
       self.lstyles.append(dict()) # magically grow to accomodate computed shapes
     self.lstyles[layer][name] = style
 
-  def gridWalk(self, blocksize, block1):
+  def _gridWalk(self, blocksize, block1):
     ''' walk the grid, one block at a time
     '''
     for y in range(0, self.cellnum, blocksize[1]):
       for x in range(0, self.cellnum, blocksize[0]):
+        self.stampBlocks(blocksize, block1, tuple([x, y]))
+
+  def gridWalk(self, blocksize, block1, cellnum=tuple()):
+    ''' walk the grid, one block at a time
+    '''
+    width, height = cellnum if len(cellnum) else (self.cellnum, self.cellnum)
+
+    for y in range(0, height, blocksize[1]):
+      for x in range(0, width, blocksize[0]):
         self.stampBlocks(blocksize, block1, tuple([x, y]))
 
   def stampBlocks(self, blocksize, block1, grid_xy):
