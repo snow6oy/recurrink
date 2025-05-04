@@ -250,18 +250,19 @@ class Shape:
 
     def control(self, direction):
       control = {
-        'N': ('EB', 'ET'),
+            'N': ('EB', 'ET'),
         'north': ('EB', 'ET'),
-        'all': ('EB', 'ET'),
-        'S': ('EB', 'ET'),
-        'E': ('NL', 'NR'),
-        'east': ('NL', 'NR'),
-        'W': ('NL', 'NR')
+          'all': ('EB', 'ET'),
+            'S': ('EB', 'ET'),
+            'E': ('NL', 'NR'),
+         'east': ('NL', 'NR'),
+            'W': ('NL', 'NR'),
+         'west': ('NL', 'NR')
       }
       if direction in control:
         return control[direction]
       else: # abandon if there are no guidelines defined
-        raise KeyError(f'all at sea > {direction=} {self.label=} not found')
+        raise KeyError(f'all at sea > {direction=} {self.name=} not found')
 
   class Void():
     ''' minimal class so flatten can handle danglers
