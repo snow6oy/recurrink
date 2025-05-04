@@ -424,6 +424,7 @@ class Cell():
 
 class Plotter:
   ''' wrapper around matplot so we can see whats going on
+      https://matplotlib.org/stable/gallery/color/named_colors.html
   '''
   def plot(self, p1, p2, fn):
     x1, y1 = p1.boundary.xy
@@ -433,15 +434,23 @@ class Plotter:
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
   def plotLine(self, line, fn):
+    ''' three params to change
+    '''
+    show_axis  = True
+    show_title = True
+    line_width = 1
+
     if line.geom_type not in ['LineString', 'LinearRing']:
       raise ValueError(f'wrong geometry {line.geom_type}')
     fig, ax = plt.subplots()
+    ax.axes.get_xaxis().set_visible(show_axis)
+    ax.axes.get_yaxis().set_visible(show_axis)
     x = []
     y = []
     [x.append(c[0]) for c in list(line.coords)]
     [y.append(c[1]) for c in list(line.coords)]
-    ax.plot(x, y)
-    plt.title(fn)
+    ax.plot(x, y, "k-", linewidth=line_width)
+    if show_title: plt.title(fn)
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
   def multiPlot(self, mpn, fn):

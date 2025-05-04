@@ -7,8 +7,9 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
   def setUp(self):
     self.writer  = Plotter()
+    self.VERBOSE = False
 
-  def test_0(self):
+  def test_j(self):
     ''' check each guideline by comparing grid order
     '''
     expect = [
@@ -33,18 +34,18 @@ class Test(unittest.TestCase):
       grid_ord = r.orderGrid(g)
       self.assertEqual(expect[i], grid_ord)
 
-  def test_1(self): 
+  def test_a(self): 
     ''' guidelines for East with plot of before and after padding
     '''
     r       = Meander(Polygon([(3, 3), (3, 15), (15, 15), (15, 3)]))
     padme   = r.pad()
     guides  = r.guidelines(padme, ('EB', 'ET'))
-    self.writer.plot(r.shape, padme, 'meander_1')
+    if self.VERBOSE: self.writer.plot(r.shape, padme, 't_meander_a')
     # [print(list(g.coords)) for g in list(guides.geoms)]
     g = list(guides.geoms)[0]
     self.assertEqual(g.coords[0], (4.0, 4.0))
 
-  def test_2(self): 
+  def test_b(self): 
     ''' Rectangle with plot of stripes
     '''
     expect  = [(4,4), (14,14)]
@@ -55,11 +56,11 @@ class Test(unittest.TestCase):
     stripes = r.makeStripes(pnts)
     first   = list(stripes.coords)[0]
     last    = list(stripes.coords)[-1]
-    self.writer.plotLine(stripes, 'meander_2')
+    if self.VERBOSE: self.writer.plotLine(stripes, 't_meander_b')
     self.assertEqual(first, expect[0])
     self.assertEqual(last,  expect[1])
 
-  def test_3(self):
+  def test_c(self):
     ''' Gnomon
     '''
     g       = Meander(Polygon([(3,3), (3,15), (15,15), (15,11), (7,11), (7,3)]))
@@ -67,11 +68,11 @@ class Test(unittest.TestCase):
     guides  = g.guidelines(padme, ('WB', 'NW', 'NR'))  # (270, 315, 360))
     pnts, _ = g.collectPoints(padme, guides)
     stripes = g.makeStripes(pnts)
-    self.writer.plotLine(stripes, 'meander_3')
+    if self.VERBOSE: self.writer.plotLine(stripes, 't_meander_c')
     self.assertEqual((6,4), list(stripes.coords)[0])
     self.assertEqual((14,14), list(stripes.coords)[-1])
 
-  def test_4(self):
+  def test_d(self):
     ''' two Gnomons make a Polygon with a whole
     '''
     g      = Meander(Polygon([(3,3),(3,15),(7,15),(7,7),(15,7),(15,3)]))
@@ -83,12 +84,12 @@ class Test(unittest.TestCase):
     guides = gg.guidelines(ggpad, ('NL', 'NE', 'EB'))
     p2, _  = g.collectPoints(ggpad, guides)
     stripe = g.joinStripes(p1, p2)
-    self.writer.plotLine(stripe, 'meander_4')
+    if self.VERBOSE: self.writer.plotLine(stripe, 't_meander_d')
     xy     = list(stripe.coords)
     self.assertEqual((4,14), xy[0])
     self.assertEqual((8,12), xy[-1])
 
-  def test_5(self):
+  def test_e(self):
     ''' one Gnomon plus Rectangle makes a Parabola
     '''
     g      = Meander(Polygon([(0,12),(0,18),(18,18),(18,0),(12,0),(12,12)]))
@@ -100,12 +101,12 @@ class Test(unittest.TestCase):
     rguide = r.guidelines(rpad, ('NR', 'NL'))
     p2, _  = r.collectPoints(rpad, rguide)
     stripe = r.joinStripes(p1, p2)
-    self.writer.plotLine(stripe, 'meander_5')
+    if self.VERBOSE: self.writer.plotLine(stripe, 't_meander_e')
     xy     = list(stripe.coords)
     self.assertEqual((17,1), xy[0])
     self.assertEqual((5,1), xy[-1])
 
-  def test_6(self):
+  def test_f(self):
     ''' western Parabola
     '''
     g      = Meander(Polygon([(0,0),(0,18),(18,18),(18,12),(6,12),(6,0)]))
@@ -117,12 +118,12 @@ class Test(unittest.TestCase):
     rguide = r.guidelines(rpad, ('WT', 'WB')) #  direction=(496,270))
     p2, _  = r.collectPoints(rpad, rguide)
     stripe = r.joinStripes(p1, p2)
-    self.writer.plotLine(stripe, 'meander_6')
+    if self.VERBOSE: self.writer.plotLine(stripe, 't_meander_f')
     xy     = list(stripe.coords)
     self.assertEqual((17,17), xy[0])
     self.assertEqual((17,5), xy[-1])
 
-  def test_7(self):
+  def test_g(self):
     ''' eastern Parabola
     '''
     g      = Meander(Polygon([(0,12),(0,18),(18,18),(18,0),(12,0),(12,12)]))
@@ -134,12 +135,12 @@ class Test(unittest.TestCase):
     rguide = r.guidelines(rpad, ('SL', 'SR')) # direction=(180,450))     # 495,270))
     p2, _  = r.collectPoints(rpad, rguide)
     stripe = r.joinStripes(p1, p2)
-    self.writer.plotLine(stripe, 'meander_7')
+    if self.VERBOSE: self.writer.plotLine(stripe, 't_meander_g')
     xy     = list(stripe.coords)
     self.assertEqual((1,17), xy[0])
     self.assertEqual((1,5), xy[-1])
 
-  def test_8(self):
+  def test_h(self):
     ''' one Gnomon plus Rectangle makes a Parabola
         can join even number of stripes
     '''
@@ -152,15 +153,12 @@ class Test(unittest.TestCase):
     rguide = r.guidelines(rpad, ('NR', 'NL')) # direction=(360,0))
     p2, _  = r.collectPoints(rpad, rguide)
     stripe = r.joinStripes(p1, p2)
-    self.writer.plotLine(stripe, 'meander_8')
+    if self.VERBOSE: self.writer.plotLine(stripe, 't_meander_h')
     xy     = list(stripe.coords)
     self.assertEqual((1,12), xy[0])
     self.assertEqual((3,1), xy[-1])
-    '''
-    self.writer.plot(g.shape, r.shape, 'meander_8')
-    '''
 
-  def test_9(self):
+  def test_i(self):
     ''' can NOT draw a north meander as a U-shape
          NW NE
         W     E
@@ -171,7 +169,7 @@ class Test(unittest.TestCase):
     guide = m.guidelines(padme, ('WB','NW', 'NE', 'EB')) #direction=(90,135,225,270))
     p, _  = m.collectPoints(padme, guide)
     s     = m.makeStripes(p)
-    self.writer.plotLine(s, 'meander_9')
+    if self.VERBOSE: self.writer.plotLine(s, 't_meander_i')
 
 '''
 the
