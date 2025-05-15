@@ -1,17 +1,23 @@
+import math
 import matplotlib.pyplot as plt
 import pprint
 from shapely import line_merge # set_precision
-from shapely.geometry import Polygon, LineString, MultiLineString, Point, LinearRing
+from shapely import Polygon, LineString, MultiLineString, Point, LinearRing
 pp = pprint.PrettyPrinter(indent=2)
 
 class Meander:
+  ''' a valid Shapely polygon is required to Meander
+  '''
+  VERBOSE = False
+
   def __init__(self, polygon):
     if isinstance(polygon, list):
       raise TypeError(polygon)
     elif polygon.is_valid:
-      self.shape = Polygon(polygon) # only a valid Shapely polygon can be used to Meander
+      self.shape = Polygon(polygon) 
 
   # TODO migrate consumers to Geomaker().padBlock
+  # Migration on hold due to testing issue
   def pad(self):
     ''' make a gap between cells by adding padding with Shapely.buffer
         a small Polygon may end up empty. Then silently return the original
@@ -29,6 +35,12 @@ class Meander:
     SW  S  SE      WB EB
     '''
     x, y, w, h = padme.bounds
+    '''
+    ibounds    = [int(x) for x in padme.bounds] # convert to int to match grid
+    x, y, w, h = ibounds
+    if not (w - x) == (h -y):
+      raise ValueError(f"{(w - x)} and {h -y} became inequal")
+    '''
     mls        = []
     guideline  = {
       'NL': LineString([(x, y), (x, h)]), # North Left
@@ -52,33 +64,45 @@ class Meander:
         gridwalk the bounding box and collect Points() touching the guidelines
         grouped by the guidelines
     '''
-    err        = None
     points     = []
     same       = 0
     for i, gl in enumerate(list(guidelines.geoms)):
+      #if self.VERBOSE: print(f"{i} {gl=}")
       points.append([]) # template
       start_x, stop_x, step_x, start_y, stop_y, step_y = self.orderGrid(gl)
       for y in range(start_y, stop_y, step_y):
         for x in range(start_x, stop_x, step_x):
           pt = Point(x, y)
           if padme.covers(pt):      # surface test for gnomons
+            if self.VERBOSE: print(f"  {x} {y} ", flush=True, end='')
             if gl.intersects(pt):   # collect the points on the guideline
               points[i].append((x,y))
+              if self.VERBOSE: print('*')
+            if self.VERBOSE: print()
       ''' uneven polygons generate guidelines that cannot go around corners
           the following condition tests whether point collecting can succeed
       '''
       if i > 0 and len(points[i]) is not same:
-        err = f"{i=} {len(points[i])} points is not the same {same} "
+        if self.VERBOSE:
+          print(f"{i=} {len(points[i])} points is not the same {same}\n")
+          prev = i-1
+          print(err)
+          print(list(guidelines.geoms)[prev])
+          pp.pprint(points[prev])
+          print(list(guidelines.geoms)[i])
+          pp.pprint(points[i])
         break
       same = len(points[i])
-    return points, err
+    return points
 
   def makeStripes(self, points):
     ''' sort the points into parallel stripes that join at alternate ends
         points is a two dim array each dim has 0..n length
-        the first dim represents an axis and the second contains points along the axis
+        the first dim represents an axis and the 
+        second contains points along the axis
         an axis is paired with the next axis in sequence e.g. 0,1 1,2 2,3 
-        paired stripes are molded into a continuous line by alternating based on odd/even
+        paired stripes are molded into a continuous line by 
+        alternating based on odd/even
         pp.pprint(points)
     '''
     #points = [list('afg'), list('beh'), list('cdi')]
@@ -124,6 +148,8 @@ line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
     return start_x, stop_x, step_x, start_y, stop_y, step_y
 
   def checkGuide(self, guidelines):
+    ''' who calls here ?
+    '''
     err        = None
     same       = 0
     for i, gl in enumerate(list(guidelines.geoms)):
@@ -140,6 +166,21 @@ line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
         break
       same = len(points[i])
     return points, err
+
+  def setClock(self, width, height):
+    ''' meandering an odd number of stripes requires 
+     direction order to be clockwise
+     even stripes must be anti-clockwise
+  
+     tests suggest that when num of stripes is 1 then 
+     clockwise should be True
+     ignoring that corner case for now ..
+    '''
+    raw_stripes   = (width - 1) / 3         # padding reduces width
+    numof_stripes = math.floor(raw_stripes) # round down
+    clockwise     = False if numof_stripes % 2 else True
+    return clockwise
+
 
 '''
 the

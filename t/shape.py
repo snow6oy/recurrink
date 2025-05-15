@@ -7,7 +7,7 @@ class Test(unittest.TestCase):
   def setUp(self):
     ''' celldata for minkscape 
     '''
-    self.VERBOSE = True
+    self.VERBOSE = False
     self.data    = config.cells
     self.clen    = 15 # cell length
 
@@ -45,8 +45,8 @@ class Test(unittest.TestCase):
 
     triangl.draw(0, 0, self.clen)
     svg = triangl.this.svg()
-    self.assertEqual('0.0,0.0,15.0,0.0,7.5,15.0,0.0,0.0', svg)
     if self.VERBOSE: triangl.plot()
+    self.assertEqual('0.0,0.0,15.0,0.0,7.5,15.0,0.0,0.0', svg['points'])
 
   def test_d(self):
     ''' line
@@ -61,18 +61,20 @@ class Test(unittest.TestCase):
     if self.VERBOSE: line.plot()
 
   def test_e(self):
-    ''' diamon
+    ''' diamond
     '''
     self.data['d']['shape']  = 'diamond'
     self.data['d']['facing'] = 'all'
     diamond = Shape('d', self.data['d'])
     self.assertEqual(diamond.this.name, 'diamond')
-    diamond.draw(0, 0, self.clen)
-    coords = list(diamond.this.data.boundary.coords)
-    self.assertEqual(coords[-1], (0, 7.5))
-    svg = diamond.svg()
-    self.assertEqual(svg['points'], '0.0,7.5,7.5,0.0,15.0,7.5,7.5,15.0,0.0,7.5')
+    diamond.draw(0, 0, 16)
     if self.VERBOSE: diamond.plot() 
+    coords = list(diamond.this.data.boundary.coords)
+    self.assertEqual(coords[-1], (0, 8))
+    svg = diamond.svg()
+    self.assertEqual(
+      '0.0,8.0,8.0,0.0,16.0,8.0,8.0,16.0,0.0,8.0', svg['points']
+    )
 
   def test_f(self):
     ''' transform a triangle

@@ -1,10 +1,12 @@
 import math
 import pprint
 import matplotlib.pyplot as plt
+from .shapes import Shapes
+'''
 from shapely.geometry import LineString, Polygon, LinearRing, Point
 from shapely import transform
 from .meander import Meander
-from .shapes import Shapes
+'''
 pp = pprint.PrettyPrinter(indent=2)
 
 class Geomink(Shapes):
@@ -449,9 +451,38 @@ class Plotter:
     y = []
     [x.append(c[0]) for c in list(line.coords)]
     [y.append(c[1]) for c in list(line.coords)]
-    ax.plot(x, y, "k-", linewidth=line_width)
+    ax.plot(x, y, "b-", linewidth=line_width)
     if show_title: plt.title(fn)
     plt.savefig(f'tmp/{fn}.svg', format="svg")
+
+  def plotGuideLines(self, mls, fn):
+    ''' ugly but just about works
+    '''
+    if mls.geom_type != 'MultiLineString':
+      raise ValueError(f'wrong geometry {mls.geom_type}')
+    fig, ax = plt.subplots()
+    colours = list('bkr')
+    lines = []
+    for line in mls.geoms:
+      x = []
+      y = [] 
+      [x.append(c[0]) for c in list(line.coords)]
+      [y.append(c[1]) for c in list(line.coords)]
+      colour = colours.pop()
+      lines.append([x, y, f"{colour}-"])
+    if len(mls.geoms) == 2:
+      ax.plot(
+        lines[0][0], lines[0][1], lines[0][2],
+        lines[1][0], lines[1][1], lines[1][2]
+      )
+    else:
+      ax.plot(
+        lines[0][0], lines[0][1], lines[0][2],
+        lines[1][0], lines[1][1], lines[1][2],
+        lines[2][0], lines[2][1], lines[2][2]
+      )
+    plt.savefig(f'tmp/{fn}.svg', format="svg")
+    
 
   def multiPlot(self, mpn, fn):
     ''' multi polygon

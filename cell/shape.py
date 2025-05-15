@@ -1,8 +1,13 @@
 import math
+import pprint
+pp = pprint.PrettyPrinter(indent=2)
 from .geomink import Plotter
 from .meander import Meander
-from shapely.geometry import Point, LinearRing, Polygon
-from shapely import transform
+from shapely.geometry import (
+  Point, LinearRing, Polygon, LineString, MultiLineString
+)
+from shapely import transform, set_precision
+
 '''
 from shapely.geometry import Polygon, MultiPolygon, LinearRing
 Shape is the lowest level geometry
@@ -48,7 +53,7 @@ class Shape:
          'west': LinearRing((self.w, self.ne, self.se))
       }
       if facing in rings:
-        self.data = Polygon(rings[facing])
+        self.data = set_precision(Polygon(rings[facing]), grid_size=0)
       else:
         raise IndexError(f"Cannot face triangle {facing}")
 
@@ -76,7 +81,7 @@ class Shape:
       'south': LinearRing((self.w, self.e, self.s))
       }
       if facing in rings:
-        self.data = Polygon(rings[facing])
+        self.data = set_precision(Polygon(rings[facing]), grid_size=0)
       else:
         raise IndexError(f"Cannot face diamond {facing}")
 
@@ -89,6 +94,11 @@ class Shape:
     def plotData(self): return self.data.boundary, self.name
 
   class Circle(Points):
+    ''' circle plots badly (square wheels!) as Shape.draw()
+        sets precision to whole number
+        but aside from testing, it matters not as 
+        the SVG output is smooth
+    '''
     def __init__(self):
       self.name = 'circle'
 
@@ -105,7 +115,8 @@ class Shape:
       }
       if size in sizes:
         radius    = sizes[size]
-        self.data = Point(self.mid.x, self.mid.y).buffer(radius)
+        circle    = Point(self.mid.x, self.mid.y).buffer(radius)
+        self.data = set_precision(circle, grid_size=0)
       else:
         raise IndexError(f"Cannot set circle to {size} size")
 
@@ -121,7 +132,7 @@ class Shape:
   class Rectangle():
     ''' squares and lines
     '''
-    VERBOSE = True
+    VERBOSE = False
 
     def __init__(self, name):
       self.name = name
@@ -187,20 +198,14 @@ class Shape:
         }
       if size in sizes:
         x, y, w, h = sizes[size]
-        self.data  = Polygon([
+        rectangle   = Polygon([
           (x, y), (x, y + h), (x + w, y + h), (x + w, y)
-        ]) # 4 corners
-        #print(f"{self.name=} {size=} {x} {y} {w} {h}")
-        #print(list(self.data.boundary.coords))
+        ])
+        self.data = set_precision(rectangle, grid_size=1)
       else:
         raise IndexError(f"Cannot make {self.name} with {size}")
 
-    def compute(self, polygon): 
-      ''' experimental!
-          idea is .draw() is the interface for user-generated cell
-          .compute() is for machine-generated i.e. Shapely diff
-      '''
-      self.data = polygon
+    def compute(self, polygon): self.data = polygon
 
     def plotData(self):
       return self.data.boundary, self.name
@@ -235,17 +240,15 @@ class Shape:
       else:
         direction = 'N'
       '''
-      d         = self.control(facing)
-      m         = Meander(self.data)
-      padme     = m.pad()
-      guides    = m.guidelines(padme, d)
-      points, e = m.collectPoints(padme, guides)
-      if e and self.VERBOSE:
-        raise ValueError(f"{e=} {self.label=} {facing=}")
-      elif e:
-        linefill = LineString()
-      else:
-        linefill = m.makeStripes(points)
+      d      = self.control(facing)
+      m      = Meander(self.data)
+      padme  = self.data
+      guides = m.guidelines(padme, d)
+      points = m.collectPoints(padme, guides)
+      if self.VERBOSE:
+        raise ValueError(f"{e=} {self.name=} {facing=}")
+        # linefill = LineString()
+      linefill = m.makeStripes(points)
       return linefill
 
     def control(self, direction):
@@ -254,6 +257,7 @@ class Shape:
         'north': ('EB', 'ET'),
           'all': ('EB', 'ET'),
             'S': ('EB', 'ET'),
+        'south': ('EB', 'ET'),
             'E': ('NL', 'NR'),
          'east': ('NL', 'NR'),
             'W': ('NL', 'NR'),
@@ -280,7 +284,6 @@ class Shape:
     VERBOSE = False
     def __init__(self):
       self.name = 'parabola'
-      #self.writer   = Plotter() TODO add plotData()
 
     def compute(self, polygon): self.data =  polygon
 
@@ -289,7 +292,7 @@ class Shape:
       return boundary until meander from computed shape is ready
       '''
       if meander and facing:
-        return self.lineFill(direction=facing)
+        return self.lineFill(facing=facing)
       elif meander:
         x = [x for x in list(self.data.boundary.xy)[0]]
         y = [y for y in list(self.data.boundary.xy)[1]]
@@ -299,13 +302,14 @@ class Shape:
       else: raise NotImplementedError
         
     def lineFill(self, facing, conf=dict(), label=None):
+      ''' attempt to Meander and fallback to boundary
+          return a LineString either way
+      '''
       self.label = label  # TODO is label a-z or P1-n ??
-      #direction  = direction if direction else conf[self.label]
       direction  = facing
       X, Y, W, H = self.data.bounds
       width      = W - X
       height     = H - Y
-      clockwise  = self.setClock(width, height)
       surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
       done       = surround.difference(self.data)
       x, y, w, h = done.bounds
@@ -327,8 +331,8 @@ class Shape:
 
       if gnomon.is_valid and rectangl.is_valid:
         g    = Meander(gnomon)
-        gpad = g.pad()
         r    = Meander(rectangl)
+        gpad = g.pad() 
         rpad = r.pad()
       elif not rectangl.is_valid and self.VERBOSE:
         raise ValueError(f"{rectangl.is_valid=} is not a good polygon")
@@ -337,47 +341,32 @@ class Shape:
         p = [f"{c[0]},{c[1]}" for c in list(self.data.boundary.xy)]
         p = [f"{c[0]},{c[1]}" for c in list(self.data.boundary.xy)]
         return { 'points': ','.join(map(str, p)) }
+          #self.writer.plot(gpad, rpad, fn=self.label)
+        linefill = LineString(list(self.data.boundary.coords))
         '''
       elif not gnomon.is_valid and self.VERBOSE:
         raise ValueError(f"{gnomon.is_valid=} {gnomon.boundary}")
   
+      clockwise = g.setClock(width, height)
       gcontrol = self.control('G', direction, clockwise)
       rcontrol = self.control('R', direction, clockwise)
       gmls     = g.guidelines(gpad, gcontrol)
       rmls     = r.guidelines(rpad, rcontrol)
-
-      p1, e1  = g.collectPoints(gpad, gmls)
-      p2, e2  = r.collectPoints(rpad, rmls)
-      if e1 or e2:
-        if self.VERBOSE: 
-          print(f"{self.label} {e1=} {e2=} {direction}")
-          print(f"""{self.label=} {clockwise=} {direction=} 
+      p1  = g.collectPoints(gpad, gmls)
+      p2  = r.collectPoints(rpad, rmls)
+      if self.VERBOSE: 
+        print(f"""{self.label=} {clockwise=} {direction=} 
 {gnomon=} 
 {gmls=} 
 {rectangl=} 
-{rmls=} """)
-          #self.writer.plot(gpad, rpad, fn=self.label)
-        linefill = list(self.data.boundary.xy)
-      else:
-        linefill = r.joinStripes(p1, p2)
+{rmls=} 
+{rcontrol} """)
+      linefill = r.joinStripes(p1, p2)
       return linefill
   
-    def setClock(self, width, height):
-      ''' meandering an odd number of stripes requires 
-          direction order to be clockwise
-          even stripes must be anti-clockwise
-  
-          tests suggest that when num of stripes is 1 then 
-          clockwise should be True
-          ignoring that corner case for now ..
-      ''' 
-      raw_stripes   = (width - 1) / 3         # padding reduces width
-      numof_stripes = math.floor(raw_stripes) # round down
-      clockwise     = False if numof_stripes % 2 else True
-      return clockwise
-
     def control(self, shape, direction, clockwise):
       ''' get the right guideline
+          reduce code by using reverse() ???
       '''
       control = {
         'G': { 
@@ -408,13 +397,11 @@ all at sea > {shape} {direction} {clockwise} < without control''')
 
     def __init__(self):
       self.name = 'sqring'
+      self.writer   = Plotter() #TODO add plotData()
 
     ''' for machine generated shapes
     '''
-    def compute(self, polygon): 
-      if len(polygon.interiors) == 1:
-        self.data = polygon
-      else: raise TypeError(f"{len(polygon.interiors)=} not a sqring")
+    def compute(self, polygon): self.data = polygon
 
     def svg(self):
       '''
@@ -423,10 +410,10 @@ all at sea > {shape} {direction} {clockwise} < without control''')
       '''
 
     def lineFill(self, facing, conf=dict(), label=None):
-      ''' square ring is not currently accepting config
+      ''' square ring is first validated by compute()
       ''' 
       self.label = label
-      X, Y, W, H = self.data.bounds
+      X, Y, W, H = self.data.bounds # should be square W - X == H - Y
       surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
       done       = surround.difference(self.data)
       x, y, w, h = done.bounds
@@ -436,33 +423,34 @@ all at sea > {shape} {direction} {clockwise} < without control''')
       if nw.is_valid and se.is_valid:
         m1  = Meander(nw)
         m2  = Meander(se)
-        nwp = m1.pad()
-        sep = m2.pad()
-      else:
-        if self.VERBOSE: 
-          print(f"{self.label} is not a good polygon")
-          self.writer.plot(surround, self.parabola, fn=self.label)
-        return LineString()
 
-      nw_mls = m1.guidelines(nwp, ('WB', 'NW', 'NR'))
-      se_mls = m2.guidelines(sep, ('SL', 'SE', 'ET'))
-      p1, e1 = m1.collectPoints(nwp, nw_mls)
-      p2, e2 = m2.collectPoints(sep, se_mls)
-      if e1 or e2:  # silently fail
-        combined = list(nwp.exterior.coords) + list(sep.exterior.coords)
-        linefill = LinearRing(combined)
-        '''
-        inner  = list(self.sqring.interiors)
-        coords = outer
-        [inner_p.append(list(lring.coords)) for lring in inner]
-        '''
-        if e1 and self.VERBOSE:
-          print(f"{self.label} {e1}")
-        elif e2 and self.VERBOSE:
-          print(f"{self.label} {e2}")
-      else:
-        linefill = m1.joinStripes(p1, p2)
+      clockwise = m1.setClock(W - X, H - Y)
+      control   = ('WB', 'NW', 'NR') if clockwise else ('NR', 'NW', 'WB')
+      nw_mls    = m1.guidelines(nw, control)
+      control   = ('SL', 'SE', 'ET') if clockwise else ('ET', 'SE', 'SL')
+      se_mls    = m2.guidelines(se, control)
+      p1 = m1.collectPoints(nw, nw_mls)
+      p2 = m2.collectPoints(se, se_mls)
+      
+      if   len(p1[0]) > len(p2[0]): p1 = self.trimStripe(p1)
+      elif len(p1[0]) < len(p2[0]): p2 = self.trimStripe(p2)
+
+      if self.VERBOSE:
+        pp.pprint(p1)
+        pp.pprint(p2)
+      linefill = m1.joinStripes(p1, p2)
       return linefill
+
+    def trimStripe(self, stripes):
+      ''' sqring can make stripes of uneven length 
+          and then meander makes an ugly diagonal
+          (parabola is unaffacted)
+        
+          the cure is fairly brutal 
+          - reduce the length of the larger stripe
+      '''
+      [stripe.pop(0) for stripe in stripes]
+      return stripes
   
   def __init__(self, label, celldata=dict()):
     ''' create a Shapely shape to put in a layered Cell
@@ -487,7 +475,7 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     '''
     self.size   = c['size']   if 'size'   in c else 'medium'
     self.facing = c['facing'] if 'facing' in c else 'north'
-    self.fill   = c['fill']   if 'fill'   in c else 'FFF'
+    self.fill   = c['fill']   if 'fill'   in c else '000'
     # remove hash for consistency
     if list(self.fill)[0] == '#': self.fill = self.fill[1:] 
     if 'fill_opacity' in c:
@@ -510,20 +498,58 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     p.plotLine(data, name)
 
   def compute(self, data):
-    ''' facing is supposed to be inherited
-    but as we already know where square rings face
-    it is hard coded here
+    ''' facing is usually be inherited
+        but as we already know where square rings face
+        it is hard coded here
+
+        to avoid impossible meanderings, only whole numbers accepted
+        print(self.label, self.this.name)
     '''
-    if self.facing:
-      self.this.compute(data)
-    elif self.this.name == 'sqring':  # TODO see direct() sqring have no face
+    data = set_precision(data, 1)
+    if self.this.name == 'sqring':  # TODO see direct() sqring has no face
       self.facing = 'all'
-      self.this.compute(data)
+      ''' TODO create generic validate() methods for machine-gen shapes
+          when validation fails, fall back to ... something. square?
+      '''
+      if len(data.interiors) == 1:
+        p1    = data.exterior
+        p2    = data.interiors[0]
+        X, Y, W, H = p1.bounds
+        x, y, w, h = p2.bounds
+        ''' test whether the inner square rests on the diagonal of the outer
+            the diagonal runs from NW to SE and is required by Meander
+        print(f"{H}={x}+{h}", H == x + h)
+        print(f"{W}={w}+{y}", W == w + y)
+        '''
+        outer_w = W - X
+        outer_h = H - Y
+        inner_w = w - x
+        inner_h = h - y
+        width   = x - X # relative
+        height  = h - Y
+        if outer_w != outer_h: raise NotImplemented
+        if inner_w != inner_h: raise NotImplemented
+        if outer_h == width + height: # hit the diagonal !
+          self.this.compute(data)
+        else: 
+          ''' the remedy is to adjust height of the inner square
+          '''
+          h      = (outer_h - (x-X)) + Y
+          y      = h - inner_h
+          remedy = [(x,y), (x,h), (w,h), (w,y)]
+          data   = Polygon(p1, holes=[remedy])
+          self.this.compute(data)
+          return # None to indicate that something changed
+      else: raise TypeError(f"{self.label=} not a sqring")
+    elif self.facing: self.this.compute(data)
     else:
       raise ValueError('faceless cannot compute')
+    return True
 
   def draw(self, x, y, clen):
     ''' wrapper to this.draw
+        this.draw() is the interface for user-generated cell
+        also see compute()
     '''
     stroke_width = 0 if not self.stroke else self.stroke['width']
     self.this.draw(
@@ -557,19 +583,34 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         1. polyline with Meander 
         2. polyline from Shapely.boundary
         3. polygon
+
+    print(self.label, self.facing)
     '''
     if meander and self.facing:
       linefill = self.this.lineFill(facing=self.facing)
-      if linefill:  # void returns None
+      if linefill.is_empty or linefill is None: # void returns None 
+        return { 'points': 'none', 'name': self.this.name }
+      elif linefill: 
+        if self.this.name == 'sqring':
+          print(f"{self.facing} {len(list(linefill.coords))}")
         p = [f"{c[0]},{c[1]}" for c in list(linefill.coords)]
         return { 'points': ','.join(map(str, p)), 'name': self.this.name }
-      else:
-        return { 'points': 'none', 'name': self.this.name }
     else:
       svg = self.this.svg()
       if 'name' in svg: print(f"{self.this.name} double handled")
       svg['name'] = self.this.name
       return svg
+
+  def padme(self, padsize=-1):
+    ''' trim before plotting
+
+        there is a duplicate padme() in Meander .. *sigh*
+    '''
+    shape  = self.this.data
+    if shape is None: return
+    b = shape.buffer(padsize, single_sided=True)
+    self.this.data = shape if b.is_empty else b
+
 '''
 the
 end

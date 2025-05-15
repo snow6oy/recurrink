@@ -12,7 +12,7 @@ class Test(unittest.TestCase):
     self.VERBOSE = False
     self.writer = Plotter()
 
-  def test_1(self):
+  def test_a(self):
     ''' southern parabola CCW=False
 
       (5,15),(5,5),(15,5),(15,6),(6,6),(6,15),(7,15),(7,7),
@@ -28,13 +28,16 @@ class Test(unittest.TestCase):
     a.void('b', b) # pass in a dangler
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
-    xy = a.bft[0].this.svg(meander=True, facing='south')
-    # front door
-    #xy = a.svg(layer=0, meander=True, facing='south')
-    if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_1')
+    #a.bft[0].padme()
+    #a.bft[1].padme()
+    xy = a.bft[0].this.lineFill(facing='south')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_parabola_a')
     self.assertEqual(expect, list(xy.coords))
+    '''
+    if self.VERBOSE: self.writer.plot(a.bft[0].this.data,b, fn='t_parabola_a')
+    '''
 
-  def test_2(self):
+  def test_b(self):
     ''' southern parabola CCW=True
     '''
     expect = [ 
@@ -49,10 +52,10 @@ class Test(unittest.TestCase):
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
     xy = a.bft[0].this.svg(meander=True, facing='south')
-    if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_2')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_parabola_b')
     self.assertEqual(expect, list(xy.coords))
 
-  def test_3(self):
+  def test_c(self):
     ''' eastern meander with CCW False
     '''
     expect = [ 
@@ -67,10 +70,10 @@ class Test(unittest.TestCase):
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
     xy = a.bft[0].this.svg(meander=True, facing='east')
-    if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_3')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_parabola_c')
     self.assertEqual(expect, list(xy.coords))
 
-  def test_4(self):
+  def test_d(self):
     ''' eastern meander with CCW True
     '''
     a = CellMaker((0,0), clen=15)
@@ -80,11 +83,11 @@ class Test(unittest.TestCase):
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
     xy = a.bft[0].this.svg(meander=True, facing='east')
-    if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_4')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_parabola_d')
     self.assertEqual((14,1), list(xy.coords)[0])
     self.assertEqual((9,4), list(xy.coords)[-1])
 
-  def test_5(self):
+  def test_e(self):
     ''' west meander CCW = False
     '''
     a = CellMaker((0,0), clen=18)
@@ -94,11 +97,11 @@ class Test(unittest.TestCase):
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
     xy = a.bft[0].this.svg(meander=True, facing='west')
-    if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_5')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_parabola_e')
     self.assertEqual((17,17), list(xy.coords)[0])
     self.assertEqual((17,5),  list(xy.coords)[-1])
 
-  def test_6(self):
+  def test_f(self):
     ''' west parabola meander CCW = True
     '''
     expect = [
@@ -114,10 +117,10 @@ class Test(unittest.TestCase):
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
     xy = a.bft[0].this.svg(meander=True, facing='west')
-    if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_6')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_parabola_f')
     self.assertEqual(expect, list(xy.coords))
 
-  def test_7(self):
+  def test_g(self):
     ''' north meander CCW False
     '''
     expect = [
@@ -131,10 +134,10 @@ class Test(unittest.TestCase):
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
     xy = a.bft[0].this.svg(meander=True, facing='north')
-    if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_7')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_parabola_g')
     self.assertEqual(expect, list(xy.coords))
 
-  def test_8(self):
+  def test_h(self):
     ''' north meander CCW True
     '''
     a = CellMaker((0,0), clen=15)
@@ -144,7 +147,7 @@ class Test(unittest.TestCase):
     a.flatten()    # convert background
     self.assertEqual('parabola', a.bft[0].this.name)
     xy = a.bft[0].this.svg(meander=True, facing='north')
-    if self.VERBOSE: self.writer.plotLine(xy, fn='parabola_8')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_parabola_h')
     self.assertEqual((14,14), list(xy.coords)[0])
     self.assertEqual((11,1), list(xy.coords)[-1])
 

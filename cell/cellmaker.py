@@ -134,9 +134,8 @@ class CellMaker(Identify):
   def foreground(self, label, cell=dict()):
     fg = Shape(label, cell)
     sw = fg.stroke['width'] if fg.stroke else 0
-    fg.this.draw(
-      self.x, self.y, self.clen, swidth=sw, size=fg.size, facing=fg.facing
-    )
+    fg.draw(self.x, self.y, self.clen)
+    #, swidth=sw, size=fg.size, facing=fg.facing print(fg.this.data.bounds)
     self.bft.append(fg)
 
   def top(self, label, cell):
@@ -165,6 +164,7 @@ class CellMaker(Identify):
     ''' construct a CSS style 
     '''
     if linear: # get ready to plot
+      if 'FFF' in self.bft[i].fill: self.bft[i].fill = '555' # avoid white/white
       style = f"fill:none;stroke:#{self.bft[i].fill};stroke-width:0.5"
       #style = f"fill:none;stroke:#000;stroke-width:1"
     elif i == 0: # force stroke width zero to hide cracks between backgrounds
@@ -213,7 +213,7 @@ class CellMaker(Identify):
       seek.this.data = None
       seek.this.name = 'invisible' # fg completely covers bg or was empty
     else:     # if done.this.data.crosses(seek.this.data): 
-      diff = seek.this.data.difference(done.this.data)
+      diff = seek.this.data.difference(done.this.data, grid_size=1)
       if self.VERBOSE: print(f"{done.label=} {seek.this.name=} {diff}")
       if diff.is_empty:   # nothing overlapped
         pass              # return seek as it came

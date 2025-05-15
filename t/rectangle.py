@@ -9,11 +9,11 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
 
   def setUp(self):
-    #self.f = Flatten()
     self.writer = Plotter()
+    self.VERBOSE = False
 
-  def test_1(self):
-    ''' poc to see if meander can be called from ShapelyCell
+  def test_a(self):
+    ''' meander called from CellMaker
     '''
     expect = [ 
       (1, 1), (1, 5), (2, 5), (2, 1), (3, 1), 
@@ -22,11 +22,12 @@ class Test(unittest.TestCase):
     cm = CellMaker((0, 0), clen=6)
     cm.background('z', {'bg': 'FFF'}) # increment sc.bft
     cm.foreground('z')
-    xy = cm.bft[1].this.svg(meander=True)
-    self.writer.plotLine(xy, fn='rectangle_1')
+    cm.bft[1].padme()
+    xy = cm.bft[1].this.lineFill(facing='all')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_rectangle_a')
     self.assertEqual(expect, list(xy.coords)) 
 
-  def test_2(self):
+  def test_b(self):
     ''' north square
     '''
     expect = [ 
@@ -36,15 +37,14 @@ class Test(unittest.TestCase):
     cm = CellMaker((0,0), clen=9)
     cm.background('z', {'bg': 'FFF'})
     cm.foreground('z')
-    xy = cm.bft[1].this.svg(meander=True)
-    self.writer.plotLine(xy, fn='rectangle_2')
+    cm.bft[1].padme()
+    xy = cm.bft[1].this.lineFill(facing='north')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_rectangle_b')
     self.assertEqual(expect, list(xy.coords))
 
-  def test_3(self):
+  def test_c(self):
     ''' east square linefill for Rectangle.meander()
 
-       north ???
-      (2,2),(2,6),(3,6),(3,2),(4,2),(4,6),(5,6),(5,2),(6,2),(6,6)
     '''
     expect = [ 
       (1.0, 1.0), (5.0, 1.0), (5.0, 2.0), (1.0, 2.0), (1.0, 3.0), 
@@ -53,8 +53,9 @@ class Test(unittest.TestCase):
     cm = CellMaker((0,0), clen=6)
     cm.background('z', {'bg': 'FFF'})
     cm.foreground('z')
-    xy = cm.bft[1].this.svg(meander=True, direction='E')
-    self.writer.plotLine(xy, fn='rectangle_3')
+    cm.bft[1].padme()
+    xy = cm.bft[1].this.lineFill(facing='east')
+    if self.VERBOSE: self.writer.plotLine(xy, fn='t_rectangle_c')
     self.assertEqual(expect, list(xy.coords)) 
 '''
 the

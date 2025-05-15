@@ -36,14 +36,13 @@ class Layout:
             }
     }
     msg = self.checksum(unit, scale, cellsize)
-    if msg:
-      raise ValueError(msg)
+    if msg: raise ValueError(msg)
     gridsize      = gridsize if gridsize else self.governance[unit]['gridsize'] 
     cellsize      = cellsize if cellsize else self.governance[unit]['cellsize']
     self.unit     = unit
     self.scale    = float(scale)
     self.cellnum  = round(gridsize / (cellsize * scale))
-    print(f"{self.cellnum=} {gridsize=} {cellsize=} {scale=}")
+    #print(f"{self.cellnum=} {gridsize=} {cellsize=} {scale=}")
     self.cellsize = round(cellsize * scale)
     self.gridsize = gridsize
     '''
@@ -176,7 +175,7 @@ class Layout:
         for gmk in self.lgmk[li][cn]:
           name   = gmk.this.name
           if self.VERBOSE: print(f"{cn} {li} {name} {gmk.facing=}")
-          shape  = gmk.svg(meander)  #, facing=gmk.facing)
+          shape  = gmk.svg(meander) 
           self.doc[dj]['shapes'].append(shape)
 
 # TODO update Flatten to source block1 from Geomaker instead of here

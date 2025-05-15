@@ -121,8 +121,8 @@ class Test(unittest.TestCase):
     block1 = self.gm.makeShapelyCells(self.blocksize, self.positions, self.data)
     self.lt.styleGuide(block1)
     self.lt.gridWalk(self.blocksize, block1)
-    doc = self.lt.svgDoc()
-    self.assertEqual(len(doc), 6)
+    self.lt.svgDoc()
+    self.assertEqual(6, len(self.lt.doc))
 
   def test_o(self):
     '''
@@ -134,8 +134,8 @@ class Test(unittest.TestCase):
     block1 = self.gm.makeShapelyCells(self.blocksize, self.positions, self.data)
     self.lt.styleGuide(block1)
     self.lt.gridWalk(self.blocksize, block1)
-    doc = self.lt.svgDoc()
-    for group in doc:
+    self.lt.svgDoc()
+    for group in self.lt.doc:
       for shape in group['shapes']:
         if shape['name'] == 'circle'and 'cx' in shape:
           has_circle = True
@@ -153,10 +153,10 @@ class Test(unittest.TestCase):
     self.lt.styleGuide(block1)
     ''' 
     fails here as Shapely.transform says Triangles are MultiPoint
-    self.lt.gridWalk(self.blocksize, block1)
     '''
-    doc = self.lt.svgDoc()
-    for group in doc:
+    self.lt.gridWalk(self.blocksize, block1)
+    self.lt.svgDoc()
+    for group in self.lt.doc:
       for shape in group['shapes']:
         if shape['name'] == 'triangl'and 'points' in shape:
           has_triangl = True

@@ -19,7 +19,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
 
   def setUp(self):
-    self.VERBOSE = True
+    self.VERBOSE = False
     self.writer  = Plotter()
     clen         = 3
     self.cells   = {
@@ -28,7 +28,7 @@ class Test(unittest.TestCase):
       'c': CellMaker((2, 0), clen) 
     }
 
-  def test_1(self):
+  def test_a(self):
     ''' a1 flattens a0 and makes it Invisible
     '''
     self.cells['a'].background('a', { 'bg': 'F00' })
@@ -39,7 +39,7 @@ class Test(unittest.TestCase):
     self.assertFalse(a0.this.data) # a1 covers background so it was removed 
     self.assertEqual('Polygon', a1.this.data.geom_type)
 
-  def test_2(self):
+  def test_b(self):
     ''' a2 flattens a1 and makes it into a Square Ring
     '''
     self.cells['a'].background('a', { 'bg': 'F00' })
@@ -52,12 +52,15 @@ class Test(unittest.TestCase):
     # plotter cannot render sqring as multigeom ?
     #if self.VERBOSE: self.writer.plot(done.data, seeker.data, fn='cflat_2')
 
-  def test_3(self):
+  def test_c(self):
     ''' b2 flattens b1 and returns a MultiPolygon
-    '''
-    expect = [
+
       [[4, 5, 5, 4, 4], [3, 3, 2, 2, 3]], # N split
       [[4, 5, 5, 4, 4], [1, 1, 0, 0, 1]]  # S split
+    '''
+    expect = [
+      [(5, 3), (5, 2), (4, 2), (4, 3), (5, 3)], # N split
+      [(5, 0), (4, 0), (4, 1), (5, 1), (5, 0)]  # S split
     ]
     self.cells['b'].background('b', { 'bg': 'F00' })
     self.cells['b'].foreground('b', { 'shape': 'line' })
@@ -70,10 +73,9 @@ class Test(unittest.TestCase):
     b1 = self.cells['b'].evalSeeker(b2, b1)
     self.assertEqual('multipolygon', b1.this.name)
     p1, p2 = b1.this.data.geoms
-    self.assertEqual(p1.boundary.xy[0].tolist(), expect[1][0])
-    self.assertEqual(p1.boundary.xy[1].tolist(), expect[1][1])
-    self.assertEqual(p2.boundary.xy[0].tolist(), expect[0][0])
-    self.assertEqual(p2.boundary.xy[1].tolist(), expect[0][1])
+
+    self.assertEqual(list(p1.boundary.coords), expect[0])
+    self.assertEqual(list(p2.boundary.coords), expect[1])
 
   def test_d(self):
     ''' c1 flattens c0
@@ -89,10 +91,10 @@ class Test(unittest.TestCase):
     c0 = self.cells['c'].bft[0]
     self.assertEqual('sqring', c0.this.name)
     c0.tx(4, 4)
-    self.assertEqual((10,7), c0.this.data.exterior.coords[0])
-    self.assertEqual((13,7), c0.this.data.exterior.coords[1])
+    self.assertEqual((13,7), c0.this.data.exterior.coords[0])
+    self.assertEqual((13,4), c0.this.data.exterior.coords[1])
 
-  def test_5(self):
+  def test_e(self):
     ''' a3 is a dangler from neighbour b2
         it tries to flatten a2 but misses
         a2 is returned unscathed
@@ -109,7 +111,7 @@ class Test(unittest.TestCase):
     if self.VERBOSE: self.writer.plot(a3.this.data, a2.this.data, fn='cflat_5')
     self.assertEqual(a2, same)
 
-  def test_6(self):
+  def test_f(self):
     ''' b2 flattens a1 then a1 flattens a0
     '''
     # assume we acquired this dangler from GeoMaker b 2
@@ -130,7 +132,7 @@ class Test(unittest.TestCase):
     self.assertEqual('invisible', a0.this.name)
     #self.assertFalse(seeker)
 
-  def test_7(self):
+  def test_g(self):
     ''' check that facing is preserved by compute
     '''
     dangler  = Polygon([(2, 1), (2, 2), (3, 2,), (3, 1), (2, 1)])
@@ -144,31 +146,50 @@ class Test(unittest.TestCase):
     # check first two co-ordinates
     self.assertEqual('0.0,0.0,0.0,3.0,3.0,3.0,3.0', meander['points'][:27])
 
-  def test_8(self):
-    pass
+  def test_h(self):
+    ''' Shapely.difference() must not create geometries
+        with precision less than 1
+        otherwise Meander will fail
+    '''
+    if self.VERBOSE: print(self.id())
+    a = CellMaker((0,0), 3)
+    a.background('a', {'bg':'FFF'}) 
+    a.foreground('a', { 'fill': 'FF0', 'facing': 'all' })
+    #Polygon([(2, 1), (2, 2), (3, 2,), (3, 1), (2, 1)]))
+    a.bft[1].compute(
+      Polygon([(0.0, 0.0), (0.0, 5.3), (3.8, 5.3,), (3.8, 0.0), (0.0, 0.0)])
+    )
+    b = a.evalSeeker(a.bft[0], a.bft[1])
+    '''
+      a.bft[0].this.data, a.bft[1].this.data, fn='t_cellmaker_h'
+    '''
+    if self.VERBOSE: self.writer.plot(
+      a.bft[0].this.data, b.this.data, fn='t_cellmaker_h'
+    )
+    self.assertEqual((0.0, 0.0, 4.0, 5.0), b.this.data.bounds)
 
-  def test_9(self):
+  def test_i(self):
     ''' rectangle
     '''
     r     = Polygon([(1, 1), (1, 2), (2, 2), (2, 1)])
     shape = self.cells['a'].shapeTeller(r, 'rectangle')
     self.assertTrue(shape)
 
-  def test_10(self):
+  def test_j(self):
     ''' gnomon
     '''
     g = Polygon([(0, 0), (0, 3), (3, 3), (3, 2), (1, 2), (1, 0)])
     shape = self.cells['b'].shapeTeller(g, 'gnomon')
     self.assertTrue(shape)
 
-  def test_11(self):
+  def test_k(self):
     ''' parabola
     '''
     p= Polygon([(0, 0), (0, 3), (3, 3), (3, 2), (1, 2), (1, 1), (3, 1), (3, 0)])
     shape = self.cells['c'].shapeTeller(p, 'parabola')
     self.assertTrue(shape)
 
-  def test_12(self):
+  def test_l(self):
     ''' square ring
     '''
     hole  = [(1, 1), (1, 2), (2, 2), (2, 1)]
@@ -177,7 +198,7 @@ class Test(unittest.TestCase):
     shape = self.cells['a'].shapeTeller(sr, 'sqring')
     self.assertTrue(shape)
 
-  def test_13(self):
+  def test_m(self):
     ''' dangling extra points
     when shapely operations leave dangling points simplify MIGHT tidy up, e.g.
 
@@ -192,7 +213,7 @@ class Test(unittest.TestCase):
     shape = self.cells['a'].shapeTeller(r, 'rectangle')
     self.assertTrue(shape)
 
-  def test_14(self):
+  def test_n(self):
     ''' audit flatten by summing up Polygon.area
     '''
     dangler = Polygon([(2, 1), (2, 2), (3, 2,), (3, 1), (2, 1)])
