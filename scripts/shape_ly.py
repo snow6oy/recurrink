@@ -42,7 +42,7 @@ b2 = LineString([(2, 2), (7, 2)])
 p1 = Polygon([(8.0, 2.0), (8.0, 1.0), (7.0, 1.0), (2.0, 1.0), (2.0, 2.0), (7.0, 2.0), (8.0, 2.0)])
 p2 = Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (7.0, 2.0), (7.0, 1.0), (2.0, 1.0), (1.0, 1.0)])
 
-case = 14
+case = 15
 
 if case == 1:
   ''' using overlap predicate with Polygons can detect difference 
@@ -189,3 +189,17 @@ elif case == 14:
       p = [f"{c[0]},{c[1]}" for c in list(self.data.boundary.xy)]
       p = list(self.data.boundary.xy)
   '''
+elif case == 15:
+  print(case)
+  '''
+  box1 = box(0.1, 0.2, 2.1, 2.1)
+  box2 = box(1, 1, 3, 3)
+  '''
+  box1 = box(0.0, 0.0, 3.0, 3.0)
+  box2 = box(0.5, 1.2, 2.8, 3.0)
+
+  #shapely.difference(box1, box2).normalize()
+  #<POLYGON ((0 0, 0 2, 1 2, 1 1, 2 1, 2 0, 0 0))>
+  diff = box1.difference(box2, grid_size=1)
+  #<POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))>
+  print(diff)
