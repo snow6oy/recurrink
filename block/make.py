@@ -1,6 +1,7 @@
 #from cell.geomink import Geomink
 # from cell import Geomink, Cell, CellMaker
 from cell import CellMaker, Shape
+#from shapely import set_precision
 
 class GeoMaker:
 
@@ -116,22 +117,6 @@ class GeoMaker:
             danglers[pos] = p
     return danglers
 
-  def padBlock(self, block1, padsize=-1):
-    ''' make a gap between cells by adding padding with Shapely.buffer
-        a small Polygon may end up empty. Then silently return the original
-        Shapely.set_precision did not help
-    '''
-    for pos, cell in block1.items():
-      padded = list()
-      for layer in cell.bft:
-        shape           = layer.this.data
-        if shape is None: continue
-        b               = shape.buffer(padsize, single_sided=True)
-        layer.this.data = shape if b.is_empty else b
-        padded.append(layer)
-      cell.bft = padded
- 
-    return block1
 
   def splitMultigeoms(self, block1):
     ''' split multi geoms across the block
@@ -166,8 +151,39 @@ class GeoMaker:
       cell.bft = keep + shapes
 
     return cell
+
+  def padBlock(self, block1, padsize=-1):
+    ''' make a gap between cells by adding padding with Shapely.buffer
+        a small Polygon may end up empty. Then silently return the original
+        Shapely.set_precision did not help
+    '''
+    for pos, cell in block1.items():
+      padded = list()
+      for layer in cell.bft:
+        layer.padme()
+        padded.append(layer)
+      cell.bft = padded
+ 
+    return block1
+
+  def _padBlock(self, block1, padsize=-1):
+    ''' make a gap between cells by adding padding with Shapely.buffer
+        a small Polygon may end up empty. Then silently return the original
+        Shapely.set_precision did not help
+    '''
+    for pos, cell in block1.items():
+      padded = list()
+      for layer in cell.bft:
+        shape           = layer.this.data
+        if shape is None: continue
+        b               = shape.buffer(padsize, single_sided=True)
+        #b               = set_precision(b, 1)
+        layer.this.data = shape if b.is_empty else b
+        padded.append(layer)
+      cell.bft = padded
+ 
+    return block1
 '''
 the
 end
 '''
-

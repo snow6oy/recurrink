@@ -222,12 +222,11 @@ class Shape:
         points = ' '.join(map(str, p))
         return { 'points': points, 'name': self.name }
       else:
-        coords = list(self.data.boundary.coords)
-        x      = coords[0][0]
-        y      = coords[0][1]
-        width  = coords[2][0] - x
-        height = coords[2][1] - y
-        #print(x, y, width, height)
+        bounds = list(self.data.bounds)
+        x      = bounds[0]
+        y      = bounds[1]
+        width  = bounds[2] - x
+        height = bounds[3] - y
         return { 'x': x, 'y': y, 'width': width, 'height': height }
 
     def lineFill(self, facing, conf=dict(), label=None):
@@ -402,12 +401,6 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     ''' for machine generated shapes
     '''
     def compute(self, polygon): self.data = polygon
-
-    def svg(self):
-      '''
-      p = [f"{x[i]},{y[i]}" for i in range(len(x))]
-      points = ' '.join(map(str, p))
-      '''
 
     def lineFill(self, facing, conf=dict(), label=None):
       ''' square ring is first validated by compute()

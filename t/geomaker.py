@@ -8,6 +8,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
 
   def setUp(self):
+    self.VERBOSE = False
     # cn layer x y w h
     self.expected = {
       'a0': [0, 0, 60, 60], 
@@ -58,7 +59,7 @@ class Test(unittest.TestCase):
         svg_vals = list(layer.this.svg().values())
         label_i  = layer.label + str(i)
         to_test[label_i] = svg_vals
-    #pp.pprint(to_test)
+    if self.VERBOSE: pp.pprint(to_test)
     self.assertEqual(len(self.expected), len(to_test))
     for e in self.expected:
       self.assertEqual(self.expected[e], to_test[e])

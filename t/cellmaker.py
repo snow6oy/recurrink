@@ -227,6 +227,11 @@ class Test(unittest.TestCase):
     sum_flatter = self.cells['a'].areaSum()
     self.assertFalse(sum_flatter[1] - sum_flatter[0])
 
+  def test_o(self):
+    a = CellMaker((0, 0), 60) 
+    a.background('a', { 'bg': 'F00' })
+    self.assertEqual((0.0, 0.0, 60.0, 60.0), a.bft[0].this.data.bounds)
+
 '''
 the
 end
