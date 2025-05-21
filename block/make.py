@@ -94,13 +94,18 @@ class GeoMaker:
     large = list()
     for pos, cell in block1.items():
       bg    = cell.bft[0].this.data
+      label = cell.bft[0].label
       for shape in cell.bft: # loop the layers
         if shape.size == 'large': 
           dangling = shape.this.data.difference(bg)
           if dangling.geom_type == 'MultiPolygon':
+            for p in dangling.geoms: # polygons in MultiPolygon
+              #large.append(dangling)
+              large.append(p)
+          elif dangling.geom_type == 'Polygon':
             large.append(dangling)
           else:
-            raise TypeError('danglers must be multipolygons')
+            raise TypeError(f"{label}: {dangling.geom_type=} unexpected type")
     return large
 
   ''' then name the neighbour to be assigned ownership
@@ -111,12 +116,10 @@ class GeoMaker:
       #print(f"x {(pos[0] * cell.clen)} y {(pos[1] * cell.clen)}")
       bg = cell.bft[0] # only backgrounds for neighbour finding
       #print(f"{pos} {bg.this.name=} {bg.this.data.geom_type=} ")
-      for g in large:
-        for p in g.geoms: # polygons in MultiPolygon
-          if bg.this.data.contains(p):
-            danglers[pos] = p
+      for geom in large:
+        if bg.this.data.contains(geom):
+          danglers[pos] = geom
     return danglers
-
 
   def splitMultigeoms(self, block1):
     ''' split multi geoms across the block

@@ -1,8 +1,8 @@
 import unittest
 import pprint
-from cell.geomink import Plotter
-from cell.cellmaker import CellMaker
+from cell import Plotter, CellMaker
 from shapely.geometry import Polygon
+from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
 ''' topdown use cases for Minkscape
@@ -50,7 +50,6 @@ class Test(unittest.TestCase):
     a1 = self.cells['a'].evalSeeker(a2, a1)
     self.assertEqual(a1.this.name, 'sqring')
     # plotter cannot render sqring as multigeom ?
-    #if self.VERBOSE: self.writer.plot(done.data, seeker.data, fn='cflat_2')
 
   def test_c(self):
     ''' b2 flattens b1 and returns a MultiPolygon
@@ -69,7 +68,8 @@ class Test(unittest.TestCase):
     )
     b1 = self.cells['b'].bft[1]
     b2 = self.cells['b'].bft[2]
-    if self.VERBOSE: self.writer.plot(b2.this.data, b1.this.data, fn='cflat_3')
+    if self.VERBOSE: 
+      self.writer.plot(b2.this.data, b1.this.data, fn='t_cellmaker_c')
     b1 = self.cells['b'].evalSeeker(b2, b1)
     self.assertEqual('multipolygon', b1.this.name)
     p1, p2 = b1.this.data.geoms
@@ -231,6 +231,76 @@ class Test(unittest.TestCase):
     a = CellMaker((0, 0), 60) 
     a.background('a', { 'bg': 'F00' })
     self.assertEqual((0.0, 0.0, 60.0, 60.0), a.bft[0].this.data.bounds)
+
+  ''' sort layers in cell by size
+  def test_z(self):
+    a = CellMaker((0, 0), 60) 
+    a.background('a', { 'bg': 'FFF' })
+    a.foreground('a', { 'size': 'small', 'fill': 'FFA500' })
+    a.top('c', { 'size': 'large', 'fill': '4B0082'})
+    bft   = a.sortByArea()
+    sfill = [layer.fill for layer in bft]
+    self.assertEqual(['4B0082', 'FFF', 'FFA500'], sfill)
+  '''
+
+  def test_p(self):
+    ''' koto cell d is on top of b
+        Shapely.difference() returns None because medium covers small
+        we test for a sqring
+    b square  small   all     True    #4B0082
+    d square  medium  all     True    #FFA500
+    '''
+    a = CellMaker((0, 0), 60) 
+    a.background('b', { 'bg': 'FFF' })
+    a.foreground('b', { 'size': 'small', 'fill': '4B0082' })
+    a.top('d', { 'size': 'medium', 'fill': 'FFA500'})
+    a.flatten()
+    if self.VERBOSE: a.prettyPrint()
+    self.assertEqual('invisible', a.bft[0].this.name)
+    self.assertEqual('sqring',    a.bft[1].this.name)
+
+  def test_q(self):
+    ''' flatten sorted layers and check sqrings
+    '''
+    a = CellMaker((0, 0), 60) 
+    a.background('a', { 'bg': 'FFF' })
+    a.foreground('a', { 'size': 'small', 'fill': 'FFA500' })
+    a.top('c', { 'size': 'large', 'fill': '4B0082'})
+    #a.bft = a.sortByArea()
+    a.flatten()
+    a0 = a.bft[0].this.data
+    a1 = a.bft[1].this.data
+    a2 = a.bft[2].this.data
+    self.assertEqual(400, a2.area)
+
+    if self.VERBOSE: # unexpected but 3 diagrams plot to same file
+      self.writer.plotSqring(a0, fn='t_cellmaker_q')
+      self.writer.plotSqring(a1, fn='t_cellmaker_q')
+      self.writer.plot(a2, a2, fn='t_cellmaker_q')
+
+  def test_r(self):
+    ''' minkscape has top and danglers
+    '''
+    b = CellMaker((1, 0), clen=60) 
+    b.background('b', { 'bg': config.cells['b']['bg'], 'facing':'all'})
+    b.foreground('b', { 
+       'shape': config.cells['b']['shape'], 
+      'facing': config.cells['b']['facing'], 
+        'size': config.cells['b']['size']
+    })
+    b.top('d', { 
+       'shape': config.cells['d']['shape'], 
+      'facing': config.cells['d']['facing'], 
+        'size': config.cells['d']['size']
+    })
+    if self.VERBOSE: b.prettyPrint()
+    b.flatten()
+    if self.VERBOSE:
+      b.prettyPrint()
+      self.writer.multiPlot(b.bft[0].this.data, fn='t_cellmaker_r')
+      self.writer.multiPlot(b.bft[1].this.data, fn='t_cellmaker_r')
+      self.writer.multiPlot(b.bft[2].this.data, fn='t_cellmaker_r')
+
 
 '''
 the

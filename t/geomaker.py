@@ -67,11 +67,14 @@ class Test(unittest.TestCase):
   def test_f(self):
     ''' filter block1 so that only cells with large shapes remain
     '''
+    cells =  config.cells
+    cells['a']['size'] = 'large'
     gm = GeoMaker()
     blocksz = (3,1)
     block1  = gm.makeShapelyCells(blocksz, config.positions, config.cells)
     large   = gm.largeShapes(block1)
-    self.assertEqual('MultiPolygon', large[0].geom_type)
+    self.assertEqual('Polygon', large[0].geom_type)
+    self.assertEqual('Polygon', large[1].geom_type)
 
   def test_g(self):
     ''' extract overlap
@@ -81,9 +84,9 @@ class Test(unittest.TestCase):
     block1  = gm.makeShapelyCells(blocksz, config.positions, config.cells)
     large   = gm.largeShapes(block1)
     found   = gm.findNeighbours(block1, large)
-    p0, p1  = list(found.keys())
-    self.assertEqual((0, 0), p0)
-    self.assertEqual((2, 0), p1)
+    self.assertEqual(2, len(found))
+    self.assertTrue((0, 0) in list(found.keys()))
+    self.assertTrue((2, 0) in list(found.keys()))
 
   def test_h(self):
     ''' pad all shapes in block1

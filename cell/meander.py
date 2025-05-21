@@ -1,8 +1,8 @@
 import math
 import matplotlib.pyplot as plt
 import pprint
-from shapely import line_merge # set_precision
-from shapely import Polygon, LineString, MultiLineString, Point, LinearRing
+from shapely import line_merge, set_precision
+from shapely.geometry import Polygon, LineString, MultiLineString, Point, LinearRing
 pp = pprint.PrettyPrinter(indent=2)
 
 class Meander:
@@ -14,7 +14,8 @@ class Meander:
     if isinstance(polygon, list):
       raise TypeError(polygon)
     elif polygon.is_valid:
-      self.shape = Polygon(polygon) 
+      precise = set_precision(polygon, grid_size=1)
+      self.shape = precise #  Polygon(polygon) 
 
   # TODO migrate consumers to Geomaker().padBlock
   # Migration on hold due to testing issue
@@ -67,31 +68,28 @@ class Meander:
     points     = []
     same       = 0
     for i, gl in enumerate(list(guidelines.geoms)):
-      #if self.VERBOSE: print(f"{i} {gl=}")
       points.append([]) # template
       start_x, stop_x, step_x, start_y, stop_y, step_y = self.orderGrid(gl)
       for y in range(start_y, stop_y, step_y):
         for x in range(start_x, stop_x, step_x):
           pt = Point(x, y)
           if padme.covers(pt):      # surface test for gnomons
-            if self.VERBOSE: print(f"  {x} {y} ", flush=True, end='')
             if gl.intersects(pt):   # collect the points on the guideline
               points[i].append((x,y))
-              if self.VERBOSE: print('*')
-            if self.VERBOSE: print()
       ''' uneven polygons generate guidelines that cannot go around corners
           the following condition tests whether point collecting can succeed
       '''
       if i > 0 and len(points[i]) is not same:
-        if self.VERBOSE:
-          print(f"{i=} {len(points[i])} points is not the same {same}\n")
-          prev = i-1
-          print(err)
-          print(list(guidelines.geoms)[prev])
-          pp.pprint(points[prev])
-          print(list(guidelines.geoms)[i])
-          pp.pprint(points[i])
-        break
+        prev = i-1
+        raise IndexError(f"""
+{i=} {len(points[i])} points is not the same {same}
+this guideline
+{list(guidelines.geoms)[prev]}
+{points[prev]}
+prev guideline
+{list(guidelines.geoms)[i]}
+{points[i]}
+""")
       same = len(points[i])
     return points
 
@@ -147,8 +145,8 @@ line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
     stop_y          += step_y
     return start_x, stop_x, step_x, start_y, stop_y, step_y
 
-  def checkGuide(self, guidelines):
-    ''' who calls here ?
+  def ___checkGuide(self, guidelines):
+    ''' who calls here ? use plotGuideline
     '''
     err        = None
     same       = 0

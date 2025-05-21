@@ -37,6 +37,9 @@ class Points:
 class Shape:
   ''' Shape needs exactly one inner class defined during init
   '''
+
+  VERBOSE = False
+
   class Triangl(Points):
     ''' a linear ring wrapped in a Polygon 
         the wrapper is needed by transform
@@ -404,16 +407,20 @@ all at sea > {shape} {direction} {clockwise} < without control''')
 
     def lineFill(self, facing, conf=dict(), label=None):
       ''' square ring is first validated by compute()
+          returns a Shapely.LineString
       ''' 
       self.label = label
       X, Y, W, H = self.data.bounds # should be square W - X == H - Y
       surround   = Polygon([(X,Y), (X,H), (W,H), (W,Y)]) # four corners
-      done       = surround.difference(self.data)
+      done       = surround.difference(self.data) 
       x, y, w, h = done.bounds
       nw         = Polygon([(X,Y), (X,H), (W,H), (W,h), (x,h), (x,Y)])
       se         = Polygon([(x,Y), (x,y), (w,y), (w,h), (W,h), (W,Y)])
 
       if nw.is_valid and se.is_valid:
+        '''
+        print(nw)
+        '''
         m1  = Meander(nw)
         m2  = Meander(se)
 
@@ -422,6 +429,8 @@ all at sea > {shape} {direction} {clockwise} < without control''')
       nw_mls    = m1.guidelines(nw, control)
       control   = ('SL', 'SE', 'ET') if clockwise else ('ET', 'SE', 'SL')
       se_mls    = m2.guidelines(se, control)
+
+
       p1 = m1.collectPoints(nw, nw_mls)
       p2 = m2.collectPoints(se, se_mls)
       
@@ -429,8 +438,11 @@ all at sea > {shape} {direction} {clockwise} < without control''')
       elif len(p1[0]) < len(p2[0]): p2 = self.trimStripe(p2)
 
       if self.VERBOSE:
+        self.writer.plotGuideLines(se_mls, fn='se_mls')
+        ''' better to use Meander.VERBOSE
         pp.pprint(p1)
         pp.pprint(p2)
+        '''
       linefill = m1.joinStripes(p1, p2)
       return linefill
 
@@ -439,8 +451,7 @@ all at sea > {shape} {direction} {clockwise} < without control''')
           and then meander makes an ugly diagonal
           (parabola is unaffacted)
         
-          the cure is fairly brutal 
-          - reduce the length of the larger stripe
+          the cure is fairly brutal - reduce the length of the larger stripe
       '''
       [stripe.pop(0) for stripe in stripes]
       return stripes
@@ -498,7 +509,8 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         to avoid impossible meanderings, only whole numbers accepted
         print(self.label, self.this.name)
     '''
-    data = set_precision(data, 1)
+    if self.VERBOSE: print(self.this.name, f"{len(data.interiors)=}")
+    data = set_precision(data, grid_size=1)
     if self.this.name == 'sqring':  # TODO see direct() sqring has no face
       self.facing = 'all'
       ''' TODO create generic validate() methods for machine-gen shapes
@@ -511,8 +523,10 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         x, y, w, h = p2.bounds
         ''' test whether the inner square rests on the diagonal of the outer
             the diagonal runs from NW to SE and is required by Meander
-        print(f"{H}={x}+{h}", H == x + h)
         print(f"{W}={w}+{y}", W == w + y)
+        print(f"{outer_w=} = {outer_h=}")
+        print(f"{inner_w=} = {inner_h=}")
+        print(f"{outer_h} ={width} + {height}")
         '''
         outer_w = W - X
         outer_h = H - Y
@@ -520,8 +534,18 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         inner_h = h - y
         width   = x - X # relative
         height  = h - Y
-        if outer_w != outer_h: raise NotImplemented
-        if inner_w != inner_h: raise NotImplemented
+        if outer_w != outer_h: 
+          raise NotImplementedError(f"{outer_w} {outer_h} are inequal")
+        elif inner_w != inner_h:  # TODO merge remedies
+          ''' the remedy is to adjust height of the inner square
+          h      = (outer_h - (x-X)) + Y
+          y      = h - inner_h
+          remedy = [(x,y), (x,h), (w,h), (w,y)]
+          data   = Polygon(p1, holes=[remedy])
+          self.this.compute(data)
+          return # None to indicate that something changed
+          '''
+          print(f"{inner_w=} {inner_h=} are inequal")
         if outer_h == width + height: # hit the diagonal !
           self.this.compute(data)
         else: 
@@ -532,12 +556,12 @@ all at sea > {shape} {direction} {clockwise} < without control''')
           remedy = [(x,y), (x,h), (w,h), (w,y)]
           data   = Polygon(p1, holes=[remedy])
           self.this.compute(data)
-          return # None to indicate that something changed
+          return data # to indicate that something changed
       else: raise TypeError(f"{self.label=} not a sqring")
     elif self.facing: self.this.compute(data)
     else:
       raise ValueError('faceless cannot compute')
-    return True
+    return None
 
   def draw(self, x, y, clen):
     ''' wrapper to this.draw
@@ -577,15 +601,14 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         2. polyline from Shapely.boundary
         3. polygon
 
-    print(self.label, self.facing)
+    if self.this.name == 'sqring':
+      print(f"{self.label} {self.facing} {self.this.name=}")
     '''
     if meander and self.facing:
       linefill = self.this.lineFill(facing=self.facing)
-      if linefill.is_empty or linefill is None: # void returns None 
+      if linefill is None or linefill.is_empty: # void returns None 
         return { 'points': 'none', 'name': self.this.name }
       elif linefill: 
-        if self.this.name == 'sqring':
-          print(f"{self.facing} {len(list(linefill.coords))}")
         p = [f"{c[0]},{c[1]}" for c in list(linefill.coords)]
         return { 'points': ','.join(map(str, p)), 'name': self.this.name }
     else:

@@ -126,9 +126,12 @@ class CellMaker(Identify):
   def background(self, label, cell):
     ''' basic square with colour
     '''
-    bg_cell = { 'shape': 'square', 'fill': cell['bg'], 'fill_opacity': 1 }
-    bg      = Shape(label, bg_cell)
-    bg.this.draw(self.x, self.y, self.clen, size='medium', facing='all')
+    bg_cell = { 
+      'shape':'square', 'fill':cell['bg'], 'fill_opacity':1, 
+      'size':'medium', 'facing':'all'
+    }
+    bg = Shape(label, bg_cell)
+    bg.draw(self.x, self.y, self.clen)
     self.bft.append(bg)
 
   def foreground(self, label, cell=dict()):
@@ -187,6 +190,11 @@ class CellMaker(Identify):
              2 |   1 0  |     top > fg, bg
              1 |     0  |      fg > bg
     '''
+    # top bigger than fg, see t.cellmaker.Test.test_p
+    if (len(self.bft) > 2 and 
+      self.bft[2].this.data.covers(self.bft[1].this.data)): 
+      self.bft[1], self.bft[2] = self.bft[2], self.bft[1]
+
     if len(self.bft) == 4:
       self.bft[2] = self.evalSeeker(self.bft[3], self.bft[2])
       self.bft[1] = self.evalSeeker(self.bft[3], self.bft[1])
@@ -204,6 +212,7 @@ class CellMaker(Identify):
         seekers may be included, depends on what overlaps with done
         return seeker either modified, emptied or as-is
     ''' 
+    #done, seek = self.sortByArea([done, seek])
     if self.VERBOSE: 
       print(f"""
 {len(self.bft)=} 
@@ -231,7 +240,15 @@ class CellMaker(Identify):
           seek.compute(diff)
     return seek
 
+  def sortByArea(self, unordered):
+    ''' large then medium then small
+    '''
+    return sorted(unordered, key=lambda layer: layer.this.data.area, reverse=True)
+    #  self.bft, key=lambda layer: layer.this.data.area, reverse=True
+
   def areaSum(self):
+    ''' use shapely area to check flatten coverage
+    '''
     expected_area = self.clen * self.clen
     total_area = 0
     if self.VERBOSE: print(f"{expected_area=}")
@@ -248,6 +265,16 @@ class CellMaker(Identify):
         if self.VERBOSE: print(f"{layer.label} {shape.name} {shape.data.area}")
         total_area += shape.data.area
     return (total_area, expected_area)
+
+  def prettyPrint(self):
+    ''' text dump of a cell to screen
+    '''
+    print(f"{self.x=} {self.y=} {self.clen=}")
+    for layer in self.bft:
+      shape = layer.this
+      meta  = f"{layer.label} {layer.facing:<6} {shape.name:<12} "
+      meta += '' if shape.data is None else f"{shape.data.bounds}" 
+      print(meta) 
 
 '''
 the

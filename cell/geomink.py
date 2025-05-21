@@ -435,13 +435,9 @@ class Plotter:
     #plt.axis([0, 18, 0, 18])
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
-  def plotLine(self, line, fn):
+  def plotLine(self, line, fn, show_axis=True, show_title=True, line_width=1):
     ''' three params to change
     '''
-    show_axis  = True
-    show_title = True
-    line_width = 1
-
     if line.geom_type not in ['LineString', 'LinearRing']:
       raise ValueError(f'wrong geometry {line.geom_type}')
     fig, ax = plt.subplots()
@@ -463,7 +459,7 @@ class Plotter:
     fig, ax = plt.subplots()
     colours = list('bkr')
     lines = []
-    for line in mls.geoms:
+    for line in mls.geoms: # TODO use self.splitCoords
       x = []
       y = [] 
       [x.append(c[0]) for c in list(line.coords)]
@@ -483,12 +479,23 @@ class Plotter:
       )
     plt.savefig(f'tmp/{fn}.svg', format="svg")
     
+  def plotSqring(self, g, fn='sqring'):
+    ''' square ring
+    '''
+    if g.geom_type != 'Polygon' or len(list(g.interiors)) != 1:
+      raise TypeError(f"""
+{g.geom_type=}
+{list(g.exterior.coords)=}
+{list(g.interiors)=}
+""")
+    x1, y1 = self.splitCoords(g.exterior.coords)
+    x2, y2 = self.splitCoords(g.interiors[0].coords)
+    plt.title(fn)
+    plt.plot(x1, y1, 'b-', x2, y2, 'r--')
+    plt.savefig(f'tmp/{fn}.svg', format="svg")
 
   def multiPlot(self, mpn, fn):
     ''' multi polygon
-      print(f"{g.geom_type=}")
-      print(f"{list(g.exterior.coords)=}")
-      print(f"{list(g.interiors)=}")
     '''
     colours = list('bgrcmyk')
     cindex  = 0
@@ -507,6 +514,14 @@ class Plotter:
     line = []
       x, y = geom.boundary.xy
     '''
+  def splitCoords(self, coords):
+    ''' convert coords when your geom is without boundary
+    '''
+    x = []
+    y = []
+    [x.append(c[0]) for c in list(coords)]
+    [y.append(c[1]) for c in list(coords)]
+    return x, y
 '''
 the
 end
