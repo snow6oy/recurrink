@@ -1,13 +1,15 @@
 import unittest
 import pprint
-from shapely.geometry import Polygon, LinearRing
-from cell import Meander, Plotter
+import matplotlib.pyplot as plt
+import shapely.plotting
+from shapely.geometry import Polygon, LinearRing, LineString
+from cell import Meander, Plotter, Spiral
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
   def setUp(self):
     self.writer  = Plotter()
-    self.VERBOSE = False
+    self.VERBOSE = True
 
   def test_a(self): 
     ''' guidelines for East with plot of before and after padding
@@ -202,7 +204,104 @@ class Test(unittest.TestCase):
     self.assertFalse(m.setClock(12.0, 12.0))
     self.assertTrue(m.setClock(15.0, 15.0))
 
-'''
-the
-end
-'''
+  def test_m(self):
+    ''' random sample points with some edge cases
+    '''
+    s = Spiral()
+    assert s.r1( 0, 0, 3)[ 3] == [0, 2]
+    assert s.r1( 8, 1, 3)[ 9] == [1, 1]
+    assert s.r1(16, 1, 5)[19] == [1, 3]
+    assert s.r1( 0, 0, 4)[ 4] == [0, 3]
+
+    assert s.c1( 3, 0, 3)[ 5] == [2, 2]
+    assert s.c1(14, 1, 4)[15] == [2, 2]
+    assert s.c1( 5, 0, 5)[ 9] == [4, 4]
+    assert s.c1(19, 1, 5)[21] == [3, 3]
+
+    assert s.r2( 5, 0, 3)[ 7] == [2, 0]
+    assert s.r2( 7, 0, 4)[10] == [3, 0]
+    assert s.r2(15, 1, 4)[16] == [2, 1]
+    assert s.r2(21, 1, 5)[23] == [3, 1]
+
+    assert s.c2( 7, 0, 3)[ 8] == [1, 0]
+    assert s.c2(10, 0, 4)[12] == [1, 0]
+    assert s.c2(23, 1, 5)[24] == [2, 1]
+    assert s.c2(30, 1, 6)[32] == [2, 1]
+
+  def test_n(self):
+    LEN     = 9 # length of matrix 
+    s       = Spiral()
+    spiral  = s.matrix(LEN)
+    self.assertEqual(81, len(list(spiral)))
+    if self.VERBOSE:
+      fig, ax = plt.subplots() 
+      shapely.plotting.plot_line(LineString(spiral), ax=ax)
+      plt.savefig(f"tmp/t_meander_n.svg", format="svg")
+
+  def test_o(self):
+    ''' split spiral into many lines according to the shape of a hole
+    '''
+    outer  = [(0,0), (9,0), (9,9), (0,9)]
+    inner  = [(4,2), (4,7), (7,7), (7,2)]
+    small  = Polygon(outer, holes=[inner])
+    m      = Meander(small)
+    spiral = m.spiral(clen=10)
+    self.assertEqual(2, len(spiral.geoms))
+    if self.VERBOSE:
+      self.writer.plotLine(spiral, self.id())
+      '''
+      print(self.id())
+      fig, ax = plt.subplots() 
+      shapely.plotting.plot_line(spiral, ax=ax, linewidth=0.5)
+      plt.savefig(f"tmp/t_meander_o.svg", format="svg")
+      '''
+
+  def test_q(self):
+    ''' split spiral into many lines according to the shape of a hole
+    '''
+    outer = [(0,0), (3,0), (3,3), (0,3)]
+    inner = [(1,1), (1,2), (2,2), (2,1)]
+    small = Polygon(outer, holes=[inner])
+    m     = Meander(small)
+    line  = m.matrix(4)
+    mls   = m.splitLines(line, Polygon(inner)) #small.interiors[0])
+    self.assertEqual(1, len(mls.geoms))
+
+  def test_p(self):
+    ''' split on a 15 x 15 cell
+    '''
+    outer = [(0,0), (15,0), (15,15), (0,15)]
+    inner = [(4,3), (4,11), (10,11), (10,3)]
+    p15   = Polygon(outer, holes=[inner])
+    m     = Meander(p15)
+    s     = m.spiral(15)
+
+    l2_begin = list(s.geoms[1].coords)[0]
+    self.assertEqual((11,11), l2_begin)
+
+    l2_end   = list(s.geoms[1].coords)[-1]
+    self.assertEqual((10,3), l2_end)
+
+  def test_r(self):
+    ''' irregular sqring needs a spiral
+    '''
+    outer = [(0,0), (60,0), (60,60), (0,60)]
+    inner = [(20,15), (20,45), (40,45), (40,15)]
+    wonky = Polygon(outer, holes=[inner])
+    m     = Meander(wonky)
+    line  = m.matrix(60)
+    mls   = m.splitLines(line, Polygon(inner)) #small.interiors[0])
+
+    #for g in mls.geoms: print(list(g.coords))
+
+    if self.VERBOSE:
+      print(self.id())
+      fig, ax = plt.subplots() 
+      ax.axes.get_xaxis().set_visible(False)
+      ax.axes.get_yaxis().set_visible(False)
+
+      shapely.plotting.plot_line(
+        #LineString(line), ax=ax, linewidth=2, add_points=False
+        mls, ax=ax, linewidth=2, add_points=False
+      )
+      plt.savefig(f"tmp/t_meander_r.svg", format="svg")

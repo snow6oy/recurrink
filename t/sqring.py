@@ -58,8 +58,10 @@ class Test(unittest.TestCase):
       'f', { 'fill': 'FF0', 'shape':'line', 'facing':'north', 'size': 'small' }
     )
     sqring = f.evalSeeker(f.bft[1], f.bft[0])
-    '''
     self.assertEqual(sqring.this.name, 'sqring')
+    self.writer.plotSqring(sqring.this.data)
+    f.prettyPrint()
+    '''
     line = sqring.this.lineFill('all')
     print(line)
     '''
