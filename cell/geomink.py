@@ -1,6 +1,7 @@
 import math
 import pprint
 import matplotlib.pyplot as plt
+import shapely.plotting
 from .shapes import Shapes
 '''
 from shapely.geometry import LineString, Polygon, LinearRing, Point
@@ -435,7 +436,9 @@ class Plotter:
     #plt.axis([0, 18, 0, 18])
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
-  def plotLine(self, line, fn, show_axis=True, show_title=True, line_width=1):
+  def _plotLine(
+    self, line, fn, show_axis=True, show_title=True, line_width=1
+  ):
     ''' three params to change
     '''
     if line.geom_type not in ['LineString', 'LinearRing']:
@@ -450,6 +453,21 @@ class Plotter:
     ax.plot(x, y, "b-", linewidth=line_width)
     if show_title: plt.title(fn)
     plt.savefig(f'tmp/{fn}.svg', format="svg")
+
+  def plotLine(self, line, fn, visible=True, title=True, width=1):
+    ''' use shapely.plotting :)
+    '''
+    if line.geom_type not in ['LineString', 'LinearRing','MultiLineString']:
+      raise ValueError(f'wrong geometry {line.geom_type}')
+    fig, ax = plt.subplots()
+    ax.axes.get_xaxis().set_visible(visible)
+    ax.axes.get_yaxis().set_visible(visible)
+
+    tid = fn.split('.')  # unittest self.id()
+
+    if title: plt.title(f"{tid[1]} {tid[3]}")
+    shapely.plotting.plot_line(line, ax=ax, linewidth=width, add_points=False)
+    plt.savefig(f"tmp/{tid[1]}_{tid[3]}.svg", format="svg")
 
   def plotGuideLines(self, mls, fn):
     ''' ugly but just about works
