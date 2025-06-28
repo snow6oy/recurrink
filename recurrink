@@ -1,247 +1,210 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import re
-import random
-import argparse
-import pprint
-from views import Views, Models
-from outfile import Svg, Stencil, Gcode
-from tmpfile import TmpFile
-pp = pprint.PrettyPrinter(indent=2)
-m = Models()
-v = Views()
-friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar']
-WORKDIR = '/home/gavin/Dropbox/familia/rinks'
-PUBDIR = '/home/gavin/Pictures/pubq'
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-def inputs():
-  ''' get inputs from command line
-  '''
-  parser = argparse.ArgumentParser(prog='recurrink')
-  subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
-  parser_l = subparsers.add_parser('list', help='list models in db')
-  parser_r = subparsers.add_parser('read', help='get view metadata')
-  parser_r.add_argument('-m', '--model', help='name of base model')
-  parser_r.add_argument("-v", "--view", help='hex name with 32 char')
-  parser_i = subparsers.add_parser('init', help='set config for new image')
-  parser_i.add_argument('-m', '--model', help='name of base model')
-  parser_i.add_argument("-p", "--palette", help='palette version', type=int, choices=range(1, 10))
-  parser_k = subparsers.add_parser('clone', help='get copy of config')
-  parser_k.add_argument("-v", "--view", help='view to clone', required=True)
-  parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
-  parser_c.add_argument('-m', '--model', help='name of base model')
-  parser_c.add_argument("-a", "--author", choices=['human', 'machine'], required=True)
-  parser_c.add_argument("-s", "--scale", help="zoom control 0.5 - 2.0", required=True)
-  parser_d = subparsers.add_parser('delete')
-  parser_d.add_argument("-v", "--view", help='view to remove from db')
-  parser_u = subparsers.add_parser('update', help='update svg from config')
-  parser_u.add_argument('-m', '--model', help='name of model to update')  # tf.conf, required=True)
-  parser_u.add_argument("-s", "--scale",  help="zoom control 0.5 - 2.0")
-  parser_u.add_argument("--a4",  help="output for A4 dimension", action=argparse.BooleanOptionalAction)
-  parser_s = subparsers.add_parser('stencil', help='monochrome to etch screens')
-  parser_s.add_argument("-v", "--view", help='view to make stencils from')
-  parser_s = subparsers.add_parser('gcode', help='write rink as gcode for plotter')
-  parser_s.add_argument("-v", "--view", help='view to plot', required=True)
-  parser_p = subparsers.add_parser('release', help='add release date to db')
-  parser_p.add_argument("-v", "--view", help='view to mark as released')
-  return parser.parse_args()
+import matplotlib.pyplot as plt
+import shapely.plotting
+from shapely.geometry import Polygon
 
-def stats():
-  ''' pretty list of models
-  '''
-  return m.stats()
+class SVG:
 
-def info(model=None, digest=None):
-  ''' accept a view id e.g. c364ab54ff542adb322dc5c1d6aa4cc8
-      return view meta data for publisher to use
-      OR a pretty text visualation of a model
-  '''
-  out = str()
-  if model:
-    xy = m.read(model=model)[2]
-    positions = m.read_positions(model)
-    for y in range(xy[1]):
-      for x in range(xy[0]):
-        p = tuple([x, y])
-        cell = positions[p][0]
-        top = positions[p][1] if positions[p][1] else '-'
-        print(cell + top, end=' ')
-      print()
-  elif digest:
-    view = v.read_meta(digest=digest)
-    out = " ".join(view[:2])
-  else:
-    pass # expected either a model or digest as input but whatever ..
-  return out or sys.exit(1)
+  VERBOSE    = False
+  ADD_POINTS = False
 
-def clone(digest):
-  ''' generate tmp files from existing database entry
-  '''
-  celldata = v.read(digest=digest, output=list())
-  model, _, scale, ver = v.read_meta(digest=digest) # author is for publishng only
-  palette = friendly_name[ver]
-  tf.conf(model, palette) # conf state is a symlink
-  tf.write(model, celldata)
-  return f"cloning {digest} with {len(celldata)} cells\nmodel {model}\npalette {friendly_name[ver]}\nscale {scale}"
+  def draw(self, b):
 
-def init(model=None, ver=None):
-  ''' init generates editable tmp files 
-  '''
-  src = None
-  ver = int(ver) if ver else random.choice(range(1, 6)) # anythin but universal is the palette
-  model, src, celldata = v.generate(model=model, ver=ver) if model else v.generate(ver)
-  palette = friendly_name[ver]
-  tf.conf(model, palette) # conf state is a symlink
-  celldata = tf.convert_to_list(celldata) # dict becomes a list before writing
-  tf.write(model, celldata)
-  return f"initialising {model} with {len(celldata)} cells from {src}\npalette {friendly_name[ver]}"
- 
-def update(model, scale, a4=False):
-  ''' generate an SVG using ElementTree
-  '''
-  model_conf, palette = tf.conf()
-  model = model_conf if model is None else model
-  ver = friendly_name.index(palette)
-  s = float(scale) if scale else m.get_scale(model)
-  blocksize = m.read(model=model)[2] # can get scale too
-  svgfile = f'/tmp/{model}.svg'
-  positions = m.read_positions(model)
-  svg = Svg(scale=s, gridsize=180, cellsize=24) if a4 else Svg(scale=s)
-  #print(f"s {svg.scale} c {svg.cellsize} g {svg.grid}")
-  cells = tf.read(model, output=dict())
-  v.validate(cells, ver=ver)
-  svg.gridwalk(blocksize, positions, cells)
-  svg.make()
-  svg.write(svgfile)
-  return f"{svgfile} {s}"
+    fig, ax = plt.subplots() 
+    ax.set_aspect('equal')    # make x and y axis the same
+    print(f"0 {b.BLOCKSZ[0] * b.CLEN} 0 {b.BLOCKSZ[1] * b.CLEN}")
+    plt.axis([0, (b.BLOCKSZ[0] * b.CLEN), 0, (b.BLOCKSZ[1] * b.CLEN)])
 
-def delete(view):
-  ''' both svg and view must exist for the delete to succeed
-  '''
-  viewdata = v.read_meta(view)
-  if len(viewdata):
-    v.delete(view) 
-    model = viewdata[0]
-    if os.path.isfile(f'{PUBDIR}/{view}.svg'):
-      os.unlink(f'{PUBDIR}/{view}.svg')
-    if os.path.isfile(f'{WORKDIR}/{model}/{view}.svg'):
-      os.unlink(f'{WORKDIR}/{model}/{view}.svg')
-      return view # success
-    raise FileNotFoundError(f'SVG not deleted {model}/{view}')
-  raise ValueError(f'nothing named {view} in database')
-  return None
+    for z in range(3): # bg 0 fg 1 top 2
+      for pos, c in b.cells.items():
 
-def commit(model, scale, author):
-  ''' read config, write to database and return digest
-      clean file system except for /tmp/model.txt
-  '''
-  model_conf, palette = tf.conf()
-  model = model_conf if model is None else model
-  ver = friendly_name.index(palette)
-  scale = scale if scale else m.get_scale(model)
-  celldata = tf.read(model, output=list())
-  cellhash = tf.read(model, output=dict()) # read the data again, but as a dictionary
-  s = Stencil(cellhash)
-  lc = len(s.colours())
-  if os.path.isdir(f"{WORKDIR}/{model}"):
-    if v.create(tf.digest, celldata, model=model, author=author, ver=ver, scale=scale, colournum=lc):
-      #[c.create(tf.digest, row) for row in celldata]
-      if os.path.isfile(f"/tmp/{model}.svg"):
-        svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
-        os.rename(f"/tmp/{model}.svg", svgname)
-        os.symlink(f"{svgname}", f"{PUBDIR}/{tf.digest}.svg")
-        response = svgname
+        if z == 2 and len(c.interiors) > 1: 
+          lring = c.interiors[1]                   # top
+        elif z == 2: continue 
+        elif z == 1: lring = c.interiors[0]        # fg
+        elif z == 0: lring = c.exterior            # bg
+
+        if self.VERBOSE:
+          print(f"{z} {pos} {len(c.interiors)} {b.style.fill[pos]}")
+        
+        shapely.plotting.plot_polygon(
+          Polygon(lring), ax=ax, add_points=self.ADD_POINTS,
+          facecolor=b.style.fill[pos][z],
+          edgecolor=b.style.stroke[pos][z], 
+          linewidth=b.style.stroke_width[pos][z]
+        )
+    plt.savefig(f"tmp/not_bft.svg", format="svg")
+
+class Block:
+
+  BLOCKSZ = (3, 1)
+  CLEN    = 6
+
+  def __init__(self): 
+    self.cells = dict()
+    self.style = Styles()
+
+  def walk(self, positions, cells):
+    ''' navigate the model and populate cells
+    '''
+    for pos in positions:
+      cell = Cells(clen=self.CLEN, pos=pos)
+      cell.background()
+      label = positions[pos][0]
+      self.style.add(pos, fill=cells[label]['bg'])
+
+      for label in positions[pos]:
+        if not label: continue
+        if bool(cells[label]['top']):
+          cell.foreground(
+            shape  = cells[label]['shape'],
+            facing = cells[label]['facing'],
+            size   = cells[label]['size']
+          )
+          self.style.add(pos, fill=cells[label]['fill'])
+        else:
+          cell.foreground(
+            shape  = cells[label]['shape'],
+            facing = cells[label]['facing'],
+            size   = cells[label]['size']
+          )
+          self.style.add(pos, fill=cells[label]['fill'])
+      self.cells[pos] = cell.polygon()
+
+  def meander(self):
+    ''' transform polygons into lines
+    for pos, c in self.cells.items():
+      print(pos)
+      print(c)
+    '''
+    print(self.cells[(0,0)].exterior)
+    
+class Cells:
+
+  VERBOSE = False
+
+  def __init__(self, pos=tuple([0,0]), clen=60): 
+    self.bft   = list()
+    self.clen  = clen     # length of cell
+    self.pos   = pos      # logical position in block
+  def background(self): 
+    x = self.pos[0] * self.clen
+    y = self.pos[1] * self.clen
+    w = x + self.clen # a square has same width and height 
+    h = y + self.clen
+    self.bft.append(((x, y), (x, h), (w, h), (w, y)))
+  def foreground(self, **kwargs):
+    coords = self.rectangle(kwargs)
+    if len(coords): self.bft.append(coords)
+  def polygon(self):
+    if len(self.bft) == 3:
+      p = Polygon(self.bft[0], holes=[self.bft[1], self.bft[2]])
+    else:             # must be two right ?
+      p = Polygon(self.bft[0], holes=[self.bft[1]])
+    return p
+
+  # Shapes.shape.Rectangle()
+  def rectangle(self, kwargs):
+    shape = kwargs['shape']
+    size  = kwargs['size']
+    facing= kwargs['facing']
+    sizes = { 
+      'square': {
+        'small': [
+          self.pos[0] * self.clen + self.clen / 3,
+          self.pos[1] * self.clen + self.clen / 3,
+          self.pos[0] * self.clen + (self.clen / 3) * 2,
+          self.pos[1] * self.clen + (self.clen / 3) * 2
+        ],
+        'medium': [
+          self.pos[0] * self.clen,
+          self.pos[1] * self.clen,
+          self.pos[0] * self.clen + self.clen,
+          self.pos[1] * self.clen + self.clen
+        ]
+      },
+      'line': {
+        'medium': {
+          'north': [
+            self.pos[0] * self.clen + self.clen / 3,
+            self.pos[1] * self.clen,
+            self.pos[0] * self.clen + (self.clen / 3) * 2,
+            self.pos[1] * self.clen + self.clen
+          ]
+        },
+        'large': {
+          'east': [  # TODO
+            self.pos[0] * self.clen - self.clen / 3,
+            self.pos[1] * self.clen + self.clen / 3,
+            self.pos[0] * self.clen + (self.clen / 3) * 4,
+            self.pos[1] * self.clen + (self.clen / 3) * 2
+          ]
+        }
+      }
+    }
+    if shape in sizes and size in sizes[shape]:
+      if shape == 'square':
+        x, y, w, h = sizes[shape][size]
+      elif facing in sizes[shape][size]:
+        x, y, w, h = sizes[shape][size][facing]
       else:
-        raise FileNotFoundError(f"{model}.svg not found in /tmp")
-    else:
-      response = 'unknown error'
-  else:
-    raise FileNotFoundError(f"{model} not found in {WORKDIR}")
-  return response
+        raise NotImplementedError(f'{shape=} {size=} {facing=}')
+    else: 
+      raise NotImplementedError(f'{shape=} {size=}')
 
-def stencil(d):
-  model, _, scale = v.read(digest=d)
-  cells = v.read(digest=d, celldata=True)
-  blocksize = m.read(model=model)[2] # can get scale too
-  positions = m.read_positions(model)
-  scale = float(scale) if scale else m.get_scale(model)
-  lt = Layout(scale=scale)
-  s = Stencil(model, cells)
-  for colour in s.colours():
-    fn = f"{model}_{colour}"
-    #print(fn)
-    bwdata = s.monochrome(colour, cells)
-    #pp.pprint(bwdata)
-    lt.gridwalk(blocksize, positions, bwdata)
-    lt.write(f'/tmp/{fn}.svg')
-  return f"{WORKDIR}/{model}/{d}\n"
+    if self.VERBOSE: print(f'{shape=} {size=} {facing=} {x} {y} {w} {h}')
+    return ((x, y), (x, h), (w, h), (w, y))
 
-def release(d):
-  v.update(d)
-  return f"released today: {d}"
+class Styles:
 
-def gcode(d):
-  # used for testing '7e731bfc1863c186616d2b3de09a9b6b' 
-  src = 'file'
-  model, _, scale, _ = v.read_meta(digest=d) # ignore author palette
-  blocksize = m.read(model=model)[2] # can get scale too
-  positions = m.read_positions(model)
-  if os.path.isfile(f"/tmp/{model}.txt"):
-    cells = tf.read(model, output=dict()) # assume whatever is in /tmp is up to date
-  elif model and d: # hit the db
-    celldata = v.read(digest=d, output=list()) # cells without strokes are empty items
-    tf.write(model, celldata)  # writing is to ensure cells without strokes have keys
-    cells = tf.read(model, output=dict())
-    src = 'db'
-  else:
-    raise ValueError("model and digest are required")
-  s = Stencil(cells, gcode=True)
-  uniqcol = s.colours() # e.g ['fill:#000', 'fill:#00F', 'fill:#F00', 'fill:#FF0', 'fill:#FFF']
-  hw = 180 # height width are same even though A4 = 210x297 mm 
-  gc = Gcode(scale=1, gridpx=hw, cellsize=30)
-  if gc.A4_OK:
-    gc.gridwalk(blocksize, positions, cells)
-    gc.make(uniqcol)
-  else:
-    uniqcol = 0 # dropout 
-  '''
-  print(gc.cellsum())
-  pp.pprint(gc.gcdata)
-  '''
-  for f in uniqcol:
-    outfile = gc.write(model, fill=f)
-    print(outfile)
-  return f"\n{model} {d} was read from {src} and written to {hw}x{hw}mm grid\nnum of colours: {len(uniqcol)}"
+  def __init__(self):
+    self.fill             = dict()
+    self.fill_opacity     = dict()
+    self.stroke           = dict()
+    self.stroke_dasharray = dict()
+    self.stroke_opacity   = dict()
+    self.stroke_width     = dict()
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+  def add(
+    self, pos, fill=str(), fill_opacity=1, 
+    stroke=None, stroke_opacity=0, stroke_dasharray=0, stroke_width=0
+  ):
+    ''' style.fill[(1,0)] = [
+      'brown',  # bg
+      'blue',   # fg
+      'green'   # top
+    ]
+
+        initialise the attributes we need
+    '''
+    if pos not in self.fill:             self.fill[pos]             = []
+    if pos not in self.fill_opacity:     self.fill_opacity[pos]     = []
+    if pos not in self.stroke:           self.stroke[pos]           = []
+    if pos not in self.stroke_dasharray: self.stroke_dasharray[pos] = []
+    if pos not in self.stroke_opacity:   self.stroke_opacity[pos]   = []
+    if pos not in self.stroke_width:     self.stroke_width[pos]     = []
+    ''' assign values
+    '''
+    stroke = stroke if stroke else fill # make a non-stroke invisible
+
+    self.fill[pos].append(fill)
+    self.fill_opacity[pos].append(fill_opacity)
+    self.stroke[pos].append(stroke)
+    self.stroke_dasharray[pos].append(stroke_dasharray)
+    self.stroke_opacity[pos].append(stroke_opacity)
+    self.stroke_width[pos].append(stroke_width)
+
 if __name__ == '__main__':
-  tf = TmpFile()
-  args = inputs()
-  if (args.keyword == 'list'):
-    print(stats())
-  elif (args.keyword == 'read'):
-    print(info(model=args.model, digest=args.view))
-  elif (args.keyword == 'init'):
-    print(init(model=args.model, ver=args.palette))
-  elif (args.keyword == 'commit'):
-    print(commit(args.model, args.scale, args.author))
-  elif (args.keyword == 'delete'):
-    print(delete(args.view))
-  elif (args.keyword == 'update'):
-    print(update(args.model, args.scale, a4=args.a4))
-  elif (args.keyword == 'stencil'):
-    print(stencil(args.view))
-  elif (args.keyword == 'release'):
-    print(release(args.view))
-  elif (args.keyword == 'gcode'):
-    print(gcode(args.view))
-  elif (args.keyword == 'clone'):
-    print(clone(args.view))
-  else:
-    pass
-  '''
-  the 
-  end
-  '''
+  from config import *
+  s = SVG()
+  b = Block()
+  b.walk(config.positions, config.cells)
+  if True: b.meander()
+  #s.draw(b)
+  
+
+'''
+the
+end
+'''
