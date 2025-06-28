@@ -48,23 +48,6 @@ class Test(unittest.TestCase):
       self.assertEqual(36, len(list(line.coords)))
     else:
       self.assertFalse(True) # fail as bad hole went undetected
-
-  def test_d(self):
-    ''' eflat cell f made a sqring flattened from a small line
-    '''
-    f = CellMaker((0,0), clen=60)
-    f.background('f', { 'bg': 'F00' })
-    f.foreground(
-      'f', { 'fill': 'FF0', 'shape':'line', 'facing':'north', 'size': 'small' }
-    )
-    sqring = f.evalSeeker(f.bft[1], f.bft[0])
-    self.assertEqual(sqring.this.name, 'sqring')
-    self.writer.plotSqring(sqring.this.data)
-    f.prettyPrint()
-    '''
-    line = sqring.this.lineFill('all')
-    print(line)
-    '''
 '''
 the
 end

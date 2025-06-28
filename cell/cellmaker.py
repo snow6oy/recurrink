@@ -1,9 +1,11 @@
 from .shape import Shape
+
+from shapely import remove_repeated_points
 from shapely.geometry import LineString
 
 class Identify:
 
-  VERBOSE = False
+  # see CellMaker.VERBOSE
 
   # TODO Triangl, Diamond, Circle, SquareRing and Irregular
   def direct(self, name, shape):
@@ -32,15 +34,18 @@ class Identify:
       else:
         raise NotImplementedError('gnomon has to face somewhere')
     elif name == 'parabola':
+      print(len(shape.interiors))
       if shape.covers(left) and shape.covers(top) and shape.covers(right):
         facing = 'north'
       elif shape.covers(right) and shape.covers(top) and shape.covers(bottom):
         facing = 'east'
       elif shape.covers(left) and shape.covers(bottom) and shape.covers(right):
         facing = 'south'
-      else:
+      elif shape.covers(left) and shape.covers(bottom) and shape.covers(top):
         facing = 'west'
-    elif name == 'sqring':
+      else:
+        raise NotImplementedError('parabola should touch three sides')
+    elif name == 'sqring' or name == 'irregular':
       facing = 'all'
     else:
       raise NotImplementedError(f'{name} has to face somewhere')
@@ -52,28 +57,24 @@ class Identify:
     '''
     if shape.geom_type in ['MultiPolygon','LinearRing']:
       raise NotImplementedError(f'cannot identify {shape.geom_type}')
-    if self.shapeTeller(shape, 'rectangle'):
-      name = 'rectangle'  # can change to square or line after self.direct
-    elif self.shapeTeller(shape, 'gnomon'):
-      name = 'gnomon'
-    elif self.shapeTeller(shape, 'parabola'):
-      name = 'parabola' 
-    elif self.shapeTeller(shape, 'sqring'):
-      name   = 'sqring'
-    else:
-      name = 'irregular'   
+
+    inner = shape.interiors
+    if len(inner) > 1:     # too many holes
+      raise NotImplementedError(assertion)
+    elif len(inner) == 1:  
+      return 'sqring' if self.sqring(shape) else 'irregular'
+
+    # no holes
+    if self.rectangle(shape):  name = 'rectangle'  
+    elif self.gnomon(shape):   name = 'gnomon'
+    elif self.parabola(shape): name = 'parabola' 
+    else:                      name = 'irregular'   
     return name
 
-  def shapeTeller(self, shape, assertion):
-    ''' count the points and decide if the asserted shape is correct
-
-        parabolas have shallow or deep ingress
-        should split 9 and 11 into Parabola.small and Large?
-        13 is a spade with danglers
-
-        simplify was not helpful 
-    clean = self.shape.exterior.simplify(tolerance=1, preserve_topology=True)
-    '''
+  def _shapeTeller(self, shape, assertion):
+    #elif self.shapeTeller(shape, 'gnomon'):
+    #elif self.shapeTeller(shape, 'sqring'):
+    #elif self.shapeTeller(shape, 'parabola'):
     count = 0
 
     outer = list(shape.exterior.coords)
@@ -87,27 +88,104 @@ class Identify:
 
     if assertion == 'rectangle' and count in [5, 6]: # 6 is for danglers
       return True
-    elif assertion == 'gnomon' and count in [7, 8]:
-      return True
-    elif assertion == 'parabola' and count in [9, 11]: 
+    # elif assertion == 'sqring' and count == 10: return True
+    elif self.VERBOSE: print(f'{assertion} with {count} coords was not found')
+    return False
+
+  def rectangle(self, shape):
+    ''' name can change to square or line after self.direct
+    '''
+    trim  = self.trimPoints(shape)
+    count = len(trim.exterior.coords)
+    if self.VERBOSE: print(f'rectangle with {count} coords found')
+    return True if count in [5, 6] else False
+
+  def gnomon(self, shape):
+    trim  = self.trimPoints(shape)
+    count = len(trim.exterior.coords)
+    if self.VERBOSE: print(f'gnomon with {count} coords found')
+    return True if count in [7, 8] else False
+
+  def parabola(self, shape):
+    ''' parabolas have shallow or deep ingress
+        should split 9 and 11 into Parabola.small and Large?
+        13 is a spade with danglers
+    '''
+    trim  = self.trimPoints(shape)
+    count = len(trim.exterior.coords)
+    if count in [9, 11]: 
       x, y, w, h = shape.bounds
-      width      = w - x
-      height     = h - y
+      width  = w - x
+      height = h - y
       if shape.is_valid:
         if width == height:
           if not width % 3:
             return True
-          else:
-            if self.VERBOSE: print(f"""{assertion} indivisible by 3 {width=}""")
-        else:
-          if self.VERBOSE: print(f"""{assertion} not square {width} {height}""")
-      else:
-        if self.VERBOSE: print(f"""
-{assertion} is not a valid polygon {x=} {y=} {w=} {h=}""")
-    elif assertion == 'sqring' and count == 10:
-      return True
-    elif self.VERBOSE: print(f'{assertion} with {count} coords was not found')
+          elif self.VERBOSE: print(f"indivisible by 3 {width=}")
+        elif self.VERBOSE: print(f"not square {width} {height}")
+      elif self.VERBOSE: print(f"not a valid polygon {x=} {y=} {w=} {h=}")
     return False
+
+  # TODO tidy up compute
+  def sqring(self, shape):
+    ''' test if shape is a valid Square Ring
+        return Boolean
+    '''
+    outer = shape.exterior
+    inner = shape.interiors
+    if len(inner) > 1:     # too many holes
+      raise NotImplementedError(assertion)
+    elif len(inner) == 0:  # no holes
+      return False
+
+    ''' test whether the inner square rests on the diagonal of the outer
+        the diagonal runs from NW to SE and is required by Meander
+    '''
+    X, Y, W, H = outer.bounds
+    x, y, w, h = inner[0].bounds
+
+    outer_w = W - X
+    outer_h = H - Y
+    inner_w = w - x
+    inner_h = h - y
+    width   = x - X # relative
+    height  = h - Y
+
+    '''
+    print(f"{W}={w}+{y}", W == w + y)
+    print(f"{outer_w=} = {outer_h=}")
+    print(f"{inner_w=} = {inner_h=}")
+    print(f"{outer_h} ={width} + {height}")
+    '''
+    # TODO consider returning False and make overall outcome >irregular<
+    # or ensure that outer is a bg and continue to fail
+    if outer_w != outer_h: 
+      raise NotImplementedError(f"{outer_w} {outer_h} are inequal")
+    elif inner_w != inner_h:
+      return False
+      ''' the remedy is to adjust height of the inner square
+          h      = (outer_h - (x-X)) + Y
+          y      = h - inner_h
+          remedy = [(x,y), (x,h), (w,h), (w,y)]
+          data   = Polygon(p1, holes=[remedy])
+          self.this.compute(data)
+          return # None to indicate that something changed
+    
+      But no easy way to return new Polygon :(
+      print(f"{inner_w=} {inner_h=} are inequal")
+      '''
+    elif outer_h == width + height: # hit the diagonal !
+      return True
+    return False
+
+  def trimPoints(self, lring):
+    ''' clean up after flattening
+
+        simplify was not helpful 
+    clean = self.shape.exterior.simplify(tolerance=1, preserve_topology=True)
+    '''
+    trimmed = remove_repeated_points(lring, tolerance=.5)
+    return trimmed
 
 class CellMaker(Identify):
 
@@ -160,7 +238,7 @@ class CellMaker(Identify):
     ''' place for danglers to hang
     '''
     void = Shape(label, { 'shape': 'void' })
-    void.compute(shape)
+    void.compute(self.x, self.y, self.clen, shape)
     self.bft.append(void)
 
   def getStyle(self, i, linear=False): # layer index
@@ -218,7 +296,9 @@ class CellMaker(Identify):
 {len(self.bft)=} 
 {done.this.name=} {done.this.data.bounds}
 {seek.this.name=} {seek.this.data.bounds}""")
-    if done.this.data.equals(seek.this.data) or seek.this.data is None:
+    if done.this.name == 'invisible':
+      pass
+    elif done.this.data.equals(seek.this.data) or seek.this.data is None:
       seek.this.data = None
       seek.this.name = 'invisible' # fg completely covers bg or was empty
     else:     # if done.this.data.crosses(seek.this.data): 
@@ -228,6 +308,7 @@ class CellMaker(Identify):
         pass              # return seek as it came
       elif diff.equals(seek.this.data):
         pass # return seek unchanged
+      # TODO multigeoms needs pos and clen
       else:  # deal with the multi geoms later
         if diff.geom_type == 'MultiPolygon':
           seek.this.name = 'multipolygon'
@@ -237,7 +318,7 @@ class CellMaker(Identify):
           rename, f = self.direct(rename, diff)  # final name
           conf      = {'shape':rename, 'fill':seek.fill, 'facing':f}
           seek      = Shape(seek.label, conf)
-          seek.compute(diff)
+          seek.compute(self.x, self.y, self.clen, diff)
     return seek
 
   def sortByArea(self, unordered):

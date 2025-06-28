@@ -9,7 +9,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
   def setUp(self):
     self.writer  = Plotter()
-    self.VERBOSE = True
+    self.VERBOSE = False
 
   def test_a(self): 
     ''' guidelines for East with plot of before and after padding
@@ -33,7 +33,7 @@ class Test(unittest.TestCase):
     stripes = r.makeStripes(pnts)
     first   = list(stripes.coords)[0]
     last    = list(stripes.coords)[-1]
-    if self.VERBOSE: self.writer.plotLine(stripes,'t_meander_b')
+    if self.VERBOSE: self.writer.plotLine(stripes, self.id())
     self.assertEqual(first,expect[0])
     self.assertEqual(last, expect[1])
 
@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
     guides  = g.guidelines(padme,('WB','NW','NR'))  # (270,315,360))
     pnts    = g.collectPoints(padme,guides)
     stripes = g.makeStripes(pnts)
-    if self.VERBOSE: self.writer.plotLine(stripes,'t_meander_c')
+    if self.VERBOSE: self.writer.plotLine(stripes, self.id())
     self.assertEqual((6,4),list(stripes.coords)[0])
     self.assertEqual((14,14),list(stripes.coords)[-1])
 
@@ -61,7 +61,7 @@ class Test(unittest.TestCase):
     guides = gg.guidelines(ggpad,('NL','NE','EB'))
     p2     = g.collectPoints(ggpad,guides)
     stripe = g.joinStripes(p1,p2)
-    if self.VERBOSE: self.writer.plotLine(stripe,'t_meander_d')
+    if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
     self.assertEqual((4,14),xy[0])
     self.assertEqual((8,12),xy[-1])
@@ -78,7 +78,7 @@ class Test(unittest.TestCase):
     rguide = r.guidelines(rpad,('NR','NL'))
     p2     = r.collectPoints(rpad,rguide)
     stripe = r.joinStripes(p1,p2)
-    if self.VERBOSE: self.writer.plotLine(stripe,'t_meander_e')
+    if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
     self.assertEqual((17,1),xy[0])
     self.assertEqual((5,1),xy[-1])
@@ -95,7 +95,7 @@ class Test(unittest.TestCase):
     rguide = r.guidelines(rpad,('WT','WB')) #  direction=(496,270))
     p2     = r.collectPoints(rpad,rguide)
     stripe = r.joinStripes(p1,p2)
-    if self.VERBOSE: self.writer.plotLine(stripe,'t_meander_f')
+    if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
     self.assertEqual((17,17),xy[0])
     self.assertEqual((17,5),xy[-1])
@@ -112,7 +112,7 @@ class Test(unittest.TestCase):
     rguide = r.guidelines(rpad,('SL','SR')) # direction=(180,450)) 495,270))
     p2     = r.collectPoints(rpad,rguide)
     stripe = r.joinStripes(p1,p2)
-    if self.VERBOSE: self.writer.plotLine(stripe,'t_meander_g')
+    if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
     self.assertEqual((1,17),xy[0])
     self.assertEqual((1,5),xy[-1])
@@ -130,7 +130,7 @@ class Test(unittest.TestCase):
     rguide = r.guidelines(rpad,('NR','NL')) # direction=(360,0))
     p2     = r.collectPoints(rpad,rguide)
     stripe = r.joinStripes(p1,p2)
-    if self.VERBOSE: self.writer.plotLine(stripe,'t_meander_h')
+    if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
     self.assertEqual((1,12),xy[0])
     self.assertEqual((3,1),xy[-1])
@@ -146,7 +146,7 @@ class Test(unittest.TestCase):
     guide = m.guidelines(padme,('WB','NW','NE','EB'))
     p     = m.collectPoints(padme,guide)
     s     = m.makeStripes(p)
-    if self.VERBOSE: self.writer.plotLine(s,'t_meander_i')
+    if self.VERBOSE: self.writer.plotLine(s, self.id())
 
   def test_j(self):
     ''' check each guideline by comparing grid order
@@ -174,27 +174,27 @@ class Test(unittest.TestCase):
       self.assertEqual(expect[i],grid_ord)
 
   def test_k(self):
-    ''' koto fails on sw gnomon
+    ''' koto fails on sw gnomon because either:
 
-        theory 1. orderGrid always generates integers
-                  but guidelines can be floats 
-                  this causes points to miss guidelines
-        theory 2. padding creates rectangles, but squares are needed
+        1. orderGrid always generates integers
+           but guidelines can be floats 
+           this causes points to miss guidelines
+        2. padding creates rectangles, but squares are needed
 
       [(6.5,16.0),(6.5,21.5),(8.5,21.5),(8.5,23.5),
        (14.0,23.5),(14.0,16.0),(6.5,16.0)]
     '''
-    g     = Polygon(
+    g = Polygon(
       [(6,16.0),(6,21),(8,21),(8,23),(13.0,23),(13.0,16.0),(6,16.0)]
     )
-    self.writer.plot(g,g,fn='t_meander_k')
-    m     = Meander(g)
-    guide = m.guidelines(g,('SL','SE','ET'))
+    m       = Meander(g)
+    guide   = m.guidelines(g,('SL','SE','ET'))
     line    = m.collectPoints(g,guide)
     stripes = m.makeStripes(line)
     if self.VERBOSE: 
-      self.writer.plotGuideLines(guide, fn='t_meander_k')
-      self.writer.plotLine(stripes, fn='t_meander_kk')
+      #self.writer.plotShape(g, self.id())
+      self.writer.plotLine(guide, self.id()) # fn='t_meander_k')
+      #self.writer.plotLine(stripes, self.id())
     self.assertEqual(18, len(list(stripes.coords)))
 
   def test_l(self):
@@ -229,10 +229,11 @@ class Test(unittest.TestCase):
     assert s.c2(30, 1, 6)[32] == [2, 1]
 
   def test_n(self):
-    LEN     = 9 # length of matrix 
-    s       = Spiral()
-    spiral  = s.matrix(LEN)
-    self.assertEqual(81, len(list(spiral)))
+    LEN    = 9 # length of matrix 
+    s      = Spiral()
+    data   = s.matrix(LEN)
+    spiral = list(data.values())
+    self.assertEqual(81, len(spiral))
     if self.VERBOSE:
       fig, ax = plt.subplots() 
       shapely.plotting.plot_line(LineString(spiral), ax=ax)
@@ -245,7 +246,7 @@ class Test(unittest.TestCase):
     inner  = [(4,2), (4,7), (7,7), (7,2)]
     small  = Polygon(outer, holes=[inner])
     m      = Meander(small)
-    spiral = m.spiral(clen=10)
+    spiral = m.spiral(clen=10, pos=tuple([0,0]))
     self.assertEqual(2, len(spiral.geoms))
     if self.VERBOSE:
       self.writer.plotLine(spiral, self.id())
@@ -263,7 +264,8 @@ class Test(unittest.TestCase):
     inner = [(1,1), (1,2), (2,2), (2,1)]
     small = Polygon(outer, holes=[inner])
     m     = Meander(small)
-    line  = m.matrix(4)
+    data  = m.matrix(4)
+    line  = list(data.values())
     mls   = m.splitLines(line, Polygon(inner)) #small.interiors[0])
     self.assertEqual(1, len(mls.geoms))
 
@@ -274,7 +276,7 @@ class Test(unittest.TestCase):
     inner = [(4,3), (4,11), (10,11), (10,3)]
     p15   = Polygon(outer, holes=[inner])
     m     = Meander(p15)
-    s     = m.spiral(15)
+    s     = m.spiral(15, tuple([0,0]))
 
     l2_begin = list(s.geoms[1].coords)[0]
     self.assertEqual((11,11), l2_begin)
@@ -289,19 +291,25 @@ class Test(unittest.TestCase):
     inner = [(20,15), (20,45), (40,45), (40,15)]
     wonky = Polygon(outer, holes=[inner])
     m     = Meander(wonky)
-    line  = m.matrix(60)
+    data  = m.matrix(60)
+    line  = list(data.values())
     mls   = m.splitLines(line, Polygon(inner)) #small.interiors[0])
 
-    #for g in mls.geoms: print(list(g.coords))
-
     if self.VERBOSE:
-      print(self.id())
-      fig, ax = plt.subplots() 
-      ax.axes.get_xaxis().set_visible(False)
-      ax.axes.get_yaxis().set_visible(False)
+      self.writer.plotLine(mls, self.id())
 
-      shapely.plotting.plot_line(
-        #LineString(line), ax=ax, linewidth=2, add_points=False
-        mls, ax=ax, linewidth=2, add_points=False
-      )
-      plt.savefig(f"tmp/t_meander_r.svg", format="svg")
+  def test_s(self):
+    ''' irregular sqring needs a spiral
+        that is offset by pos
+    '''
+    outer = [(9,0), (9,9), (18,9), (18,0)]
+    inner = [(12,3), (12,6), (15,6), (15,3)]
+    wonky = Polygon(outer, holes=[inner])
+    m     = Meander(wonky)
+    mls   = m.spiral(9, (1,0))
+    if self.VERBOSE: pass
+    self.writer.plotLine(mls, self.id())
+'''
+the
+end
+'''

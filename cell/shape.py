@@ -40,6 +40,22 @@ class Shape:
 
   VERBOSE = False
 
+
+  class Irregular:
+    ''' Ideally Flatten would only produce Regular shapes
+        but it does not and then Meander fails badly 
+    '''
+    def __init__(self): self.name = 'irregular'
+    def compute(self, polygon): self.data = polygon
+    def lineFill(self, clen=15, facing='all'):
+      ''' spiral with a hole innit
+          return a Shapely multiline
+      print(f"{self.pos=}")
+      '''
+      m        = Meander(self.data)
+      linefill = m.spiral(self.clen, self.pos)
+      return linefill
+
   class Triangl(Points):
     ''' a linear ring wrapped in a Polygon 
         the wrapper is needed by transform
@@ -143,11 +159,11 @@ class Shape:
     def draw(self, x, y, clen, swidth=0, size=str(), facing=str()):
       ''' generate a shapely polygon
       '''
-      sizes = dict()
-      sw  = swidth
-      hsw = swidth / 2 # TODO scale half stroke width
-      cs  = clen  
-      t3  = cs / 3    # three times smaller
+      sizes     = dict()
+      sw        = swidth
+      hsw       = swidth / 2 # TODO scale half stroke width
+      cs        = clen  
+      t3        = cs / 3    # three times smaller
       ''' input can be any of the four cardinal directions
           but only two are used so we silently collapse the others
       '''
@@ -287,7 +303,8 @@ class Shape:
     def __init__(self):
       self.name = 'parabola'
 
-    def compute(self, polygon): self.data =  polygon
+    def compute(self, polygon): 
+      self.data = polygon
 
     def svg(self, meander=False, facing=None):
       ''' make u-shaped svg path 
@@ -461,14 +478,15 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     '''
     name = celldata['shape'] if 'shape' in celldata else 'square' 
     shapes = { 
-      'circle': self.Circle(), 
-      'diamond': self.Diamond(),
-      'triangl': self.Triangl(), 
-      'line': self.Rectangle(name), 
-      'square': self.Rectangle(name),
-      'void': self.Void(),
-      'parabola': self.Parabola(),
-      'sqring': self.SquareRing()
+         'circle': self.Circle(), 
+        'diamond': self.Diamond(),
+        'triangl': self.Triangl(), 
+           'line': self.Rectangle(name), 
+         'square': self.Rectangle(name),
+           'void': self.Void(),
+       'parabola': self.Parabola(),
+         'sqring': self.SquareRing(),
+      'irregular': self.Irregular()
     }
     self.this  = shapes[name]
     self.label = label
@@ -501,14 +519,19 @@ all at sea > {shape} {direction} {clockwise} < without control''')
     data, name = self.this.plotData()
     p.plotLine(data, name)
 
-  def compute(self, data):
-    ''' facing is usually be inherited
+  def compute(self, x, y, clen, data):
+    ''' facing is usually inherited
         but as we already know where square rings face
         it is hard coded here
 
         to avoid impossible meanderings, only whole numbers accepted
         print(self.label, self.this.name)
+    self.pos  = tuple([x, y])
+    self.clen = clen
+    print(data.geom_type)
     '''
+    self.this.pos  = tuple([x, y])
+    self.this.clen = clen
     if self.VERBOSE: print(self.this.name, f"{len(data.interiors)=}")
     data = set_precision(data, grid_size=1)
     if self.this.name == 'sqring':  # TODO see direct() sqring has no face
@@ -568,6 +591,8 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         this.draw() is the interface for user-generated cell
         also see compute()
     '''
+    self.pos  = tuple([x, y])
+    self.clen = clen
     stroke_width = 0 if not self.stroke else self.stroke['width']
     self.this.draw(
       x, y, clen, swidth=stroke_width, facing=self.facing, size=self.size
@@ -578,19 +603,23 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         according to grid position
     if line_string.geom_type == 'LineString':
     '''
+    VERBOSE = False
+    if self.label == 'c' and self.this.name == 'irregular':
+      #print(f"{self.this.data.geom_type} {self.label} {self.this.name}")
+      VERBOSE = False
     if self.this.data.geom_type == 'Polygon':
       if len(self.this.data.interiors) == 0:
         boundary       = self.this.data.boundary 
         line_string    = transform(boundary, lambda a: a + [x, y])
         self.this.data = Polygon(line_string)
-        # print(f"{x} {y} {self.label} {line_string}")
+        if VERBOSE: print(f"{x} {y} {self.label} {line_string}")
       elif len(self.this.data.interiors) == 1: # deal with sqring
         lse = transform(self.this.data.exterior, lambda a: a + [x, y])
         lsi = transform(self.this.data.interiors[0], lambda a: a + [x, y])
-        # print(f"{x} {y} {self.label} {list(lsi.coords)}")
+        if VERBOSE: print(f"{x} {y} {self.label} {list(lsi.coords)}")
         self.this.data = Polygon(lse, holes=[list(lsi.coords)])
       else:
-        raise NotImplementedError
+        raise NotImplementedError('too many holes in Polygon')
     else: raise TypeError(f"""
 {self.this.data.geom_type} unexpected: '{self.label}' {self.this.name}""")
 
@@ -601,16 +630,31 @@ all at sea > {shape} {direction} {clockwise} < without control''')
         2. polyline from Shapely.boundary
         3. polygon
 
-    if self.this.name == 'sqring':
-      print(f"{self.label} {self.facing} {self.this.name=}")
+      print(f"{self.label} {self.facing} {self.this.name}")
+    print(f"{self.clen} {self.pos}")
+    if self.this.name == 'square': # square is a prototype, other shapes todo
+      print(f"{self.this.clen} {self.label} {self.facing} {self.this.name} ")
+    if self.this.name == 'square':
+      print(self.this.data.bounds) 
     '''
-    if meander and self.facing:
+    if self.this.name == 'irregular':
+      linefill = self.this.lineFill(facing=self.facing) #, clen=self.clen)
+      points   = str()
+      if linefill.geom_type != 'MultiLineString': raise NotImplementedError()
+      for geom in linefill.geoms:
+        p       = [f"{int(c[0])},{int(c[1])}" for c in list(geom.coords)]
+        #print(len(geom.coords), p[0], p[-1])
+        points += ','.join(map(str, p))
+      return { 'points': points, 'name': self.this.name }
+    elif meander and self.facing:
       linefill = self.this.lineFill(facing=self.facing)
+      points   = str()
       if linefill is None or linefill.is_empty: # void returns None 
-        return { 'points': 'none', 'name': self.this.name }
+        points = 'none'
       elif linefill: 
-        p = [f"{c[0]},{c[1]}" for c in list(linefill.coords)]
-        return { 'points': ','.join(map(str, p)), 'name': self.this.name }
+        p      = [f"{int(c[0])},{int(c[1])}" for c in list(linefill.coords)]
+        points = ','.join(map(str, p))
+      return { 'points': points, 'name': self.this.name }
     else:
       svg = self.this.svg()
       if 'name' in svg: print(f"{self.this.name} double handled")

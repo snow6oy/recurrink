@@ -434,6 +434,7 @@ class Plotter:
     x2, y2 = p2.boundary.xy
     plt.plot(x1, y1, 'b-', x2, y2, 'r--')
     #plt.axis([0, 18, 0, 18])
+    # 0,10 is for x axis range. 0,20 is for y axis range.
     plt.savefig(f'tmp/{fn}.svg', format="svg")
 
   def _plotLine(
@@ -462,12 +463,20 @@ class Plotter:
     fig, ax = plt.subplots()
     ax.axes.get_xaxis().set_visible(visible)
     ax.axes.get_yaxis().set_visible(visible)
-
-    tid = fn.split('.')  # unittest self.id()
-
-    if title: plt.title(f"{tid[1]} {tid[3]}")
+    t_class, t_name = self.fileName(fn)
+    if title: plt.title(f"{t_class} {t_name}")
     shapely.plotting.plot_line(line, ax=ax, linewidth=width, add_points=False)
-    plt.savefig(f"tmp/{tid[1]}_{tid[3]}.svg", format="svg")
+    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
+
+  def plotShape(self, shape, fn):
+    fig, ax = plt.subplots()
+    t_class, t_name = self.fileName(fn)
+    shapely.plotting.plot_polygon(shape, ax=ax, add_points=False)
+    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
+
+  def fileName(self, fn):
+    tid = fn.split('.')  # unittest self.id()
+    return tid[1], tid[3]
 
   def plotGuideLines(self, mls, fn):
     ''' ugly but just about works

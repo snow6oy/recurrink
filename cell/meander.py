@@ -27,24 +27,56 @@ class Spiral:
   '''
   VERBOSE = False
 
-  def spiral(self, clen):
+  def spiral(self, clen, pos):
     ''' split a LineString and return a MultiLineString
         split on boundary of Polygon.interiors[0]
     '''
-    if len(self.shape.interiors) != 1: raise IndexError()
-    if self.shape.interiors[0].geom_type != 'LinearRing':
-      raise ValueError()
-    line   = self.matrix(clen)
-    hole   = self.shape.interiors[0]
-    mls    = self.splitLines(line, Polygon(hole))
-    return MultiLineString(mls) 
+    x, y, w, h = self.shape.bounds
+    clen       = int(w - x)     # better than original clen because of padding
+    pos        = tuple([x, y])  # better than pos because of tx
+    db   = self.matrix(clen)
+    # self.prettyPrint(clen, db)
+    # print(f"{clen} {pos} {self.shape.bounds}")
+    line = self.offset(clen, pos, list(db.values()))
+    ''' this is returning positions with an extra clen
+        without holes there will be overlaps /-:
+    if len(self.shape.interiors) == 1: 
+      if self.shape.interiors[0].geom_type != 'LinearRing':
+        raise ValueError()
+      else:
+        hole = self.shape.interiors[0]
+        mls  = self.splitLines(line, Polygon(hole))
+        return mls 
+    else:
+      raise IndexError(f"{len(self.shape.interiors)=} is not one")
+    '''
+    return MultiLineString([LineString(line)]) 
+
+  def offset(self, clen, pos, points):
+    ''' CellMaker increases pos by the factor of cell length
+    '''
+    X = pos[0]
+    Y = pos[1]
+    offset = [tuple([X + p[0], Y + p[1]]) for p in points]
+    return offset
+
+  def prettyPrint(self, clen, db):
+    ''' its borken
+    '''
+    m  = [[0]*clen for i in range(clen)] # output template
+    for k in db:   # convert to printer friendly format
+      print(k)
+      r = db[k][0]
+      c = db[k][1]
+      m[r][c] = f"{k:02d}"
+      [print(" ".join(s)) for s in m]
 
   def splitLines(self, line, hole):
     ''' test line using touches and contains 
         split when spiral passes inside hole
     '''
-    inside = False
-    mls = []
+    inside   = False
+    mls      = []
     new_line = []
     for xy in line:
       pt = Point(xy)
@@ -69,9 +101,8 @@ class Spiral:
     ''' call rows 1, 2 and col 1, 2 and pack points into a list
     '''
     count = 0  # final number of cells
-    n = 0      # depth of spiral
-    db = {}    # temp data collection
-    m = [[0]*LEN for i in range(LEN)] # output template
+    n     = 0  # depth of spiral
+    db    = {} # temp data collection
 
     for n in range(LEN):
       db = {**db, **self.r1(count, n, LEN)} # append top rows
@@ -88,13 +119,8 @@ class Spiral:
       db = {**db, **self.c2(count, n, LEN)} # left hand col
       count = max(db.keys())
 
-    if self.VERBOSE:
-      for k in db:   # convert to printer friendly format
-        r = db[k][0]
-        c = db[k][1]
-        m[r][c] = f"{k:02d}"
-        [print(" ".join(s)) for s in m]
-    return list(db.values())
+    return db
+
 
   def r1(self, s, n, l):
     ''' x x x 

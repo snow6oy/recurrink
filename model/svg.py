@@ -182,13 +182,18 @@ class LinearSvg(Svg):
         p = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
         comment = ET.Comment( f' {layer.label} {shape.name}')
         points = str()
-        if shape.name == 'sqring': # multi part geometry
-          outer  = list(shape.data.exterior.coords)
-          inner  = list(shape.data.interiors)
-          coords = outer 
-          [inner_p.append(list(lring.coords)) for lring in inner]
+        #if shape.name == 'sqring' or shape.name == 'irregular':
+        if shape.data.geom_type == 'Polygon': # Polygon with
+          if len(shape.data.interiors):
+            outer  = list(shape.data.exterior.coords)
+            inner  = list(shape.data.interiors)
+            coords = outer 
+            [inner_p.append(list(lring.coords)) for lring in inner]
+          else: 
+            coords = list(shape.data.boundary.coords)
         else:
-          coords = list(shape.data.boundary.coords)
+          coords = []
+          print(f"ignoring {shape.data.geom_type}")
         for c in coords:
           coord = ','.join(map(str, c))
           points += f"{coord} "
@@ -249,6 +254,9 @@ class LinearSvg(Svg):
       g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
       g.set('style', content['style']) # swap fill for stroke
       for shape in content['shapes']:
+        if shape['name'] == 'irregular': # square
+          p = shape['points']
+          #print(f"{p[:20]}")
         if shape['name'] == 'void': continue # empty group
         elif 'points' in shape: 
           uniqid += 1

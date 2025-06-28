@@ -157,6 +157,7 @@ class Test(unittest.TestCase):
     a.foreground('a', { 'fill': 'FF0', 'facing': 'all' })
     #Polygon([(2, 1), (2, 2), (3, 2,), (3, 1), (2, 1)]))
     a.bft[1].compute(
+      a.x, a.y, a.clen,
       Polygon([(0.0, 0.0), (0.0, 5.3), (3.8, 5.3,), (3.8, 0.0), (0.0, 0.0)])
     )
     b = a.evalSeeker(a.bft[0], a.bft[1])
@@ -172,21 +173,21 @@ class Test(unittest.TestCase):
     ''' rectangle
     '''
     r     = Polygon([(1, 1), (1, 2), (2, 2), (2, 1)])
-    shape = self.cells['a'].shapeTeller(r, 'rectangle')
-    self.assertTrue(shape)
+    name = self.cells['a'].bless(r)
+    self.assertEqual('rectangle', name)
 
   def test_j(self):
     ''' gnomon
     '''
     g = Polygon([(0, 0), (0, 3), (3, 3), (3, 2), (1, 2), (1, 0)])
-    shape = self.cells['b'].shapeTeller(g, 'gnomon')
+    shape = self.cells['b'].gnomon(g)
     self.assertTrue(shape)
 
   def test_k(self):
     ''' parabola
     '''
     p= Polygon([(0, 0), (0, 3), (3, 3), (3, 2), (1, 2), (1, 1), (3, 1), (3, 0)])
-    shape = self.cells['c'].shapeTeller(p, 'parabola')
+    shape = self.cells['c'].parabola(p)
     self.assertTrue(shape)
 
   def test_l(self):
@@ -195,7 +196,7 @@ class Test(unittest.TestCase):
     hole  = [(1, 1), (1, 2), (2, 2), (2, 1)]
     outer = [(0, 0), (0, 3), (3, 3), (3, 0)]
     sr    = Polygon(outer, holes=[hole])
-    shape = self.cells['a'].shapeTeller(sr, 'sqring')
+    shape = self.cells['a'].sqring(sr)
     self.assertTrue(shape)
 
   def test_m(self):
@@ -207,10 +208,10 @@ class Test(unittest.TestCase):
     but it has unacceptable side-effect of clobbering Gnomons and Parabolas
     this test documents the risk of shapeTeller being fooled by the danglers
   
-    Anyway shapeTeller() seems to work
+    Anyway Identify() seems to work
     '''
     r = Polygon([(0, 0), (0, 1), (0, 3), (3, 3), (3, 0)])
-    shape = self.cells['a'].shapeTeller(r, 'rectangle')
+    shape = self.cells['a'].rectangle(r)
     self.assertTrue(shape)
 
   def test_n(self):
@@ -301,6 +302,26 @@ class Test(unittest.TestCase):
       self.writer.multiPlot(b.bft[1].this.data, fn='t_cellmaker_r')
       self.writer.multiPlot(b.bft[2].this.data, fn='t_cellmaker_r')
 
+  def test_s(self):
+    ''' uneven square ring
+    '''
+    outer = [(0, 0), (0, 5), (5, 5), (5, 0)]
+    hole  = [(1, 1), (1, 2), (2, 2), (2, 1)]
+    sr    = Polygon(outer, holes=[hole])
+    name  = self.cells['a'].bless(sr)
+    self.assertEqual('irregular', name)
+
+  def test_t(self):
+    ''' Meander.spiral should be called by the irregular
+    '''
+    z = CellMaker((0, 0), clen=15) 
+    z.background('z', { 'bg': '00F', 'facing':'all'})
+    z.foreground('z', { 'shape': 'line', 'facing':'north', 'size':'small'})
+    z.flatten()
+    if self.VERBOSE:
+      z.prettyPrint()
+      line = z.bft[0].this.lineFill(clen=z.clen)
+      self.writer.plotLine(line, self.id())
 
 '''
 the

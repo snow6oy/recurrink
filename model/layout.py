@@ -144,10 +144,14 @@ class Layout:
     if li >= len(self.lgmk): self.lgmk.append(dict())
 
     if shape.this.data is None: # avoid the void
-      # print(f"avoiding {cn=} {pos=} {li=} ")
+      #print(f"avoiding {cn=} {pos=} {li=} ")
       self.lgmk[li][cn] = list()
       return
+    if shape.this.data.geom_type == 'MultiPolygon': 
+      print(f"ignoring multipolygon {cn} {len(shape.this.data.geoms)}")
+      return
     shape.tx(pos[0], pos[1])
+
     if cn in self.lgmk[li]:
       self.lgmk[li][cn].append(shape)
     else:

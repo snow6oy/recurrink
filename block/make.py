@@ -137,15 +137,15 @@ class GeoMaker:
     for layer in cell.bft:
       shape = layer.this
       if shape.name == 'multipolygon':
-        if self.VERBOSE: 
-          print(f"found: {layer.label} {layer.facing} {shape.name}")
+        if self.VERBOSE: print(f"found: {layer.label} {shape.name}")
         found = True
         for p in shape.data.geoms:
           rename    = cell.bless(p)
           rename, f = cell.direct(rename, p)
           conf      = {'shape': rename, 'fill': layer.fill, 'facing':f }
           piece     = Shape(layer.label, conf)
-          piece.this.compute(p)
+          #piece.this.compute(p)
+          piece.compute(cell.x, cell.y, cell.clen, p)
           shapes.append(piece)
       elif self.VERBOSE: print(f'ignored: {layer.label} {shape.name}')
 
