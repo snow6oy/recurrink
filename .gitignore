@@ -10,7 +10,9 @@ sql/palette/*
 Archive
 __pycache__/*
 t/__pycache__/*
-scripts/__pycache__/*
 t/__init__.py
-recurrink.py
+cell/__pycache__/*
+model/__pycache__/*
+block/__pycache__/*
+scripts/*
 v/*
