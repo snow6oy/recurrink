@@ -14,5 +14,6 @@ t/__init__.py
 cell/__pycache__/*
 model/__pycache__/*
 block/__pycache__/*
+cell/shape/__pycache__/*
 scripts/*
 v/*
