@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import shapely.plotting
+from shapely.geometry import Polygon
 
 class Svg:
 
@@ -10,7 +11,6 @@ class Svg:
 
     fig, ax = plt.subplots() 
     ax.set_aspect('equal')    # make x and y axis the same and set to CLEN
-    print(f"0 {b.BLOCKSZ[0] * b.CLEN} 0 {b.BLOCKSZ[1] * b.CLEN}")
     plt.axis([0, (b.BLOCKSZ[0] * b.CLEN), 0, (b.BLOCKSZ[1] * b.CLEN)])
 
     # TODO refactor to use style for iteration ??
@@ -24,6 +24,7 @@ class Svg:
         elif z == 0: lring = c.exterior            # bg
 
         if self.VERBOSE:
+          print(f"0 {b.BLOCKSZ[0] * b.CLEN} 0 {b.BLOCKSZ[1] * b.CLEN}")
           print(f"{z} {pos} {len(c.interiors)} {b.style.fill[pos]}")
         
         shapely.plotting.plot_polygon(

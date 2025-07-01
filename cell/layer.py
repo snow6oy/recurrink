@@ -26,12 +26,13 @@ class Layer:
     name   = kwargs['shape'] if 'shape' in kwargs else 'square'
     shapes = {
       'line': Rectangle(name),
-      'square': Rectangle(name)
+      'square': Rectangle(name),
+      'gnomon': Gnomon()
     }
     shape     = shapes[name]
     coords    = shape.coords(self.pos[0], self.pos[1], self.clen, kwargs)
     if len(coords): self.bft.append(coords)
-    self.direction.append(shape.direction(kwargs['facing']))
+    self.direction.append(shape.guide(kwargs['facing']))
 
   def polygon(self):
     if len(self.bft) == 3:

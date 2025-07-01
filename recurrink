@@ -4,10 +4,15 @@ from model import Svg
 from block import Make, Styles
 from config import *
 
+cells = config.cells
 svg   = Svg()
 block = Make()
+
+cells['a']['shape'] = 'gnomon'
+cells['a']['facing'] = 'south'
+
 block.walk(config.positions, config.cells)
-if True:       # output to idraw
+if False:       # output to idraw
   block.meander(padding=False)
   svg.drawLine(block)
 else: svg.draw(block)

@@ -56,7 +56,7 @@ class Rectangle:
     if self.VERBOSE: print(f'{shape=} {size=} {facing=} {x} {y} {w} {h}')
     return ((x, y), (x, h), (w, h), (w, y))
 
-  def direction(self, direction):
+  def guide(self, direction):
     ''' expand facing to a pair of guidelines for meander
     '''
     control = {
