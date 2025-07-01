@@ -17,6 +17,7 @@ class Make:
   def walk(self, positions, cells):
     ''' navigate the model and populate cells
     '''
+    self.setBlocksize(positions)
     for pos in positions:
       cell = Layer(clen=self.CLEN, pos=pos)
       cell.background()
@@ -67,3 +68,15 @@ class Make:
         '''
         if e: raise ValueError(e)
         else: self.guide[pos][z] = LineString(m.makeStripes(pt))
+
+  def setBlocksize(self, positions):
+    ''' extract blocksize and set for downstream functions
+    '''
+    x = [p[0] for p in list(positions.keys())]
+    y = [p[1] for p in list(positions.keys())]
+    self.BLOCKSZ = (max(x) + 1, max(y) + 1)
+
+'''
+the
+end
+'''

@@ -7,7 +7,7 @@ class Svg:
   VERBOSE    = False
   ADD_POINTS = False
 
-  def draw(self, b):
+  def draw(self, b, svgfile):
 
     fig, ax = plt.subplots() 
     ax.set_aspect('equal')    # make x and y axis the same and set to CLEN
@@ -33,20 +33,26 @@ class Svg:
           edgecolor=b.style.stroke[pos][z], 
           linewidth=b.style.stroke_width[pos][z]
         )
-    plt.savefig(f"tmp/not_bft.svg", format="svg")
+    svgfile = svgfile if svgfile else "tmp/not_bft.svg"
+    plt.savefig(svgfile, format="svg")
 
-  def drawLine(self, block):
+  def drawLine(self, block, svgfile):
     ''' preview a plotfile
     '''
     fig, ax = plt.subplots() 
+    width   = block.BLOCKSZ[0] * block.CLEN
+    height  = block.BLOCKSZ[1] * block.CLEN
+    ax.set_aspect('equal') # make x and y axis the same and set to CLEN
+    plt.axis([0, width, 0, height])
 
     for pos in block.guide:
       for z, linestr in enumerate(block.guide[pos]):
         shapely.plotting.plot_line(
-          linestr, ax=ax, 
+          linestr, ax=ax, add_points=self.ADD_POINTS,
           color=block.style.stroke[pos][z]
         )
-    plt.savefig(f"tmp/not_bft_line.svg", format="svg")
+    svgfile = svgfile if svgfile else "tmp/not_bft.svg"
+    plt.savefig(svgfile, format="svg")
 
 '''
 the
