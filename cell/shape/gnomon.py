@@ -17,10 +17,10 @@ class Gnomon:
 
     facing    = kwargs['facing']
     direction = {
-      'north': [(X, Y), (X, H), (W, H), (W, d), (b, d), (b, Y)],
-       'west': [(X, Y), (X, H), (b, H), (b, a), (W, a), (W, H)],
-      'south': [(X, Y), (X, a), (c, a), (c, H), (W, H), (W, Y)],
-       'east': [(X, d), (X, H), (W, H), (W, Y), (c, Y), (c, d)]
+      'north': [(X, Y), (X, H), (W, H), (W, d), (a, d), (a, Y)],
+       'west': [(X, Y), (X, H), (a, H), (a, b), (W, b), (W, Y)],
+      'south': [(X, Y), (X, b), (c, b), (c, H), (W, H), (W, Y)],
+       'east': [(X, d), (X, H), (W, H), (W, Y), (c, Y), (c, d)] 
     }
     if facing in direction: return direction[facing]
     else: raise IndexError(f"gnomon at sea {facing}")
@@ -30,7 +30,9 @@ class Gnomon:
     '''
     control = {
       'north': ('WB', 'NW', 'NR'),
-      'south': ('SL', 'SE', 'ET')
+      'south': ('SL', 'SE', 'ET'),
+       'east': ('NL', 'NE', 'SR'),
+       'west': ('WT', 'SW', 'EB')
     }
     if direction in control: return control[direction]
     else: raise KeyError(f'all at sea > {direction} <')

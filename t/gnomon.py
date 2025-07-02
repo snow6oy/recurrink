@@ -1,6 +1,11 @@
 import unittest
 import pprint
-from flatten import Gnomon, Rectangle, Flatten
+import matplotlib.pyplot as plt
+#from flatten import Gnomon, Rectangle, Flatten
+import shapely.plotting 
+from shapely.geometry import Polygon
+from model import Svg
+from cell.shape import Gnomon
 pp = pprint.PrettyPrinter(indent=2)
 
   ##########
@@ -10,7 +15,8 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
 
   def setUp(self):
-    self.f = Flatten()
+    #self.f = Flatten()
+    pass
 
   def test_1(self):
     ''' north west gnomon meander 
@@ -121,6 +127,14 @@ class Test(unittest.TestCase):
       xy = s.boundary.xy
       self.assertEqual(xy[0].tolist(), expect[d]['x'])
       self.assertEqual(xy[1].tolist(), expect[d]['y'])
+
+  def test_a(self):
+    fig, ax = plt.subplots()
+    dim = (0, 6, 6, 12, 2.0, 8.0, 4.0, 10.0, 8.0, 8.0, 10.0, 10.0)
+    g   = Gnomon()
+    c   = g.coords(dim, {'facing': 'north'})
+    shapely.plotting.plot_polygon(Polygon(c), ax=ax, add_points=False)
+    plt.savefig(f"tmp/t_meander_a.svg", format="svg")
 
 '''
 the

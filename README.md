@@ -125,7 +125,7 @@ Three tables in Cell
 - ~'all' from guide calls Spiral not Meander~
 
 Matplot SVG has limitations
-- stroke is ignored
+- stroke is ignored, sent as edgecolour ???
 - group order is ignored e.g. koto has 2 invisible squares in box view
 
 New YAML should also remove support for small lines (use square instead)

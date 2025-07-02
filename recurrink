@@ -40,9 +40,11 @@ if MODEL == 'minkscape':     # read minkscape
   celldata['a']['facing'] = 'north'
   celldata['a']['fill'] = '#AA0000'
 else:                 # read test case 1-10 
-  celldata = v.read(digest=tests[MODEL], output=dict())
-  b = BlockData(MODEL)
-  positions = b.readPositions(MODEL)
+  celldata = tf.read(MODEL, output=dict())
+  #v.validate(cells, ver=ver)
+  # celldata = v.read(digest=tests[MODEL], output=dict())
+  bd = BlockData(MODEL)
+  positions = bd.readPositions(MODEL)
 
 if CLONE and MODEL != 'minkscape':         # write test case
   friendly_name = [
