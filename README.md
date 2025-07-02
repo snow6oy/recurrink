@@ -84,10 +84,23 @@ TODO evolve the data model
 2. to extend the model to support flattening
 
 ```
-model.svg            # output
-block             
-cell.meander         # 
-cell.shape.rectangle #
+gavin@macarol:~/code/recurrink$ find cell block model -name "*.py"
+
+cell.data
+cell.layer
+cell.shape.rectangle
+cell.shape.gnomon
+
+block.styles
+block.meander
+block.tmpfile
+block.make
+block.data
+
+model.svg
+model.db
+model.data
+
 ```
 Three tables in Cell
 - cells c.ext int0 int1
@@ -96,8 +109,6 @@ Three tables in Cell
 
 
 ### TODO
-- titles for matplotlib
-- 'all' from guide calls Spiral not Meander
 - add new flatten shapes to codebase
 - add Inkscape palettes
 - Gnomon should support sizes: small and medium
@@ -107,16 +118,20 @@ Three tables in Cell
 - mock toggle using code and run cflat tests
 - resolve flatten errors by using Don Cooke theory and check results
 - produce a YAML from Flatten and stop toggling
+- ~titles for matplotlib~
 - ~run cflat test suite~
 - ~on dev branch install scripts/not_bft.py as ./recurrink~
 - ~add meander for rectangle~
+- ~'all' from guide calls Spiral not Meander~
 
 Matplot SVG has limitations
 - stroke is ignored
-- group order is ignored e.g. koto has 2 invisible squares in polygon view
+- group order is ignored e.g. koto has 2 invisible squares in box view
 
 New YAML should also remove support for small lines (use square instead)
 
+Using kwargs send set_alpha based on fill_opacity
+https://matplotlib.org/devdocs/api/_as_gen/matplotlib.artist.Artist.set_alpha.html#matplotlib.artist.Artist.set_alpha
 
 
 

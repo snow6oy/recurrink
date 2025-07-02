@@ -56,18 +56,20 @@ class Make:
         elif z == 0: lring = c.exterior            # bg
 
         if self.VERBOSE:
-          print(f"{z} {pos} {len(c.interiors)} {self.direction[pos]}")
+          print(f"{z} {pos} {len(c.interiors)} {self.guide[pos]}")
 
-        m     = Meander(Polygon(lring))
-        guide = self.guide[pos][z]
-        shape = m.pad() if padding else m.shape
-        gline = m.guidelines(shape, guide)  # ('EB', 'ET'))
-        pt, e = m.collectPoints(shape, gline)
-
-        ''' replace the guide tuple with a Shapely.LineString
+        m      = Meander(Polygon(lring))
+        guide  = self.guide[pos][z]
+        if guide == 'spiral':
+          linestr = LineString(m.spiral(self.CLEN, pos))
+        else:
+          shape  = m.pad() if padding else m.shape
+          gline  = m.guidelines(shape, guide)  # ('EB', 'ET'))
+          points = m.collectPoints(shape, gline)
+          linestr = LineString(m.makeStripes(points))
+        ''' replace the guide with actual Shapely.LineString
         '''
-        if e: raise ValueError(e)
-        else: self.guide[pos][z] = LineString(m.makeStripes(pt))
+        self.guide[pos][z] = linestr
 
   def setBlocksize(self, positions):
     ''' extract blocksize and set for downstream functions

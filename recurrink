@@ -60,10 +60,10 @@ palette {friendly_name[ver]}""")
 elif LINE:       # output to idraw
   block.walk(positions, celldata)
   block.meander(padding=False)
-  svg.drawLine(block, svgfile=f'tmp/{MODEL}-l.svg')
+  svg.drawLine(block, svgfile=f'_.{MODEL}._.line')
 else: 
   block.walk(positions, celldata)
-  svg.draw(block, svgfile=f'tmp/{MODEL}-p.svg')
+  svg.draw(block, svgfile=f'_.{MODEL}._.box')
 
 '''
 the

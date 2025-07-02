@@ -33,8 +33,14 @@ class Svg:
           edgecolor=b.style.stroke[pos][z], 
           linewidth=b.style.stroke_width[pos][z]
         )
+
+    t_class, t_name = self.fileName(svgfile)
+    plt.title(f"{t_class} {t_name}")
+    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
+    '''
     svgfile = svgfile if svgfile else "tmp/not_bft.svg"
     plt.savefig(svgfile, format="svg")
+    '''
 
   def drawLine(self, block, svgfile):
     ''' preview a plotfile
@@ -51,8 +57,18 @@ class Svg:
           linestr, ax=ax, add_points=self.ADD_POINTS,
           color=block.style.stroke[pos][z]
         )
-    svgfile = svgfile if svgfile else "tmp/not_bft.svg"
-    plt.savefig(svgfile, format="svg")
+
+    t_class, t_name = self.fileName(svgfile)
+    plt.title(f"{t_class} {t_name}")
+    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
+
+  def fileName(self, fn):
+    ''' hijack unittest to auto-gen file names
+
+    example output of unittest self.id() is t.meander.Test.test_o
+    '''
+    tid = fn.split('.')  # unittest self.id()
+    return tid[1], tid[3]
 
 '''
 the

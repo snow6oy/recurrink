@@ -59,7 +59,7 @@ class Rectangle:
         TODO are the NSEW aliases used?
     '''
     control = {
-        'all': ('EB', 'ET'),  # TODO change to spiral
+        'all': ('spiral'),  # TODO EB ET
           'N': ('EB', 'ET'),
       'north': ('EB', 'ET'),
           'S': ('EB', 'ET'),
