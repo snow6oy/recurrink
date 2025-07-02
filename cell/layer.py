@@ -12,12 +12,8 @@ class Layer:
     self.pos       = pos      # logical position in block
 
   def background(self): 
-    x = self.pos[0] * self.clen
-    y = self.pos[1] * self.clen
-    w = x + self.clen # a square has same width and height 
-    h = y + self.clen
-    self.bft.append(((x, y), (x, h), (w, h), (w, y)))
-    # self.direction.append('all') TODO map all to spiral
+    X, Y, W, H, *a = self.dimension(self.pos[0], self.pos[1], self.clen)
+    self.bft.append(((X, Y), (X, H), (W, H), (W, Y)))
     self.direction.append(('EB','ET'))
 
   def foreground(self, **kwargs):
@@ -29,8 +25,9 @@ class Layer:
       'square': Rectangle(name),
       'gnomon': Gnomon()
     }
-    shape     = shapes[name]
-    coords    = shape.coords(self.pos[0], self.pos[1], self.clen, kwargs)
+    dim     = self.dimension(self.pos[0], self.pos[1], self.clen)
+    shape   = shapes[name]
+    coords  = shape.coords(dim, kwargs)
     if len(coords): self.bft.append(coords)
     self.direction.append(shape.guide(kwargs['facing']))
 
@@ -40,6 +37,41 @@ class Layer:
     else:             # must be two right ?
       p = Polygon(self.bft[0], holes=[self.bft[1]])
     return p
+
+  def dimension(self, x, y, clen):
+    ''' set dimensions for all shapes 
+
+    usage examples
+
+    1. unpack everything
+    X, Y, W, H, a, b, c, d, A, B, C, D = dim
+
+    2. unpack for medium sized shape
+    X, Y, W, H, *a = dim
+       
+        o---------o D
+        | +.....+ | H
+        | . x x . | d
+        | . x x . | b
+        | +.....+ | Y
+        o---------o B 
+        A X a c W C
+    '''
+    X = x * clen              # medium
+    Y = y * clen
+    W = X + clen
+    H = Y + clen
+    a = X + (clen / 3)        # small
+    b = Y + (clen / 3)
+    c = W - (clen / 3)
+    d = H - (clen / 3)
+    A = X + (clen / 3) * 4    # large
+    B = X + (clen / 3) * 4
+    C = Y + (clen / 3) * 2
+    D = Y + (clen / 3) * 2
+
+    return tuple([X, Y, W, H, a, b, c, d, A, B, C, D])
+
 '''
 the
 end

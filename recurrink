@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 from model import Svg
 from block import Make, Styles, Views, TmpFile, BlockData
 from config import *
@@ -8,53 +9,61 @@ svg    = Svg()
 block  = Make()
 v      = Views()
 tf     = TmpFile()
-model  = 'buleria'
 tests  = {
   'minkscape': None,
-    'buleria':'7e731bfc1863c186616d2b3de09a9b6b'
-9 minkscape
-8 7e731bfc1863c186616d2b3de09a9b6b buleria
-7 4be0d482b6a2806857b017bf3c5047aa koto
-6 47698c060ba647fee5bebc3548644b88 sonny 
-5 3409bc82f3b0bfa90fb29fd23cb51abc eflat
-4 e2703e9ea6733f9c47458bcf5afb8b45 waltz 
-3 a2397e60976e01cba87a1e9e5467df2d bossa
-2 6b3779708184e346d31c0c3a6de3d885 afroclave
-1 f049e4fe093d87f09e57e259334bc6e2 pitch
-0 b6b1998b57aa1c31e5c4ff6e74fd5a58 mambo
+    'buleria': '7e731bfc1863c186616d2b3de09a9b6b',
+       'koto': '4be0d482b6a2806857b017bf3c5047aa',
+      'sonny': '47698c060ba647fee5bebc3548644b88',
+      'eflat': '3409bc82f3b0bfa90fb29fd23cb51abc',
+      'waltz': 'e2703e9ea6733f9c47458bcf5afb8b45',
+      'bossa': 'a2397e60976e01cba87a1e9e5467df2d',
+  'afroclave': '6b3779708184e346d31c0c3a6de3d885',
+      'pitch': 'f049e4fe093d87f09e57e259334bc6e2',
+      'mambo': 'b6b1998b57aa1c31e5c4ff6e74fd5a58'
 }
 
-if model == 'minkscape':     # read minkscape
+if len(sys.argv) == 2: 
+  MODEL = sys.argv[1]
+  CLONE = True 
+  LINE  = False
+elif len(sys.argv) == 3:
+  MODEL = sys.argv[1]
+  CLONE = False
+  LINE  = eval(sys.argv[2])
+else:
+  raise ValueError(f"{sys.argv=} unexpected")
+
+if MODEL == 'minkscape':     # read minkscape
   celldata  = config.cells
   positions = config.positions
   celldata['a']['shape'] = 'gnomon'
-  celldata['a']['facing'] = 'south'
+  celldata['a']['facing'] = 'north'
+  celldata['a']['fill'] = '#AA0000'
 else:                 # read test case 1-10 
-  celldata = v.read(digest=tests[model], output=dict())
-  b = BlockData(model)
-  positions = b.readPositions(model)
+  celldata = v.read(digest=tests[MODEL], output=dict())
+  b = BlockData(MODEL)
+  positions = b.readPositions(MODEL)
 
-if False:         # write test case
+if CLONE and MODEL != 'minkscape':         # write test case
   friendly_name = [
     'universal','colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar'
   ]
-  celldata = v.read(digest=tests[model], output=list())
-  model, author, scale, ver = v.readMeta(digest=tests[model])
-  palette = friendly_name[ver]
-  tf.conf(model, palette) # conf state is a symlink
-  tf.write(model, celldata)
+  celldata = v.read(digest=tests[MODEL], output=list())
+  ver      = v.readMeta(digest=tests[MODEL])[3]
+  palette  = friendly_name[ver]
+  tf.conf(MODEL, palette) # conf state is a symlink
+  tf.write(MODEL, celldata)
   print(f"""
-cloning {digest} with {len(celldata)} cells
-model {model}
-palette {friendly_name[ver]}
-scale {scale}""")
-
-block.walk(positions, celldata)
-
-if True:       # output to idraw
+cloning {tests[MODEL]} with {len(celldata)} cells
+model {MODEL}
+palette {friendly_name[ver]}""")
+elif LINE:       # output to idraw
+  block.walk(positions, celldata)
   block.meander(padding=False)
-  svg.drawLine(block, svgfile=f'tmp/{model}-l.svg')
-else: svg.draw(block, svgfile=f'tmp/{model}-p.svg')
+  svg.drawLine(block, svgfile=f'tmp/{MODEL}-l.svg')
+else: 
+  block.walk(positions, celldata)
+  svg.draw(block, svgfile=f'tmp/{MODEL}-p.svg')
 
 '''
 the

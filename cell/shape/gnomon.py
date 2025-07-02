@@ -10,23 +10,17 @@ class Gnomon:
   def __init__(self):
     self.name = 'gnomon'
 
-  def coords(self, x, y, clen, kwargs):
-    ''' define the input to create Shapely Polygon
+  def coords(self, dim, kwargs):
+    ''' define the input so Shapely Polygon can create an L shape
     '''
-    X = x * clen
-    Y = y * clen
-    W = X + clen
-    H = Y + clen
-    a = Y + (clen / 3)  # x
-    b = W - (clen / 3)  
-    c = H - (clen / 3)  # h
-    d = X + (clen / 3)
-    facing = kwargs['facing']
+    X, Y, W, H, a, b, c, d, *A = dim
+
+    facing    = kwargs['facing']
     direction = {
-      'north': [(X, Y), (X, H), (W, H), (W, c), (a, c), (a, Y)],
-       'west': [(X, Y), (X, H), (a, H), (a, d), (W, d), (W, H)],
-      'south': [(X, Y), (X, d), (b, d), (b, H), (W, H), (W, Y)],
-       'east': [(X, c), (X, H), (W, H), (W, Y), (b, Y), (b, c)]
+      'north': [(X, Y), (X, H), (W, H), (W, d), (b, d), (b, Y)],
+       'west': [(X, Y), (X, H), (b, H), (b, a), (W, a), (W, H)],
+      'south': [(X, Y), (X, a), (c, a), (c, H), (W, H), (W, Y)],
+       'east': [(X, d), (X, H), (W, H), (W, Y), (c, Y), (c, d)]
     }
     if facing in direction: return direction[facing]
     else: raise IndexError(f"gnomon at sea {facing}")

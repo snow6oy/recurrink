@@ -5,41 +5,38 @@ class Rectangle:
   def __init__(self, name):
     self.name = name
 
-  def coords(self, x, y, clen, kwargs):
+  def coords(self, dim, kwargs):
+    ''' calculate bounding coords for a Shapely polygon
+    '''
+    X, Y, W, H, a, b, c, d, A, B, C, D = dim
+
     shape = kwargs['shape']
     size  = kwargs['size']
     facing= kwargs['facing']
     sizes = { 
       'square': {
-        'small': [
-          x * clen + clen / 3,
-          y * clen + clen / 3,
-          x * clen + (clen / 3) * 2,
-          y * clen + (clen / 3) * 2
-        ],
-        'medium': [
-          x * clen,
-          y * clen,
-          x * clen + clen,
-          y * clen + clen
-        ]
+        'small': [a, b, c, d],
+       'medium': [X, Y, W, H],
+        'large': [A, B, C, D]
       },
       'line': {
         'medium': {
-          'north': [
-            x * clen + clen / 3,
-            y * clen,
-            x * clen + (clen / 3) * 2,
-            y * clen + clen
-          ]
+          'north': [a, Y, c, H],
+          'south': [a, Y, c, H],
+           'east': [X, b, W, d],
+           'west': [X, b, W, d]
+        },
+        'small': {  # TODO same as small square so deprecate in the interface
+          'north': [a, b, c, d],
+          'south': [a, b, c, d],
+           'east': [a, b, c, d],
+           'west': [a, b, c, d]
         },
         'large': {
-          'east': [  # TODO
-            x * clen - clen / 3,
-            y * clen + clen / 3,
-            x * clen + (clen / 3) * 4,
-            y * clen + (clen / 3) * 2
-          ]
+         'north': [a, B, c, D],
+         'south': [a, B, c, D],
+          'west': [A, b, C, d],
+          'east': [A, b, C, d]
         }
       }
     }
@@ -58,18 +55,25 @@ class Rectangle:
 
   def guide(self, direction):
     ''' expand facing to a pair of guidelines for meander
+
+        TODO are the NSEW aliases used?
     '''
     control = {
-      'N': ('EB', 'ET'),
+        'all': ('EB', 'ET'),  # TODO change to spiral
+          'N': ('EB', 'ET'),
       'north': ('EB', 'ET'),
-      'all': ('EB', 'ET'),
-      'S': ('EB', 'ET'),
-      'E': ('NL', 'NR'),
-      'east': ('NL', 'NR'),
-      'W': ('NL', 'NR')
+          'S': ('EB', 'ET'),
+      'south': ('EB', 'ET'),
+          'E': ('NL', 'NR'),
+       'east': ('NL', 'NR'),
+          'W': ('NL', 'NR'),
+       'west': ('NL', 'NR'),
     }
     if direction in control: return control[direction]
     else: # abandon if there are no guidelines defined
-      raise KeyError(f'all at sea > {direction=} {self.label=} not found')
+      raise KeyError(f'all at sea > {direction=} {self.name=} not found')
 
-
+'''
+the
+end
+'''
