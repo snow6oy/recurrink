@@ -17,3 +17,4 @@ __pycache__/*
 */__pycache__/*
 t/__init__.py
 t/zz/*
+cell/shape
