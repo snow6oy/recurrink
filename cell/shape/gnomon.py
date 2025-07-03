@@ -15,27 +15,38 @@ class Gnomon:
     '''
     X, Y, W, H, a, b, c, d, *A = dim
 
-    facing    = kwargs['facing']
-    direction = {
-      'north': [(X, Y), (X, H), (W, H), (W, d), (a, d), (a, Y)],
-       'west': [(X, Y), (X, H), (a, H), (a, b), (W, b), (W, Y)],
-      'south': [(X, Y), (X, b), (c, b), (c, H), (W, H), (W, Y)],
-       'east': [(X, d), (X, H), (W, H), (W, Y), (c, Y), (c, d)] 
+    facing  = kwargs['facing']
+    size    = kwargs['size']
+    sizes   = {
+      'medium': {
+          'NW': [(X, Y), (X, H), (W, H), (W, d), (a, d), (a, Y)],
+          'SW': [(X, Y), (X, H), (a, H), (a, b), (W, b), (W, Y)],
+          'SE': [(X, Y), (X, b), (c, b), (c, H), (W, H), (W, Y)],
+          'NE': [(X, d), (X, H), (W, H), (W, Y), (c, Y), (c, d)] 
+       },
+       'small': {
+          'NW': [(X, b), (X, H), (c, H), (c, d), (a, d), (a, b)],
+          'SW': [(X, Y), (X, d), (a, d), (a, b), (c, b), (c, Y)],
+          'SE': [(a, Y), (a, b), (c, b), (c, d), (W, d), (W, Y)],
+          'NE': [(a, d), (a, H), (W, H), (W, b), (c, b), (c, d)] 
+       }
     }
-    if facing in direction: return direction[facing]
-    else: raise IndexError(f"gnomon at sea {facing}")
+    if size in sizes and facing in sizes[size]: return sizes[size][facing]
+    else: raise IndexError(f"gnomon at sea {size} {facing}")
 
-  def guide(self, direction):
+  def guide(self, facing):
     ''' see Meander to check the codes 
     '''
     control = {
-      'north': ('WB', 'NW', 'NR'),
-      'south': ('SL', 'SE', 'ET'),
-       'east': ('NL', 'NE', 'SR'),
-       'west': ('WT', 'SW', 'EB')
+      'NW': ('WB', 'NW', 'NR'),
+      'SE': ('SL', 'SE', 'ET')
     }
-    if direction in control: return control[direction]
-    else: raise KeyError(f'all at sea > {direction} <')
+    ''' these guidelines throw exception in collectPoints
+      'NE': ('NL', 'NE', 'SR'),
+      'SW': ('WT', 'SW', 'EB')
+    '''
+    if facing in control: return control[facing]
+    else: raise KeyError(f'all at sea > {facing} <')
 
 '''
 the

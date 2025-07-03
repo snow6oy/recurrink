@@ -110,9 +110,10 @@ Three tables in Cell
 
 ### TODO
 - add new flatten shapes to codebase
+- ~Gnomon should support sizes: small and medium~
 - add Inkscape palettes
-- Gnomon should support sizes: small and medium
 - validation should be done by Shape
+- CLEN is always 6 !
 - implement new YAML by extending TmpFile
 - add flatten to not bft
 - mock toggle using code and run cflat tests
@@ -131,7 +132,7 @@ Matplot SVG has limitations
 New YAML should also remove support for small lines (use square instead)
 
 Using kwargs send set_alpha based on fill_opacity
-https://matplotlib.org/devdocs/api/_as_gen/matplotlib.artist.Artist.set_alpha.html#matplotlib.artist.Artist.set_alpha
+[](https://matplotlib.org/devdocs/api/_as_gen/matplotlib.artist.Artist.set_alpha.html#matplotlib.artist.Artist.set_alpha)
 
 
 

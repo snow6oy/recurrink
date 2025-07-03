@@ -129,11 +129,15 @@ class Test(unittest.TestCase):
       self.assertEqual(xy[1].tolist(), expect[d]['y'])
 
   def test_a(self):
+    ''' convert cell dimension for pos n to coords for Shapely.Polygon
+    '''
     fig, ax = plt.subplots()
     dim = (0, 6, 6, 12, 2.0, 8.0, 4.0, 10.0, 8.0, 8.0, 10.0, 10.0)
     g   = Gnomon()
-    c   = g.coords(dim, {'facing': 'north'})
-    shapely.plotting.plot_polygon(Polygon(c), ax=ax, add_points=False)
+    ne  = g.coords(dim, {'facing': 'NE', 'size':'small' })
+    sw  = g.coords(dim, {'facing': 'SW', 'size':'medium' })
+    shapely.plotting.plot_polygon(Polygon(ne), ax=ax) #, add_points=False)
+    shapely.plotting.plot_polygon(Polygon(sw), ax=ax) #, add_points=False)
     plt.savefig(f"tmp/t_meander_a.svg", format="svg")
 
 '''
