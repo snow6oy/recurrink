@@ -1,57 +1,35 @@
 import unittest
+from shapely.geometry import Polygon
+from cell.shape import Parabola
+from model import SvgWriter
+'''
 import pprint
 from flatten import Rectangle, Flatten, Parabola
 pp = pprint.PrettyPrinter(indent=2)
-
+'''
 ############
 # Parabola #
 ############
 
 class Test(unittest.TestCase):
+
   def setUp(self):
-    self.f = Flatten()
+    self.p       = Parabola()
+    self.writer  = SvgWriter()
+    self.VERBOSE = True
 
-  def test_0(self):
-    ''' overlay test: count rectangles embedded square
-        also: does shapely return the expected boundary for our rectangle
+  def test_a(self):
+    ''' start simple
     '''
-    done   = Rectangle(x=1, y=1, w=4, h=4)
-    seeker = Rectangle(x=2, y=2, w=2, h=4)
-    shapes = self.f.overlayTwoCells(seeker, done)
-    done.plotPoints(seeker=seeker, fn='parabola_0')
-    self.assertEqual(shapes[0].name, 'P')
+    self.assertEqual(self.p.name, 'parabola')
 
-  def test_1(self):
-    ''' overlay test: rectangles make parabolas
+  def test_b(self):
+    ''' south parabola contructs ok with cell length 15
     '''
-    expect = 3
-    expect_d = ['N', 'E', 'S', 'W']
-    done = Rectangle(x=2, y=2, w=3, h=3)
-    seekers = [
-      Rectangle(x=3, y=0, w=1, h=3),
-      Rectangle(x=0, y=3, w=3, h=1),
-      Rectangle(x=3, y=4, w=1, h=3),
-      Rectangle(x=4, y=3, w=3, h=1)
-    ]
-    for i, s in enumerate(seekers):
-      shapes = self.f.overlayTwoCells(s, done)
-      d = shapes[0].direction
-      self.assertEqual(expect_d[i], d)
-    done.plotPoints(seeker=seekers[2], fn='parabola_1')
-
-  def test_2(self):
-    ''' parabola south after split
-    '''
-    expect = ([1,1,3,3,5,5,7,7,1], [1,4,4,2,2,4,4,1,1])
-    done   = Rectangle(x=3, y=2, w=2, h=3)
-    seeker = Rectangle(x=1, y=1, w=6, h=3)
-    shapes = self.f.overlayTwoCells(seeker, done)
-    done.plotPoints(seeker=shapes[0], fn='parabola_2')
-    xy = shapes[0].boundary.xy
-    #pp.pprint(expect)
-    #pp.pprint(xy[0].tolist())
-    self.assertEqual(xy[0].tolist(), expect[0])
-    self.assertEqual(xy[1].tolist(), expect[1])
+    kwargs = {'facing': 'south', 'size': 'medium'}
+    dim    = (0, 0, 14, 14, 5, 5, 10, 10)
+    coords = self.p.coords(dim, kwargs)
+    if self.VERBOSE: self.writer.plot(Polygon(coords), self.id())
 
   def test_3(self):
     ''' west

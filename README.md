@@ -110,15 +110,16 @@ Three tables in Cell
 
 ### TODO
 - add new flatten shapes to codebase
-- ~Gnomon should support sizes: small and medium~
 - add Inkscape palettes
-- validation should be done by Shape
+- All validation should be done by Shape
 - CLEN is always 6 !
 - implement new YAML by extending TmpFile
 - add flatten to not bft
 - mock toggle using code and run cflat tests
 - resolve flatten errors by using Don Cooke theory and check results
 - produce a YAML from Flatten and stop toggling
+- Gnomon defect when SW and NE guides. Try anti-clockwise?
+- ~Gnomon should support sizes: small and medium~
 - ~titles for matplotlib~
 - ~run cflat test suite~
 - ~on dev branch install scripts/not_bft.py as ./recurrink~

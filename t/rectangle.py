@@ -4,20 +4,49 @@
 import unittest
 import numpy as np
 import pprint
-from flatten import Rectangle, Flatten
+#from flatten import Rectangle, Flatten
+
+from shapely.geometry import Polygon
+from cell.shape import Rectangle
+from model import SvgWriter
+from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
+  ''' self.f = Flatten()
+    X, Y, W, H, a, b, c, d, A, B, C, D
+  '''
   def setUp(self):
-    self.f = Flatten()
+    self.dim = 0, 0, 6, 6, 2, 2, 4, 4, -2, -2, 8, 8
+    self.VERBOSE = True
+    self.writer  = SvgWriter()
 
-  def test_1(self):
+  def test_a(self):
     ''' does shapely return the expected boundary for our rectangle
     '''
-    expect = np.array([[2, 2, 4, 4, 2], [2, 4, 4, 2, 2]])
-    r = Rectangle(x=2, y=2, w=2, h=2)
-    xy = np.array(r.xyPoints())
-    self.assertEqual(xy.all(), expect.all())
+    expect = ((2, 2), (2, 4), (4, 4), (4, 2))
+    r      = Rectangle('square') # x=2, y=2, w=2, h=2)
+    small  = r.coords(self.dim, config.cells['c'])
+    [self.assertEqual(c, expect[i]) for i, c in enumerate(small)]
+    medium = r.coords(self.dim, config.cells['a'])
+    polygn = Polygon(medium, holes=[small])
+    if self.VERBOSE: self.writer.plot(polygn, self.id())
+
+  def test_b(self):
+    ''' edges are small lines aligned to the edge
+        they are designed to combine with gnomon
+        gnomon + edge = parabola
+    '''
+    cell = {
+      'shape':'edge', 'size':'small', 'facing':'south',
+      'bg':'#000', 'top':False, 'fill':'#F00'
+    }
+    e  = Rectangle('edge')
+    c1 = e.coords(self.dim, config.cells['a'])
+    c2 = e.coords(self.dim, cell)
+    p  = Polygon(c1, holes=[c2])
+    if self.VERBOSE: self.writer.plot(p, self.id())
+    
 
   def test_2(self):
     ''' compare western edges: expect seeker max x to be greater than done max x

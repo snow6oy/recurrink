@@ -38,6 +38,14 @@ class Rectangle:
           'west': [A, b, C, d],
           'east': [A, b, C, d]
         }
+      },
+      'edge': {
+        'small': {
+          'north': [X, d, c, H],
+          'south': [a, Y, W, b],
+           'east': [c, b, W, H],
+           'west': [X, Y, a, d]
+        }
       }
     }
     if shape in sizes and size in sizes[shape]:
@@ -53,7 +61,7 @@ class Rectangle:
     if self.VERBOSE: print(f'{shape=} {size=} {facing=} {x} {y} {w} {h}')
     return ((x, y), (x, h), (w, h), (w, y))
 
-  def guide(self, direction):
+  def __guide(self, direction):
     ''' expand facing to a pair of guidelines for meander
 
         TODO are the NSEW aliases used?
@@ -68,6 +76,20 @@ class Rectangle:
        'east': ('NL', 'NR'),
           'W': ('NL', 'NR'),
        'west': ('NL', 'NR'),
+    }
+    if direction in control: return control[direction]
+    else: # abandon if there are no guidelines defined
+      raise KeyError(f'all at sea > {direction=} {self.name=} not found')
+
+  def guide(self, direction):
+    ''' expand facing to a pair of guidelines for meander
+    '''
+    control = {
+        'all': ('spiral', None), 
+      'north': ('guided', 'EB', 'ET'),
+      'south': ('guided', 'EB', 'ET'),
+       'east': ('guided', 'NL', 'NR'),
+       'west': ('guided', 'NL', 'NR'),
     }
     if direction in control: return control[direction]
     else: # abandon if there are no guidelines defined

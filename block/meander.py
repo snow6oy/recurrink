@@ -196,23 +196,22 @@ class Meander(Spiral):
   VERBOSE = False
 
   def __init__(self, polygon):
-    if isinstance(polygon, list):
-      raise TypeError(polygon)
-    elif polygon.is_valid:
-      precise = set_precision(polygon, grid_size=1)
-      self.shape = precise #  Polygon(polygon) 
+    if polygon.geom_type == 'Polygon' and polygon.is_valid:
+      precise    = set_precision(polygon, grid_size=1)
+      self.shape = precise # whole numbers only
+    else:
+      raise TypeError(f"{polygon} is invalid")
 
-  # TODO migrate consumers to Geomaker().padBlock
-  # Migration on hold due to testing issue
   def pad(self):
     ''' make a gap between cells by adding padding with Shapely.buffer
         a small Polygon may end up empty. Then silently return the original
         Shapely.set_precision did not help
     '''
-    b = self.shape.buffer(-1, single_sided=True)
-    return self.shape if b.is_empty else b
+    buf = self.shape.buffer(-1, single_sided=True)
+    pad = set_precision(buf, grid_size=1)
+    self.shape = self.shape if pad.is_empty else pad
 
-  def guidelines(self, padme, direction):
+  def guidelines(self, direction, shape=None):
     '''
     NW  N  NE      WT ET
       ↖ ↑ ↗     NL +---+ NR
@@ -220,6 +219,7 @@ class Meander(Spiral):
       ↙ ↓ ↘     SL +---+ SR
     SW  S  SE      WB EB
     '''
+    padme      = shape if shape else self.shape
     x, y, w, h = padme.bounds
     '''
     ibounds    = [int(x) for x in padme.bounds] # convert to int to match grid
@@ -245,13 +245,14 @@ class Meander(Spiral):
     [mls.append(guideline[d]) for d in direction]
     return MultiLineString(mls) 
 
-  def collectPoints(self, padme, guidelines):
-    ''' collect the points intersecting the padded version of shape
+  def collectPoints(self, guidelines, shape=None):
+    ''' collect the points intersecting the shape
         gridwalk the bounding box and collect Points() touching the guidelines
         grouped by the guidelines
     '''
-    points     = []
-    same       = 0
+    padme   = shape if shape else self.shape
+    points  = []
+    same    = 0
     for i, gl in enumerate(list(guidelines.geoms)):
       points.append([]) # template
       start_x, stop_x, step_x, start_y, stop_y, step_y = self.orderGrid(gl)
@@ -266,7 +267,8 @@ class Meander(Spiral):
       '''
       if i > 0 and len(points[i]) is not same:
         prev = i-1
-        raise IndexError(f"""
+        '''
+        raise Warning(f"""
 {i=} {len(points[i])} points is not the same {same}
 this guideline
 {list(guidelines.geoms)[prev]}
@@ -275,6 +277,7 @@ prev guideline
 {list(guidelines.geoms)[i]}
 {points[i]}
 """)
+        '''
       same = len(points[i])
     return points
 
@@ -350,7 +353,7 @@ line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
       same = len(points[i])
     return points, err
 
-  def setClock(self, width, height):
+  def __setClock(self, width, height):
     ''' meandering an odd number of stripes requires 
      direction order to be clockwise
      even stripes must be anti-clockwise

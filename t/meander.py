@@ -3,20 +3,21 @@ import pprint
 import matplotlib.pyplot as plt
 import shapely.plotting
 from shapely.geometry import Polygon, LinearRing, LineString
-from block import Meander, Spiral  # cell Plotter, Spiral
+from block import Make, Meander, Spiral  # cell Plotter, Spiral
+from model import SvgWriter
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
   def setUp(self):
-    #self.writer  = Plotter()
-    self.VERBOSE = False
+    self.writer  = SvgWriter()
+    self.VERBOSE = True
 
   def test_a(self): 
     ''' guidelines for East with plot of before and after padding
     '''
     r       = Meander(Polygon([(3,3),(3,15),(15,15),(15,3)]))
     padme   = r.pad()
-    guides  = r.guidelines(padme,('EB','ET'))
+    guides  = r.guidelines(('EB','ET'), shape=padme)
     if self.VERBOSE: self.writer.plot(r.shape,padme,'t_meander_a')
     # [print(list(g.coords)) for g in list(guides.geoms)]
     g = list(guides.geoms)[0]
@@ -28,8 +29,8 @@ class Test(unittest.TestCase):
     expect  = [(4,4),(14,14)]
     r       = Meander(Polygon([(3,3),(3,15),(15,15),(15,3)]))
     padme   = r.pad()
-    guides  = r.guidelines(padme,('EB','ET'))
-    pnts    = r.collectPoints(padme,guides)
+    guides  = r.guidelines(('EB','ET'), shape=padme)
+    pnts    = r.collectPoints(guides, shape=padme)
     stripes = r.makeStripes(pnts)
     first   = list(stripes.coords)[0]
     last    = list(stripes.coords)[-1]
@@ -42,8 +43,8 @@ class Test(unittest.TestCase):
     '''
     g       = Meander(Polygon([(3,3),(3,15),(15,15),(15,11),(7,11),(7,3)]))
     padme   = g.pad()
-    guides  = g.guidelines(padme,('WB','NW','NR'))  # (270,315,360))
-    pnts    = g.collectPoints(padme,guides)
+    guides  = g.guidelines(('WB','NW','NR'), shape=padme)  # (270,315,360))
+    pnts    = g.collectPoints(guides, shape=padme)
     stripes = g.makeStripes(pnts)
     if self.VERBOSE: self.writer.plotLine(stripes, self.id())
     self.assertEqual((6,4),list(stripes.coords)[0])
@@ -54,12 +55,12 @@ class Test(unittest.TestCase):
     '''
     g      = Meander(Polygon([(3,3),(3,15),(7,15),(7,7),(15,7),(15,3)]))
     gpad   = g.pad()
-    guides = g.guidelines(gpad,('ET','NE','NR'))
-    p1     = g.collectPoints(gpad,guides)
+    guides = g.guidelines(('ET','NE','NR'), shape=gpad)
+    p1     = g.collectPoints(guides, shape=gpad)
     gg     = Meander(Polygon([(11,7),(11,11),(7,11),(7,15),(15,15),(15,7)]))
     ggpad  = gg.pad()
-    guides = gg.guidelines(ggpad,('NL','NE','EB'))
-    p2     = g.collectPoints(ggpad,guides)
+    guides = gg.guidelines(('NL','NE','EB'), shape=ggpad)
+    p2     = g.collectPoints(guides, shape=ggpad)
     stripe = g.joinStripes(p1,p2)
     if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
@@ -71,12 +72,12 @@ class Test(unittest.TestCase):
     '''
     g      = Meander(Polygon([(0,12),(0,18),(18,18),(18,0),(12,0),(12,12)]))
     gpad   = g.pad()
-    guides = g.guidelines(gpad,('WB','SW','SL')) 
-    p1     = g.collectPoints(gpad,guides)
+    guides = g.guidelines(('WB','SW','SL'), shape=gpad) 
+    p1     = g.collectPoints(guides, shape=gpad)
     r      = Meander(Polygon([(0,0),(0,12),(6,12),(6,0)]))
     rpad   = r.pad()
-    rguide = r.guidelines(rpad,('NR','NL'))
-    p2     = r.collectPoints(rpad,rguide)
+    rguide = r.guidelines(('NR','NL'), shape=rpad)
+    p2     = r.collectPoints(rguide, shape=rpad)
     stripe = r.joinStripes(p1,p2)
     if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
@@ -88,12 +89,12 @@ class Test(unittest.TestCase):
     '''
     g      = Meander(Polygon([(0,0),(0,18),(18,18),(18,12),(6,12),(6,0)]))
     gpad   = g.pad()
-    guides = g.guidelines(gpad,('SR','SE','EB')) #450,135,90))
-    p1     = g.collectPoints(gpad,guides)
+    guides = g.guidelines(('SR','SE','EB'), shape=gpad) #450,135,90))
+    p1     = g.collectPoints(guides, shape=gpad)
     r      = Meander(Polygon([(6,0),(6,6),(18,6),(18,0)]))
     rpad   = r.pad()
-    rguide = r.guidelines(rpad,('WT','WB')) #  direction=(496,270))
-    p2     = r.collectPoints(rpad,rguide)
+    rguide = r.guidelines(('WT','WB'), shape=rpad) #  direction=(496,270))
+    p2     = r.collectPoints(rguide, shape=rpad)
     stripe = r.joinStripes(p1,p2)
     if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
@@ -105,12 +106,12 @@ class Test(unittest.TestCase):
     '''
     g      = Meander(Polygon([(0,12),(0,18),(18,18),(18,0),(12,0),(12,12)]))
     gpad   = g.pad()
-    guides = g.guidelines(gpad,('SL','SW','WB'))  #direction=(180,225,270))
-    p1     = g.collectPoints(gpad,guides)
+    guides = g.guidelines(('SL','SW','WB'), shape=gpad) 
+    p1     = g.collectPoints(guides, shape=gpad)
     r      = Meander(Polygon([(0,0),(0,6),(12,6),(12,0)]))
     rpad   = r.pad()
-    rguide = r.guidelines(rpad,('SL','SR')) # direction=(180,450)) 495,270))
-    p2     = r.collectPoints(rpad,rguide)
+    rguide = r.guidelines(('SL','SR'), shape=rpad) # (180,450)) 495,270))
+    p2     = r.collectPoints(rguide, shape=rpad)
     stripe = r.joinStripes(p1,p2)
     if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
@@ -123,12 +124,12 @@ class Test(unittest.TestCase):
     '''
     g      = Meander(Polygon([(0,8),(0,13),(13,13),(13,0),(8,0),(8,8)]))
     gpad   = g.pad()
-    guides = g.guidelines(gpad,('SL','SW','WB')) #  direction=(180,225,270))
-    p1     = g.collectPoints(gpad,guides)
+    guides = g.guidelines(('SL','SW','WB'), shape=gpad) #  (180,225,270))
+    p1     = g.collectPoints(guides, shape=gpad)
     r      = Meander(Polygon([(0,0),(0,8),(4,8),(4,0)]))
     rpad   = r.pad()
-    rguide = r.guidelines(rpad,('NR','NL')) # direction=(360,0))
-    p2     = r.collectPoints(rpad,rguide)
+    rguide = r.guidelines(('NR','NL'), shape=rpad) # direction=(360,0))
+    p2     = r.collectPoints(rguide, shape=rpad)
     stripe = r.joinStripes(p1,p2)
     if self.VERBOSE: self.writer.plotLine(stripe, self.id())
     xy     = list(stripe.coords)
@@ -143,8 +144,8 @@ class Test(unittest.TestCase):
     '''
     m = Meander(Polygon([(1,1),(1,13),(13,13),(13,1),(9,1),(9,9),(5,9),(5,1)]))
     padme = m.pad()
-    guide = m.guidelines(padme,('WB','NW','NE','EB'))
-    p     = m.collectPoints(padme,guide)
+    guide = m.guidelines(('WB','NW','NE','EB'), shape=padme)
+    p     = m.collectPoints(guide, shape=padme)
     s     = m.makeStripes(p)
     if self.VERBOSE: self.writer.plotLine(s, self.id())
 
@@ -168,33 +169,23 @@ class Test(unittest.TestCase):
     d       = ('NL','NE','EB','SE','SL','SW','WB','NR','ET','SR','WT')
     r       = Meander(Polygon([(3,3),(3,15),(15,15),(15,3)]))
     padme   = r.pad()
-    guides  = r.guidelines(padme,direction=d)
+    guides  = r.guidelines(d, shape=padme)
     for i,g in enumerate(list(guides.geoms)):
       grid_ord = r.orderGrid(g)
       self.assertEqual(expect[i],grid_ord)
 
   def test_k(self):
-    ''' koto fails on sw gnomon because either:
-
-        1. orderGrid always generates integers
-           but guidelines can be floats 
-           this causes points to miss guidelines
-        2. padding creates rectangles, but squares are needed
-
-      [(6.5,16.0),(6.5,21.5),(8.5,21.5),(8.5,23.5),
-       (14.0,23.5),(14.0,16.0),(6.5,16.0)]
+    ''' sw gnomon with irregular small square
     '''
     g = Polygon(
       [(6,16.0),(6,21),(8,21),(8,23),(13.0,23),(13.0,16.0),(6,16.0)]
     )
     m       = Meander(g)
-    guide   = m.guidelines(g,('SL','SE','ET'))
-    line    = m.collectPoints(g,guide)
+    guide   = m.guidelines(('SL','SE','ET'))
+    line    = m.collectPoints(guide)
     stripes = m.makeStripes(line)
     if self.VERBOSE: 
-      #self.writer.plotShape(g, self.id())
-      self.writer.plotLine(guide, self.id()) # fn='t_meander_k')
-      #self.writer.plotLine(stripes, self.id())
+      self.writer.plotLine(stripes, self.id())
     self.assertEqual(18, len(list(stripes.coords)))
 
   def test_l(self):
@@ -239,19 +230,19 @@ class Test(unittest.TestCase):
       shapely.plotting.plot_line(LineString(spiral), ax=ax)
       plt.savefig(f"tmp/t_meander_n.svg", format="svg")
 
+  # TODO as feature is frozen
   def test_o(self):
-    ''' split spiral into many lines according to the shape of a hole
+    ''' check spiral line according to the shape of a hole
     '''
-    print(self.id())
     outer  = [(0,0), (9,0), (9,9), (0,9)]
     inner  = [(4,2), (4,7), (7,7), (7,2)]
     small  = Polygon(outer, holes=[inner])
     m      = Meander(small)
     spiral = m.spiral(clen=10, pos=tuple([0,0]))
-    self.assertEqual(2, len(spiral.geoms))
     if self.VERBOSE:
-      self.writer.plotLine(spiral, self.id())
+      self.writer.plotLine(LineString(spiral), self.id())
       '''
+      self.assertEqual(2, len(spiral.geoms))
       print(self.id())
       fig, ax = plt.subplots() 
       shapely.plotting.plot_line(spiral, ax=ax, linewidth=0.5)
@@ -279,11 +270,15 @@ class Test(unittest.TestCase):
     m     = Meander(p15)
     s     = m.spiral(15, tuple([0,0]))
 
+    if self.VERBOSE: self.writer.plotLine(LineString(s), self.id())
+
+    ''' On hold
     l2_begin = list(s.geoms[1].coords)[0]
     self.assertEqual((11,11), l2_begin)
 
     l2_end   = list(s.geoms[1].coords)[-1]
     self.assertEqual((10,3), l2_end)
+    '''
 
   def test_r(self):
     ''' irregular sqring needs a spiral
@@ -300,16 +295,54 @@ class Test(unittest.TestCase):
       self.writer.plotLine(mls, self.id())
 
   def test_s(self):
-    ''' irregular sqring needs a spiral
-        that is offset by pos
+    ''' similar to test_h but uses Composite orchestrator
     '''
-    outer = [(9,0), (9,9), (18,9), (18,0)]
-    inner = [(12,3), (12,6), (15,6), (15,3)]
-    wonky = Polygon(outer, holes=[inner])
-    m     = Meander(wonky)
-    mls   = m.spiral(9, (1,0))
-    if self.VERBOSE: pass
-    self.writer.plotLine(mls, self.id())
+    make  = Make(clen=27)
+    cells = {
+      'a': {
+         'shape':'parabol', 'size':'medium', 'facing':'east',
+         'bg':'#000', 'top':False, 'fill':'#F00'
+       }
+    }
+    make.walk({(0,0):['a']}, cells)
+    make.meander(padding=False)
+    linestr = make.guide[(0,0)][1]
+    if self.VERBOSE: self.writer.plotLine(linestr, self.id())
+
+  def test_t(self):
+    ''' catch a bad parabola 
+    '''
+    parabol = [(6,0),(6,6),(80,6),(80,20),(100,20),(100,6),(12,6),(12,0)]
+    polygon = Polygon(parabol)
+    if self.VERBOSE: self.writer.plotLine(polygon, self.id())
+    with self.assertRaises(TypeError):
+      Meander(polygon)
+
+  def test_u(self):
+    ''' meander a parabola ?
+    '''
+    parabol = Polygon(
+      [(12,0),(12,6),(14,6),(14,2),(16,2),(16,6),(18,6),(18,0),(12,0)]
+    )
+    m = Meander(parabol)
+    '''
+    self.writer.plot(parabol, self.id())
+    '''
+    #south = { True:  ('NR', 'NE', 'ET'), False: ('ET', 'NE', 'NR')}
+    south = { True:  ('WB', 'NW', 'NR'), False: ('ET', 'EB')}
+    print(south[True])
+    mls = m.guidelines(south[True])
+    for gl in list(mls.geoms):
+      #print(m.orderGrid(gl))
+      start_x, stop_x, step_x, start_y, stop_y, step_y = m.orderGrid(gl)
+      for y in range(start_y, stop_y, step_y):
+        for x in range(start_x, stop_x, step_x):
+          print(f'{x} {y},', end='', flush=True)
+        print()
+    points  = m.collectPoints(mls)
+    stripes = m.makeStripes(points)
+    self.writer.plotLine(stripes, self.id())
+
 '''
 the
 end

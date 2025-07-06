@@ -1,4 +1,4 @@
-from .svg import Svg
+from .svg import Svg, SvgWriter
 from .db import Db
 from .data import ModelData
 

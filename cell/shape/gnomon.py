@@ -38,8 +38,8 @@ class Gnomon:
     ''' see Meander to check the codes 
     '''
     control = {
-      'NW': ('WB', 'NW', 'NR'),
-      'SE': ('SL', 'SE', 'ET')
+      'NW': ('guided', 'WB', 'NW', 'NR'),
+      'SE': ('guided', 'SL', 'SE', 'ET')
     }
     ''' these guidelines throw exception in collectPoints
       'NE': ('NL', 'NE', 'SR'),
