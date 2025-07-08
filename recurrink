@@ -36,9 +36,11 @@ else:
 if MODEL == 'minkscape':     # read minkscape
   celldata  = config.cells
   positions = config.positions
-  celldata['d']['shape'] = 'parabol'
-  celldata['d']['facing'] = 'west'
-  celldata['d']['fill'] = '#AA0000'
+  celldata['a']['shape']  = 'sqring'
+  #celldata['d']['size']   = 'medium'
+  #celldata['a']['facing'] = 'west'
+  #celldata['a']['bg']   = '#AA0000'
+  #celldata['a']['bg']     = None
 else:                 # read test case 1-10 
   celldata = tf.read(MODEL, output=dict())
   #v.validate(cells, ver=ver)

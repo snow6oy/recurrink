@@ -78,6 +78,37 @@ Perhaps the `facing` key can accept two value sets:
 2. NW .. SE that are positioned relative to the nine shown above
 
 
+### Meander
+Meander is the class at the heart of recurrink for plotters.
+In this version, it adopts a plug-in architecture. An overview of the plugins.
+
+#### Guided
+For shapes with corners, e.g. gnomon.
+
+#### Spiral
+For shapes that face in all directions, e.g. square
+
+#### Composite
+Combine guided algorithms and orchestrate. Used exclusively by Parabola.
+
+In the future, two new plugins are planned: __Concentric__ for circles and __Original__ which is an up-down and avoid obstacle algorithm that was deprecated.
+
+There are three components involved:
+
+1. Cell.shape.guide()
+1. Block.meander()
+1. Block.Meander.plugin()
+
+The Cell.shape class defines which plugin to use and some optional guides. Two examples:
+
+```
+('guided', 'EB', 'ET')           
+('composite', 'SE', 'north')
+```
+
+Block.meander reads the definition and assembles the inputs required by the plugin. The plugin then generates a line (array of points) that are stored by Block. Finally, the Svg module renders as a polyline element.
+
+
 ### Data Model
 TODO evolve the data model
 1. to explain how the code is packaged
@@ -107,18 +138,35 @@ Three tables in Cell
 - style [0-2]
 - direction [0-2]
 
+### Palette stabilo
+The spider-web template can compare three colours.
+Stabilo pen is a set of 30.
+To populate all permutations 
+1. randomly generate 3 colours
+1. add to a set
+1. if set equals 3 (no duplicates) try to add to set of sets
+1. if add ok, repeat step 1
+1. else stop
+OR use Ruben method
+>>> math.comb(30, 3)
+4060
+
 
 ### TODO
+- Layer can only make valid Shapely geometries!
 - add new flatten shapes to codebase
 - add Inkscape palettes
+- see palette stabilo
+- CLEN is always 6 ! Any value divisible by 9 will do
+  18 27 36 45 54 63 72 81
 - All validation should be done by Shape
-- CLEN is always 6 !
 - implement new YAML by extending TmpFile
 - add flatten to not bft
-- mock toggle using code and run cflat tests
-- resolve flatten errors by using Don Cooke theory and check results
 - produce a YAML from Flatten and stop toggling
+- resolve flatten errors by using Don Cooke theory and check results
 - Gnomon defect when SW and NE guides. Try anti-clockwise?
+- Square Ring defect. small square makes invalid Polygon
+- ~mock toggle using code and run cflat tests~
 - ~Gnomon should support sizes: small and medium~
 - ~titles for matplotlib~
 - ~run cflat test suite~

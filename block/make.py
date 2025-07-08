@@ -5,9 +5,9 @@ from .styles import Styles
 
 class Make:
 
-  VERBOSE = True
+  VERBOSE = False
   BLOCKSZ = (3, 1)
-  CLEN    = 6
+  CLEN    = 9
 
   def __init__(self, clen=0): 
     self.cells  = dict()
@@ -20,9 +20,16 @@ class Make:
     '''
     self.setBlocksize(positions)
     for pos in positions:
-      cell = Layer(clen=self.CLEN, pos=pos)
+      label = positions[pos][0]  
+      cell  = Layer(clen=self.CLEN, pos=pos)
       cell.background()
-      label = positions[pos][0]
+
+      # swap some colours
+      if cells[label]['shape'] == 'sqring':
+        cells[label]['bg']   = cells[label]['fill'] 
+        cells[label]['fill'] = None 
+        cell.direction[0]    = ('spiral', None)
+      # TODO can Styles help make the hole invisible? alpha=0 fill_opacity
       self.style.add(pos, fill=cells[label]['bg'])
 
       for label in positions[pos]:
@@ -40,39 +47,15 @@ class Make:
             facing = cells[label]['facing'],
             size   = cells[label]['size']
           )
-          self.style.add(pos, fill=cells[label]['fill'])
+          self.style.add(pos, fill=cells[label]['fill'])  
       self.cells[pos] = cell.polygon()
       self.guide[pos] = cell.direction
 
-  def meander(self, padding=True):
-    # can use style as a skeleton to access lring ?
-    ''' transform polygons into lines
-    '''
-    for z in range(3): # bg 0 fg 1 top 2
-      for pos, c in self.cells.items():
+  def meanderSpiral(self, cell, pos):
+    m = Meander(cell)
+    linestr = LineString(m.spiral(self.CLEN, pos))
+    return linestr
 
-        if z == 2 and len(c.interiors) > 1: 
-          lring = c.interiors[1]                   # top
-        elif z == 2: continue 
-        elif z == 1: lring = c.interiors[0]        # fg
-        elif z == 0: lring = c.exterior            # bg
-
-        if self.VERBOSE: 
-          print(f"{z=} {pos=} {len(c.interiors)} {self.guide[pos][z]}")
-
-        algo, *guide  = self.guide[pos][z]
-        if algo == 'spiral':
-          m       = Meander(Polygon(lring))
-          linestr = LineString(m.spiral(self.CLEN, pos))
-        elif algo == 'composite':
-          linestr = self.meanderComposite(guide, pos, padding=padding)
-        elif algo == 'guided':
-          linestr = self.meanderGuided(guide, lring, padding=padding)
-        else:
-          raise Warning(f"{pos} {z} {algo} not known to Meander")
-        self.guide[pos][z] = linestr # replace guide with Shapely.LineString
-
-  # TODO padding
   def meanderComposite(self, meta, pos, padding):
     ''' orchestrate the composite algorithm of meander
     '''
@@ -86,23 +69,22 @@ class Make:
     gd        = cell.direction[0][1:]  # ignore algo
     gd        = gd if clockwise else list(reversed(gd))
     ed        = cell.direction[1][1:]
-    #ed        = list(reversed(ed)) if clockwise else ed
     ed        = ed if clockwise else list(reversed(ed))
-    gnomon    = Meander(Polygon(composite.exterior))
+    gnomon    = Meander(composite.geoms[0])
     if padding: gnomon.pad()
     g_guide   = gnomon.guidelines(gd)
     g_points  = gnomon.collectPoints(g_guide)
 
-    edge      = Meander(Polygon(composite.interiors[0]))
+    edge      = Meander(composite.geoms[1])
     if padding: edge.pad()
     e_guide   = edge.guidelines(ed)
     e_points  = edge.collectPoints(e_guide)
     return edge.joinStripes(g_points, e_points)
 
-  def meanderGuided(self, guide, lring, padding):
+  def meanderGuided(self, cell, guide, padding):
     ''' orchestrate the guided algorithm of meander
     '''
-    m      = Meander(Polygon(lring))
+    m      = Meander(cell)
     padme  = m.pad() if padding else m.shape
     gline  = m.guidelines(guide, shape=padme)  # ('EB', 'ET'))
     points = m.collectPoints(gline, shape=padme)
@@ -114,6 +96,40 @@ class Make:
     x = [p[0] for p in list(positions.keys())]
     y = [p[1] for p in list(positions.keys())]
     self.BLOCKSZ = (max(x) + 1, max(y) + 1)
+
+  def polygon(self, pos, z): 
+    ''' lookup cell in layer
+    '''
+    c = self.cells[pos]
+
+    if z == 2 and len(c.geoms) > 2: polygn = c.geoms[2]
+    elif z == 2: polygn = None
+    elif z == 1 and len(c.geoms) > 1:
+      polygn = c.geoms[1]
+    elif z == 1 and len(c.geoms[0].interiors):
+      polygn = Polygon(c.geoms[0].interiors[0])
+    elif z == 0: polygn = c.geoms[z]     # bg
+    return polygn
+
+  def meander(self, padding=True):
+    ''' transform polygons into lines
+    '''
+    for z in range(3): # bg 0 fg 1 top 2
+      for pos in self.cells:
+ 
+        polygn = self.polygon(pos, z)
+        if polygn is None: continue
+
+        algo, *guide  = self.guide[pos][z]
+        if algo == 'spiral':
+          linestr = self.meanderSpiral(polygn, pos)
+        elif algo == 'composite':
+          linestr = self.meanderComposite(guide, pos, padding=padding)
+        elif algo == 'guided':
+          linestr = self.meanderGuided(polygn, guide, padding=padding)
+        else:
+          raise Warning(f"{pos} {z} {algo} not known to Meander")
+        self.guide[pos][z] = linestr # replace guide with Shapely.LineString
 
 '''
 the

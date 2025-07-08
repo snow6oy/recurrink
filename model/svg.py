@@ -7,43 +7,34 @@ class Svg:
   VERBOSE    = False
   ADD_POINTS = False
 
-  def draw(self, b, svgfile):
-
+  def draw(self, b1, svgfile):
+    ''' plot a shapely box
+    '''
     fig, ax = plt.subplots() 
     ax.set_aspect('equal')    # make x and y axis the same and set to CLEN
-    plt.axis([0, (b.BLOCKSZ[0] * b.CLEN), 0, (b.BLOCKSZ[1] * b.CLEN)])
+    plt.axis([0, (b1.BLOCKSZ[0] * b1.CLEN), 0, (b1.BLOCKSZ[1] * b1.CLEN)])
 
-    # TODO refactor to use style for iteration ??
     for z in range(3): # bg 0 fg 1 top 2
-      for pos, c in b.cells.items():
+      for pos in b1.cells:
 
-        if z == 2 and len(c.interiors) > 1: 
-          lring = c.interiors[1]                   # top
-        elif z == 2: continue 
-        elif z == 1: lring = c.interiors[0]        # fg
-        elif z == 0: lring = c.exterior            # bg
-
+        polygn = b1.polygon(pos, z)
+        if polygn is None: continue
         if self.VERBOSE:
-          print(f"0 {b.BLOCKSZ[0] * b.CLEN} 0 {b.BLOCKSZ[1] * b.CLEN}")
-          print(f"{z} {pos} {len(c.interiors)} {b.style.fill[pos]}")
+          print(f"{z} {pos} {polygn.geom_type} {b1.style.fill[pos]}")
         
         shapely.plotting.plot_polygon(
-          Polygon(lring), ax=ax, add_points=self.ADD_POINTS,
-          facecolor=b.style.fill[pos][z],
-          edgecolor=b.style.stroke[pos][z], 
-          linewidth=b.style.stroke_width[pos][z]
+          polygn, ax=ax, add_points=self.ADD_POINTS,
+          facecolor=b1.style.fill[pos][z],
+          edgecolor=b1.style.stroke[pos][z], 
+          linewidth=b1.style.stroke_width[pos][z], alpha=.5
         )
 
     t_class, t_name = self.fileName(svgfile)
     plt.title(f"{t_class} {t_name}")
     plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
-    '''
-    svgfile = svgfile if svgfile else "tmp/not_bft.svg"
-    plt.savefig(svgfile, format="svg")
-    '''
 
   def drawLine(self, block, svgfile):
-    ''' preview a plotfile
+    ''' preview a meandered plotfile
     '''
     fig, ax = plt.subplots() 
     width   = block.BLOCKSZ[0] * block.CLEN
@@ -92,7 +83,13 @@ class SvgWriter(Svg):
      fig, ax = plt.subplots()
      t_class, t_name = self.fileName(fn)
      if title: plt.title(f"{t_class} {t_name}")
-     shapely.plotting.plot_polygon(box, ax=ax, add_points=False)
+     shapely.plotting.plot_polygon(
+       box, ax=ax, add_points=True, 
+       alpha=.5,
+       facecolor='#CCC',
+       edgecolor='#000',
+       linewidth=1
+     )
      plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
 
 
@@ -100,4 +97,3 @@ class SvgWriter(Svg):
 the
 end
 '''
-

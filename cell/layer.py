@@ -1,5 +1,5 @@
 import math
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import Polygon, LineString, MultiPolygon
 from .shape import *
 
 class Layer:
@@ -26,6 +26,7 @@ class Layer:
          'line': Rectangle(name),
          'edge': Rectangle(name),
        'square': Rectangle(name),
+       'sqring': Rectangle(name),
        'gnomon': Gnomon(),
       'parabol': Parabola()
     }
@@ -36,11 +37,29 @@ class Layer:
     self.direction.append(shape.guide(kwargs['facing']))
 
   def polygon(self):
-    if len(self.bft) == 3:     # top
-      p = Polygon(self.bft[0], holes=[self.bft[1], self.bft[2]])
-    else:                       # foreground, normal case
+    ''' convert LinearRings in bft to one of the folllowing
+
+        Polygon           1     background only
+        Polygon + hole    1     square ring
+        Polygon           2	background + foreground
+        Polygon           3	bg fg + top
+    '''
+    polygons = list()
+
+    if len(self.bft) == 1:       # bg only
+      polygons.append(Polygon(self.bft[0]))
+    elif len(self.bft) == 2:     # sqring or two polygns
       p = Polygon(self.bft[0], holes=[self.bft[1]])
-    return p
+      if p.is_valid: polygons.append(p)
+      else: polygons = [Polygon(lring) for lring in self.bft]
+    elif len(self.bft) == 3:     # top
+      [polygons.append(Polygon(lring)) for lring in self.bft]
+
+    for p in polygons:
+      if p.is_valid: continue
+      raise TypeError(p)
+    
+    return MultiPolygon(polygons) if len(polygons) else polygons[0]
 
   def dimension(self, x, y, clen):
     ''' set dimensions for all shapes 

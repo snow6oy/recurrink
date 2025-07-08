@@ -19,6 +19,9 @@ class Rectangle:
        'medium': [X, Y, W, H],
         'large': [A, B, C, D]
       },
+      'sqring': {
+        'medium': [a, b, c, d]   # return small size for hole
+      },
       'line': {
         'medium': {
           'north': [a, Y, c, H],
@@ -49,7 +52,7 @@ class Rectangle:
       }
     }
     if shape in sizes and size in sizes[shape]:
-      if shape == 'square':
+      if shape == 'square' or shape == 'sqring':
         x, y, w, h = sizes[shape][size]
       elif facing in sizes[shape][size]:
         x, y, w, h = sizes[shape][size][facing]

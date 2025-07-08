@@ -1,5 +1,5 @@
 from cell import Layer
-from .meander import Meander, Spiral
+from .meander import Meander
 from .make import Make
 from .styles import Styles
 from .data import Views, BlockData

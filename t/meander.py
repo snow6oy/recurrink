@@ -1,9 +1,9 @@
 import unittest
 import pprint
 import matplotlib.pyplot as plt
-import shapely.plotting
+#import shapely.plotting
 from shapely.geometry import Polygon, LinearRing, LineString
-from block import Make, Meander, Spiral  # cell Plotter, Spiral
+from block import Make, Meander 
 from model import SvgWriter
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -196,91 +196,6 @@ class Test(unittest.TestCase):
     self.assertTrue(m.setClock(15.0, 15.0))
 
   def test_m(self):
-    ''' random sample points with some edge cases
-    '''
-    s = Spiral()
-    assert s.r1( 0, 0, 3)[ 3] == [0, 2]
-    assert s.r1( 8, 1, 3)[ 9] == [1, 1]
-    assert s.r1(16, 1, 5)[19] == [1, 3]
-    assert s.r1( 0, 0, 4)[ 4] == [0, 3]
-
-    assert s.c1( 3, 0, 3)[ 5] == [2, 2]
-    assert s.c1(14, 1, 4)[15] == [2, 2]
-    assert s.c1( 5, 0, 5)[ 9] == [4, 4]
-    assert s.c1(19, 1, 5)[21] == [3, 3]
-
-    assert s.r2( 5, 0, 3)[ 7] == [2, 0]
-    assert s.r2( 7, 0, 4)[10] == [3, 0]
-    assert s.r2(15, 1, 4)[16] == [2, 1]
-    assert s.r2(21, 1, 5)[23] == [3, 1]
-
-    assert s.c2( 7, 0, 3)[ 8] == [1, 0]
-    assert s.c2(10, 0, 4)[12] == [1, 0]
-    assert s.c2(23, 1, 5)[24] == [2, 1]
-    assert s.c2(30, 1, 6)[32] == [2, 1]
-
-  def test_n(self):
-    LEN    = 9 # length of matrix 
-    s      = Spiral()
-    data   = s.matrix(LEN)
-    spiral = list(data.values())
-    self.assertEqual(81, len(spiral))
-    if self.VERBOSE:
-      fig, ax = plt.subplots() 
-      shapely.plotting.plot_line(LineString(spiral), ax=ax)
-      plt.savefig(f"tmp/t_meander_n.svg", format="svg")
-
-  # TODO as feature is frozen
-  def test_o(self):
-    ''' check spiral line according to the shape of a hole
-    '''
-    outer  = [(0,0), (9,0), (9,9), (0,9)]
-    inner  = [(4,2), (4,7), (7,7), (7,2)]
-    small  = Polygon(outer, holes=[inner])
-    m      = Meander(small)
-    spiral = m.spiral(clen=10, pos=tuple([0,0]))
-    if self.VERBOSE:
-      self.writer.plotLine(LineString(spiral), self.id())
-      '''
-      self.assertEqual(2, len(spiral.geoms))
-      print(self.id())
-      fig, ax = plt.subplots() 
-      shapely.plotting.plot_line(spiral, ax=ax, linewidth=0.5)
-      plt.savefig(f"tmp/t_meander_o.svg", format="svg")
-      '''
-
-  def test_q(self):
-    ''' split spiral into many lines according to the shape of a hole
-    '''
-    outer = [(0,0), (3,0), (3,3), (0,3)]
-    inner = [(1,1), (1,2), (2,2), (2,1)]
-    small = Polygon(outer, holes=[inner])
-    m     = Meander(small)
-    data  = m.matrix(4)
-    line  = list(data.values())
-    mls   = m.splitLines(line, Polygon(inner)) #small.interiors[0])
-    self.assertEqual(1, len(mls.geoms))
-
-  def test_p(self):
-    ''' split on a 15 x 15 cell
-    '''
-    outer = [(0,0), (15,0), (15,15), (0,15)]
-    inner = [(4,3), (4,11), (10,11), (10,3)]
-    p15   = Polygon(outer, holes=[inner])
-    m     = Meander(p15)
-    s     = m.spiral(15, tuple([0,0]))
-
-    if self.VERBOSE: self.writer.plotLine(LineString(s), self.id())
-
-    ''' On hold
-    l2_begin = list(s.geoms[1].coords)[0]
-    self.assertEqual((11,11), l2_begin)
-
-    l2_end   = list(s.geoms[1].coords)[-1]
-    self.assertEqual((10,3), l2_end)
-    '''
-
-  def test_r(self):
     ''' irregular sqring needs a spiral
     '''
     outer = [(0,0), (60,0), (60,60), (0,60)]
@@ -294,7 +209,7 @@ class Test(unittest.TestCase):
     if self.VERBOSE:
       self.writer.plotLine(mls, self.id())
 
-  def test_s(self):
+  def test_n(self):
     ''' similar to test_h but uses Composite orchestrator
     '''
     make  = Make(clen=27)
@@ -309,7 +224,7 @@ class Test(unittest.TestCase):
     linestr = make.guide[(0,0)][1]
     if self.VERBOSE: self.writer.plotLine(linestr, self.id())
 
-  def test_t(self):
+  def test_o(self):
     ''' catch a bad parabola 
     '''
     parabol = [(6,0),(6,6),(80,6),(80,20),(100,20),(100,6),(12,6),(12,0)]
@@ -318,7 +233,7 @@ class Test(unittest.TestCase):
     with self.assertRaises(TypeError):
       Meander(polygon)
 
-  def test_u(self):
+  def test_p(self):
     ''' meander a parabola ?
     '''
     parabol = Polygon(
