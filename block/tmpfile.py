@@ -152,3 +152,26 @@ class TmpFile():
     if index and index in conf:
       return conf[index]
     return conf
+
+  def exportPalfile(self, palname, palette):
+    ''' write paldata to a tab separated text file
+    '''
+    #pp.pprint(palette)
+    if len(palette) == 0:
+      raise ValueError(f"{palname} is empty")
+    with open(f"tmp/{palname}.txt", 'w') as f:
+      print("\t".join(['fill', 'opacity', 'background']), file=f)
+      for pal in palette:
+        line = [str(p) for p in pal] # convert everything to string
+        print("\t".join(line), file=f)  # flush=True)
+
+  def importPalfile(self, palname):
+    with open(f"tmp/{palname}.txt") as f:
+      data = [line.rstrip() for line in f] # read and strip newlines
+    data = [d.split() for d in data[1:]] # ignore header and split on space
+    return data
+
+'''
+the
+end
+'''

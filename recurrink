@@ -5,6 +5,7 @@ from model import Svg
 from block import Make, Styles, Views, TmpFile, BlockData
 from config import *
 
+ver    = 8  # 'htmstarter'
 svg    = Svg()
 block  = Make()
 v      = Views()
@@ -33,6 +34,10 @@ elif len(sys.argv) == 3:
 else:
   raise ValueError(f"{sys.argv=} unexpected")
 
+PAL = config.friendly_name[ver]
+
+print(f"{MODEL=} {CLONE=} {LINE=} {PAL=}")
+
 if MODEL == 'minkscape':     # read minkscape
   celldata  = config.cells
   positions = config.positions
@@ -41,26 +46,28 @@ if MODEL == 'minkscape':     # read minkscape
   #celldata['a']['facing'] = 'west'
   #celldata['a']['bg']   = '#AA0000'
   #celldata['a']['bg']     = None
-else:                 # read test case 1-10 
+elif not CLONE:                 # read test case 1-10 
   celldata = tf.read(MODEL, output=dict())
-  #v.validate(cells, ver=ver)
+  v.validate(celldata, ver=ver)
   # celldata = v.read(digest=tests[MODEL], output=dict())
   bd = BlockData(MODEL)
   positions = bd.readPositions(MODEL)
 
 if CLONE and MODEL != 'minkscape':         # write test case
+  '''
   friendly_name = [
     'universal','colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar'
   ]
+  '''
   celldata = v.read(digest=tests[MODEL], output=list())
   ver      = v.readMeta(digest=tests[MODEL])[3]
-  palette  = friendly_name[ver]
+  palette  = config.friendly_name[ver]
   tf.conf(MODEL, palette) # conf state is a symlink
   tf.write(MODEL, celldata)
   print(f"""
 cloning {tests[MODEL]} with {len(celldata)} cells
 model {MODEL}
-palette {friendly_name[ver]}""")
+palette {config.friendly_name[ver]}""")
 elif LINE:       # output to idraw
   block.walk(positions, celldata)
   block.meander(padding=False)

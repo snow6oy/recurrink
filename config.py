@@ -59,4 +59,21 @@ class config:
     (1, 0): ('b', 'd'),  # d is only top
     (2, 0): ('c',None)
   }
+  friendly_name = [
+    'universal', 
+    'colour45', 
+    'htmstarter', 
+    'jeb', 
+    'whitebossa', 
+    'snowbg', 
+    'solar',
+    'uniball',
+    'copic_sketch',
+    'copic',
+    'stabilo68'
+  ]
 
+'''
+the
+end 
+'''

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 import pprint
 import argparse
+from model import SvgPalette
+from block import PaletteMaker, TmpFile, Views
 from cell import Palette
-from palette import PaletteMaker
-from tmpfile import TmpFile
-from views import Views
-pp = pprint.PrettyPrinter(indent=2)
-pal = Palette(ver=None) # TODO Palette has to be initialised with ver. Why?
-pmk = PaletteMaker()
-friendly_name = ['universal', 'colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar']
+from config import *
+pp   = pprint.PrettyPrinter(indent=2)
+pal  = Palette(ver=None) # TODO Palette has to be initialised with ver. Why?
+pmk  = PaletteMaker()
+svg  = SvgPalette()
+tf   = TmpFile()
+v    = Views() # obtain model from view
+fnam = config.friendly_name
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def inputs():
   ''' get inputs from command line
@@ -19,65 +22,76 @@ def inputs():
   parser = argparse.ArgumentParser(prog='palette')
   subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
   parser_i = subparsers.add_parser('init', help='create palette config as tmpfile')
-  parser_i.add_argument("-p", "--palette", help='palette version to initialise', type=int, choices=range(0, 10))
+  parser_i.add_argument(
+    "-p", "--palette", help='palette version to initialise', type=int, choices=range(0, 99)
+  )
   parser_i.add_argument("-v", "--view", help='view to generate palette from')
+  parser_i.add_argument("-i", "--inkpal", help='GPL file to generate palette')
   parser_u = subparsers.add_parser('update', help='update svg from config')
-  parser_u.add_argument("-p", "--palette", help='palette version to write as svg', type=int, choices=range(0, 10))
+  parser_u.add_argument(
+    "-p", "--palette", help='palette version to write as svg', type=int, choices=range(0, 99)
+  )
   parser_u.add_argument("-v", "--view", help='palette from view to write as svg')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
-  parser_c.add_argument("-p", "--palette", help='new palette to create', type=int, choices=range(0, 10), required=True)
+  parser_c.add_argument(
+    "-p", "--palette", help='new palette to create', type=int, 
+    choices=range(0, 99), required=True
+  )
   parser_c.add_argument("-v", "--view", help='swap view to use palette')
   parser_m = subparsers.add_parser('cmp', help='compare palettes: tmpfile to db')
-  parser_m.add_argument("-p", "--palette", help='read palette from version in db', type=int, choices=range(0, 10), required=True)
+  parser_m.add_argument(
+    "-p", "--palette", help='read palette from version in db', type=int, 
+    choices=range(0, 99), required=True
+  )
   parser_m.add_argument("-v", "--view", help='read palette from view in tmpfile', required=True)
   parser_m = subparsers.add_parser('list', help='list palettes')
   return parser.parse_args()
 
-def init(ver, digest):
+def init(ver, digest, inkpal):
   ''' pull a palette from db and write to tmpfile
   '''
   fn = str()
   palette = set() # need to flaten as same PID can belong to many cells
   if ver in range(10): # export from palette table
-    fn = friendly_name[ver]
+    fn = fnam[ver]
     pal.load_palette(ver=ver)
     #pp.pprint(pal.palette)
     palette = pal.palette # keep order so relations are grouped
   elif digest: # export view as palette
     fn = digest
     palette = set(pal.read_view(fn))
+  elif inkpal:
+    ''' uniball.gpl
+    '''
+    paldir  = '/home/gavin/.config/inkscape/palettes/'
+    palette = pmk.inkscapePal(paldir, f"{inkpal}.gpl")
+    fn      = inkpal
   else:
     raise ValueError("init needs either a palette or view")
-  pmk.export_txtfile(fn, palette) 
+  tf.exportPalfile(fn, palette) 
   return f"{fn}.txt was written"
 
 def update(ver, digest):
   ''' tmpfile to svg 
   '''
-  fn = friendly_name[ver] if ver in range(10) else digest
+  fn = fnam[ver] if ver in range(99) else digest
   if fn is None:
     raise ValueError("empty palette: check input?")
   else:
-    palette = pmk.import_txtfile(fn)
+    palette = tf.importPalfile(fn)
     #pp.pprint(palette)
-    gs = pmk.gridsize(3, len(palette))
-    x, grid = pmk.grid(palette, gs)
-    pmk.root(gs[0] * 60, gs[1] * 60)
-    pmk.make(grid, verbose=True)
-    pmk.write(fn)
-    return f"{fn}.svg was written"
+    svg.render(fn, palette)
+  return f"{fn}.svg was written"
 
 def commit(ver, digest=None):
   msg = str()
-  if ver > len(friendly_name):
+  if ver > len(fnam):
     raise IndexError(f"no friendly name for {ver}")
-  fn = friendly_name[ver]
+  fn = fnam[ver]
   if ver and digest:
     ''' 1. export view using recurrink init -v --> /tmp/MODEL.txt
         2. export pal from using palette init -p
     '''
-    tf = TmpFile()
-    v = Views() # obtain model from view
     model = v.read_meta(digest)[0]
     celldata = tf.read(model, output=list())
     numupdated = pal.swap_palette(celldata, ver, digest)
@@ -89,7 +103,7 @@ def commit(ver, digest=None):
     use the index of friendly_name[] as arg
     '''
     new_pal = list()
-    palette = pmk.import_txtfile(fn)
+    palette = tf.importPalfile(fn)
     missing_colours = pmk.colour_check(pal, palette)
     if missing_colours: # add any new colours 
       pal.create_colours(missing_colours)
@@ -113,9 +127,9 @@ def commit(ver, digest=None):
 def compare(ver, digest):
   ''' compare palettes given ver and digest
   '''
-  fn = friendly_name[ver]
-  new_pal = pmk.import_txtfile(digest)
-  candidate = pmk.import_txtfile(fn)
+  fn = fnam[ver]
+  new_pal = tf.importPalfile(digest)
+  candidate = tf.importPalfile(fn)
   cmp = pmk.cmp_pal(new_pal, candidate)
   return f"""
 {len(new_pal):3d} {digest}
@@ -128,7 +142,7 @@ def compare(ver, digest):
 if __name__ == '__main__':
   args = inputs()
   if (args.keyword == 'init'):
-    print(init(ver=args.palette, digest=args.view))
+    print(init(ver=args.palette, digest=args.view, inkpal=args.inkpal))
   elif (args.keyword == 'commit'):
     print(commit(args.palette, digest=args.view))
   elif (args.keyword == 'cmp'):
@@ -136,7 +150,7 @@ if __name__ == '__main__':
   elif (args.keyword == 'update'):
     print(update(args.palette, digest=args.view))
   elif (args.keyword == 'list'):
-    [print(f"{i}\t{name}") for i, name in enumerate(friendly_name)]
+    [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
   '''
   the 
   end

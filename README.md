@@ -153,19 +153,22 @@ OR use Ruben method
 
 
 ### TODO
-- Layer can only make valid Shapely geometries!
-- add new flatten shapes to codebase
 - add Inkscape palettes
 - see palette stabilo
 - CLEN is always 6 ! Any value divisible by 9 will do
   18 27 36 45 54 63 72 81
+- make SVGs with layers that idraw can plot
+- model.layout needs to be ported
 - All validation should be done by Shape
 - implement new YAML by extending TmpFile
 - add flatten to not bft
 - produce a YAML from Flatten and stop toggling
 - resolve flatten errors by using Don Cooke theory and check results
 - Gnomon defect when SW and NE guides. Try anti-clockwise?
-- Square Ring defect. small square makes invalid Polygon
+
+- ~Square Ring defect. small square makes invalid Polygon~
+- ~Layer can only make valid Shapely geometries!~
+- ~Add new flatten shapes to codebase~
 - ~mock toggle using code and run cflat tests~
 - ~Gnomon should support sizes: small and medium~
 - ~titles for matplotlib~
