@@ -108,7 +108,12 @@ class PaletteMaker:
     #pp.pprint(new_pid)
     return new_pid[0][0], new_pid[0][2]
 
-  def cmp_pal(self, p1, p2):
+  def cmpPalettes(self, digest, fn):
+    ''' count matching entries of two palettes
+    '''
+    tf = TmpFile()
+    p1 = tf.importPalfile(digest)
+    p2 = tf.importPalfile(fn)
     #pp.pprint(p1)
     #pp.pprint(p2)
     same = 0
@@ -117,28 +122,30 @@ class PaletteMaker:
         if x[0] == y[0] and x[1] == y[1] and x[2] == y[2]:
           # print(x)
           same += 1
-    return same
+    out = (f"""
+{len(new_pal):3d} {digest}
+{len(candidate):3d} {fn}
+{same:3d} matching palette entries""")
+    return out
 
+  def makeUnique(self, ver, pal, txtpal):
+    ''' compare db and txt palettes and return difference
+    '''
+    new_pal = list()
+    for p in txtpal: # avoid duplicating existing entry
+      p[1] = float(p[1])
+      test_entry = tuple(p[:3]) 
+      if (test_entry not in pal.palette): # its empty the very first time
+        new_pal.append(list(test_entry))
+    for n in new_pal: # decorate palette before INSERTing
+      rn = self.relation(n[0], n[2])
+      n.append(rn)
+      n.insert(0, ver)
+    pal.create_palette_entry(new_pal)
+    return new_pal
 
   ''' INKSCAPE
-copic.gpl     # need to split pal as pens cannot be used together due to width
-stabilo.gpl 4060
-
-uniball 56
-
-### Palette stabilo
-The spider-web template can compare three colours.
-Stabilo pen is a set of 30.
-To populate all permutations
-1. randomly generate 3 colours
-1. add to a set
-1. if set equals 3 (no duplicates) try to add to set of sets
-1. if add ok, repeat step 1
-1. else stop
-OR use Ruben method
->>> math.comb(30, 3)
   '''
-
   def randomTwo(self, data):
     '''
     '''

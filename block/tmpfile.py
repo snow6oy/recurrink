@@ -13,7 +13,7 @@ class TmpFile():
       'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
     ]
 
-  def convert_to_list(self, celldata):
+  def convertToList(self, celldata):
     ''' when celldata is in hash format, call this before writing a list 
     '''   
     cells = list()
@@ -119,15 +119,15 @@ class TmpFile():
       if model and ver: # swap old and new
         os.unlink(path)
         os.symlink(f'/tmp/recurrink/{model}.txt', f'/tmp/recurrink/{ver}')
-        return None
+        return None, None
       else: # read link
         path = os.readlink(path)
         model = re.findall(r"[a-z0-9]+", path)[2]
         return model, link
     elif len(links) == 0 and model and ver: # first time
       os.symlink(f'/tmp/recurrink/{model}.txt', f'/tmp/recurrink/{ver}')
-    else:
-      raise ValueError(f'unexpected number of links {len(links)}')
+    #else: #raise ValueError(f'unexpected number of links {len(links)}')
+    return None, None
 
   def tmplinks(self):
     links = list()

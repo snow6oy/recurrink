@@ -153,19 +153,19 @@ OR use Ruben method
 
 
 ### TODO
-- add Inkscape palettes
-- see palette stabilo
+- Fix palette commit with author:human default and pmk.makeUnique
 - CLEN is always 6 ! Any value divisible by 9 will do
   18 27 36 45 54 63 72 81
+- model.layout needs to be ported to explode b1 onto grid
 - make SVGs with layers that idraw can plot
-- model.layout needs to be ported
-- All validation should be done by Shape
-- implement new YAML by extending TmpFile
 - add flatten to not bft
+- implement new YAML by extending TmpFile
 - produce a YAML from Flatten and stop toggling
+- shape validation should be done by Shape
 - resolve flatten errors by using Don Cooke theory and check results
 - Gnomon defect when SW and NE guides. Try anti-clockwise?
 
+- ~add Inkscape palettes see palette stabilo~
 - ~Square Ring defect. small square makes invalid Polygon~
 - ~Layer can only make valid Shapely geometries!~
 - ~Add new flatten shapes to codebase~

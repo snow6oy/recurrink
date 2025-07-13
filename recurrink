@@ -1,80 +1,380 @@
-#!/usr/bin/env python
-
-import sys
-from model import Svg
-from block import Make, Styles, Views, TmpFile, BlockData
+#!/usr/bin/env python3
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+import os
+import argparse
+import random
+from model import ModelData, Svg, SvgPalette, SvgLinear
+from block import PaletteMaker, TmpFile, Views, BlockData, Make
+from cell import Palette
 from config import *
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''' get inputs from command line
+'''
+parser = argparse.ArgumentParser(prog='recurrink')
+subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
 
-ver    = 8  # 'htmstarter'
-svg    = Svg()
-block  = Make()
-v      = Views()
-tf     = TmpFile()
-tests  = {
-  'minkscape': None,
-    'buleria': '7e731bfc1863c186616d2b3de09a9b6b',
-       'koto': '4be0d482b6a2806857b017bf3c5047aa',
-      'sonny': '47698c060ba647fee5bebc3548644b88',
-      'eflat': '3409bc82f3b0bfa90fb29fd23cb51abc',
-      'waltz': 'e2703e9ea6733f9c47458bcf5afb8b45',
-      'bossa': 'a2397e60976e01cba87a1e9e5467df2d',
-  'afroclave': '6b3779708184e346d31c0c3a6de3d885',
-      'pitch': 'f049e4fe093d87f09e57e259334bc6e2',
-      'mambo': 'b6b1998b57aa1c31e5c4ff6e74fd5a58'
-}
+parser_b = subparsers.add_parser('build', help='build svg from config')
+parser_b.add_argument(
+  '-p', '--palette', type=int, choices=range(0, 99), metavar='[0-99]',
+  help='palette version to write as svg' 
+)
+parser_b.add_argument("-v", "--view", help='palette from view to write as svg')
+parser_b.add_argument('-m', '--model', help='name of model to build')
+parser_b.add_argument(
+  "-s", "--size", help='cell length', nargs='?', type=int, choices=[9,18,27,45,54,90], const=9, required=True
+)
+parser_b.add_argument(
+  '-l', '--line',  help='output for plotter', action=argparse.BooleanOptionalAction
+)
 
-if len(sys.argv) == 2: 
-  MODEL = sys.argv[1]
-  CLONE = True 
-  LINE  = False
-elif len(sys.argv) == 3:
-  MODEL = sys.argv[1]
-  CLONE = False
-  LINE  = eval(sys.argv[2])
-else:
-  raise ValueError(f"{sys.argv=} unexpected")
+parser_m = subparsers.add_parser('compare', help='compare palettes: tmpfile to db')
+parser_m.add_argument(
+  "-p", "--palette", help='read palette from version in db', type=int, 
+  choices=range(0, 99), metavar='[0-99]', required=True
+)
+parser_m.add_argument("-v", "--view", help='read palette from view in tmpfile', required=True)
 
-PAL = config.friendly_name[ver]
+parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
+parser_c.add_argument( 
+  "-a", "--author", choices=['human', 'machine'], nargs='?', const='human'
+)
+parser_c.add_argument("-s", "--scale", help="zoom control 0.5 - 2.0") 
+parser_c.add_argument(
+  "-p", "--palette", help='new palette to create', type=int, 
+  choices=range(0, 99), metavar='[0-99]'  #, required=True
+)
+parser_c.add_argument("-v", "--view", help='swap view to use palette')
 
-print(f"{MODEL=} {CLONE=} {LINE=} {PAL=}")
+parser_k = subparsers.add_parser('clone', help='get copy of config')
+parser_k.add_argument("-v", "--view", help='view to clone', required=True)
+parser_k.add_argument(
+  '-o', '--output', nargs='?', choices=['cell','pal'], const='cell',
+  help='clone celldata by default, else palette data'
+)
 
-if MODEL == 'minkscape':     # read minkscape
-  celldata  = config.cells
-  positions = config.positions
-  celldata['a']['shape']  = 'sqring'
-  #celldata['d']['size']   = 'medium'
-  #celldata['a']['facing'] = 'west'
-  #celldata['a']['bg']   = '#AA0000'
-  #celldata['a']['bg']     = None
-elif not CLONE:                 # read test case 1-10 
-  celldata = tf.read(MODEL, output=dict())
-  v.validate(celldata, ver=ver)
-  # celldata = v.read(digest=tests[MODEL], output=dict())
-  bd = BlockData(MODEL)
-  positions = bd.readPositions(MODEL)
+parser_d = subparsers.add_parser('delete')
+parser_d.add_argument("-v", "--view", help='view to remove from db', required=True)
 
-if CLONE and MODEL != 'minkscape':         # write test case
+parser_e = subparsers.add_parser('explode', help='stamp a block across the grid')
+parser_e.add_argument(
+  "-s", "--size", help='cell length', nargs='?', type=int, choices=[9,18,27,45,54,90], const=9, required=True
+)
+
+parser_f = subparsers.add_parser('flatten', help='write svg formatted for plotter')
+parser_f.add_argument("-s", "--scale", help='scale to plot clone .6 1 2', required=False)
+parser_f.add_argument(
+  "-w", "--wireframe", help="flatten as wireframe", 
+  action=argparse.BooleanOptionalAction
+)
+parser_f.add_argument(
+  "-y", "--yaml", help='init conf/MODEL.yaml', 
+  action=argparse.BooleanOptionalAction
+)
+
+parser_i = subparsers.add_parser('init', help='set config to create new image')
+parser_i.add_argument('-m', '--model', help='name of base model')
+parser_i.add_argument(
+  "-p", "--palette", type=int, choices=range(0, 99), metavar='[0-99]',
+  help='palette version to initialise'
+)
+parser_i.add_argument("-v", "--view", help='view to generate palette from')
+parser_i.add_argument("-i", "--inkpal", help='GPL file to generate palette')
+
+parser_l = subparsers.add_parser('ls', help='list models or palettes')
+parser_l.add_argument(
+  "-o", "--output", choices=['model','pal'], const='model', nargs='?', 
+  help='model by default'
+)
+
+parser_p = subparsers.add_parser('publish', help='add release date to db')
+parser_p.add_argument("-v", "--view", help='view to mark as released', required=True)
+
+parser_r = subparsers.add_parser('read', help='get view metadata')
+parser_r.add_argument('-m', '--model', help='name of base model')
+parser_r.add_argument("-v", "--view", help='hex name with 32 char')
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+args    = parser.parse_args()
+modl    = ModelData()
+pal     = Palette()
+pmk     = PaletteMaker()
+svg     = Svg()
+svgpal  = SvgPalette()
+tf      = TmpFile()
+view    = Views()
+WORKDIR = '/home/gavin/Dropbox/familia/rinks'
+PUBDIR  = '/home/gavin/Pictures/pubq'
+fnam    = config.friendly_name  # list of palette names
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+if (args.keyword == 'compare'):
+  ''' compare palettes given ver and digest
+      expect tmp/PALETTE.txt tmp/DIGEST.txt to exist already
   '''
-  friendly_name = [
-    'universal','colour45', 'htmstarter', 'jeb', 'whitebossa', 'snowbg', 'solar'
-  ]
+  print(f'{args.palette=} {args.view=}')
+  print(pmk.cmpPalettes(fnam[args.palette], args.view))
+
+elif (args.keyword == 'commit'):
+  ''' read config, write to database and return digest
+      clean file system except for tmp/model.txt
+
+    When both pal and digest are given remember to do this first
+      export view using recurrink init -v --> /tmp/MODEL.txt
+      export pal from using palette init -p
+
+    When only pal then
+      convert palette in tmpfile to sql INSERT but first manually 
+      create tmpfile NEW_PAL.txt 
+      add NEW_PAL to friendly_name
+      use the index of config.friendly_name[] as arg
   '''
-  celldata = v.read(digest=tests[MODEL], output=list())
-  ver      = v.readMeta(digest=tests[MODEL])[3]
-  palette  = config.friendly_name[ver]
-  tf.conf(MODEL, palette) # conf state is a symlink
-  tf.write(MODEL, celldata)
-  print(f"""
-cloning {tests[MODEL]} with {len(celldata)} cells
-model {MODEL}
-palette {config.friendly_name[ver]}""")
-elif LINE:       # output to idraw
+  print(f'{args.author=} {args.scale=} {args.palette=} {args.view=}')
+  if args.palette and args.view:
+    model      = view.read_meta(args.view)[0]
+    celldata   = tf.read(model, output=list())
+    numupdated = pal.swap_palette(celldata, ver, digest)
+    print(f"update {numupdated} view, swapping {args.view} to palette {fnam[args.palette]}")
+  elif args.palette:
+    palette         = tf.importPalfile(fnam[args.palette])
+    missing_colours = pmk.colour_check(pal, palette)
+    if len(missing_colours): # add any new colours 
+      pal.create_colours(missing_colours)
+      print(f"{len(missing_colours)} new colours ")
+    pal.read_palette(args.palette)
+    new_pal = pmk.makeUnique(args.palette, pal, palette)
+    print(f"{len(new_pal)} new entries")
+  elif args.author:
+    model, pal = tf.conf()
+    if model is None:
+      raise ValueError("cannot commit: missing symlinks? {model} or {pal} or both")
+    ver      = fnam.index(pal)
+    scale    = scale if args.scale else modl.getScale(model)
+    celldata = tf.read(model, output=list())
+    lc = -1  # TODO colournum should have a real value
+    if os.path.isdir(f"{WORKDIR}/{model}"):
+      if view.create(
+        tf.digest, celldata, model=model, author=args.author, 
+        ver=ver, scale=scale, colournum=lc
+      ):
+        if os.path.isfile(f"tmp/{model}_box.svg"):
+          svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
+          os.rename(f"tmp/{model}_box.svg", svgname)
+          os.symlink(f"{svgname}", f"{PUBDIR}/{tf.digest}.svg")
+          response = svgname
+        else:
+          raise FileNotFoundError(f"{model}.svg not found in tmp")
+      else:
+        response = 'unknown error'
+    else:
+      raise FileNotFoundError(f"{model} not found in {WORKDIR}")
+    print(response)
+
+elif (args.keyword == 'clone'):
+  ''' pull from db to create tmp/MODEL.txt from digest
+  '''
+  print(f'{args.view=} {args.output=}')
+  model, author, scale, ver = view.readMeta(digest=args.view)
+  if args.output == 'pal': # export view as palette
+    palette = set(pal.read_view(args.view))
+    tf.exportPalfile(args.view, palette) 
+    print(f"{args.view}.txt was written")
+  else:   # assume we want celldata
+    celldata  = view.read(digest=args.view, output=list())
+    tf.conf(model, fnam[ver]) # conf state is a symlink
+    tf.write(model, celldata)
+    print(f"""
+cloning {model}
+with {len(celldata)} cells
+palette {fnam[ver]}""")
+
+elif (args.keyword == 'delete'): # as delete has no help text it is not listed by argparse
+  print(f'{args.view=}')
+  ''' both svg and view must exist for the delete to succeed
+      4e3e83e969f2b41bf47fda2ec430a8f8 
+  '''
+  viewdata = view.readMeta(args.view)
+  if len(viewdata):
+    view.delete(view) 
+    model = viewdata[0]
+    if os.path.isfile(f'{PUBDIR}/{args.view}.svg'):
+      os.unlink(f'{PUBDIR}/{args.view}.svg')
+    if os.path.isfile(f'{WORKDIR}/{model}/{args.view}.svg'):
+      os.unlink(f'{WORKDIR}/{model}/{args.view}.svg')
+      print(f'{args.view} deleted ok') # success
+    else: raise FileNotFoundError(f'SVG not deleted {model}/{args.view}')
+  else: raise ValueError(f'nothing named {args.view} in database')
+
+elif (args.keyword == 'explode'):
+  ''' assumptions: gridsize is A3 (297 x 420 mm) 
+      image is square: with margins grid is 270 x 270
+      numbers of cells defined by cell length which is always divisible by 3
+      to ensure whole numbers: clen must be one of: 9 18 27 45 54 90
+
+  lsvg.styleGuide(block1, linear=True)        # populate styles in Layout
+  cn = tuple([blocksz[0], blocksz[1] * 2])    # walk down one step
+  cn = tuple()
+  lsvg.gridWalk(blocksz, block1, cellnum=cn)  # add cells in Layout()
+  lsvg.svgDoc(meander=True)                   # combine styles and cells
+  lsvg.svgMarkup()
+  lsvg.write(f'tmp/cflat_{model}.svg')
+  '''
+  print(f'{args.size=}')
+  block      = Make(args.size)
+  svglin     = SvgLinear(args.size)
+  model, ver = tf.conf()  
+  if model:
+    bd        = BlockData(model)
+    celldata  = tf.read(model, output=dict())
+    positions = bd.readPositions(model)
+  else:                     # when symlink does not resolve 
+    model     = 'minkscape' # default model
+    celldata  = config.cells
+    positions = config.positions
+  #print(model)
+  block.setBlocksize(positions)
   block.walk(positions, celldata)
-  block.meander(padding=False)
-  svg.drawLine(block, svgfile=f'_.{MODEL}._.line')
-else: 
-  block.walk(positions, celldata)
-  svg.draw(block, svgfile=f'_.{MODEL}._.box')
+  svglin.gridWalk(block, args.size)
+  svglin.render()
+
+elif (args.keyword == 'flatten'):
+  print(f'{args.scale=} {args.yaml=} {args.wireframe=}')
+  #def flatten(scale, yaml=False, wireframe=False):
+  ''' once cloned use flatten to make an SVG for plotting
+      testing '7e731bfc1863c186616d2b3de09a9b6b' 
+  '''
+  f         = Flatten()
+  s         = float(scale) if scale else 1.0
+  msg       = str()
+  model, _  = tf.conf()  # ignore palette
+  b         = BlockData(model)
+  blocksize = m.read(model=model)[2] # can get scale too
+  positions = b.readPositions(model)
+  svg       = LinearSvg(scale=s) # unit is millimetres
+  cells     = tf.read(model, output=dict())
+  gm      = GeoMaker(cellsize=15)
+  block1  = gm.make(blocksize, positions, cells)
+  #pp.pprint(cells)
+  if yaml: # print conf
+    '''
+    svg.gridwalk(blocksize, positions, cells)
+    cell_conf, block1 = svg.blockOne()  # TODO remove cell_conf
+    msg               = cell_conf + meander_conf
+      block1  = todo.pop(0)
+    '''
+    f.run(block1)
+    meander_conf      = svg.wireframe(f.done, writeconf=True)
+    msg               = meander_conf
+  else:
+    #todo = grid.walk(blocksize, conf['cells'])
+    if wireframe:             # first block only
+      svgfile = f'tmp/{model}_wf.svg'
+      f.run(block1)
+      svg.wireframe(f.done)
+    else:                     # send all the blocks
+      mc = tf.modelConf(model, 'meander')
+      grid = Grid(scale=s)    # cellsize=3 gridsize=9
+      blox = grid.walk(blocksize, block1)
+      squished = []
+      for b in blox:
+        f = Flatten()    # runs slow without new instance
+        squished.append(f.run(b))
+      print(f"{len(squished)=}")
+      svgfile = svg.make(model, squished, meander_conf=mc)
+    svg.write(svgfile)
+    print(f"""
+added {f.stats[0]} merged {f.stats[1]} cropped {f.stats[2]} 
+ignored {f.stats[3]} punched {f.stats[4]}
+TOTAL {len(f.done)} {svgfile} {s}""")
+
+elif (args.keyword == 'init'):
+  ''' pull a palette from db and write to tmpfile
+      generate an editable config file 
+  '''
+  print(f'{args.model=} {args.palette=} {args.view=} {args.inkpal=}')
+  if args.inkpal: # e.g. uniball.gpl
+    paldir  = '/home/gavin/.config/inkscape/palettes/'
+    palette = pmk.inkscapePal(paldir, f"{args.inkpal}.gpl")
+    tf.exportPalfile(args.inkpal, palette) 
+    print(f"{args.inkpal}.txt was written")
+  elif args.palette in range(99) and args.model:
+    _model, src, celldata = view.generate(model=args.model, ver=args.palette)
+    tf.conf(args.model, fnam[args.palette]) # conf state is a symlink
+    celldata = tf.convertToList(celldata) # become a list before writing
+    tf.write(args.model, celldata)
+    print(f"""
+initialising {args.model} with {len(celldata)} cells from {src}
+palette {fnam[args.palette]}""")
+  elif args.palette in range(99): # export from palette table
+    fn    = fnam[args.palette]
+    pal.loadPalette(ver=fn)
+    #pp.pprint(pal.palette)
+    palette = pal.palette # keep order so relations are grouped
+    tf.exportPalfile(fn, palette) 
+    print(f"{fn}.txt was written")
+  else:
+    ver = random.choice(range(1, 6)) # len(fnam) is incorrect because not enough entries
+    model, src, celldata = view.generate(model=args.model, ver=ver)
+    tf.conf(model, fnam[ver])                 # conf state is a symlink
+    celldata = tf.convertToList(celldata)     # become a list before writing
+    tf.write(model, celldata)
+    print(f"""
+initialising {model} with {len(celldata)} cells from {src}
+palette {fnam[ver]}""")
+
+elif (args.keyword == 'ls'):
+  ''' list from db or config
+  '''
+  print(f'{args.output=}')
+  if args.output == 'pal': [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
+  else: print(modl.stats())
+
+elif (args.keyword == 'publish'):
+  ''' used by reith to update pubdate
+  '''
+  print(f'{args.view=}')
+  view.update(d)
+  print(f"updated ok")
+
+elif (args.keyword == 'read'):
+  print(f'{args.model=} {args.view=}')
+  if args.model:
+    bd        = BlockData(args.model)
+    blocksize = modl.read(model=args.model)[2]
+    print(bd.prettyPrint(args.model, blocksize[0], blocksize[1]))
+  else:  # reith is consumer
+    view = view.readMeta(digest=args.view)
+    print(' '.join(view[:2]))
+
+elif (args.keyword == 'build'):
+  ''' generate an SVG from tmpfile using ElementTree
+  '''
+  print(f'{args.model=} {args.size=} {args.palette=} {args.view=} {args.line=}')
+  if args.palette or args.view:
+    fn      = fnam[args.palette] if args.palette else args.view
+    palette = tf.importPalfile(fn)
+    svgpal.render(fn, palette)
+    print(f"{fn}.svg was written")
+  else:
+    block     = Make(args.size)
+    mc, pal   = tf.conf()
+    model     = mc if args.model is None else args.model
+    if model is None:
+      model     = 'minkscape' # default model
+      celldata  = config.cells
+      positions = config.positions
+    else:
+      ver       = fnam.index(pal)
+      celldata  = tf.read(model, output=dict())
+      bd        = BlockData(model)
+      positions = bd.readPositions(model)
+      view.validate(celldata, ver=ver)
+
+    if args.line:
+      block.walk(positions, celldata)
+      block.meander(padding=False)
+      svg.drawLine(block, svgfile=f'_.{model}._.line')
+    else:
+      block.walk(positions, celldata)
+      svg.draw(block, svgfile=f'_.{model}._.box')
+    print(f'{model=} svg was written')
 
 '''
 the

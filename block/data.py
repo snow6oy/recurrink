@@ -2,9 +2,7 @@ import random
 import psycopg2
 from model import Db, ModelData
 from cell import CellData
-#from model.db import Db
-#from model.data import ModelData
-
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
   ''' a View is an instance of a model, composed from a collection of blocks 
   '''
@@ -257,4 +255,21 @@ AND model = %s;""", [model])
     rows = self.cursor.fetchall()
     tc = [a[0] for a in rows]
     return tc
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+  def prettyPrint(self, model, bsx, bsy):
+    out = str()
+    positions = self.readPositions(model)
+    for y in range(bsy):
+      for x in range(bsx):
+        p = tuple([x, y])
+        cell = positions[p][0]
+        top = positions[p][1] if positions[p][1] else '-'
+        out += f'{cell}{top} '
+      out += "\n"
+    return out
+
+'''
+the
+end
+'''
+
