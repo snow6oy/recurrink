@@ -5,13 +5,14 @@
 import os.path
 import unittest
 import pprint
-from cell import Cell
+from cell import CellData
+from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
-class TestCell(unittest.TestCase):
+class Test(unittest.TestCase):
 
   def setUp(self):
-    self.c = Cell(2) # colour45 inherit Stroke() class
+    self.c = CellData(2) # colour45 inherit Stroke() class
 
   def testGenerateOne(self):
     ''' called with axis cell generate along ONE axis
@@ -46,7 +47,7 @@ class TestCell(unittest.TestCase):
     ''' send line from /tmp/MODEL.txt to update an existing view
         cell shape size facing top fill bg fo stroke sw sd so
     '''
-    c = Cell(ver=2)  # htmstarter
+    c = CellData(ver=2)  # htmstarter
     self.assertFalse(c.create(
       'e4681aa9b7aef66efc6290f320b43e55',
       ['a','triangl','medium','west',False,'#FFF','#000',1.0,'#000',1,0,1]
@@ -59,7 +60,7 @@ class TestCell(unittest.TestCase):
     ''' before writing SVG check TmpFile for human error
         (stroke width should not be 60)
     '''
-    self.c.load_palette()
+    self.c.loadPalette()
     cells = { 
       'a': { 
         'bg': '#DC143C', 'facing': 'east', 'fill': '#4B0082', 'fill_opacity': '1.0',
@@ -69,3 +70,7 @@ class TestCell(unittest.TestCase):
     }
     #self.c.validate(cells) # does it raise an error
     self.assertRaises(ValueError, self.c.validate, cells)
+'''
+the
+end
+'''

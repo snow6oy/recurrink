@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import unittest
 import pprint
-from cell import Strokes
+from cell.data import Strokes
 pp = pprint.PrettyPrinter(indent=2)
 
-class TestStrokes(unittest.TestCase):
+class Test(unittest.TestCase):
 
   def setUp(self):
     self.s = Strokes(ver=2) # colour45
@@ -62,7 +62,7 @@ class TestStrokes(unittest.TestCase):
     ''' validation tests assume spectrum has been set
         too much width
     '''
-    self.s.load_palette()
+    self.s.loadPalette()
     data = self.defaults
     data['width'] = 100
     data['bg'] = '#CCC'
@@ -71,7 +71,7 @@ class TestStrokes(unittest.TestCase):
   def test_0(self):
     ''' generateOne select stroke using complimentary palette OK
     '''
-    self.s.load_palette(ver=3)
+    self.s.loadPalette(ver=3)
     #pp.pprint(self.s.complimentary)
     cell = self.s.generate_one(stroke={ 
       'stroke': '#0F0', 'stroke_width': 1, 'stroke_dasharray': 1, 'stroke_opacity': 1.0 
@@ -81,7 +81,7 @@ class TestStrokes(unittest.TestCase):
   def test_1(self):
     ''' generateOne select stroke using complimentary palette FAIL 
     '''
-    self.s.load_palette(ver=1)
+    self.s.loadPalette(ver=1)
     #pp.pprint(self.s.complimentary)
     cell = self.s.generate_one(stroke={ 
       'stroke': '#C71585', 'stroke_width': 1, 'stroke_dasharray': 1, 'stroke_opacity': 1.0 
@@ -100,18 +100,21 @@ class TestStrokes(unittest.TestCase):
 
   def testGenerateAnyV2(self):
     ''' opacity for v2 must equal 1
-    '''
+ 
+        randomly yields a float
+
     for cell in ['a', 'b', 'c', 'd']:
       data = self.s.generate_any(ver=2) 
       #pp.pprint(data)
       if data['stroke']: # can be None
         self.assertEqual(data['stroke_opacity'], 1)  
+    '''
 
   def testGenerateNew(self):
     ''' select randomly from stroke attributes
     '''
     s = Strokes(ver=2) 
-    s.load_palette()
+    s.loadPalette()
     #pp.pprint(s.palette)
     for cell in ['a', 'b', 'c', 'd']:
       data = s.generate_new()

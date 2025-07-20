@@ -21,18 +21,24 @@ parser_b.add_argument(
 parser_b.add_argument("-v", "--view", help='palette from view to write as svg')
 parser_b.add_argument('-m', '--model', help='name of model to build')
 parser_b.add_argument(
-  "-s", "--size", help='cell length', nargs='?', type=int, choices=[9,18,27,45,54,90], const=9, required=True
+  "-s", "--size", help='cell length', nargs='?', type=int, 
+  choices=[9,18,27,45,54,90], const=9, required=True
 )
 parser_b.add_argument(
-  '-l', '--line',  help='output for plotter', action=argparse.BooleanOptionalAction
+  '-l', '--line',  help='output for plotter', 
+  action=argparse.BooleanOptionalAction
 )
 
-parser_m = subparsers.add_parser('compare', help='compare palettes: tmpfile to db')
+parser_m = subparsers.add_parser(
+  'compare', help='compare palettes: tmpfile to db'
+)
 parser_m.add_argument(
   "-p", "--palette", help='read palette from version in db', type=int, 
   choices=range(0, 99), metavar='[0-99]', required=True
 )
-parser_m.add_argument("-v", "--view", help='read palette from view in tmpfile', required=True)
+parser_m.add_argument(
+  "-v", "--view", help='read palette from view in tmpfile', required=True
+)
 
 parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
 parser_c.add_argument( 
@@ -53,15 +59,24 @@ parser_k.add_argument(
 )
 
 parser_d = subparsers.add_parser('delete')
-parser_d.add_argument("-v", "--view", help='view to remove from db', required=True)
-
-parser_e = subparsers.add_parser('explode', help='stamp a block across the grid')
-parser_e.add_argument(
-  "-s", "--size", help='cell length', nargs='?', type=int, choices=[9,18,27,45,54,90], const=9, required=True
+parser_d.add_argument(
+  "-v", "--view", help='view to remove from db', required=True
 )
 
-parser_f = subparsers.add_parser('flatten', help='write svg formatted for plotter')
-parser_f.add_argument("-s", "--scale", help='scale to plot clone .6 1 2', required=False)
+parser_e = subparsers.add_parser(
+  'explode', help='stamp a block across the grid'
+)
+parser_e.add_argument(
+  "-s", "--size", help='cell length', nargs='?', 
+  type=int, choices=[9,18,27,45,54,90], const=9, required=True
+)
+
+parser_f = subparsers.add_parser(
+  'flatten', help='write svg formatted for plotter'
+)
+parser_f.add_argument(
+  "-s", "--scale", help='scale to plot clone .6 1 2', required=False
+)
 parser_f.add_argument(
   "-w", "--wireframe", help="flatten as wireframe", 
   action=argparse.BooleanOptionalAction
@@ -87,7 +102,9 @@ parser_l.add_argument(
 )
 
 parser_p = subparsers.add_parser('publish', help='add release date to db')
-parser_p.add_argument("-v", "--view", help='view to mark as released', required=True)
+parser_p.add_argument(
+  "-v", "--view", help='view to mark as released', required=True
+)
 
 parser_r = subparsers.add_parser('read', help='get view metadata')
 parser_r.add_argument('-m', '--model', help='name of base model')
@@ -131,7 +148,9 @@ elif (args.keyword == 'commit'):
     model      = view.read_meta(args.view)[0]
     celldata   = tf.read(model, output=list())
     numupdated = pal.swap_palette(celldata, ver, digest)
-    print(f"update {numupdated} view, swapping {args.view} to palette {fnam[args.palette]}")
+    print(f"""
+update {numupdated} view 
+swapping {args.view} to palette {fnam[args.palette]}""")
   elif args.palette:
     palette         = tf.importPalfile(fnam[args.palette])
     missing_colours = pmk.colour_check(pal, palette)
@@ -144,7 +163,9 @@ elif (args.keyword == 'commit'):
   elif args.author:
     model, pal = tf.conf()
     if model is None:
-      raise ValueError("cannot commit: missing symlinks? {model} or {pal} or both")
+      raise ValueError(
+        "cannot commit: missing symlinks? {model} or {pal} or both"
+      )
     ver      = fnam.index(pal)
     scale    = scale if args.scale else modl.getScale(model)
     celldata = tf.read(model, output=list())
@@ -185,7 +206,8 @@ cloning {model}
 with {len(celldata)} cells
 palette {fnam[ver]}""")
 
-elif (args.keyword == 'delete'): # as delete has no help text it is not listed by argparse
+elif (args.keyword == 'delete'): 
+  # as delete has no help text it is not listed by argparse
   print(f'{args.view=}')
   ''' both svg and view must exist for the delete to succeed
       4e3e83e969f2b41bf47fda2ec430a8f8 
@@ -207,14 +229,6 @@ elif (args.keyword == 'explode'):
       image is square: with margins grid is 270 x 270
       numbers of cells defined by cell length which is always divisible by 3
       to ensure whole numbers: clen must be one of: 9 18 27 45 54 90
-
-  lsvg.styleGuide(block1, linear=True)        # populate styles in Layout
-  cn = tuple([blocksz[0], blocksz[1] * 2])    # walk down one step
-  cn = tuple()
-  lsvg.gridWalk(blocksz, block1, cellnum=cn)  # add cells in Layout()
-  lsvg.svgDoc(meander=True)                   # combine styles and cells
-  lsvg.svgMarkup()
-  lsvg.write(f'tmp/cflat_{model}.svg')
   '''
   print(f'{args.size=}')
   block      = Make(args.size)
@@ -228,10 +242,9 @@ elif (args.keyword == 'explode'):
     model     = 'minkscape' # default model
     celldata  = config.cells
     positions = config.positions
-  #print(model)
-  block.setBlocksize(positions)
   block.walk(positions, celldata)
-  svglin.gridWalk(block, args.size)
+  block.hydrateGrid()
+  svglin.explode(block)
   svglin.render()
 
 elif (args.keyword == 'flatten'):
@@ -323,7 +336,8 @@ elif (args.keyword == 'ls'):
   ''' list from db or config
   '''
   print(f'{args.output=}')
-  if args.output == 'pal': [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
+  if args.output == 'pal': 
+    [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
   else: print(modl.stats())
 
 elif (args.keyword == 'publish'):

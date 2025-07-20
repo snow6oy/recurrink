@@ -5,13 +5,15 @@
 import os.path
 import unittest
 import pprint
-from cell import Geometry
+from cell.data import Geometry
 pp = pprint.PrettyPrinter(indent=2)
 
-class TestGeometry(unittest.TestCase):
+class Test(unittest.TestCase):
   ''' geometries are shared and have a 1:* relation with views and cells
-      geometries are never updated, only inserted when shape/size/facing/top combination is new
-      immutable avoids side-effect of incrementing SERIAL by anticipating UniqueViolation 
+      geometries are never updated, only inserted 
+      when shape/size/facing/top combination is new
+      immutable avoids side-effect of incrementing SERIAL 
+      by anticipating UniqueViolation 
   '''
   def setUp(self):
     self.g = Geometry()

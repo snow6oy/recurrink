@@ -13,7 +13,6 @@ Archive
 __pycache__/*
 t/__pycache__/*
 t/__init__.py
-t/zz
 cell/__pycache__/*
 model/__pycache__/*
 block/__pycache__/*

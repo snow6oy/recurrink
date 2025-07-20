@@ -115,23 +115,29 @@ TODO evolve the data model
 2. to extend the model to support flattening
 
 ```
-gavin@macarol:~/code/recurrink$ find cell block model -name "*.py"
+cell/
+cell/data.py
+cell/layer.py
+cell/shape/
+cell/shape/rectangle.py
+cell/shape/parabola.py
+cell/shape/gnomon.py
 
-cell.data
-cell.layer
-cell.shape.rectangle
-cell.shape.gnomon
+block/
+block/data.py
+block/make.py
+block/styles.py
+block/spiral.py
+block/meander.py
+block/tmpfile.py
+block/palette.py
 
-block.styles
-block.meander
-block.tmpfile
-block.make
-block.data
-
-model.svg
-model.db
-model.data
-
+model/
+model/db.py
+model/svg.py
+model/data.py
+model/linear.py
+model/palette.py
 ```
 Three tables in Cell
 - cells c.ext int0 int1
@@ -162,6 +168,7 @@ OR use Ruben method
 - implement new YAML by extending TmpFile
 - produce a YAML from Flatten and stop toggling
 - shape validation should be done by Shape
+- nice if the pen names appear in Inkscape <g id=Y123 /> for copic yellow
 - resolve flatten errors by using Don Cooke theory and check results
 - Gnomon defect when SW and NE guides. Try anti-clockwise?
 
@@ -186,6 +193,5 @@ New YAML should also remove support for small lines (use square instead)
 Using kwargs send set_alpha based on fill_opacity
 [](https://matplotlib.org/devdocs/api/_as_gen/matplotlib.artist.Artist.set_alpha.html#matplotlib.artist.Artist.set_alpha)
 
-
-
-
+## Line count
+3575 before not bft

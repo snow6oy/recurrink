@@ -64,26 +64,6 @@ class Rectangle:
     if self.VERBOSE: print(f'{shape=} {size=} {facing=} {x} {y} {w} {h}')
     return ((x, y), (x, h), (w, h), (w, y))
 
-  def __guide(self, direction):
-    ''' expand facing to a pair of guidelines for meander
-
-        TODO are the NSEW aliases used?
-    '''
-    control = {
-        'all': ('spiral'),  # TODO EB ET
-          'N': ('EB', 'ET'),
-      'north': ('EB', 'ET'),
-          'S': ('EB', 'ET'),
-      'south': ('EB', 'ET'),
-          'E': ('NL', 'NR'),
-       'east': ('NL', 'NR'),
-          'W': ('NL', 'NR'),
-       'west': ('NL', 'NR'),
-    }
-    if direction in control: return control[direction]
-    else: # abandon if there are no guidelines defined
-      raise KeyError(f'all at sea > {direction=} {self.name=} not found')
-
   def guide(self, direction):
     ''' expand facing to a pair of guidelines for meander
     '''

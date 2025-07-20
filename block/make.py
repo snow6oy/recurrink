@@ -1,4 +1,7 @@
+import copy
+import pprint
 from shapely.geometry import Polygon, LineString
+from shapely import transform
 from cell import Layer
 from .meander import Meander
 from .styles import Styles
@@ -13,7 +16,9 @@ class Make:
     self.cells  = dict()
     self.style  = Styles()
     self.guide  = dict()
+    self.grid   = [{} for _ in range(3)] # unique style for each layer
     if clen: self.CLEN = clen
+
 
   def walk(self, positions, cells):
     ''' navigate the model and populate cells
@@ -90,6 +95,26 @@ class Make:
     points = m.collectPoints(gline, shape=padme)
     return LineString(m.makeStripes(points))
 
+  def meander(self, padding=True):
+    ''' transform polygons into lines
+    '''
+    for z in range(3): # bg 0 fg 1 top 2
+      for pos in self.cells:
+ 
+        polygn = self.polygon(pos, z)
+        if polygn is None: continue
+
+        algo, *guide  = self.guide[pos][z]
+        if algo == 'spiral':
+          linestr = self.meanderSpiral(polygn, pos)
+        elif algo == 'composite':
+          linestr = self.meanderComposite(guide, pos, padding=padding)
+        elif algo == 'guided':
+          linestr = self.meanderGuided(polygn, guide, padding=padding)
+        else:
+          raise Warning(f"{pos} {z} {algo} not known to Meander")
+        self.guide[pos][z] = linestr # replace guide with Shapely.LineString
+
   def setBlocksize(self, positions):
     ''' extract blocksize and set for downstream functions
     '''
@@ -111,26 +136,25 @@ class Make:
     elif z == 0: polygn = c.geoms[z]     # bg
     return polygn
 
-  def meander(self, padding=True):
-    ''' transform polygons into lines
+  def hydrateGrid(self):
+    ''' convert one block into a list of polygons
+        each list has a unique style for each layer
+        0 s1 [p1 p2], s2 [p1]
     '''
-    for z in range(3): # bg 0 fg 1 top 2
-      for pos in self.cells:
- 
+    for pos in self.cells:
+      for z in range(len(self.cells[pos].geoms)):
+        #print(z, pos)
+        fill   = self.style.fill[pos][z]
+        style  = f'fill:{fill};fill-opacity:0.5'
         polygn = self.polygon(pos, z)
-        if polygn is None: continue
-
-        algo, *guide  = self.guide[pos][z]
-        if algo == 'spiral':
-          linestr = self.meanderSpiral(polygn, pos)
-        elif algo == 'composite':
-          linestr = self.meanderComposite(guide, pos, padding=padding)
-        elif algo == 'guided':
-          linestr = self.meanderGuided(polygn, guide, padding=padding)
+        if style in self.grid[z]:
+          self.grid[z][style].append(polygn)
         else:
-          raise Warning(f"{pos} {z} {algo} not known to Meander")
-        self.guide[pos][z] = linestr # replace guide with Shapely.LineString
-
+          self.grid[z][style] = list()
+          self.grid[z][style].append(polygn)
+    #pprint.pprint(self.grid)
+    return None
+ 
 '''
 the
 end

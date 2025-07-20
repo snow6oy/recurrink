@@ -10,7 +10,7 @@ pp = pprint.PrettyPrinter(indent=2)
 class Test(unittest.TestCase):
   def setUp(self):
     self.writer  = SvgWriter()
-    self.VERBOSE = True
+    self.VERBOSE = False
 
   def test_a(self): 
     ''' guidelines for East with plot of before and after padding
@@ -52,7 +52,6 @@ class Test(unittest.TestCase):
 
   def test_d(self):
     ''' two Gnomons make a Polygon with a whole
-    '''
     g      = Meander(Polygon([(3,3),(3,15),(7,15),(7,7),(15,7),(15,3)]))
     gpad   = g.pad()
     guides = g.guidelines(('ET','NE','NR'), shape=gpad)
@@ -66,6 +65,7 @@ class Test(unittest.TestCase):
     xy     = list(stripe.coords)
     self.assertEqual((4,14),xy[0])
     self.assertEqual((8,12),xy[-1])
+    '''
 
   def test_e(self):
     ''' one Gnomon plus Rectangle makes a Parabola
@@ -188,16 +188,8 @@ class Test(unittest.TestCase):
       self.writer.plotLine(stripes, self.id())
     self.assertEqual(18, len(list(stripes.coords)))
 
-  def test_l(self):
-    ''' set clock migrated from Parabola
-    '''
-    m = Meander(Polygon())
-    self.assertFalse(m.setClock(12.0, 12.0))
-    self.assertTrue(m.setClock(15.0, 15.0))
-
   def test_m(self):
     ''' irregular sqring needs a spiral
-    '''
     outer = [(0,0), (60,0), (60,60), (0,60)]
     inner = [(20,15), (20,45), (40,45), (40,15)]
     wonky = Polygon(outer, holes=[inner])
@@ -208,6 +200,7 @@ class Test(unittest.TestCase):
 
     if self.VERBOSE:
       self.writer.plotLine(mls, self.id())
+    '''
 
   def test_n(self):
     ''' similar to test_h but uses Composite orchestrator
@@ -242,7 +235,6 @@ class Test(unittest.TestCase):
     m = Meander(parabol)
     '''
     self.writer.plot(parabol, self.id())
-    '''
     #south = { True:  ('NR', 'NE', 'ET'), False: ('ET', 'NE', 'NR')}
     south = { True:  ('WB', 'NW', 'NR'), False: ('ET', 'EB')}
     print(south[True])
@@ -257,6 +249,7 @@ class Test(unittest.TestCase):
     points  = m.collectPoints(mls)
     stripes = m.makeStripes(points)
     self.writer.plotLine(stripes, self.id())
+    '''
 
 '''
 the

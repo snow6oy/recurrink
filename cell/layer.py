@@ -1,5 +1,6 @@
 import math
 from shapely.geometry import Polygon, LineString, MultiPolygon
+from shapely import transform
 from .shape import *
 
 class Layer:
@@ -7,7 +8,7 @@ class Layer:
   VERBOSE = False
 
   # TODO expose padding so Block.walk() can init
-  def __init__(self, pos=tuple([0,0]), clen=60): 
+  def __init__(self, pos=tuple([0,0]), clen=9): 
     self.bft       = list()
     self.direction = list()   # make guide for meander
     self.clen      = clen     # length of cell
@@ -59,7 +60,14 @@ class Layer:
       if p.is_valid: continue
       raise TypeError(p)
     
-    return MultiPolygon(polygons) if len(polygons) else polygons[0]
+    return MultiPolygon(polygons) # if len(polygons) > 1 else polygons[0]
+
+  def tx(self, x, y):
+    ''' copy.copy ??
+    '''
+    p      = self.polygon()
+    polygn = transform(p, lambda a: a + [x, y])
+    return polygn
 
   def dimension(self, x, y, clen):
     ''' set dimensions for all shapes 
