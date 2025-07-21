@@ -63,16 +63,21 @@ class SvgLinear:
     self.ns = '{http://www.w3.org/2000/svg}'
     self.root = root
 
-  def render(self, model='minkscape'):
+  def render(self, model, line=False):
     ''' render SVG grouped by colour for pen plotting
     pp.pprint(self.grid[0].keys())
     '''
     self.setSvgHeader()
     inner_p = list()
-    uniqid = 1 # xml elements must have unique IDs
+    elem    = 'polyline' if line else 'polygon'
+    uniqid  = 1 # xml elements must have unique IDs
+
     for layer in self.grid:
       for style in layer:
-        # group ID should be the name of the pen e.g. S68-034
+        # TODO
+        ''' group ID should be the name of the pen e.g. S68-034
+            to show 1mm stripes in gthumb set stroke-width:0.5 ??
+        '''
         g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
         g.set('style', style)  # 'fill:#FFF;stroke:#000;stroke-width:1'
         #print(style)
@@ -80,13 +85,15 @@ class SvgLinear:
           ''' SVG polygon
           '''
           uniqid += 1
-          p  = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
+          p  = ET.SubElement(g, f"{self.ns}{elem}", id=str(uniqid))
           points = str()
-          if len(shape.interiors): # Square Ring has a hole
+          if not line and len(shape.interiors): # Square Ring has a hole
             outer  = list(shape.exterior.coords)
             inner  = list(shape.interiors)
             coords = outer 
             [inner_p.append(list(lring.coords)) for lring in inner]
+          elif line:
+            coords = list(shape.coords)
           else:
             coords = list(shape.boundary.coords)
           for c in coords:
@@ -96,13 +103,14 @@ class SvgLinear:
         uniqid += 1
         ''' fill in the holes
         '''
-        g2 = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-        # 'fill:#FFF;stroke:#000;stroke-width:1;stroke-dasharray:0.5')
-        g2.set('style', style)
+        if len(inner_p) > 0:
+          g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
+          # 'fill:#FFF;stroke:#000;stroke-width:1;stroke-dasharray:0.5')
+          g.set('style', style)
         for coords in inner_p:  
           uniqid += 1
           # Add any points from inner ring
-          p      = ET.SubElement(g2, f"{self.ns}polygon", id=str(uniqid))
+          p      = ET.SubElement(g, f"{self.ns}{elem}", id=str(uniqid))
           points = str()
           for c in coords:
             coord = ','.join(map(str, c))

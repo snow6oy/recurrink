@@ -1,4 +1,5 @@
 import copy
+import time
 import pprint
 from shapely.geometry import Polygon, LineString
 from shapely import transform
@@ -35,7 +36,10 @@ class Make:
         cells[label]['fill'] = None 
         cell.direction[0]    = ('spiral', None)
       # TODO can Styles help make the hole invisible? alpha=0 fill_opacity
-      self.style.add(pos, fill=cells[label]['bg'])
+      self.style.add(pos, 
+        fill=cells[label]['bg'], stroke=cells[label]['bg'],
+        stroke_opacity=1, stroke_width=0.7
+      )
 
       for label in positions[pos]:
         if not label: continue
@@ -45,14 +49,26 @@ class Make:
             facing = cells[label]['facing'],
             size   = cells[label]['size']
           )
-          self.style.add(pos, fill=cells[label]['fill'])
+          self.style.add(pos, 
+            fill=cells[label]['fill'],
+            stroke=cells[label]['stroke'],
+            stroke_dasharray=cells[label]['stroke_dasharray'],
+            stroke_opacity=cells[label]['stroke_opacity'],
+            stroke_width=cells[label]['stroke_width']
+          )
         else:
           cell.foreground(
             shape  = cells[label]['shape'],
             facing = cells[label]['facing'],
             size   = cells[label]['size']
           )
-          self.style.add(pos, fill=cells[label]['fill'])  
+          self.style.add(pos, 
+            fill=cells[label]['fill'],
+            stroke=cells[label]['stroke'],
+            stroke_dasharray=cells[label]['stroke_dasharray'],
+            stroke_opacity=cells[label]['stroke_opacity'],
+            stroke_width=cells[label]['stroke_width']
+          )
       self.cells[pos] = cell.polygon()
       self.guide[pos] = cell.direction
 
@@ -105,6 +121,7 @@ class Make:
         if polygn is None: continue
 
         algo, *guide  = self.guide[pos][z]
+        #print(f'{z} {pos} {algo} {time.time()}')
         if algo == 'spiral':
           linestr = self.meanderSpiral(polygn, pos)
         elif algo == 'composite':
@@ -136,7 +153,7 @@ class Make:
     elif z == 0: polygn = c.geoms[z]     # bg
     return polygn
 
-  def hydrateGrid(self):
+  def __hydrateGrid(self):
     ''' convert one block into a list of polygons
         each list has a unique style for each layer
         0 s1 [p1 p2], s2 [p1]
@@ -152,6 +169,37 @@ class Make:
         else:
           self.grid[z][style] = list()
           self.grid[z][style].append(polygn)
+    #pprint.pprint(self.grid)
+    return None
+ 
+  def hydrateGrid(self, line=False):
+    ''' convert one block into a list of polygons
+        each list has a unique style for each layer
+        0 s1 [p1 p2], s2 [p1]
+    '''
+    for z in range(3): 
+      for pos in self.cells:
+        print(z, pos)
+        polygn = self.polygon(pos, z)
+        if not polygn: continue
+        if line:
+          f = 'fill:none;'
+          s = f'stroke:{self.style.stroke[pos][z]};'
+          d = f'stroke-dasharray:{self.style.stroke_dasharray[pos][z]};'
+          o = f'stroke-opacity:{self.style.stroke_opacity[pos][z]};'
+          w = f'stroke-width:{self.style.stroke_width[pos][z]};'
+
+          style  = f + s + d + o + w
+          geom   = self.guide[pos][z]    # fetch linestring
+        else:
+          fill   = self.style.fill[pos][z]
+          style  = f'fill:{fill};fill-opacity:0.5'
+          geom   = polygn                # assign polygon
+        if style in self.grid[z]:
+          self.grid[z][style].append(geom)
+        else:
+          self.grid[z][style] = list()
+          self.grid[z][style].append(geom)
     #pprint.pprint(self.grid)
     return None
  

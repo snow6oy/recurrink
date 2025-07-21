@@ -9,9 +9,6 @@ class Test(unittest.TestCase):
 
   def setUp(self):
     self.VERBOSE = False
-    self.expected = [
-      (0, 0), (0, 0), (3, 3), (9, 0), (12, 0), (6, 3), (18, 0)
-    ]
 
   def test_a(self):
     ''' make cell and check style
@@ -45,16 +42,21 @@ class Test(unittest.TestCase):
   def test_e(self):
     ''' svg coords for each minkscape cell
     '''
+    expected = [
+      (0, 0), (9, 0), (18, 0), (0, 0), (12, 0), (21, 3), (3, 3), (6, 3)
+    ]
     bm      = Make()
     bm.walk(config.positions, config.cells)
     to_test = list()
-    for pos, cell in bm.cells.items():
-      for i, polygn in enumerate(cell.geoms):
-        x, y, *z = polygn.bounds
-        to_test.append(tuple([int(x), int(y)]))
+    for z in range(3):
+      for pos in bm.cells:
+        polygn = bm.polygon(pos, z)
+        if polygn:
+          x, y, *zz = polygn.bounds
+          to_test.append(tuple([int(x), int(y)]))
     if self.VERBOSE: pp.pprint(to_test)
-    self.assertEqual(len(self.expected), len(to_test))
-    [self.assertEqual(e, to_test[i]) for i, e in enumerate(self.expected)]
+    self.assertEqual(len(expected), len(to_test))
+    [self.assertEqual(e, to_test[i]) for i, e in enumerate(expected)]
 
   def test_f(self):
     ''' filter block1 so that only cells with large shapes remain

@@ -70,6 +70,10 @@ parser_e.add_argument(
   "-s", "--size", help='cell length', nargs='?', 
   type=int, choices=[9,18,27,45,54,90], const=9, required=True
 )
+parser_e.add_argument(
+  '-l', '--line',  help='output for plotter', 
+  action=argparse.BooleanOptionalAction
+)
 
 parser_f = subparsers.add_parser(
   'flatten', help='write svg formatted for plotter'
@@ -230,7 +234,7 @@ elif (args.keyword == 'explode'):
       numbers of cells defined by cell length which is always divisible by 3
       to ensure whole numbers: clen must be one of: 9 18 27 45 54 90
   '''
-  print(f'{args.size=}')
+  print(f'{args.size=} {args.line=}')
   block      = Make(args.size)
   svglin     = SvgLinear(args.size)
   model, ver = tf.conf()  
@@ -243,11 +247,13 @@ elif (args.keyword == 'explode'):
     celldata  = config.cells
     positions = config.positions
   block.walk(positions, celldata)
-  block.hydrateGrid()
+  if args.line: block.meander(padding=False)
+  print('-'*80)
+  block.hydrateGrid(line=args.line)
   svglin.explode(block)
-  svglin.render()
+  svglin.render(model, line=args.line)
 
-elif (args.keyword == 'flatten'):
+elif args.keyword == 'flatten':
   print(f'{args.scale=} {args.yaml=} {args.wireframe=}')
   #def flatten(scale, yaml=False, wireframe=False):
   ''' once cloned use flatten to make an SVG for plotting
