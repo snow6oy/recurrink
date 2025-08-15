@@ -1,7 +1,7 @@
 import random
 import psycopg2
 from model import Db
-#from model.db import Db
+from .shape import *
 
 class Geometry(Db):
   ''' Generate a geometry by selecting existing geometries from db
@@ -103,24 +103,47 @@ ORDER BY random() LIMIT 1;""", [top])
     '''
     flip = self.flip[axis]
     geom = self.read_one(list(flip.keys()))
-    geom[2] = flip[facing] if facing else geom[2] # this makes western line and IT IS FINE
+    # makes western line and IT IS FINE
+    geom[2] = flip[facing] if facing else geom[2] 
     geom[3] = top
     return dict(zip(['shape','size','facing','top'], geom))
 
-  def validate(self, cell, data):
-    #print(f"{cell}\tshape {data['shape']} size {data['size']} facing {data['facing']} top {data['top']}")
+  def validate(self, label, geom):
+    if 'name' in geom: name = geom['name']
+    else: raise ValueError(f"validation error: {label}")
+
+    shapes = {
+         'line': Rectangle(name),
+         'edge': Rectangle(name),
+       'square': Rectangle(name),
+       'sqring': Rectangle(name),
+       'gnomon': Gnomon(),
+      'parabol': Parabola(),
+      'triangl': Triangle(),
+      'diamond': Diamond(),
+       'circle': Circle()
+    }
+    shape  = shapes[name]
+    errmsg = shape.validate(geom)
+    if errmsg: raise ValueError(f"validation error {label}: {name} {errmsg}")
+
+    '''
+    print(f"""{label}
+{cell['shape']} size {cell['size']} facing {cell['facing']} top {cell['top']}
+""")
     if data['shape'] in ['square', 'circle'] and data['facing'] != 'all':
       raise ValueError(f"validation error: circle and square must face all {cell}")
     if data['shape'] in ['triangl', 'line'] and data['facing'] == 'all': 
       raise ValueError(f"validation error: triangles and lines cannot face all {cell}")
     if data['shape'] in ['triangl', 'diamond'] and data['size'] in ['large', 'small']: 
-      raise ValueError(f"validation error: triangle or diamond wrong size {cell}")
+      raise ValueError(f"validation error: triangle or diamond wrong size {label}")
+    '''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Palette(Geometry):
 
-  def __init__(self, ver):
+  def __init__(self, ver=0):
     super().__init__()
-    self.ver = ver # universal is set as default by recurrink
+    self.ver     = ver # universal is not a good default (hint: each function can override)
     self.opacity = self.read_opacity()
     self.zeroten = [n for n in range(1, 11)]
 
@@ -224,6 +247,7 @@ AND bg = %s;""", palette)
     return pids
 
   def read_any(self, ver):
+    #if ver not in range(9): ver = 1 # 10 has no entries
     self.cursor.execute("""
 SELECT fill, bg, opacity
 FROM palette
@@ -292,10 +316,10 @@ FROM colours;""", [])
     colours = [c[0] for c in self.cursor.fetchall()]
     return colours
 
-  def load_palette(self, ver=None):
+  def loadPalette(self, ver=None):
     ''' used to validate inputs from tmpfile
     '''
-    ver = ver if ver in range(10) else self.ver  # override for tester
+    ver = ver if ver in range(99) else self.ver  # override for tester
     self.read_palette(ver)
     if len(self.palette) == 0:
       raise ValueError(f"what version are you on about {ver}")
@@ -334,17 +358,29 @@ FROM colours;""", [])
     if fo == 1 and data['fill'] == data['bg'] and data['stroke_width'] is None:
       print(f"WARNING: opaque fill on same background >{cell}< ver: {self.ver}")
  
-  def validate(self, cell, data):
+  def validate(self, label, cell):
     ''' raise error unless given data exists in palette
     '''
-    Geometry.validate(self, cell, data) 
-    fo = float(data['fill_opacity'])
-    so = float(data['stroke_opacity']) if data['stroke_opacity'] else None
-    t = tuple([data['fill'], fo, data['bg']])
-    if t not in self.palette:
-      raise ValueError(f"validation error: >{cell}< {t}")
-    if fo == 1 and data['fill'] == data['bg'] and so is None:
-      print(f"WARNING: opaque fill on same background >{cell}< ver: {self.ver}")
+    print(f'{self.ver=} {label=} {cell.keys()}')
+    if 'geom' in cell:
+      Geometry.validate(self, label, cell['geom']) 
+    if 'color' in cell:
+      fo = float(cell['color']['opacity'])
+      # '#' + cell['color']['fill'], fo, '#' + cell['color']['background']
+      t  = tuple([cell['color']['fill'], fo, cell['color']['background']])
+      print(t)
+      if t not in self.palette:
+        raise ValueError(f"validation error: >{label}< {t} not in {self.ver=}")
+    if 'stroke' in cell:
+      pass
+      '''
+      if 'opacity' in cell['stroke']: so = float(cell['stroke']['opacity'])
+      else: so = None
+      if (fo == 1 and so is None
+        and cell['color']['fill'] == cell['color']['background']): 
+          print(f"""
+WARNING: opaque fill on same background >{cell}< ver: {self.ver}""")
+      '''
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Strokes(Palette):
@@ -391,14 +427,19 @@ AND opacity = %s;""", strokes)
     return sid[0] if sid else None
 
   def read_any(self, ver, opacity):
+    ''' a side effect of adding new Inkscape palettes is that SELECT returned None
+        the opacity limit has been relaxed so that init can work randomly
+    AND s.opacity = %s
+    ORDER BY random() LIMIT 1;""", [ver, opacity])
+    '''
+    if ver not in range(99): raise ValueError()
     self.cursor.execute("""
 SELECT s.fill, width, dasharray, s.opacity
 FROM palette as p
 LEFT OUTER JOIN strokes as s ON p.fill = s.fill OR p.bg = s.fill
 WHERE ver = %s
-AND s.opacity = %s
 GROUP BY sid
-ORDER BY random() LIMIT 1;""", [ver, opacity])
+ORDER BY random() LIMIT 1;""", [ver])
     return list(self.cursor.fetchone())
 
   def generate_one(self, stroke=None):
@@ -411,7 +452,10 @@ ORDER BY random() LIMIT 1;""", [ver, opacity])
       fill = stroke['stroke']
       data['stroke'] = self.complimentary[fill]
     else:
-      data = dict(zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(self.ver, random.choice(self.opacity))))
+      data = dict(
+        zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], 
+        self.read_any(self.ver, random.choice(self.opacity)))
+      )
     return data
 
   def generate_any(self, ver=None):
@@ -421,7 +465,8 @@ ORDER BY random() LIMIT 1;""", [ver, opacity])
     # TODO stroke or not should be consistent across all cells in view ?
     YN = random.choice([True, False]) # fifty fifty chance to get a stroke
     return dict(
-      zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], self.read_any(ver, random.choice(self.opacity)))
+      zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], 
+      self.read_any(ver, random.choice(self.opacity)))
     ) if YN else empty
 
   # TODO if width is 0 then all stroke attributes should be null
@@ -468,7 +513,8 @@ VALUES (%s, %s, %s, %s, %s);""", [digest, cell, gid, pid, sid])
       ok = False
     return ok
 
-  def generate(self, top, axis=None, facing_all=False, facing=None, primary=None, stroke=None):
+  def generate(self, top, 
+    axis=None, facing_all=False, facing=None, primary=None, stroke=None):
     #print(f"a {axis} t {top} p {facing} p {primary} s {stroke}")
     if axis:
       g = Geometry.generate_one(self, axis, top, facing)
@@ -486,7 +532,7 @@ VALUES (%s, %s, %s, %s, %s);""", [digest, cell, gid, pid, sid])
     self.data = g | p | s
 
   def validate(self, celldata):
-    self.load_palette()
+    self.loadPalette()
     [Strokes.validate(self, c, celldata[c]) for c in celldata]
   '''
   the

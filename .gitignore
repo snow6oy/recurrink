@@ -2,7 +2,8 @@
 TODO
 doc
 tmp
-conf
+palettes
+conf/*
 rinks/*
 pubq/*
 scripts/*
@@ -10,11 +11,11 @@ sql/models/*
 sql/palette/*
 *.swp
 .DS_Store
+scripts/*
 v/*
 Archive
-recurrink.py
 __pycache__/*
 */__pycache__/*
+cell/shape/__pycache__/*
 t/__init__.py
 t/zz/*
-cell/shape

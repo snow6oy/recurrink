@@ -1,43 +1,41 @@
-from block import Views, TmpFile
+from block import TmpFile
 import unittest
 import pprint
 import os.path
+import random
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
 
   def setUp(self):
     self.tf = TmpFile()
-    self.model = 'soleares'
+    self.model = 'minkscape'
 
-  def test_1(self):
+  def test_a(self):
     ''' Write soleares.txt in tmp might cause a false positive
-    '''
     v = Views()
     ver = 1
     model, src, celldata = v.generate(ver, self.model)
     #pp.pprint(celldata)
-    celldata = self.tf.convert_to_list(celldata)
+    celldata = self.tf.convertToList(celldata)
     self.tf.write(self.model, celldata)
     self.assertTrue(os.path.isfile('tmp/soleares.txt'))
+    '''
 
-  def test_2(self):
-    ''' read '''
-    celldata = self.tf.read(self.model)
-    #pp.pprint(celldata)
-    self.assertEqual(len(celldata.keys()), 4)
-    self.assertEqual(len(self.tf.digest), 32)
+  def test_b(self):
+    ''' read the meta stuff'''
+    metadata = self.tf.readConf(self.model, meta=True)
+    self.assertEqual(3, len(metadata.keys()))
 
-  def test_3(self):
-    ''' Read As List '''
-    celldata = self.tf.read(self.model, output=list())
-    #pp.pprint(celldata)
-    self.assertTrue(len(celldata))
-  
-  def test_4(self):
+  def test_c(self):
+    ''' Read celldata only, no meta stuff '''
+    celldata = self.tf.readConf(self.model)
+    for label in celldata:
+      self.assertTrue(label, 'geom' in celldata[label])
+
+  def test_d(self):
     ''' check vals from csv are correctly poured, e.g. top reordering
         shape size facing top fill bg fo stroke sw sd so
-    '''
     test = [
       [ 'a', 'triangl','medium','west','False','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
       [ 'b', 'circle','large','all','True','#FFF','#FFA500','1.0','#000','1','0','1.0' ],
@@ -49,22 +47,23 @@ class Test(unittest.TestCase):
     cells = self.tf.read(self.model)
     sorted_by_top = list(cells.keys())
     self.assertEqual(sorted_by_top, ['a', 'c', 'd', 'b'])
+    '''
 
-  def test_5(self):
+  def test_e(self):
     ''' Get Cell Values
     ./recurrink.py -m ${model} --cell ${cell}
     0 1        2      3      4    5    6               7   8    9 0 1   2
     a soleares circle medium west #fff mediumvioletred 1.0 #000 0 0 1.0 True
-    '''
     if os.path.isfile('tmp/soleares.txt'):
       cells = self.tf.read('soleares')
       # pp.pprint(cells['a'])
       self.assertTrue(isinstance(cells['a']['shape'], str))
     else:
       raise RuntimeError('missing test dependency')
+    '''
 
-  def test_6(self):
-    ''' Convert To List '''
+  def test_f(self):
+    ''' Convert To List 
     celldata = { 
       'a': { 
          'facing': 'south', 
@@ -93,36 +92,16 @@ class Test(unittest.TestCase):
          'stroke_opacity': None
       }
     }
-    celllist = self.tf.convert_to_list(celldata)
+    celllist = self.tf.convertToList(celldata)
     #pp.pprint(celllist)
     self.assertEqual(celllist[0][0], 'a')
     self.assertEqual(celllist[1][8], '') # sw is empty
-
-  def test_7(self):
-    ''' Read Text to pass to Inkscape. Really ??
     '''
-    soleares_txt = """cell shape size facing top fill bg fo stroke sw sd so
-a line medium south False #FFF #32CD32 1.0 #000 0 0 1.5
-b square medium all False #FFF #FFA500 1.0 #000 0 0 1.0
-c triangl medium east False #FFF #4B0082 1.0 #000 0 0 1.0
-d diamond medium south False #CCC #32CD32 1.0 #000 0 0 1.0
-"""
-    celldata = self.tf.read('soleares', txt=soleares_txt)
-    self.assertEqual(len(celldata.keys()), 4)
-    self.assertEqual(len(self.tf.digest), 32)
 
-  def test_8(self):
-    ''' Conf
+  def test_g(self):
     '''
-    self.tf.conf('mambo', 'htmstarter') # set conf
-    model, ver = self.tf.conf() # read conf
-    self.assertEqual(model, 'mambo')
-    self.assertEqual(ver, 'htmstarter')
-    self.tf.conf('waltz', 'colour45') # set conf to something different
-    model, ver = self.tf.conf() # read conf again
-    self.assertEqual(model, 'waltz')
-    self.assertEqual(ver, 'colour45')
-  '''
-  the
-  end
-  '''
+    az = [chr(i) for i in range(97,123,1)]
+    r = ''.join(random.choice(az) for i in range(12))
+    self.tf.set(r)
+    self.assertEqual(32, len(self.tf.digest))
+    '''

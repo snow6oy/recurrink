@@ -1,154 +1,195 @@
-import os.path
-import re
+''' yaml file for conf and csv for palettes
+'''
+import yaml
+import random
 import hmac
-import yaml 
+import pprint
+from block import Views, BlockData
+from config import *
 
-class TmpFile():
-  ''' read and write data to /tmp/recurrink
-  '''
-  def __init__(self):
-    self.colnam = ['cell','shape','size','facing','top','fill','bg','fo','stroke','sw','sd','so']
-    self.header = [
-      'cell','shape','size','facing','top',
-      'fill','bg','fill_opacity','stroke','stroke_width','stroke_dasharray','stroke_opacity'
-    ]
+# TODO add palette
 
-  def convert_to_list(self, celldata):
-    ''' when celldata is in hash format, call this before writing a list 
-    '''   
-    cells = list()
-    for c in celldata:
-      cellrow = [c]
-      for h in self.header:
-        if h == 'cell': # already primed
-          continue
-        # not needed because read will convert empties correctly
-        if h in ['stroke', 'stroke_width', 'stroke_dasharray', 'stroke_opacity']:
-          if celldata[c][h] is None:
-            celldata[c][h] = str() # TODO remove or delete to empty a dictionary entry?
-        try: 
-          cellrow.append(celldata[c][h])
-        except:
-          print(f"error missing cell:{c} key:{h}")
-      cells.append(cellrow)
-    return cells
+class TmpFile:
 
-  def write(self, model, celldata):
-    ''' write celldata to a tab separated text file
-        data is a list of lists. the inner list must be formatted to match self.header
+  BLOCKSZ = tuple()
+  VERSION = 1
+  pp      = pprint.PrettyPrinter(indent=2)
+
+  def setVersion(self, ver=None):
+    ''' Version is badly named reference to palette index
+        0: universal is a mess and should not be used
+        using len(fnam) is risky because not enough entries
     '''
-    if len(celldata) == 0:
-      raise ValueError(f"{model} celldata is empty")
-    with open(f"/tmp/recurrink/{model}.txt", 'w') as f:
-      print("\t".join(self.colnam), file=f)
-      for data in celldata:
-        vals = [str(d) for d in data] # convert everything to string
-        line = "\t".join(vals)
-        print(line, file=f)
+    if ver is None:
+      ver = random.choice(range(1, len(config.friendly_name)))
+    self.VERSION = ver
+    return ver
 
-  def read(self, model, txt=None, output=dict()):
-    ''' read text file, convert values from string to primitives and sort on top
-        > cell shape size facing top fill bg fo stroke sw sd so
-        > a square medium north False #FFF #CCC 1.0 #000 0 0 1.0
-        return a dictionary keyed by cell
+  def write(self, model, cells):
+    ''' wrap the data and make ready to write
     '''
-    cells = None
-    sortdata = list()
-    to_hash = str()
-    data = self.get_text(txt) if txt else self.get_file(model)
+    ver   = self.VERSION
+    bd    = BlockData(model)
+    pos   = bd.readPositions(model)
+    fgpos = self.positionBlock(pos)
+    topos = self.positionBlock(pos, top=True)
+    pal   = config.friendly_name[ver]
+    
+    celldata = {
+      'model': model,
+      'palette': config.friendly_name[ver]
+    }
+    for label in cells:
+      cell = cells[label]
+      cell = self.refactorCell(label, cell)
+      celldata[label] = cell
 
-    for d in data:
-      to_hash += ''.join(d)
-      d[4] = (d[4] in ['True', 'true'])
-      if len(d) > 8: # has stroke entries
-        d[9] = int(d[9])
-        d[10] = int(d[10])
-      else:
-        d += [None, 0, None, None]
-    self.set(to_hash) # make digest
-    # sort them so that top:true will be rendered last
-    sortdata = sorted(data, key=lambda x: x[4])
+    posdata = dict()
+    posdata['positions'] = { 'foreground': fgpos }
+    if topos: posdata['positions']['top'] = topos
 
-    if isinstance(output, list):
-      cells = sortdata 
-    elif isinstance(output, dict):
-      cells = dict()
-      for d in sortdata:
-        z = zip(self.header, d)
-        attrs = dict(z)
-        cell = attrs['cell']
-        del attrs['cell']
-        cells.update({cell: attrs})
+    self.writeConf(model, celldata, posdata)
+
+  def writeConf(self, model, celldata, posdata):
+    ''' PyYAML flow style None is different from False
+        we write twice to get both :/
+    '''
+    out = yaml.dump(celldata, default_flow_style=False)
+    out += yaml.dump(posdata, default_flow_style=None)
+    with open(f'conf/{model}.yaml', 'w') as outfile:
+      print(out, file=outfile)
+
+  def readConf(self, model, meta=False):
+    ''' read YAML
+    '''
+    meta_tags = ['model', 'palette', 'positions'] # defaults will be popped
+
+    with open(f'conf/{model}.yaml', 'r') as yf:
+      conf = yaml.safe_load(yf)
+
+    self.VERSION = conf['palette']
+    if meta:
+      meta_vals = [conf[key] for key, val in conf.items() if key in meta_tags]
+      metadata  = dict(zip(meta_tags, meta_vals))
+      return metadata
     else:
-      raise TypeError(f"unsupported type {output}")
-    if not cells: # is model with given name available from db ?
-      raise ValueError(f'non readable <{model}>')
-    return cells
+      if 'defaults' in conf:      # copy defaults 
+        defaults = conf.pop('defaults')
+        for key in defaults:
+          for val in defaults[key]:
+            for cell in conf:
+              if key in conf[cell]:
+                conf[cell][key][val] = defaults[key][val]
 
-  def get_file(self, model):
-    with open(f"/tmp/recurrink/{model}.txt") as f:
-      data = [line.rstrip() for line in f] # read and strip newlines
-    data = [d.split() for d in data[1:]] # ignore header and split on space
-    return data
+      for tag in meta_tags: del conf[tag] # remove meta data
+      for label in conf: # add the hash #rrggbb
+        for cs in conf[label]:
+          if cs in ['color', 'stroke']:
+            for fb in conf[label][cs]:
+              if fb in ['fill', 'background']: # skip opacity
+                conf[label][cs][fb] = self.prettyHash(conf[label][cs][fb])
+    return conf 
 
-  def get_text(self, text):
-    data = list()
-    [data.append(line.split()) for line in text.splitlines()]
-    del data[0] # remove header
-    return data
-
-  def set(self, key):
-    ''' make a digest that has a unique value for each model view
-    '''
+  def makeDigest(self, key=None):
+    if key is None:
+      az  = [chr(i) for i in range(97,123,1)] 
+      key = ''.join(random.choice(az) for i in range(12))
     secret = b'recurrink'
     digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
     self.digest = digest_maker.hexdigest()
 
-  def conf(self, model=None, ver=None):
-    '''reads all symlinks
-       when there is exactly one, continue but 0 or > 1 throw error
+  def setBlocksize(self, positions):
+    x = [p[0] for p in list(positions.keys())]
+    y = [p[1] for p in list(positions.keys())]
+    self.BLOCKSZ = (max(x) + 1, max(y) + 1)
 
-       when given a ver and a model
-       removes old link and create new
-       else read and return
+  def emptyBlock(self):
+    block = list(range(self.BLOCKSZ[1]))
+    for x in block:
+      row      = list(range(self.BLOCKSZ[0]))
+      block[x] = row
+    return block
+
+  def positionBlock(self, positions, top=False):
+    ''' make positions pretty for yaml
     '''
-    links = self.tmplinks()
-    if len(links) == 1:
-      link = links[0]
-      path = f'/tmp/recurrink/{link}'
-      if model and ver: # swap old and new
-        os.unlink(path)
-        os.symlink(f'/tmp/recurrink/{model}.txt', f'/tmp/recurrink/{ver}')
-        return None
-      else: # read link
-        path = os.readlink(path)
-        model = re.findall(r"[a-z0-9]+", path)[2]
-        return model, link
-    elif len(links) == 0 and model and ver: # first time
-      os.symlink(f'/tmp/recurrink/{model}.txt', f'/tmp/recurrink/{ver}')
-    else:
-      raise ValueError(f'unexpected number of links {len(links)}')
+    self.setBlocksize(positions)
+    i     = 1 if top else 0
+    block = self.emptyBlock()
+    for p in positions:
+      x, y = p
+      block[y][x] = positions[p][i]
 
-  def tmplinks(self):
-    links = list()
-    for _, _, files in os.walk('/tmp/recurrink'):
-      for f in files:
-        if os.path.islink(f'/tmp/recurrink/{f}'):
-          links.append(f)
-    return links
+    if top: # does this model have any cells with top?
+      truth = list()
+      for row in block:
+        truth.append(all(t is None for t in row))
+      if truth.count(True) == len(block): block = None
+    return block
 
-  '''
-  def meanderConf(self, model):
-    with open(f'conf/meander.yaml', 'r') as yf:
-      conf = yaml.safe_load(yf)
-    if model in conf:
-      return conf[model]
-    else:
-      raise ValueError(f'unexpected yaml {model}')
-  '''
-  def modelConf(self, model, index=None):
-    with open(f'conf/{model}.yaml', 'r') as yf:
-      conf = yaml.safe_load(yf)
-    if index and index in conf:
-      return conf[index]
-    return conf
+  def prettyHash(self, val, remove=False):
+    ''' YAML looks nicer with FF00CC but database wants #FF00CC
+    '''
+    rgb = str(val) # rgb must be a string but YAML can send int
+    fix = str()
+    if remove:          fix = rgb[1:]
+    elif rgb[0] == '#': fix = rgb
+    else:               fix = '#' + str(rgb)
+    return fix 
+ 
+  def refactorCell(self, label, cell):
+    print(f'{label} ', end='', flush=True)
+    facing = {
+        'all': 'C',
+      'north': 'N',
+       'east': 'E',
+      'south': 'S',
+       'west': 'W'
+    }
+    f = cell['facing']
+    newc = dict()
+    newc['geom'] = {
+      'facing': facing[f],
+        'size': cell['size'],
+        'name': cell['shape'],
+         'top': cell['top']
+    }
+    newc['color'] = {
+      'fill': self.prettyHash(cell['fill'], remove=True),
+   'opacity': cell['fill_opacity'],
+'background': self.prettyHash(cell['bg'], remove=True)
+    }
+    # block.Views.readCelldata treats stroke as optional
+    if 'stroke' in cell and cell['stroke'] is not None:
+      newc['stroke'] = {
+        'fill': cell['stroke'][1:],
+        'dasharray': cell['stroke_dasharray'],
+        'opacity': cell['stroke_opacity'],
+        'width': cell['stroke_width']
+      }
+    return newc
+
+  def exportPalfile(self, palname, palette):
+    ''' write paldata to a tab separated text file
+
+    self.pp.pprint(palette)
+    '''
+    if len(palette) == 0:
+      raise ValueError(f"{palname} is empty")
+    with open(f"palettes/{palname}.txt", 'w') as f:
+      print("\t".join(['fill', 'opacity', 'background']), file=f)
+      for pal in palette:
+        line = [str(p) for p in pal] # convert everything to string
+        print("\t".join(line), file=f)  # flush=True)
+
+  def importPalfile(self, palname):
+    with open(f"palettes/{palname}.txt") as f:
+      data = [line.rstrip() for line in f] # read and strip newlines
+    data = [d.split() for d in data[1:]] # ignore header and split on space
+    return data
+
+'''
+the
+end
+'''
+

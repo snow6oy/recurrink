@@ -2,9 +2,7 @@ import random
 import psycopg2
 from model import Db, ModelData
 from cell import CellData
-#from model.db import Db
-#from model.data import ModelData
-
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
   ''' a View is an instance of a model, composed from a collection of blocks 
   '''
@@ -112,16 +110,18 @@ WHERE view = %s;""", [digest])
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return meta
 
-  #def generate(self, model=None, ver=0): 
   def generate(self, ver, model=None): 
-    m = ModelData()
-    model = m.generate() if model is None else model
-    b = BlockData(model)
-    #ver = ver if ver else random.choice(range(1, 6)) 
-    compass = Compass(model) # compass.conf will be None for unknown models
+    ''' source celldata from compass or database or None
+    '''
+    m         = ModelData()
+    model     = m.generate() if model is None else model
+    b         = BlockData(model)
+    compass   = Compass(model) # compass.conf will be None for unknown models
     uniqcells = b.readPositions(model, output=list())
-    topcells = b.topcells(model)
-    c = CellData(ver=ver) 
+    topcells  = b.topcells(model)
+    c         = CellData(ver=ver)
+    source    = None
+
     for cell in uniqcells:
       topYN = True if cell in topcells else False
       if compass.conf:
@@ -130,8 +130,6 @@ WHERE view = %s;""", [digest])
         if compass.all(cell):
           c.generate(topYN, facing_all=True)
         elif len(pair):
-        #else: # this means that cells must have a compass entry
-          #pair, axis = compass.one(cell)
           for i in range(2):
             other = pair[i]
             if other in self.view: # already seen
@@ -257,4 +255,20 @@ AND model = %s;""", [model])
     rows = self.cursor.fetchall()
     tc = [a[0] for a in rows]
     return tc
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+  def prettyPrint(self, model, bsx, bsy):
+    out = str()
+    positions = self.readPositions(model)
+    for y in range(bsy):
+      for x in range(bsx):
+        p = tuple([x, y])
+        cell = positions[p][0]
+        top = positions[p][1] if positions[p][1] else '-'
+        out += f'{cell}{top} '
+      out += "\n"
+    return out
+
+'''
+the
+end
+'''

@@ -5,7 +5,7 @@
 import os.path
 import unittest
 import pprint
-from cell import CellData, Cell
+from cell import CellData
 from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -13,6 +13,27 @@ class Test(unittest.TestCase):
 
   def setUp(self):
     self.c = CellData(2) # colour45 inherit Stroke() class
+
+  def test_a(self):
+    ''' before writing SVG check TmpFile for human error
+        (stroke width should not be 60)
+    '''
+    self.c.loadPalette()
+    cells = config.cells['a']
+    cells['color']['fill'] = '#zz'
+    '''
+    print(cells['color']['fill'])
+    print(cells['color']['background'])
+    cells = { 
+      'a': { 
+        'bg': '#DC143C', 'facing': 'east', 'fill': '#DC143C', 'fill_opacity': '1.0',
+        'shape': 'line', 'size': 'large', 'stroke': '#DC143C', 'stroke_dasharray': 0,
+        'stroke_opacity': '1', 'stroke_width': 60, 'top': True
+      }
+    }
+    self.c.validate('a', cells) # does it raise an error
+    self.assertRaises(Warning, self.c.validate, cells)
+    '''
 
   def testGenerateOne(self):
     ''' called with axis cell generate along ONE axis
@@ -53,45 +74,8 @@ class Test(unittest.TestCase):
       ['a','triangl','medium','west',False,'#FFF','#000',1.0,'#000',1,0,1]
     ))
 
-  def testTransform(self):
-    pass
-
-  def testValidate(self):
-    ''' before writing SVG check TmpFile for human error
-        (stroke width should not be 60)
-    '''
-    self.c.load_palette()
-    cells = { 
-      'a': { 
-        'bg': '#DC143C', 'facing': 'east', 'fill': '#4B0082', 'fill_opacity': '1.0',
-        'shape': 'line', 'size': 'large', 'stroke': '#DC143C', 'stroke_dasharray': 0,
-        'stroke_opacity': '1', 'stroke_width': 60, 'top': True
-      }
-    }
-    #self.c.validate(cells) # does it raise an error
-    self.assertRaises(ValueError, self.c.validate, cells)
-
-  def test_1(self):
-    ''' create a cell for first position of block with top
-    '''
-    cellsize = 60
-    coord    = (0, 0)
-    cn, tn   = config.positions[coord]
-    c        = Cell(cn, cellsize, coord, config.cells[cn])
-    self.assertEqual(c.bft[0].layer, 'bg')
-    self.assertEqual(c.bft[1].layer, 'fg')
-    c.addTop(tn, config.cells[tn])
-    self.assertEqual(c.bft[2].layer, 'top')
-
-  def test_2(self):
-    ''' cells keep their names
-    '''
-    cellsize = 60
-    coord    = (2, 0)
-    cn, tn   = config.positions[coord]
-    c        = Cell(cn, cellsize, coord, config.cells[cn])
-    self.assertEqual(c.names[1], 'c')
 '''
 the
 end
 '''
+

@@ -1,191 +1,175 @@
-#from cell.geomink import Geomink
-# from cell import Geomink, Cell, CellMaker
-from cell import CellMaker, Shape
-#from shapely import set_precision
+import pprint
+from shapely.geometry import Polygon, LineString
+from cell import Layer
+from .meander import Meander
+from .styles import Styles
 
-class GeoMaker:
+class Make:
 
   VERBOSE = False
+  BLOCKSZ = (3, 1)
+  CLEN    = 9
+  pp      = pprint.PrettyPrinter(indent=2)
 
-  def __init__(self, scale=1.0, cellsize=60):
-    self.scale    = scale
-    self.cellsize = cellsize
+  def __init__(self, clen=0): 
+    self.cells  = dict()
+    self.style  = Styles()
+    self.guide  = dict()
+    self.grid   = [{} for _ in range(3)] # unique style for each layer
+    if clen: self.CLEN = clen
 
-  # TODO tell flatten to make with makeShapelyCells
-  def make(self, blocksize, positions, cells):
-    ''' given block and cell metadata make a geometry object 
-        for each position on the block
+
+  def walk(self, positions, cells):
+    ''' navigate the model and populate cells
     '''
-    block  = []
-    b0, b1  = blocksize
-    for y in range(b1):
-      for x in range(b0):
-        coord = (x, y)
-        c, t = positions[coord]
-        #print(cells[c])
-        for layer in ['top', 'fg', 'bg']:
-          #print(f"{c=} {t=} {layer=}")
-          if layer == 'top':
-            if t: block.append(self.getShape(t, coord, cells[t], layer='top'))
-          else: block.append(self.getShape(c, coord, cells[c], layer=layer))
-    return block
+    self.setBlocksize(positions)
+    for pos in positions:
+      label   = positions[pos][0]  
+      cell    = Layer(clen=self.CLEN, pos=pos)
+      cell.background(cell=cells[label])
+      self.style.addBackground(pos, color=cells[label]['color'])
+      for label in positions[pos]:
+        if not label: continue
+        if 'stroke' in cells[label]: strokedata = cells[label]['stroke']
+        else: strokedata = None
+        if bool(cells[label]['geom']['top']):
+          cell.foreground(cells[label]['geom'])
+          self.style.add(pos, color=cells[label]['color'], stroke=strokedata)
+        else:
+          cell.foreground(cells[label]['geom'])
+          self.style.add(pos, color=cells[label]['color'], stroke=strokedata)
+      self.cells[pos] = cell.polygon()
+      self.guide[pos] = cell.direction
 
-  def getShape(self, label, coord, cell, layer):
-    ''' create a geometry object from cell data
+  def meanderSpiral(self, cell, pos):
+    ''' return an empty for square ring 
+        otherwise a spiral linestr 
     '''
-    return Geomink(
-      self.cellsize, scale=self.scale, coord=coord, 
-      cell=cell, layer=layer, label=label
-    )
+    linestr = LineString()
+    m = Meander(cell)
+    linestr = LineString(m.spiral(self.CLEN, pos))
+    return linestr
 
-  # TODO update should use makeShapelyCells
-  def makeCells(self, blocksize, positions, cells):
-    ''' given block and cell metadata wrap geominks for each block position 
+  def meanderComposite(self, meta, pos, padding):
+    ''' orchestrate the composite algorithm of meander
     '''
-    block  = {}
-    b0, b1 = blocksize
-    for y in range(b1):
-      for x in range(b0):
-        coord  = (x, y)
-        cn, tn = positions[coord]
-        c      = Cell(cn, self.cellsize, coord, cells[cn])
-        if tn in cells: c.addTop(tn, cells[tn])
-        #print(coord, c.names)
-        block[coord] = c
-    return block
+    f1, f2 = meta # facing for the composites
+    cell   = Layer(clen=self.CLEN, pos=pos)
+    #cell.foreground(shape='gnomon', facing=f1, size='medium')
+    #cell.foreground(shape='edge',   facing=f2, size='small')
+    cell.foreground(geom={'name':'gnomon', 'facing':f1, 'size':'medium'})
+    cell.foreground(geom={'name':'edge', 'facing':f2, 'size':'small'})
 
-  def makeShapelyCells(self, blocksize, positions, cells):
-    block  = {}
-    b0, b1 = blocksize
-    for y in range(b1):
-      for x in range(b0):
-        pos    = (x, y)
-        cn, tn = positions[pos]
-        cell   = CellMaker(pos, self.cellsize)
-        cell.background(cn, cells[cn])
-        cell.foreground(cn, cells[cn])
-        if tn: cell.top(tn, cells[tn])
-        #print(f"{cell.bft[0].label=} {len(cell.bft)=}")
-        block[pos] = cell
-    return block
+    clockwise = cell.setClock(padding=padding)
+    composite = cell.polygon()
+    gd        = cell.direction[0][1:]  # ignore algo
+    gd        = gd if clockwise else list(reversed(gd))
+    ed        = cell.direction[1][1:]
+    ed        = ed if clockwise else list(reversed(ed))
+    gnomon    = Meander(composite.geoms[0])
+    if padding: gnomon.pad()
+    g_guide   = gnomon.guidelines(gd)
+    if self.VERBOSE: print(f'{f1=} {gd=} {f2=} {ed=}')
+    g_points  = gnomon.collectPoints(g_guide)
 
-  ''' to discover the danglers first gather overlaps from the large shapes
-    for pos, cell in block1.items():
-      large = list()
-      bg    = cell.bft[0].this.data
-      for shape in cell.bft: # loop the layers
-        if shape.size == 'large': 
-          dangling = shape.this.data.difference(bg)
-          shape.this.update(dangling) # replace with the dangling MultiGeometry
-          large.append(shape)
-      cell.bft = large
-    return block1
-  '''
-  def danglers(self, block1):
-    ''' orchestrate two dangler functions
+    edge      = Meander(composite.geoms[1])
+    if padding: edge.pad()
+    e_guide   = edge.guidelines(ed)
+    e_points  = edge.collectPoints(e_guide)
+    return edge.joinStripes(g_points, e_points)
+
+  def meanderGuided(self, cell, guide, padding):
+    ''' orchestrate the guided algorithm of meander
     '''
-    large    = self.largeShapes(block1)
-    danglers = self.findNeighbours(block1, large)
-    return danglers
+    m      = Meander(cell)
+    padme  = m.pad() if padding else m.shape
+    gline  = m.guidelines(guide, shape=padme)  # ('EB', 'ET'))
+    points = m.collectPoints(gline, shape=padme)
+    return LineString(m.makeStripes(points))
 
-  ''' to discover the danglers first gather overlaps from the large shapes
-  '''
-  def largeShapes(self, block1):
-    large = list()
-    for pos, cell in block1.items():
-      bg    = cell.bft[0].this.data
-      label = cell.bft[0].label
-      for shape in cell.bft: # loop the layers
-        if shape.size == 'large': 
-          dangling = shape.this.data.difference(bg)
-          if dangling.geom_type == 'MultiPolygon':
-            for p in dangling.geoms: # polygons in MultiPolygon
-              #large.append(dangling)
-              large.append(p)
-          elif dangling.geom_type == 'Polygon':
-            large.append(dangling)
-          else:
-            raise TypeError(f"{label}: {dangling.geom_type=} unexpected type")
-    return large
-
-  ''' then name the neighbour to be assigned ownership
-  '''
-  def findNeighbours(self, block1, large):
-    danglers = dict()
-    for pos, cell in block1.items():
-      #print(f"x {(pos[0] * cell.clen)} y {(pos[1] * cell.clen)}")
-      bg = cell.bft[0] # only backgrounds for neighbour finding
-      #print(f"{pos} {bg.this.name=} {bg.this.data.geom_type=} ")
-      for geom in large:
-        if bg.this.data.contains(geom):
-          danglers[pos] = geom
-    return danglers
-
-  def splitMultigeoms(self, block1):
-    ''' split multi geoms across the block
+  def meander(self, padding=True):
+    ''' transform polygons into lines
     '''
-    for pos in block1:
-      block1[pos] = self.splitByCell(block1[pos]) 
-    return block1
-
-  def splitByCell(self, cell):
-    ''' update cell by converting multipolygon into new shapes
-    '''
-    found = True
-    keep  = shapes = list()
-
-    for layer in cell.bft:
-      shape = layer.this
-      if shape.name == 'multipolygon':
-        if self.VERBOSE: print(f"found: {layer.label} {shape.name}")
-        found = True
-        for p in shape.data.geoms:
-          rename    = cell.bless(p)
-          rename, f = cell.direct(rename, p)
-          conf      = {'shape': rename, 'fill': layer.fill, 'facing':f }
-          piece     = Shape(layer.label, conf)
-          #piece.this.compute(p)
-          piece.compute(cell.x, cell.y, cell.clen, p)
-          shapes.append(piece)
-      elif self.VERBOSE: print(f'ignored: {layer.label} {shape.name}')
-
-    if found: # merge new shapes with anything other than a multi
-      keep = [x for x in cell.bft if x.this.name != 'multipolygon']
-      cell.bft = keep + shapes
-
-    return cell
-
-  def padBlock(self, block1, padsize=-1):
-    ''' make a gap between cells by adding padding with Shapely.buffer
-        a small Polygon may end up empty. Then silently return the original
-        Shapely.set_precision did not help
-    '''
-    for pos, cell in block1.items():
-      padded = list()
-      for layer in cell.bft:
-        layer.padme()
-        padded.append(layer)
-      cell.bft = padded
+    for z in range(3): # bg 0 fg 1 top 2
+      for pos in self.cells:
  
-    return block1
+        polygn = self.polygon(pos, z)
+        if polygn is None: continue
+        # print(f"{pos=} {z=} {polygn=}")
 
-  def _padBlock(self, block1, padsize=-1):
-    ''' make a gap between cells by adding padding with Shapely.buffer
-        a small Polygon may end up empty. Then silently return the original
-        Shapely.set_precision did not help
+        algo, *guide  = self.guide[pos][z]
+        if self.VERBOSE: print(f"{pos=} {z=} {algo=} {guide=}")
+
+        if algo == 'spiral':
+          linestr = self.meanderSpiral(polygn, pos)
+        elif algo == 'composite':
+          linestr = self.meanderComposite(guide, pos, padding=padding)
+        elif algo == 'guided':
+          linestr = self.meanderGuided(polygn, guide, padding=padding)
+        elif algo == 'border':
+          linestr = polygn.exterior
+        else:
+          raise Warning(f"{pos} {z} {algo} not known to Meander")
+        self.guide[pos][z] = linestr # replace guide with Shapely.LineString
+
+  def setBlocksize(self, positions):
+    ''' extract blocksize and set for downstream functions
     '''
-    for pos, cell in block1.items():
-      padded = list()
-      for layer in cell.bft:
-        shape           = layer.this.data
-        if shape is None: continue
-        b               = shape.buffer(padsize, single_sided=True)
-        #b               = set_precision(b, 1)
-        layer.this.data = shape if b.is_empty else b
-        padded.append(layer)
-      cell.bft = padded
+    x = [p[0] for p in list(positions.keys())]
+    y = [p[1] for p in list(positions.keys())]
+    self.BLOCKSZ = (max(x) + 1, max(y) + 1)
+
+  def polygon(self, pos, z): 
+    ''' lookup cell in layer
+    '''
+    c = self.cells[pos]
+
+    if z == 2 and len(c.geoms) > 2: polygn = c.geoms[2]
+    elif z == 2: polygn = None
+    elif z == 1 and len(c.geoms) > 1:
+      polygn = c.geoms[1]
+    elif z == 1 and len(c.geoms[0].interiors):
+      polygn = Polygon(c.geoms[0].interiors[0])
+    elif z ==1:
+      polygn = Polygon(c.geoms[0])
+      # for g in c.geoms: print(f'{pos=} {z=} {g.geom_type}')
+    elif z == 0: polygn = c.geoms[z]     # bg
+    return polygn
+
+  def hydrateGrid(self, line=False):
+    ''' convert one block into a list of polygons
+        each list has a unique style for each layer
+        0 s1 [p1 p2], s2 [p1]
+    '''
+    for z in range(3): 
+      for pos in self.cells:
+        #print(z, pos)
+        polygn = self.polygon(pos, z)
+        if not polygn: continue
+        if line:
+          f = 'fill:none;'
+            # TODO what if there is a stroke ?
+          s = f'stroke:{self.style.fill[pos][z]};'    
+          d = f'stroke-dasharray:{self.style.stroke_dasharray[pos][z]};'
+          o = f'stroke-opacity:{self.style.stroke_opacity[pos][z]};'
+            # TODO fix tmpfile to support <1 self.style.stroke_width[pos][z]
+            # w = f'stroke-width:{self.style.stroke_width[pos][z]};'
+          w = f'stroke-width:0.7;' 
+
+          style  = f + s + d + o + w
+          geom   = self.guide[pos][z]    # fetch linestring
+        else:
+          fill   = self.style.fill[pos][z]
+          style  = f'fill:{fill};fill-opacity:0.5'
+          geom   = polygn                # assign polygon
+        if style in self.grid[z]:
+          self.grid[z][style].append(geom)
+        else:
+          self.grid[z][style] = list()
+          self.grid[z][style].append(geom)
+    #self.pp(self.grid)
+    return None
  
-    return block1
 '''
 the
 end

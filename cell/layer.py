@@ -1,0 +1,133 @@
+import math
+from shapely.geometry import Polygon, LineString, MultiPolygon, Point
+from .shape import *
+
+class Layer:
+
+  VERBOSE = False
+
+  # TODO expose padding so Block.walk() can init
+  def __init__(self, pos=tuple([0,0]), clen=9): 
+    self.bft       = list()
+    self.direction = list()   # make guide for meander
+    self.clen      = clen     # length of cell
+    self.pos       = pos      # logical position in block
+
+  def background(self, cell): 
+    X, Y, W, H, *a = self.dimension(self.pos[0], self.pos[1], self.clen)
+    ''' swap colours for square ring
+    '''
+    if cell['geom']['name'] == 'sqring':
+      self.direction.append(('spiral', None)) # override Rectangle
+    else:
+      self.direction.append(('guided', 'EB','ET'))
+    self.bft.append(Polygon(((X, Y), (X, H), (W, H), (W, Y))))
+
+  def foreground(self, geom):
+    ''' Block.walk also calls here when top
+    '''
+    name   = geom['name'] if 'name' in geom else 'square'
+    x, y   = self.pos
+    shapes = {
+         'line': Rectangle(name),
+         'edge': Rectangle(name),
+       'square': Rectangle(name),
+       'sqring': Rectangle(name),
+       'gnomon': Gnomon(),
+      'parabol': Parabola(),
+      'triangl': Triangle(),
+      'diamond': Diamond(),
+       'circle': Circle()
+    }
+    shape   = shapes[name]
+    if name in ['circle', 'triangl', 'diamond']:
+      if 'stroke_width' in geom: sw  = geom['stroke_width']
+      else: sw = 0
+      dim = self.points(x, y, sw, self.clen)
+    else:
+      dim = self.dimension(x, y, self.clen)
+    coords  = shape.coords(dim, geom)
+    if coords.geom_type: self.bft.append(coords)
+    self.direction.append(shape.guide(geom['facing']))
+
+
+  def polygon(self):
+    return MultiPolygon(self.bft)
+
+  def dimension(self, x, y, clen):
+    ''' set dimensions for all rectangular shapes 
+
+    usage examples
+
+    1. unpack everything
+    X, Y, W, H, a, b, c, d, A, B, C, D = dim
+
+    2. unpack for medium sized shape
+    X, Y, W, H, *a = dim
+       
+        o---------o D
+        | +.....+ | H
+        | . x x . | d
+        | . x x . | b
+        | +.....+ | Y
+        o---------o B 
+        A X a c W C
+    '''
+    X = x * clen              # medium
+    Y = y * clen
+    W = X + clen
+    H = Y + clen
+    a = X + (clen / 3)        # small
+    b = Y + (clen / 3)
+    c = W - (clen / 3)
+    d = H - (clen / 3)
+    A = X + (clen / 3) * 4    # large
+    B = X + (clen / 3) * 4
+    C = Y + (clen / 3) * 2
+    D = Y + (clen / 3) * 2
+
+    return tuple([X, Y, W, H, a, b, c, d, A, B, C, D])
+
+  def points(self, x, y, stroke_width, clen):
+    X = x * clen
+    Y = y * clen
+
+    swd = stroke_width
+    cl  = clen
+    n   = tuple([X + cl / 2,   Y + swd])
+    e   = tuple([X + cl - swd, Y + cl / 2])
+    s   = tuple([X + cl / 2,   Y + cl - swd])
+    w   = tuple([X + swd,      Y + cl / 2])
+    ne  = tuple([X + cl - swd, Y + swd] )
+    se  = tuple([X + cl - swd, Y + cl - swd])
+    nw  = tuple([X + swd,      Y + swd])
+    sw  = tuple([X + swd,      Y + cl - swd])
+    mid = tuple([X + cl / 2,   Y + cl / 2])
+
+    return tuple([swd, cl, n, e, s, w, ne, se, nw, sw, mid])
+
+  def setClock(self, padding=True):
+    ''' position join point for composite meanders
+
+     meandering an odd number of stripes requires 
+     direction order to be clockwise
+     even stripes must be anti-clockwise
+  
+     tests suggest that when num of stripes is 1 then 
+     clockwise should be True
+     ignoring that corner case for now ..
+
+     ALSO ignoring this
+
+    raw_stripes   = (width - 1) / 3         # padding reduces width
+    '''
+    clen          = self.clen =- 1 if padding else self.clen
+    raw_stripes   = clen / 3
+    numof_stripes = math.floor(raw_stripes) # round down
+    #print(f'{numof_stripes=}')
+    return False if numof_stripes % 2 else True
+
+'''
+the
+end
+'''

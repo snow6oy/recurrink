@@ -6,7 +6,7 @@ from cell import Palette
 from block import PaletteMaker
 pp = pprint.PrettyPrinter(indent=2)
 
-class TestPalette(unittest.TestCase):
+class Test(unittest.TestCase):
 
   def setUp(self):
     self.p = Palette(ver=1)  # colour45 is default
@@ -22,7 +22,7 @@ class TestPalette(unittest.TestCase):
 
   def test_0(self):
     p0 = Palette(ver=0)
-    p0.load_palette()
+    p0.loadPalette()
     data = self.defaults
     data['shape'] = 'circle'  # pass geom
     data['fill'] = '#4B0082' 
@@ -36,7 +36,7 @@ class TestPalette(unittest.TestCase):
     ''' Load Palette
     '''
     p = Palette(ver=2)
-    p.load_palette(ver=2)
+    p.loadPalette(ver=2)
     #print(len(p.palette))
     #pp.pprint(p.palette)
     self.assertTrue(len(p.palette), 25)
@@ -46,7 +46,7 @@ class TestPalette(unittest.TestCase):
   def test_2(self):
     ''' Generate One randomly generate first cell of pair and then allocate complimentary to the second cell 
     '''
-    self.p.load_palette(ver=1)
+    self.p.loadPalette(ver=1)
     pairs = ('b', 'd')       # compass.one(axis) for context
     cell_b = self.p.generate_one(ver=1)
     #pp.pprint(cell_b)
@@ -109,7 +109,7 @@ class TestPalette(unittest.TestCase):
     ''' validate fake bg value 
     '''
     #self.p.spectrum(['#CCC'], ['#FFF'], [1], None)
-    self.p.load_palette()
+    self.p.loadPalette()
     data = self.defaults
     data['bg'] = '#ZZZ'
     self.assertRaises(ValueError, self.p.validate, 'a', data)
@@ -118,7 +118,7 @@ class TestPalette(unittest.TestCase):
     ''' ver changes test to check palette Hunt The Moon starter kit
     '''
     self.p = Palette(ver=2)
-    self.p.load_palette()
+    self.p.loadPalette()
     data = self.defaults
     data['bg'] = '#FFA500'
     self.assertRaises(ValueError, self.p.validate, 'a', data)
@@ -129,7 +129,7 @@ class TestPalette(unittest.TestCase):
     ''' FFF CCC 1. combination does not exist in jeb
     '''
     self.p = Palette(ver=3)
-    self.p.load_palette()
+    self.p.loadPalette()
     #pp.pprint(self.p.palette)
     self.assertRaises(ValueError, self.p.validate, 'a', self.defaults)
 
@@ -137,7 +137,7 @@ class TestPalette(unittest.TestCase):
     ''' selfect randomly to generate new palette
     '''
     self.p = Palette(ver=0) # universal
-    self.p.load_palette()
+    self.p.loadPalette()
     cell = self.p.generate_any()
     #pp.pprint(f"c {cell}")
     self.assertEqual(len(cell.keys()), 3)
@@ -157,7 +157,7 @@ class TestPalette(unittest.TestCase):
 
   def testLoadPaletteOk(self):
     self.p = Palette(ver=0) # universal not done yet
-    self.p.load_palette()
+    self.p.loadPalette()
     #pp.pprint(self.p.palette)
     self.assertTrue(len(self.p.palette))
 
@@ -165,21 +165,21 @@ class TestPalette(unittest.TestCase):
     ''' bad palette
     '''
     self.p = Palette(ver=999) # not done .. yet (:
-    self.assertRaises(ValueError, self.p.load_palette)
+    self.assertRaises(ValueError, self.p.loadPalette)
 
   def testOpacity(self):
     ''' palette should have opacity greather than 0
     '''
     p0 = Palette(ver=0) 
-    p0.load_palette()
+    p0.loadPalette()
     [self.assertTrue((o >= 0.1 and o <= 1.0)) for o in p0.opacity]
     #pp.pprint(p0.opacity)
     p1 = Palette(ver=1)
-    p1.load_palette()
+    p1.loadPalette()
     #pp.pprint(p1.opacity)
     self.assertEqual(len(p1.opacity), 3)
     p2 = Palette(ver=2)
-    p2.load_palette()
+    p2.loadPalette()
     self.assertEqual(len(p2.opacity), 1)
 
   def testReadWithPid(self):

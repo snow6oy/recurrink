@@ -8,7 +8,7 @@ from block import Views
 import pprint
 pp = pprint.PrettyPrinter(indent=2)
 
-class TestViews(unittest.TestCase):
+class Test(unittest.TestCase):
 
   def setUp(self):
     self.v = Views()

@@ -1,13 +1,12 @@
 -- testcard data
 -- DEFAULTS size: medium top:FALSE
-UPDATE geometry
-SET shape='square', size='small', facing='all', top=DEFAULT
-WHERE gid=2;
-UPDATE geometry
-SET shape='circle', size='small', facing='all', top=DEFAULT
-WHERE gid=4;
-
 INSERT INTO geometry (shape, size, facing, top) 
 VALUES 
-  ('line', 'small', 'north', DEFAULT),
-  ('line', 'small', 'east', DEFAULT);
+  ('gnomon', 'medium', 'NE', DEFAULT),
+  ('gnomon', 'medium', 'SE', DEFAULT),
+  ('gnomon', 'medium', 'SW', DEFAULT),
+  ('gnomon', 'medium', 'NW', DEFAULT),
+  ('gnomon', 'small', 'NE', DEFAULT),
+  ('gnomon', 'small', 'SE', DEFAULT),
+  ('gnomon', 'small', 'SW', DEFAULT),
+  ('gnomon', 'small', 'NW', DEFAULT);

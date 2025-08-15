@@ -1,295 +1,99 @@
-import pprint
-import xml.etree.ElementTree as ET
-from model import Layout
-pp = pprint.PrettyPrinter(indent = 2)
+import matplotlib.pyplot as plt
+import shapely.plotting
+from shapely.geometry import Polygon
 
-class Svg(Layout):
-  def __init__(
-    self, scale=1, unit='px', gridsize=0, cellsize=0, inkscape=False
-  ):
-    ''' svg:transform(scale) is better than homemade scaling
-        but is lost when converting to raster. Instagram !!!
+class Svg:
+
+  VERBOSE    = False
+  ADD_POINTS = False
+
+  def draw(self, b1, svgfile):
+    ''' plot a shapely box
     '''
-    square = True
-    if type(gridsize) is tuple: # quick hak to make nicer wireframes
-      w, h      = gridsize
-      gridsize  = None
-      square    = False # custom width and height 
-      
-    super().__init__(unit, scale, gridsize, cellsize)
-    ''' apply governance from Layout
+    fig, ax = plt.subplots() 
+    ax.set_aspect('equal')    # make x and y axis the same and set to CLEN
+    plt.axis([0, (b1.BLOCKSZ[0] * b1.CLEN), 0, (b1.BLOCKSZ[1] * b1.CLEN)])
+
+    for z in range(3): # bg 0 fg 1 top 2
+      for pos in b1.cells:
+
+        polygn = b1.polygon(pos, z)
+        if polygn is None: continue
+        if self.VERBOSE:
+          print(f"{z} {pos} {polygn.geom_type} {b1.style.fill[pos]}")
+        
+        shapely.plotting.plot_polygon(
+          polygn, ax=ax, add_points=self.ADD_POINTS,
+          facecolor=b1.style.fill[pos][z],
+          edgecolor=b1.style.stroke[pos][z], 
+          linewidth=b1.style.stroke_width[pos][z], alpha=.5
+        )
+
+    t_class, t_name = self.fileName(svgfile)
+    plt.title(f"{t_class} {t_name}")
+    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
+
+  def drawLine(self, block, svgfile):
+    ''' preview a meandered plotfile
     '''
-    if square: w, h = self.gridsize, self.gridsize
+    fig, ax = plt.subplots() 
+    width   = block.BLOCKSZ[0] * block.CLEN
+    height  = block.BLOCKSZ[1] * block.CLEN
+    ax.set_aspect('equal') # make x and y axis the same and set to CLEN
+    plt.axis([0, width, 0, height])
 
-    ET.register_namespace('',"http://www.w3.org/2000/svg")
-    root = ET.fromstring(f'''
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 {w} {h}" 
-      width="{w}{self.unit}" height="{h}{self.unit}"
-      transform="scale({self.scale})"></svg>
-    ''')
-    comment = ET.Comment(
-      f' scale:{scale} cellsize:{cellsize} gridsize:{gridsize} '
-    )
-    root.insert(0, comment)  # 0 is the index where comment is inserted
-    if inkscape:             # add tags so plotter can split on layer
-      ET.register_namespace(
-        'inkscape',"http://www.inkscape.org/namespaces/inkscape"
-      )
-      root.set('xmlns:inkscape', "http://www.inkscape.org/namespaces/inkscape")
-      self.ns1 = '{http://www.inkscape.org/namespaces/inkscape}'
-    #ET.dump(root)
-    self.ns = '{http://www.w3.org/2000/svg}'
-    self.root = root
-    self.inkscape = inkscape
+    for pos in block.guide:
+      for z, linestr in enumerate(block.guide[pos]):
+        if self.VERBOSE: print(f'{pos=} {z=} {block.style.fill[pos]=}')
+        shapely.plotting.plot_line(
+          linestr, ax=ax, add_points=self.ADD_POINTS,
+          color=block.style.fill[pos][z]
+        )
 
-  def make(self):
-    ''' expand the doc from gridwalk and convert to XML
+    t_class, t_name = self.fileName(svgfile)
+    plt.title(f"{t_class} {t_name}")
+    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
+
+  def fileName(self, fn):
+    ''' hijack unittest to auto-gen file names
+
+    example output of unittest self.id() is t.meander.Test.test_o
     '''
-    #pp.pprint(self.doc)
-    uniqid = 0 # xml elements must have unique IDs
-    for group in self.doc:
-      uniqid += 1
-      g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-      g.set('style', group['style'])
-      if self.inkscape:
-        g.set('inkscape:groupmode', "layer") # need namespace for inkscape
-        g.set('inkscape:label', self.trimStyle(group['style'])) # e.g "CCC"
-      for s in group['shapes']:
-        uniqid += 1
-        name = s['name']
-        #print(f"{name=} {str(uniqid)} {s.keys()=}")
-        if name == 'circle':
-          circle = ET.SubElement(g, f"{self.ns}circle", id=str(uniqid))
-          circle.set('cx', f"{s['cx']:g}")
-          circle.set('cy', f"{s['cy']:g}")
-          circle.set('r', f"{s['r']:g}")
-        #elif name == 'rect':
-        elif name == 'square' or name == 'line':
-          rect = ET.SubElement(g, f"{self.ns}rect", id=str(uniqid))
-          rect.set("x", f"{s['x']:g}")
-          rect.set("y", f"{s['y']:g}")
-          rect.set("width", f"{s['width']:g}")
-          rect.set("height", f"{s['height']:g}")
-        #elif name == 'polygon':
-        elif name == 'triangl' or name == 'diamond' or name == 'parabola':
-          polyg = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
-          polyg.set("points", s['points'])
-        elif name == 'void':
-          pass
-        else:
-          # pp.pprint(s)
-          t = ET.SubElement(g, f"{self.ns}text", id=str(uniqid))
-          t.text = name
-          tx = s['x'] + 10
-          ty = s['y'] + 30
-          t.set("x", str(tx))
-          t.set("y", str(ty))
-          t.set("class", "{fill:#000;fill-opacity:1.0}")
+    tid = fn.split('.')  # unittest self.id()
+    return tid[1], tid[3]
 
 
-  def write(self, svgfile):
-    tree = ET.ElementTree(self.root)
-    ET.indent(tree, level=0)
-    tree.write(svgfile)
+class SvgWriter(Svg):
+   ''' for testers 
+   '''
 
-class LinearSvg(Svg):
-  ''' output design to a two dimensional SVG that a plotter can understand
-    clen = 15 blocksize = (6,2) scale = 2
-    width = 15 * 6 * 2 height = 15 * 2 * 2
-
-    viewbox "0 0 180 60" 
-    width="180mm" height="60mm" 
-    transform="scale(2)"
-    super().__init__(unit='mm', scale=2, gridsize=max_blocksize, cellsize=15)
-    super().__init__(
-      unit='mm', scale=scale, gridsize=gridsize, cellsize=cellsize
-    )
-  '''
-
-  def __init__(self, scale=1, clen=15):
-    super().__init__(unit='mm', scale=scale, cellsize=clen)
-    self.scale  = scale
-    self.clen   = clen
-    self.labels = list()
-
-  def wireframe(self, blockOne, writeconf=False):
-    ''' preview shapes generated by Flatten OR write meander.conf
+   def plotLine(self, line, fn, visible=True, title=True, width=.5):
+    ''' use shapely.plotting :)
     '''
-    msg= self.writeMeanderConf(blockOne) if writeconf else self.markup(blockOne)
-    return msg
+    if line.geom_type not in ['LineString', 'LinearRing','MultiLineString']:
+      raise ValueError(f'wrong geometry {line.geom_type}')
+    fig, ax = plt.subplots()
+    ax.axes.get_xaxis().set_visible(visible)
+    ax.axes.get_yaxis().set_visible(visible)
+    t_class, t_name = self.fileName(fn)
+    if title: plt.title(f"{t_class} {t_name}")
+    shapely.plotting.plot_line(line, ax=ax, linewidth=width, add_points=False)
+    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
 
-  def markup(self, done):
-    inner_p = list()
-    uniqid = 1 # xml elements must have unique IDs
-    g      = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-    g.set('style', 'fill:#FFF;stroke:#000;stroke-width:1')
-    for i in done:
-      gmk = done[i]
-      uniqid += 1
-      ''' SVG polygon
-      '''
-      p      = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
-      points = str()
-      # print(f"{shape_name=}")
-      if gmk.label[0] == 'S':  # Square Ring is a multi part geometry
-        outer  = list(gmk.shape.exterior.coords)
-        inner  = list(gmk.shape.interiors)
-        coords = outer 
-        [inner_p.append(list(lring.coords)) for lring in inner]
-      else:
-        coords = list(gmk.shape.boundary.coords)
-      for c in coords:
-        coord = ','.join(map(str, c))
-        points += f"{coord} "
-      p.set("points", points.strip())
-
-    uniqid += 1
-    g2 = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-    g2.set('style', 'fill:#FFF;stroke:#000;stroke-width:1;stroke-dasharray:0.5')
-    for coords in inner_p:  
-      uniqid += 1
-      ''' Add any points from inner ring
-      '''
-      p      = ET.SubElement(g2, f"{self.ns}polygon", id=str(uniqid))
-      points = str()
-      for c in coords:
-        coord = ','.join(map(str, c))
-        points += f"{coord} "
-      p.set("points", points.strip())
-
-  def cflatWireframe(self, block1, blocksz):
-    ''' preview shapes generated by CellMaker.flatten
-    '''
-    w = self.clen * blocksz[0] * self.scale
-    h = self.clen * blocksz[1] * self.scale
-    super().__init__(
-      unit='mm', scale=self.scale, gridsize=(w, h), cellsize=self.clen
-    )
-    inner_p = list()
-    uniqid = 1 # xml elements must have unique IDs
-    g      = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-    g.set('style', 'fill:#FFF;stroke:#000;stroke-width:1;fill-opacity:0.5')
-    for pos, cell in block1.items():
-      for layer in cell.bft:
-        shape = layer.this
-        if shape.name in ['invisible', 'void', 'multipolygon']:
-          continue       # multi part geometry not expected here!
-        uniqid += 1
-        ''' SVG polygon
-        '''
-        p = ET.SubElement(g, f"{self.ns}polygon", id=str(uniqid))
-        comment = ET.Comment( f' {layer.label} {shape.name}')
-        points = str()
-        #if shape.name == 'sqring' or shape.name == 'irregular':
-        if shape.data.geom_type == 'Polygon': # Polygon with
-          if len(shape.data.interiors):
-            outer  = list(shape.data.exterior.coords)
-            inner  = list(shape.data.interiors)
-            coords = outer 
-            [inner_p.append(list(lring.coords)) for lring in inner]
-          else: 
-            coords = list(shape.data.boundary.coords)
-        else:
-          coords = []
-          print(f"ignoring {shape.data.geom_type}")
-        for c in coords:
-          coord = ','.join(map(str, c))
-          points += f"{coord} "
-        p.set("points", points.strip())
-        p.insert(0, comment)  # 0 is the index where comment is inserted
-
-    uniqid += 1
-    g2 = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-    g2.set('style', 'fill:#FFF;stroke:#000;stroke-width:1;stroke-dasharray:0.5')
-    for coords in inner_p:  
-      uniqid += 1
-      ''' Add any points from inner ring
-      '''
-      p = ET.SubElement(g2, f"{self.ns}polygon", id=str(uniqid))
-      points = str()
-      for c in coords:
-        coord = ','.join(map(str, c))
-        points += f"{coord} "
-      p.set("points", points.strip())
-
-  def writeMeanderConf(self, done):
-    ''' print to console an initial meander
-    '''
-    out = "meander:\n"
-    for i in done:
-      gmk = done[i]
-      tx = gmk.shape.bounds[0]
-      ty = gmk.shape.bounds[1]
-      out += f"  {gmk.label}: N # {int(tx):>3},{int(ty):>3}\n"
-    return out
-
-  def make(self, model, blocks, meander_conf=dict()):
-    self.doc = dict()     # reset for regrouping by fill
-    for block in blocks:
-      self.regroupColors(block, meander_conf=meander_conf)
-      print('.', end='', flush=True)
-    self.svgGroup()
-    return f'tmp/{model}_mm.svg'
-
-  def regroupColors(self, done, meander_conf):
-    for i in done:
-      gmk = done[i]
-      xy  = gmk.meander.fill(conf=meander_conf, label=gmk.label)
-      if xy.is_empty: # meander could not fill d
-        continue
-      if gmk.pencolor in self.doc:
-        self.doc[gmk.pencolor].append(xy)
-      else:
-        self.doc[gmk.pencolor] = list()
-        self.doc[gmk.pencolor].append(xy)
-
-  def svgMarkup(self):
-    ''' reset after wireframe
-    '''
-    uniqid = 0
-    for content in self.doc:
-      uniqid += 1
-      g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-      g.set('style', content['style']) # swap fill for stroke
-      for shape in content['shapes']:
-        if shape['name'] == 'irregular': # square
-          p = shape['points']
-          #print(f"{p[:20]}")
-        if shape['name'] == 'void': continue # empty group
-        elif 'points' in shape: 
-          uniqid += 1
-          polyln = ET.SubElement(g, f"{self.ns}polyline", id=str(uniqid))
-          polyln.set("points", shape['points'])
-        else: print(f"hello new {shape['name']}")
-
-  def svgGroup(self):
-    ''' when pencolor is white it will not plot well on white paper
-    but it is still allowed here
-
-    plotters cannot fill, so style fill:none
-    but they can draw lines, so polyline not polygon
-    '''
-    uniqid = 0
-    for pencolor in self.doc:
-      uniqid += 1
-      g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
-      g.set('style', f"fill:none;stroke:#{pencolor}")
-
-      for line in self.doc[pencolor]:
-        uniqid += 1
-        points = str()
-        for c in list(line.coords):
-          x = c[0]
-          y = c[1]
-          points += f"{x},{y} "
-        polyln = ET.SubElement(g, f"{self.ns}polyline", id=str(uniqid))
-        polyln.set("style", 'stroke-width:0.5') # to show 1mm stripes in gthumb
-        polyln.set("points", points)
+   def plot(self, box, fn, title=True):
+     fig, ax = plt.subplots()
+     t_class, t_name = self.fileName(fn)
+     if title: plt.title(f"{t_class} {t_name}")
+     shapely.plotting.plot_polygon(
+       box, ax=ax, add_points=True, 
+       alpha=.5,
+       facecolor='#CCC',
+       edgecolor='#000',
+       linewidth=1
+     )
+     plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
 
 '''
 the
 end
 '''
- 
