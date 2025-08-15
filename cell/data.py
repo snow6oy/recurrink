@@ -361,14 +361,12 @@ FROM colours;""", [])
   def validate(self, label, cell):
     ''' raise error unless given data exists in palette
     '''
-    print(f'{self.ver=} {label=} {cell.keys()}')
     if 'geom' in cell:
       Geometry.validate(self, label, cell['geom']) 
     if 'color' in cell:
       fo = float(cell['color']['opacity'])
       # '#' + cell['color']['fill'], fo, '#' + cell['color']['background']
       t  = tuple([cell['color']['fill'], fo, cell['color']['background']])
-      print(t)
       if t not in self.palette:
         raise ValueError(f"validation error: >{label}< {t} not in {self.ver=}")
     if 'stroke' in cell:

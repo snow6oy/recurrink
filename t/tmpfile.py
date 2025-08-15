@@ -34,6 +34,14 @@ class Test(unittest.TestCase):
       self.assertTrue(label, 'geom' in celldata[label])
 
   def test_d(self):
+    ''' make digest
+    '''
+    az = [chr(i) for i in range(97,123,1)]
+    r = ''.join(random.choice(az) for i in range(12))
+    self.tf.makeDigest(r)
+    self.assertEqual(32, len(self.tf.digest))
+
+  def test_d(self):
     ''' check vals from csv are correctly poured, e.g. top reordering
         shape size facing top fill bg fo stroke sw sd so
     test = [
@@ -97,11 +105,8 @@ class Test(unittest.TestCase):
     self.assertEqual(celllist[0][0], 'a')
     self.assertEqual(celllist[1][8], '') # sw is empty
     '''
+'''
+the
+end
+'''
 
-  def test_g(self):
-    '''
-    az = [chr(i) for i in range(97,123,1)]
-    r = ''.join(random.choice(az) for i in range(12))
-    self.tf.set(r)
-    self.assertEqual(32, len(self.tf.digest))
-    '''
