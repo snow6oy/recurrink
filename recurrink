@@ -175,7 +175,7 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
       ):
         if os.path.isfile(f"tmp/{args.model}.svg"):
           svgname = f"{WORKDIR}/{args.model}/{tf.digest}.svg"
-          os.rename(f"tmp/{model}.svg", svgname)
+          os.rename(f"tmp/{args.model}.svg", svgname)
           os.symlink(f"{svgname}", f"{PUBDIR}/{tf.digest}.svg")
           response = svgname
         else:

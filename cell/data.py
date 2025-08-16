@@ -503,8 +503,9 @@ class CellData(Strokes):
     ok = True # used only by unit test
     gid = Geometry.read_gid(self, data['geom']) 
     pid = Palette.read_pid(self, self.ver, data['color'])
-    sid = Strokes.read_sid(self, data['stroke'])
-    #print(f'{digest} {label} {gid=} {pid=} {sid=}')
+    if 'stroke' in data: sid = Strokes.read_sid(self, data['stroke'])
+    else:                sid = None
+    print(f'{digest} {label} {gid=} {pid=} {sid=}')
     try:
       self.cursor.execute("""
 INSERT INTO cells (view, cell, gid, pid, sid)
