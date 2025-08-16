@@ -18,7 +18,6 @@ class Make:
     self.grid   = [{} for _ in range(3)] # unique style for each layer
     if clen: self.CLEN = clen
 
-
   def walk(self, positions, cells):
     ''' navigate the model and populate cells
     '''

@@ -3,23 +3,17 @@ class Styles:
   def __init__(self):
     self.fill             = dict()
     self.fill_opacity     = dict()
-    # self.background       = dict() background is fill[0]
     self.stroke           = dict()
     self.stroke_dasharray = dict()
     self.stroke_opacity   = dict()
     self.stroke_width     = dict()
 
-  #def add(
-  #  self, pos, fill=str(), fill_opacity=1, 
-  #  stroke=None, stroke_opacity=0, stroke_dasharray=0, stroke_width=0
-  #):
   def add(self, pos, color, stroke=None):
     ''' style.fill[(1,0)] = [
       'brown',  # bg
       'blue',   # fg
       'green'   # top
     ]
-
         assign values
     '''
     self.fill[pos].append(color['fill'])
@@ -41,7 +35,6 @@ class Styles:
     '''
     if pos not in self.background: self.background[pos] = []
     self.background[pos] = '#' + color['background']
-
         initialise the attributes we need
     '''
     if pos not in self.fill:             self.fill[pos]             = []

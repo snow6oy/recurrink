@@ -1,2 +1,2 @@
-from .layer import Layer
 from .data import CellData, Palette
+from .layer import Layer

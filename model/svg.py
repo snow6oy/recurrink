@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import shapely.plotting
 from shapely.geometry import Polygon
-
 class Svg:
 
   VERBOSE    = False
@@ -92,7 +91,6 @@ class SvgWriter(Svg):
        linewidth=1
      )
      plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
-
 '''
 the
 end

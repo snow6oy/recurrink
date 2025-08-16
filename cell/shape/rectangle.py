@@ -1,5 +1,4 @@
 from shapely.geometry import Polygon
-
 class Rectangle:
 
   VERBOSE = False
