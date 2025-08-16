@@ -167,29 +167,25 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
     size     = args.size / 10  # make it fit scale type in db
     lc       = -1  # TODO colournum should have a real value
     tf.makeDigest(key=args.model)
-    print(f'''
-{tf.digest} {len(celldata.keys())} {args.model=} 
-{args.author=} {ver=}, {size=} colournum {lc}''')
-    '''
-    if os.path.isdir(f"{WORKDIR}/{model}"):
+    #print(f''' {tf.digest} {len(celldata.keys())} {args.model=} {args.author=} {ver=}, {size=} colournum {lc}''')
+    if os.path.isdir(f"{WORKDIR}/{args.model}"):
       if view.create(
-        tf.digest, celldata, model=model, author=args.author, 
+        tf.digest, celldata, model=args.model, author=args.author, 
         ver=ver, scale=size, colournum=lc
       ):
-        if os.path.isfile(f"tmp/{model}_box.svg"):
-          svgname = f"{WORKDIR}/{model}/{tf.digest}.svg"
-          os.rename(f"tmp/{model}_box.svg", svgname)
+        if os.path.isfile(f"tmp/{args.model}.svg"):
+          svgname = f"{WORKDIR}/{args.model}/{tf.digest}.svg"
+          os.rename(f"tmp/{model}.svg", svgname)
           os.symlink(f"{svgname}", f"{PUBDIR}/{tf.digest}.svg")
           response = svgname
         else:
-          raise FileNotFoundError(f"{model}.svg not found in tmp")
+          raise FileNotFoundError(f"{args.model}.svg not found in tmp")
       else:
         response = 'unknown error'
     else:
-      raise FileNotFoundError(f"{model} not found in {WORKDIR}")
+      raise FileNotFoundError(f"{args.model} not found in {WORKDIR}")
     print(response)
-    '''
-  else: print("cannot commit: missing model or palette")
+  else: print("cannot commit: missing model, author or palette")
 
 elif (args.keyword == 'clone'):
   ''' pull from db to create tmp/MODEL.txt from digest
