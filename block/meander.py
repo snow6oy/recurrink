@@ -102,7 +102,6 @@ prev guideline
   def makeStripes(self, points):
     ''' sort the points into parallel stripes that join at alternate ends
         points is a two dim array each dim has 0..n length
-<<<<<<< HEAD
         the first dim represents an axis and the 
         second contains points along the axis
         an axis is paired with the next axis in sequence e.g. 0,1 1,2 2,3 
