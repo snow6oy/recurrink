@@ -49,9 +49,10 @@ WHERE top = %s;""", [top])
       items = self.cursor.fetchall()
     return items
 
-  def read_gid(self, item):
-    ''' in order to commit the item must be converted to a gid
+  def read_gid(self, geom):
+    ''' in order to commit, the item must be converted to a gid
     '''
+    item = [geom[k] for k in ['name', 'size', 'facing', 'top']]
     self.cursor.execute("""
 SELECT gid
 FROM geometry
@@ -218,7 +219,8 @@ AND view = %s;""", [view])
     palette = self.cursor.fetchall()
     return palette
 
-  def read_pid(self, ver, palette=list()):
+  def read_pid(self, ver, color): 
+    palette = [color[k] for k in ['fill', 'background', 'opacity']]
     palette.append(ver)
     self.cursor.execute("""
 SELECT pid
@@ -413,7 +415,8 @@ WHERE sid = %s;""", [sid])
     else:
       raise ValueError("need a sid to find a stroke")
 
-  def read_sid(self, strokes):
+  def read_sid(self, stroke):
+    strokes = [stroke[k] for k in ['fill','width','dasharray','opacity']]
     self.cursor.execute("""
 SELECT sid
 FROM strokes
@@ -494,7 +497,23 @@ class CellData(Strokes):
   def __init__(self, ver=None):
     super().__init__(ver)
 
-  def create(self, digest, items):
+  def create(self, digest, label, data):
+    ''' create a cell by joining a view with geometry and style entries
+    '''
+    ok = True # used only by unit test
+    gid = Geometry.read_gid(self, data['geom']) 
+    pid = Palette.read_pid(self, self.ver, data['color'])
+    sid = Strokes.read_sid(self, data['stroke'])
+    #print(f'{digest} {label} {gid=} {pid=} {sid=}')
+    try:
+      self.cursor.execute("""
+INSERT INTO cells (view, cell, gid, pid, sid)
+VALUES (%s, %s, %s, %s, %s);""", [digest, label, gid, pid, sid])
+    except psycopg2.errors.UniqueViolation:  # 23505 
+      ok = False
+    return ok
+
+  def _create(self, digest, items):
     ''' create a cell by joining a view with geometry and style entries
     '''
     ok = True # used only by unit test

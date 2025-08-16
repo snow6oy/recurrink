@@ -35,6 +35,20 @@ class Test(unittest.TestCase):
     self.assertRaises(Warning, self.c.validate, cells)
     '''
 
+  def test_b(self):
+    ''' commit new cells
+        input data from conf/MODEL.yaml 
+        fields: cell shape size facing top fill bg fo stroke sw sd so
+
+      ['a','triangl','medium','west',False,'#FFF','#000',1.0,'#000',1,0,1]
+    '''
+    cell = CellData(ver=2)  # htmstarter
+    data = config.cells
+    self.assertFalse(cell.create(
+      'e4681aa9b7aef66efc6290f320b43e55', 'a', data['a']
+    ))
+
+
   def testGenerateOne(self):
     ''' called with axis cell generate along ONE axis
     '''
@@ -63,19 +77,9 @@ class Test(unittest.TestCase):
 
   def testRead(self):
     pass
-
-  def testCreate(self):
-    ''' send line from /tmp/MODEL.txt to update an existing view
-        cell shape size facing top fill bg fo stroke sw sd so
-    '''
-    c = CellData(ver=2)  # htmstarter
-    self.assertFalse(c.create(
-      'e4681aa9b7aef66efc6290f320b43e55',
-      ['a','triangl','medium','west',False,'#FFF','#000',1.0,'#000',1,0,1]
-    ))
-
 '''
 the
 end
 '''
+
 

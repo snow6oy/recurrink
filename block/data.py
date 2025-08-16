@@ -32,17 +32,22 @@ DELETE FROM views
 WHERE view = %s;""", [digest])
     return True
 
-  def create(self, digest, celldata, model=str, author=str, ver=int, scale=1.0, colournum=0):
+  def create(
+    self, digest, celldata, model=str(), author=str(), 
+    ver=int(), scale=1.0, colournum=0
+  ):
     ''' create views metadata and try Cells()
     '''
     try:
       self.cursor.execute("""
 INSERT INTO views (view, model, author, scale, colournum, ver)
-VALUES (%s, %s, %s, %s, %s, %s);""", [digest, model, author, scale, colournum, ver])
+VALUES (%s, %s, %s, %s, %s, %s);""", 
+        [digest, model, author, scale, colournum, ver]
+      )
     except psycopg2.errors.UniqueViolation:  # 23505 
       print(f"WARNING {model} {digest} already exists")
     c = CellData(ver=ver)
-    [c.create(digest, row) for row in celldata]
+    [c.create(digest, label, cell) for label, cell in celldata.items()]
     return digest
 
   def colournum(self, digest=None, count=0):
