@@ -102,6 +102,7 @@ prev guideline
   def makeStripes(self, points):
     ''' sort the points into parallel stripes that join at alternate ends
         points is a two dim array each dim has 0..n length
+<<<<<<< HEAD
         the first dim represents an axis and the 
         second contains points along the axis
         an axis is paired with the next axis in sequence e.g. 0,1 1,2 2,3 
@@ -171,20 +172,6 @@ line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
         break
       same = len(points[i])
     return points, err
-
-  def __setClock(self, width, height):
-    ''' meandering an odd number of stripes requires 
-     direction order to be clockwise
-     even stripes must be anti-clockwise
-  
-     tests suggest that when num of stripes is 1 then 
-     clockwise should be True
-     ignoring that corner case for now ..
-    '''
-    raw_stripes   = (width - 1) / 3         # padding reduces width
-    numof_stripes = math.floor(raw_stripes) # round down
-    clockwise     = False if numof_stripes % 2 else True
-    return clockwise
 
 '''
 the
