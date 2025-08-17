@@ -18,55 +18,57 @@ class Test(unittest.TestCase):
   def setUp(self):
     self.g = Geometry()
 
-  def testReadTop(self):
-    ''' number of top entries should be even
+  def test_a(self):
+    ''' number of top entries
+        gnomons are never on top
     '''
-    cells = self.g.read(top=False)
     top = self.g.read(top=True)
-    #pp.pprint(top)
-    self.assertEqual(len(cells), len(top))
+    self.assertEqual(27, len(top))
 
-  def testReadGid(self):
+  def test_b(self):
     ''' test the newest geom that was randomly generated and added to the db
     '''
     geom = self.g.read(gid=70)
-    self.assertEqual(geom, ('line', 'medium', 'west', True))
+    self.assertEqual(geom, ('line', 'medium', 'W', True))
 
-  ''' force top to False unless shape is large
-  def testValidate1(self):
-    geom = ['square', 'medium', 'west', True]
-    self.assertFalse(self.g.validate(geom)[3])
-  '''
-  def testValidate2(self):
+  def test_c(self):
     ''' only circles, lines and square may be large
     ''' 
-    data = {'shape':'triangl', 'size':'large', 'facing':'west'}
+    data = {'shape':'triangl', 'size':'large', 'facing':'W'}
     self.assertRaises(ValueError, self.g.validate, 'a', data)
 
-  def testValidate3(self):
+  def test_d(self):
     ''' triangl cannot face all
     '''
-    data = {'shape':'triangl', 'size':'medium', 'facing':'all'}
+    data = {'shape':'triangl', 'size':'medium', 'facing':'C'}
     self.assertRaises(ValueError, self.g.validate, 'a', data)
 
-  def testGenerateAny(self):
+  def test_d(self):
+    ''' Generate Any direction
+    '''
     geom = self.g.generate_any()  
     items = list(geom.keys())
     self.assertEqual(len(items), 4)
 
-  def testGenerateAll(self):
+  def test_e(self):
     ''' cells must face all directions for allocation pool to generate output
     '''
     geom = self.g.generate_all()
-    self.assertEqual(geom['facing'], 'all')
+    self.assertEqual(geom['facing'], 'C')
 
-  def testGenerateOne(self):
-    ''' after compass pair is applied cells b and d should be symmetrical on east-west axis
+  def test_f(self):
+    ''' after compass pair is applied 
+        cells b and d should be symmetrical on east-west axis
     '''
     pair = ('b', 'd')  # soleares compass, just for context
-    cell_b = self.g.generate_one(axis='east', top=False, facing=None)
+    cell_b = self.g.generate_one(axis='E', top=False, facing=None)
     b_facing = cell_b['facing']
-    self.assertTrue(b_facing in ['north', 'south'])
-    cell_d = self.g.generate_one(axis='east', top=False, facing=b_facing)
+    self.assertTrue(b_facing in ['N', 'S'])
+    cell_d = self.g.generate_one(axis='E', top=False, facing=b_facing)
     d_facing = cell_d['facing'] 
     self.assertTrue(b_facing != d_facing)
+
+'''
+the
+end
+'''

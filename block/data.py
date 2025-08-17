@@ -141,8 +141,10 @@ WHERE view = %s;""", [digest])
               c.generate(topYN, axis=axis, facing=self.view[other]['facing'])
             else:
               c.generate(topYN, axis=axis)
+        else:
+          print(f"WARNING {model} {cell=} has a broken compass")
+          c.generate(topYN, facing_all=True)
       else:
-        #print(f"model {model} has no direction")
         source = 'database'
         c.generate(topYN)
       self.view[cell] = c.data
@@ -170,7 +172,7 @@ WHERE model = %s;""", [model])
         _, cell, pair, facing = r
         if facing not in conf:
           conf[facing] = list()
-        if facing == 'all':
+        if facing == 'C':
           conf[facing].append(cell)
         else:
           conf[facing].append((cell, pair))
@@ -182,9 +184,12 @@ WHERE model = %s;""", [model])
     return list(self.conf.keys()) if self.conf else list()
 
   def all(self, cell):
-    ''' test if the given cell is in the model and can face all directions
+    ''' test if the given cell has been configured and can face all directions
     '''
-    return True if self.conf and 'all' in self.conf and cell in self.conf['all'] else False
+    if self.conf and 'C' in self.conf and cell in self.conf['C']:
+      return True
+    else:
+      return False
 
   def one(self, cell):
     ''' define the cell pairs (tuples) that face each other
@@ -192,7 +197,7 @@ WHERE model = %s;""", [model])
     pair, facing = tuple(), str()
     if self.conf:
       for axis in self.axis():
-        if axis == 'all':
+        if axis == 'C':
           continue
         for p in self.conf[axis]:
           if cell in p:

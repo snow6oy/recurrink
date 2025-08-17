@@ -51,6 +51,11 @@ class Gnomon:
     if facing in control: return control[facing]
     else: raise KeyError(f'all at sea > {facing} <')
 
+  def validate(self, geom): 
+    if geom['size'] in ['large', 'small']: 
+      return 'strictly medium'
+
+
 '''
 the
 end

@@ -20,8 +20,9 @@ class TmpFile:
         0: universal is a mess and should not be used
         using len(fnam) is risky because not enough entries
     '''
+    USE_PEN_PALS = 7  # palettes with pens, not friends from abroad :-D
     if ver is None:
-      ver = random.choice(range(1, len(config.friendly_name)))
+      ver = random.choice(range(USE_PEN_PALS, len(config.friendly_name)))
     self.VERSION = ver
     return ver
 
@@ -139,17 +140,14 @@ class TmpFile:
  
   def refactorCell(self, label, cell):
     print(f'{label} ', end='', flush=True)
+    """
     facing = {
-        'all': 'C',
-      'north': 'N',
-       'east': 'E',
-      'south': 'S',
-       'west': 'W'
+        'all': 'C', 'north': 'N', 'east': 'E', 'south': 'S', 'west': 'W'
     }
-    f = cell['facing']
+    """
     newc = dict()
     newc['geom'] = {
-      'facing': facing[f],
+      'facing': cell['facing'],
         'size': cell['size'],
         'name': cell['shape'],
          'top': cell['top']

@@ -12,11 +12,17 @@ class Triangle():
     swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
     facing = geom['facing']
     rings = {
-      'north': (nw, ne, s), 'N': (nw, ne, s),
-      'south': (sw, n, se), 'S': (sw, n, se),
-      'east': (nw, e, sw),  'E': (nw, e, sw),
-      'west': (w, ne, se),  'W': (w, ne, se)
+      'N': (nw, ne, s),
+      'S': (sw, n, se),
+      'E': (nw, e, sw),
+      'W': (w, ne, se)
     }
+    """
+      'north': (nw, ne, s),
+      'south': (sw, n, se),
+      'east': (nw, e, sw),
+      'west': (w, ne, se),
+    """
     if facing in rings:
       return Polygon(rings[facing])
     else: raise IndexError(f"Cannot face triangle {facing}")

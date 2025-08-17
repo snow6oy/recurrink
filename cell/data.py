@@ -11,17 +11,19 @@ class Geometry(Db):
     super().__init__()
     self.attributes = {
       'shape': ['circle', 'line', 'square', 'triangl', 'diamond'],
-      'facing': ['all','north', 'south', 'east', 'west'],
+      'facing': ['C','N', 'S', 'E', 'W'],
       'size': ['medium', 'large'],
       'top': [True, False]
     }
     self.flip = {
-      'east': { 'north': 'south', 'south': 'north' },
-      'north': { 'west': 'east', 'east': 'west' },
-      'northeast': { 'north': 'east', 'east': 'north' },
-      'southwest': { 'south': 'west', 'west': 'south' }
+       'E': { 'N': 'S', 'S': 'N' },
+       'N': { 'W': 'E', 'E': 'W' },
+      'NE': { 'N': 'E', 'E': 'N' },
+      'SW': { 'S': 'W', 'W': 'S' }
     }
-    self.defaults = { 'shape':'square', 'size':'medium', 'facing':None, 'top':False }
+    self.defaults = { 
+      'shape':'square', 'size':'medium', 'facing':None, 'top':False 
+    }
 
   def create(self, items):
     ''' there are finite permutation of geometries so stopped random creation
@@ -78,7 +80,7 @@ ORDER BY random() LIMIT 1;""", flip)
     self.cursor.execute("""
 SELECT shape, size, facing, top 
 FROM geometry 
-WHERE facing = 'all'
+WHERE facing = 'C'
 AND top = %s
 ORDER BY random() LIMIT 1;""", [top])
     return self.cursor.fetchone()
@@ -505,7 +507,7 @@ class CellData(Strokes):
     pid = Palette.read_pid(self, self.ver, data['color'])
     if 'stroke' in data: sid = Strokes.read_sid(self, data['stroke'])
     else:                sid = None
-    print(f'{digest} {label} {gid=} {pid=} {sid=}')
+    #print(f'{digest} {label} {gid=} {pid=} {sid=}')
     try:
       self.cursor.execute("""
 INSERT INTO cells (view, cell, gid, pid, sid)
@@ -514,45 +516,31 @@ VALUES (%s, %s, %s, %s, %s);""", [digest, label, gid, pid, sid])
       ok = False
     return ok
 
-  def _create(self, digest, items):
-    ''' create a cell by joining a view with geometry and style entries
-    '''
-    ok = True # used only by unit test
-    cell = items.pop(0) # ignore first item cell
-    gid = Geometry.read_gid(self, item=items[:4]) 
-    pid = Palette.read_pid(self, self.ver, palette=items[4:7])
-    sid = Strokes.read_sid(self, strokes=items[7:])
-    # print(digest, cell, gid, pid, sid)
-    try:
-      self.cursor.execute("""
-INSERT INTO cells (view, cell, gid, pid, sid)
-VALUES (%s, %s, %s, %s, %s);""", [digest, cell, gid, pid, sid])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      ok = False
-    return ok
-
   def generate(self, top, 
-    axis=None, facing_all=False, facing=None, primary=None, stroke=None):
+    axis=None, facing_all=False, facing=None, primary=None, stroke=None
+  ):
     #print(f"a {axis} t {top} p {facing} p {primary} s {stroke}")
     if axis:
       g = Geometry.generate_one(self, axis, top, facing)
       p = Palette.generate_one(self, primary=primary)
       s = Strokes.generate_one(self, stroke=stroke)
     else:
-      if facing_all:
-        g = Geometry.generate_all(self, top)
-      else:
-        g = Geometry.generate_any(self, top)
+      if facing_all: g = Geometry.generate_all(self, top)
+      else:          g = Geometry.generate_any(self, top)
       p = Palette.generate_any(self)
       s = Strokes.generate_any(self)
-    if self.ver == 0 and s['stroke_width']: # hack to overcome uneven opacity values in universal palette
-      s['stroke_opacity'] = random.choice(Palette.read_opacity(self, fill=p['fill'], bg=p['bg']))
+    # hack to overcome uneven opacity values in universal palette
+    if self.ver == 0 and s['stroke_width']: 
+      s['stroke_opacity'] = random.choice(
+        Palette.read_opacity(self, fill=p['fill'], bg=p['bg'])
+      )
     self.data = g | p | s
 
   def validate(self, celldata):
     self.loadPalette()
     [Strokes.validate(self, c, celldata[c]) for c in celldata]
-  '''
+
+'''
   the
   end
-  '''
+'''
