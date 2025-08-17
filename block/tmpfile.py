@@ -34,7 +34,7 @@ class TmpFile:
     pos   = bd.readPositions(model)
     fgpos = self.positionBlock(pos)
     topos = self.positionBlock(pos, top=True)
-    pal   = config.friendly_name[ver]
+    #pal   = config.friendly_name[ver]
     
     celldata = {
       'model': model,
@@ -89,15 +89,28 @@ class TmpFile:
             for fb in conf[label][cs]:
               if fb in ['fill', 'background']: # skip opacity
                 conf[label][cs][fb] = self.prettyHash(conf[label][cs][fb])
+      self.setDigest(celldata=conf) 
     return conf 
 
-  def makeDigest(self, key=None):
-    if key is None:
+  def setDigest(self, celldata=None):
+    if celldata is None: # non-reversable 
       az  = [chr(i) for i in range(97,123,1)] 
       key = ''.join(random.choice(az) for i in range(12))
+    else: key = self.digestString(celldata)
     secret = b'recurrink'
     digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
     self.digest = digest_maker.hexdigest()
+
+  def digestString(self, celldata):
+    ''' create a string that is uniq to rink and repeatable
+        hoover all the vals together
+    '''
+    seed = str()
+    for label in celldata: 
+      for k in celldata[label]:
+        for item in celldata[label][k]:
+          seed += str(celldata[label][k][item])
+    return seed
 
   def setBlocksize(self, positions):
     x = [p[0] for p in list(positions.keys())]
