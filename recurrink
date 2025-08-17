@@ -166,7 +166,7 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
     ver      = fnam.index(pal)
     size     = args.size / 10  # make it fit scale type in db
     lc       = -1  # TODO colournum should have a real value
-    tf.makeDigest(key=args.model)
+    tf.setDigest(celldata=celldata)
     #print(f''' {tf.digest} {len(celldata.keys())} {args.model=} {args.author=} {ver=}, {size=} colournum {lc}''')
     if os.path.isdir(f"{WORKDIR}/{args.model}"):
       if view.create(
