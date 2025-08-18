@@ -11,9 +11,9 @@ class Make:
   CLEN    = 9
   pp      = pprint.PrettyPrinter(indent=2)
 
-  def __init__(self, clen=0): 
+  def __init__(self, clen=9, pen_names=dict()): 
     self.cells  = dict()
-    self.style  = Styles()
+    self.style  = Styles(pen_names)
     self.guide  = dict()
     self.grid   = [{} for _ in range(3)] # unique style for each layer
     if clen: self.CLEN = clen
@@ -145,10 +145,11 @@ class Make:
         #print(z, pos)
         polygn = self.polygon(pos, z)
         if not polygn: continue
+        fill = self.style.fill[pos][z]
         if line:
           f = 'fill:none;'
             # TODO what if there is a stroke ?
-          s = f'stroke:{self.style.fill[pos][z]};'    
+          s = f'stroke:{fill};'    
           d = f'stroke-dasharray:{self.style.stroke_dasharray[pos][z]};'
           o = f'stroke-opacity:{self.style.stroke_opacity[pos][z]};'
             # TODO fix tmpfile to support <1 self.style.stroke_width[pos][z]
@@ -158,15 +159,18 @@ class Make:
           style  = f + s + d + o + w
           geom   = self.guide[pos][z]    # fetch linestring
         else:
-          fill   = self.style.fill[pos][z]
           style  = f'fill:{fill};fill-opacity:0.5'
           geom   = polygn                # assign polygon
         if style in self.grid[z]:
-          self.grid[z][style].append(geom)
+          self.grid[z][style]['geom'].append(geom)
         else:
-          self.grid[z][style] = list()
-          self.grid[z][style].append(geom)
-    #self.pp(self.grid)
+          self.grid[z][style] = {
+             'geom': list(), 
+            'penam': self.style.fill_penam[pos][z] + f'_{z}'
+          }
+          self.grid[z][style]['geom'].append(geom)
+        
+    #self.pp.pprint(self.grid)
     return None
  
 '''

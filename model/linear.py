@@ -25,8 +25,10 @@ class SvgLinear:
     for z, layer in enumerate(block.grid):
       self.grid.append({})
       for style in layer:
-        exploded = self.walk(layer[style], gsize, b0, b1, self.clen, edge)
-        self.grid[z][style] = exploded
+        self.grid[z][style] = {'geom':list(), 'penam':str()}
+        exploded = self.walk(layer[style]['geom'], gsize, b0, b1, self.clen, edge)
+        self.grid[z][style]['geom']  = exploded
+        self.grid[z][style]['penam'] = layer[style]['penam']
     #pp.pprint(self.grid)
 
   def walk(self, block, gsize, b0, b1, CLEN, edge):
@@ -78,10 +80,10 @@ class SvgLinear:
         ''' group ID should be the name of the pen e.g. S68-034
             to show 1mm stripes in gthumb set stroke-width:0.5 ??
         '''
-        g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
+        g = ET.SubElement(self.root, f"{self.ns}g", id=layer[style]['penam'])
         g.set('style', style)  # 'fill:#FFF;stroke:#000;stroke-width:1'
         #print(style)
-        for shape in layer[style]:
+        for shape in layer[style]['geom']:
           ''' SVG polygon
           '''
           uniqid += 1
@@ -104,7 +106,7 @@ class SvgLinear:
         ''' fill in the holes
         '''
         if len(inner_p) > 0:
-          g = ET.SubElement(self.root, f"{self.ns}g", id=str(uniqid))
+          g = ET.SubElement(self.root, f"{self.ns}g", id=layer[style]['penam'])
           # 'fill:#FFF;stroke:#000;stroke-width:1;stroke-dasharray:0.5')
           g.set('style', style)
         for coords in inner_p:  

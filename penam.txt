@@ -1,0 +1,19 @@
+as a plotter controller i want to see a
+display of pen names in inkscape 
+so that i know which pen to load next
+
+
+1. read from GPL file.
+stabilo68.gpl example
+
+r   g   b      penam hex
+---------------------------
+128 255 179 #  13    80ffb3
+
+2. add penam as new field in palette table
+
+3. block.styles can read from db
+
+4. model.linear replace group id with penam
+
+

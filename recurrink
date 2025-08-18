@@ -231,17 +231,20 @@ elif (args.keyword == 'explode'):
   '''
   print(f'{args.model=} {args.size=} {args.line=}')
   print('-'*80)
-  block      = Make(args.size)
   svglin     = SvgLinear(args.size)
   celldata   = tf.readConf(args.model)
   ver        = fnam.index(tf.VERSION)
   if args.model == 'minkscape': # default model
     positions = config.positions
-  else:                    # TODO source positions from model
+    penam     = config.penam[2]  # pen names for htmstart pal
+  else:                         # TODO source positions from model
     bd        = BlockData(args.model)
     positions = bd.readPositions(args.model)
+
+  block = Make(args.size, pen_names=penam)
   block.walk(positions, celldata)
-  if args.line: block.meander(padding=False)
+  if args.line: 
+    block.meander(padding=False)
   block.hydrateGrid(line=args.line)
   svglin.explode(block)
   svglin.render(args.model, line=args.line)
