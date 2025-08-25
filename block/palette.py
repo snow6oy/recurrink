@@ -157,8 +157,9 @@ class PaletteMaker:
   def inkscapePal(self, paldir, fn):
     ''' convert a list into a set of unique pairs for overprinting fun
     '''
-    pal  = self.readInkscapePal(paldir, fn)
+    penpal  = self.readInkscapePal(paldir, fn)
     print(paldir, fn)
+    pal  = list(penpal.keys())
     n    = len(pal)
     size = math.comb(n, 2)
     done = set()
@@ -177,9 +178,11 @@ class PaletteMaker:
 
   def readInkscapePal(self, paldir, fn):
     '''
-    data = getHex('/home/gavin/.config/inkscape/palettes/', 'uniball.gpl')
+    paldir: '/home/gavin/.config/inkscape/palettes/'
+    fn: 'uniball.gpl'
     '''
-    found = list()
+    #found = list()
+    found = dict()
     with open(f"{paldir}/{fn}") as pal:
       for line in pal.read().splitlines():
         bits   = line.split()
@@ -189,8 +192,11 @@ class PaletteMaker:
         R, G, B = [int(r), int(g), int(b)]
         hexstr  = f'#{R:02x}{G:02x}{B:02x}'
         #print(r, g, b, hexstr)
-        found.append(hexstr)
-    return tuple(found)
+        #found.append(hexstr)
+        found[hexstr] = comments[1]
+    #return tuple(found)
+    return found
+
 '''
 the
 end

@@ -129,24 +129,12 @@ ORDER BY random() LIMIT 1;""", [top])
     shape  = shapes[name]
     errmsg = shape.validate(geom)
     if errmsg: raise ValueError(f"validation error {label}: {name} {errmsg}")
-
-    '''
-    print(f"""{label}
-{cell['shape']} size {cell['size']} facing {cell['facing']} top {cell['top']}
-""")
-    if data['shape'] in ['square', 'circle'] and data['facing'] != 'all':
-      raise ValueError(f"validation error: circle and square must face all {cell}")
-    if data['shape'] in ['triangl', 'line'] and data['facing'] == 'all': 
-      raise ValueError(f"validation error: triangles and lines cannot face all {cell}")
-    if data['shape'] in ['triangl', 'diamond'] and data['size'] in ['large', 'small']: 
-      raise ValueError(f"validation error: triangle or diamond wrong size {label}")
-    '''
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Palette(Geometry):
 
   def __init__(self, ver=0):
     super().__init__()
-    self.ver     = ver # universal is not a good default (hint: each function can override)
+    self.ver = ver # universal is not a good default (better to override)
     self.opacity = self.read_opacity()
     self.zeroten = [n for n in range(1, 11)]
 
@@ -177,7 +165,8 @@ INSERT INTO palette (ver, fill, bg, opacity, relation) VALUES (%s, %s, %s, %s, %
 
   def swap_palette(self, celldata, ver, view, old_ver=0):
     ''' WARN: we break the golden "Rinks Are Immutable" rule
-      the reason is that collapsing universal palette requires rinks to be moved to a new palette
+      the reason is that collapsing universal palette requires 
+      rinks to be moved to a new palette
       so we update a view generated with universal palette to use another
     '''
     # old_pid = self.read_pid(ver=old_ver, palette=['#FFF', '#9ACD32', '0.5'])
@@ -244,7 +233,7 @@ AND ver = %s;""", palette)
     self.cursor.execute("""
 SELECT pid, opacity
 FROM palette
-WHERE ver = 0
+WHERE ver = 1
 AND fill = %s
 AND bg = %s;""", palette)
     pids = self.cursor.fetchall()
@@ -284,19 +273,6 @@ ORDER BY relation, fill, opacity;""", [ver])
     self.palette = self.cursor.fetchall()
     self.read_compliment(ver)
 
-  # TODO remove this once tested with ./recurrink init
-  def zzzz():
-    self.cursor.execute("""
-SELECT DISTINCT(fill)
-FROM palette
-WHERE ver = %s;""", [ver])
-    self.fill = [f[0] for f in self.cursor.fetchall()]
-    self.cursor.execute("""
-SELECT DISTINCT(bg)
-FROM palette
-WHERE ver = %s;""", [ver])
-    self.backgrounds = [bg[0] for bg in self.cursor.fetchall()]
-
   def read_opacity(self, fill=None, bg=None):
     if fill and bg: # opacity varies according to fill when ver is universal
       self.cursor.execute("""
@@ -320,6 +296,29 @@ FROM colours;""", [])
     colours = [c[0] for c in self.cursor.fetchall()]
     return colours
 
+  def verByPenam(self, penam):
+    ''' return ver from a pen name e.g. stabilo68 returns 11
+    '''
+    self.cursor.execute("""
+SELECT ver 
+FROM inkpal 
+WHERE gplfile = %s;""", [penam])
+    row = self.cursor.fetchone()
+    ver = row[0] if len(row) else None
+    return ver
+
+  def penNames(self, penam, gpldata):
+    ''' pen names keyed by ver:hex
+    '''
+    ver = self.verByPenam(penam)
+    if ver:
+      for hexstr in gpldata:
+        self.cursor.execute("""
+INSERT INTO pens (ver, fill, penam)
+VALUES (%s, %s, %s);""", 
+          [ver, hexstr, gpldata[hexstr]]
+        )
+
   def loadPalette(self, ver=None):
     ''' used to validate inputs from tmpfile
     '''
@@ -330,7 +329,10 @@ FROM colours;""", [])
 
   def generate_any(self, ver=None):
     ver = ver if ver else self.ver
-    return dict(zip(['fill','bg','fill_opacity'], Palette.read_any(self, ver=ver)))
+    return dict(
+      zip(['fill','bg','fill_opacity'], 
+      Palette.read_any(self, ver=ver))
+    )
 
   def generate_one(self, ver=None, primary=None):
     ver = ver if ver else self.ver
@@ -341,6 +343,8 @@ FROM colours;""", [])
       one = Palette.read_any(self, ver=ver)
     return dict(zip(['fill','bg','fill_opacity'], one))
 
+
+
   # edge case where all values are valid but their combined value does not exit in palette
   def valzzzzz(self, cell, data):
     ''' apply rules for defined palette
@@ -349,7 +353,7 @@ FROM colours;""", [])
     fo = float(data['fill_opacity'])
     so = float(data['stroke_opacity']) if data['stroke_opacity'] else None
     # print(f"{cell} v{self.ver}\tfo {fo} stroke {data['fill']} {data['bg']} {so}")
-    if self.ver == 0: # override opacity because universal palette is a bit random
+    if self.ver == 1: # override opacity as universal palette is a bit random
       self.opacity = self.read_opacity(fill=data['fill'], bg=data['bg'])
     if fo not in self.opacity: 
       raise ValueError(f"validation error: fill opacity >{cell}<")
@@ -530,7 +534,7 @@ VALUES (%s, %s, %s, %s, %s);""", [digest, label, gid, pid, sid])
       p = Palette.generate_any(self)
       s = Strokes.generate_any(self)
     # hack to overcome uneven opacity values in universal palette
-    if self.ver == 0 and s['stroke_width']: 
+    if self.ver == 1 and s['stroke_width']: 
       s['stroke_opacity'] = random.choice(
         Palette.read_opacity(self, fill=p['fill'], bg=p['bg'])
       )
