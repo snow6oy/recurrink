@@ -92,13 +92,19 @@ class config:
     'snowbg', 
     'solar',
     'uniball',
-    'copic_sketch',
+    'copicsketch',
     'copic',
     'stabilo68'
   ]
   penam = [{}, {}, {
     '#F00': 'red', '#090': 'green', '#00F': 'blue'
   }]
+  directory = {
+       'rinks': '/home/gavin/Dropbox/familia/rinks',
+        'pubq': '/home/gavin/Pictures/pubq',
+    'palettes': '/home/gavin/.config/inkscape/palettes/'
+  }
+
 
 '''
 the

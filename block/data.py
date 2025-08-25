@@ -4,7 +4,8 @@ from model import Db, ModelData
 from cell import CellData
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
-  ''' a View is an instance of a model, composed from a collection of blocks 
+  ''' a rink (View is the old name) is an instance of a model
+      a rink is a collection of blocks with a set of unique attributes
   '''
   def __init__(self):
     self.view = dict() # cell data goes here
@@ -265,6 +266,33 @@ AND model = %s;""", [model])
     rows = self.cursor.fetchall()
     tc = [a[0] for a in rows]
     return tc
+
+  def verByPenam(self, penam):
+    ''' return ver from a pen name e.g. stabilo68 returns 11
+    '''
+    self.cursor.execute("""
+SELECT ver 
+FROM inkpal 
+WHERE gplfile = %s;""", [penam])
+    row = self.cursor.fetchone()
+    ver = int(row) if row else None
+    return ver
+
+  def penNames(self, ver):
+    ''' pen names from ver
+    '''
+    penam = dict()
+    self.cursor.execute("""
+SELECT fill, penam
+FROM pens
+WHERE ver = %s;""",
+      [ver]
+    )
+    rows = self.cursor.fetchall()
+    for k, v in rows: penam[k] = v
+    return penam
+    
+
 
   def prettyPrint(self, model, bsx, bsy):
     out = str()

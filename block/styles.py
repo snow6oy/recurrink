@@ -23,7 +23,9 @@ class Styles:
     fill  = color['fill']
     self.fill[pos].append(fill)
     self.fill_opacity[pos].append(color['opacity'])
-    self.fill_penam[pos].append(self.penam[fill])
+
+    if fill in self.penam: self.fill_penam[pos].append(self.penam[fill])
+    else: self.fill_penam[pos].append(fill)
 
     # strokes do not align with YAML where they are a separate object, hmm
     if stroke:
@@ -64,7 +66,8 @@ class Styles:
     if pos not in self.fill_penam:   self.fill_penam[pos]   = []
     if pos not in self.stroke_penam: self.stroke_penam[pos] = []
 
-    self.fill_penam[pos].append(self.penam[bgcol])
+    if bgcol in self.penam: self.fill_penam[pos].append(self.penam[bgcol])
+    else: self.fill_penam[pos].append(bgcol)
     self.stroke_penam[pos].append(None)
 
   def __addPenam(self):

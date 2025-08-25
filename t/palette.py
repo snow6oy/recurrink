@@ -20,6 +20,13 @@ class Test(unittest.TestCase):
       'facing':'all'
     }
 
+  def test_a(self):
+    gpldata = self.pmk.readInkscapePal(
+      '/home/gavin/.config/inkscape/palettes/', 'stabilo68.gpl'
+    )
+    pp.pprint(gpldata)
+
+
   def test_0(self):
     p0 = Palette(ver=0)
     p0.loadPalette()

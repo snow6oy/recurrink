@@ -19,7 +19,7 @@ parser_b.add_argument(
   '-p', '--palette', type=int, choices=range(0, 99), metavar='[0-99]',
   help='palette version to write as svg' 
 )
-parser_b.add_argument('-d', '--digest', help='palette from view to write as svg')
+parser_b.add_argument('-d', '--digest', help='palette from rink to write as svg')
 parser_b.add_argument('-m', '--model', help='name of model to build')
 parser_b.add_argument(
   "-s", "--size", help='cell length', nargs='?', type=int, 
@@ -38,7 +38,7 @@ parser_m.add_argument(
   choices=range(0, 99), metavar='[0-99]', required=True
 )
 parser_m.add_argument(
-  '-d', '--digest', help='read palette from view in tmpfile', required=True
+  '-d', '--digest', help='read palette from rink in tmpfile', required=True
 )
 
 parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
@@ -54,10 +54,11 @@ parser_c.add_argument(
   "-p", "--palette", help='new palette to create', type=int, 
   choices=range(0, 99), metavar='[0-99]'  #, required=True
 )
-parser_c.add_argument('-d', '--digest', help='swap view to use palette')
+parser_c.add_argument('-d', '--digest', help='swap rink to use palette')
+parser_c.add_argument("-i", "--inkpal", help='Insert GPLFILE to pens table')
 
 parser_k = subparsers.add_parser('clone', help='get copy of config')
-parser_k.add_argument('-d', '--digest', help='view to clone', required=True)
+parser_k.add_argument('-d', '--digest', help='rink to clone', required=True)
 parser_k.add_argument(
   '-o', '--output', nargs='?', choices=['cell','pal'], const='cell',
   help='clone celldata by default, else palette data'
@@ -65,7 +66,7 @@ parser_k.add_argument(
 
 parser_d = subparsers.add_parser('delete')
 parser_d.add_argument(
-  '-d', '--digest', help='view to remove from db', required=True
+  '-d', '--digest', help='rink to remove from db', required=True
 )
 
 parser_e = subparsers.add_parser(
@@ -90,7 +91,6 @@ parser_i.add_argument(
   "-p", "--palette", type=int, choices=range(0, 99), metavar='[0-99]',
   help='palette version to initialise'
 )
-#parser_i.add_argument('-d', '--digest', help='view to generate palette from')
 parser_i.add_argument("-i", "--inkpal", help='GPL source to generate palette')
 
 parser_l = subparsers.add_parser('ls', help='list models or palettes')
@@ -101,10 +101,10 @@ parser_l.add_argument(
 
 parser_p = subparsers.add_parser('publish', help='add release date to db')
 parser_p.add_argument(
-  '-d', '--digest', help='view to mark as released', required=True
+  '-d', '--digest', help='rink to mark as released', required=True
 )
 
-parser_r = subparsers.add_parser('read', help='get view metadata')
+parser_r = subparsers.add_parser('read', help='get rink metadata')
 parser_r.add_argument('-m', '--model', help='name of base model')
 parser_r.add_argument('-d', '--digest', help='hex name with 32 char')
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -116,8 +116,9 @@ svg     = Svg()
 svgpal  = SvgPalette()
 tf      = TmpFile()
 view    = Views()
-WORKDIR = '/home/gavin/Dropbox/familia/rinks'
-PUBDIR  = '/home/gavin/Pictures/pubq'
+WORKDIR = config.directory['rinks']
+PUBDIR  = config.directory['pubq']
+PALDIR  = config.directory['palettes']
 fnam    = config.friendly_name  # list of palette names
 pp      = pprint.PrettyPrinter(indent=2)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -159,6 +160,10 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
     pal.read_palette(args.palette)
     new_pal = pmk.makeUnique(args.palette, pal, palette)
     print(f"{len(new_pal)} new entries")
+  elif args.inkpal:
+    gpldata = pmk.readInkscapePal(PALDIR, f'{args.inkpal}.gpl')
+    pal.penNames(args.inkpal, gpldata)
+
   elif args.author and args.model:
     celldata = tf.readConf(args.model)
     metadata = tf.readConf(args.model, meta=True)
@@ -233,15 +238,17 @@ elif (args.keyword == 'explode'):
   print('-'*80)
   svglin     = SvgLinear(args.size)
   celldata   = tf.readConf(args.model)
-  ver        = fnam.index(tf.VERSION)
+  ver        = fnam.index(tf.VERSION) + 1
   if args.model == 'minkscape': # default model
     positions = config.positions
     penam     = config.penam[2]  # pen names for htmstart pal
+    block     = Make(args.size, pen_names=penam)
   else:                         # TODO source positions from model
     bd        = BlockData(args.model)
     positions = bd.readPositions(args.model)
+    penam     = bd.penNames(ver)
+    block     = Make(args.size, pen_names=penam)
 
-  block = Make(args.size, pen_names=penam)
   block.walk(positions, celldata)
   if args.line: 
     block.meander(padding=False)
