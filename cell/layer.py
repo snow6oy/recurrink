@@ -15,12 +15,13 @@ class Layer:
 
   def background(self, cell): 
     X, Y, W, H, *a = self.dimension(self.pos[0], self.pos[1], self.clen)
-    ''' swap colours for square ring
+    ''' square rings have outer ring as bg
+        others swap direction depending whether odd or even
     '''
     if cell['geom']['name'] == 'sqring':
       self.direction.append(('spiral', None)) # override Rectangle
-    else:
-      self.direction.append(('guided', 'EB','ET'))
+    elif self.pos[0] % 2: self.direction.append(('guided', 'EB','ET'))
+    else: self.direction.append(('guided', 'NL','NR'))
     self.bft.append(Polygon(((X, Y), (X, H), (W, H), (W, Y))))
 
   def foreground(self, geom):
