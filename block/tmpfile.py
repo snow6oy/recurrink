@@ -34,29 +34,29 @@ class TmpFile:
     pos   = bd.readPositions(model)
     fgpos = self.positionBlock(pos)
     topos = self.positionBlock(pos, top=True)
-    #pal   = config.friendly_name[ver]
+    pal   = config.friendly_name[ver]
     
-    celldata = {
-      'model': model,
-      'palette': config.friendly_name[ver]
-    }
+    celldata = dict()
     for label in cells:
       cell = cells[label]
       cell = self.refactorCell(label, cell)
       celldata[label] = cell
 
-    posdata = dict()
-    posdata['positions'] = { 'foreground': fgpos }
-    if topos: posdata['positions']['top'] = topos
+    metadata = {
+      'model': model,
+      'palette': config.friendly_name[ver]
+    }
+    metadata['positions'] = { 'foreground': fgpos }
+    if topos: metadata['positions']['top'] = topos
 
-    self.writeConf(model, celldata, posdata)
+    self.writeConf(model, metadata, celldata)
 
-  def writeConf(self, model, celldata, posdata):
+  def writeConf(self, model, metadata, celldata):
     ''' PyYAML flow style None is different from False
         we write twice to get both :/
     '''
-    out = yaml.dump(celldata, default_flow_style=False)
-    out += yaml.dump(posdata, default_flow_style=None)
+    out  = yaml.dump(metadata, default_flow_style=None)
+    out += yaml.dump(celldata, default_flow_style=False)
     with open(f'conf/{model}.yaml', 'w') as outfile:
       print(out, file=outfile)
 

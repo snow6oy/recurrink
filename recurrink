@@ -2,6 +2,7 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 import os
 import argparse
+import time
 import random
 import pprint
 from model import ModelData, Svg, SvgPalette, SvgLinear
@@ -121,6 +122,7 @@ PUBDIR  = config.directory['pubq']
 PALDIR  = config.directory['palettes']
 fnam    = config.friendly_name  # list of palette names
 pp      = pprint.PrettyPrinter(indent=2)
+start_t = time.time()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if (args.keyword == 'compare'):
   ''' compare palettes given ver and digest
@@ -351,6 +353,7 @@ elif (args.keyword == 'build'):
   else:
     raise Warning(f'missing {args.model=}, {args.palette=} or {args.digest=}')
 
+print(f"--- {(time.time() - start_t)} seconds ---")
 '''
 the
 end

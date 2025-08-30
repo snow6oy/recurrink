@@ -84,6 +84,7 @@ class config:
     (2, 0): ('c', None)
   }
   friendly_name = [
+    None,
     'universal', 
     'colour45', 
     'htmstarter', 
