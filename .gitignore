@@ -1,19 +1,18 @@
 # local stuff
+*.swp
+.DS_Store
 TODO
 doc
 tmp
 palettes
+Archive
 conf/*
 pubq/*
 scripts/*
 sql/models/*
 sql/palette/*
-*.swp
-.DS_Store
 v/*
-Archive
+t/__init__.py
 __pycache__/*
 */__pycache__/*
 cell/shape/__pycache__/*
-t/__init__.py
-t/zz/*

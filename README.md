@@ -1,8 +1,20 @@
 # Recurrink
 
-Recurrink is a machine learning how to make imagery.
-To see sample outputs from recurrink (we call them rinks) please check
+Recurrink is a machine learning how to make imagery. For example:
+
+![](tutorial/soleares.svg)
+
+To see more sample outputs from recurrink (we call them rinks) please check
 [instagram](instagram.com/recurrink)
+
+## Using recurrink
+
+Recurrink is a CLI. Type `recurrink --help` to see the options.
+The design is based on a hiearchy of Model > Block > Cell.
+
+![](tutorial/classBlockModel.svg)
+
+A model can generate many rinks (SVG files) according to what is defined in `conf/MODEL.yaml`. A rink is linked to a palette which can be built and viewed as `palettes/PALETTE.html`.
 
 ## Adding support for plotters
 
