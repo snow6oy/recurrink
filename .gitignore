@@ -4,14 +4,12 @@ doc
 tmp
 palettes
 conf/*
-rinks/*
 pubq/*
 scripts/*
 sql/models/*
 sql/palette/*
 *.swp
 .DS_Store
-scripts/*
 v/*
 Archive
 __pycache__/*

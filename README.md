@@ -1,4 +1,10 @@
-# Adding support for plotters
+# Recurrink
+
+Recurrink is a machine learning how to make imagery.
+To see sample outputs from recurrink (we call them rinks) please check
+[instagram](instagram.com/recurrink)
+
+## Adding support for plotters
 
 SVGs have overlapping layers. 
 When overlapping colours are used together a new, third colour emerges.
