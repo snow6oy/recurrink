@@ -9,7 +9,7 @@ class config:
       },
       'geom': {
         'name': 'square', 
-        'facing': 'all', 
+        'facing': 'C', 
         'size': 'medium', 
         'top': False
       },
@@ -28,7 +28,7 @@ class config:
       },
       'geom': {
         'name': 'line', 
-        'facing': 'north', 
+        'facing': 'N', 
         'size': 'medium', 
         'top': False
       },
@@ -47,7 +47,7 @@ class config:
       },
       'geom': {
         'name': 'square', 
-        'facing': 'all', 
+        'facing': 'C', 
         'size': 'small', 
         'top': True
       },
@@ -66,7 +66,7 @@ class config:
       },
       'geom': {
         'name': 'line', 
-        'facing': 'east', 
+        'facing': 'E', 
         'size': 'large', 
         'top': True
       },
