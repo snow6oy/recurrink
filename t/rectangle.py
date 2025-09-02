@@ -25,8 +25,19 @@ class Test(unittest.TestCase):
     ''' rectangle square has a spiral guide
     '''
     r     = Rectangle('square')
-    guide = r.guide('all')
+    guide = r.guide('C')
     self.assertEqual('spiral', guide[0])
+
+  def test_c(self):
+    ''' rectangle makes a big square
+    '''
+    expect = Polygon(((0, 0), (0, 9), (9, 9), (9, 0)))
+    r      = Rectangle('square')
+    geom   = config.cells['a']['geom']
+    geom['size'] = 'large'
+    polygn = Polygon(r.coords(self.dim, geom))
+    if self.VERBOSE: self.writer.plot(polygn, self.id())
+    self.assertEqual(expect, polygn) 
 
 '''
 the
