@@ -6,6 +6,6 @@ class Db:
   def __init__(self):
     ''' create connection to postgres
     '''
-    connection = psycopg2.connect(dbname='recurrink', port=5433)
+    connection = psycopg2.connect(dbname='recurrink') #, port=5433)
     connection.autocommit = True
     self.cursor = connection.cursor()
