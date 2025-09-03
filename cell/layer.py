@@ -13,12 +13,12 @@ class Layer:
     self.clen      = clen     # length of cell
     self.pos       = pos      # logical position in block
 
-  def background(self, cell): 
+  def background(self, geom): 
     X, Y, W, H, *a = self.dimension(self.pos[0], self.pos[1], self.clen)
     ''' square rings have outer ring as bg
         others swap direction depending whether odd or even
     '''
-    if cell['geom']['name'] == 'sqring':
+    if geom['name'] == 'sqring':
       self.direction.append(('spiral', None)) # override Rectangle
     elif self.pos[0] % 2: self.direction.append(('guided', 'EB','ET'))
     else: self.direction.append(('guided', 'NL','NR'))
@@ -61,7 +61,7 @@ class Layer:
     usage examples
 
     1. unpack everything
-    X, Y, W, H, a, b, c, d, A, B, C, D = dim
+   X, Y, W, H, a, b, c, d, A, B, C, D = dim
 
     2. unpack for medium sized shape
     X, Y, W, H, *a = dim
@@ -74,18 +74,20 @@ class Layer:
         o---------o B 
         A X a c W C
     '''
-    X = x * clen              # medium
+    scaler = clen / 3    # scale up or down by a factor of three
+
+    X = x * clen         # medium
     Y = y * clen
     W = X + clen
     H = Y + clen
-    a = X + (clen / 3)        # small
-    b = Y + (clen / 3)
-    c = W - (clen / 3)
-    d = H - (clen / 3)
-    A = X + (clen / 3) * 4    # large
-    B = X + (clen / 3) * 4
-    C = Y + (clen / 3) * 2
-    D = Y + (clen / 3) * 2
+    a = X + scaler       # small
+    b = Y + scaler
+    c = W - scaler
+    d = H - scaler
+    A = X - scaler       # large
+    B = Y - scaler
+    C = W + scaler
+    D = H + scaler
 
     return tuple([X, Y, W, H, a, b, c, d, A, B, C, D])
 

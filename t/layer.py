@@ -19,15 +19,10 @@ class Test(unittest.TestCase):
     ''' create a simple with bg and fg
     '''
     cell = Layer()
-    cell.background()
-    cell.foreground(
-      shape=config.cells['a']['shape'],
-      size=config.cells['a']['size'],
-      facing=config.cells['a']['facing']
-    )
+    cell.background(config.cells['a']['geom'])
+    cell.foreground(config.cells['a']['geom'])
     mp = cell.polygon()
     self.assertEqual('MultiPolygon', mp.geom_type)
-
 
   def test_b(self):
     ''' test exploder walks the grid
@@ -60,14 +55,31 @@ class Test(unittest.TestCase):
         cell.layer.foreground assembles the parts
     '''
     cell = Layer()
-    cell.background()
-    cell.foreground(
-      shape='sqring',
-      size=config.cells['a']['size'],
-      facing=config.cells['a']['facing']
-    )
+    geom = config.cells['a']['geom']
+    geom['name'] = 'sqring'
+    cell.background(geom)
+    cell.foreground(geom)
     p = cell.polygon()
     if self.VERBOSE: self.writer.plot(p, self.id())
+ 
+  def test_e(self):
+    ''' dimensions of three sizes
+        given a pos 1 1
+    ''' 
+    expt = {
+       'med': ( 9,  9, 18, 18),
+      'smal': (12, 12, 15, 15),
+      'lrge': ( 6,  6, 21, 21)
+    }
+    rslt = dict()
+    cell = Layer()
+    dim  = cell.dimension(x=1, y=1, clen=9)
+    rslt['med']  = dim[:4]
+    rslt['smal'] = dim[4:8]
+    rslt['lrge'] = dim[8:]
+    for size in ['med', 'smal', 'lrge']:
+      self.assertEqual(expt[size], rslt[size])
+    
 
 '''
 the

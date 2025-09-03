@@ -50,6 +50,26 @@ class Rectangle:
         }
       }
     }
+    if shape == 'sqring':
+      X, Y, W, H = sizes['square']['medium']
+      x, y, w, h = sizes['square']['small']
+      rectgl = Polygon(
+        ((X, Y), (X, H), (W, H), (W, Y)), 
+        holes=[((x, y), (x, h), (w, h), (w, y))]
+      )
+    elif shape in sizes and size in sizes[shape]:
+      if shape == 'square':
+        x, y, w, h = sizes[shape][size]
+        rectgl = Polygon(((x, y), (x, h), (w, h), (w, y)))
+      elif facing in sizes[shape][size]:
+        x, y, w, h = sizes[shape][size][facing]
+        rectgl = Polygon(((x, y), (x, h), (w, h), (w, y)))
+      else:
+        raise NotImplementedError(f'{shape=} {size=} {facing=}')
+    else: 
+      raise NotImplementedError(f'{shape=} {size=}')
+    if self.VERBOSE: print(f'{shape=} {size=} {facing=} {x} {y} {w} {h}')
+    return rectgl
     """
           'south': [a, Y, c, H],
           'north': [a, Y, c, H],
@@ -68,27 +88,6 @@ class Rectangle:
            'east': [W, b, c, H],
            'west': [X, Y, a, d],
     """
-    if shape in sizes and size in sizes[shape]:
-      if shape == 'square':
-        x, y, w, h = sizes[shape][size]
-        rectgl = Polygon(((x, y), (x, h), (w, h), (w, y)))
-      elif shape == 'sqring':
-        X, Y, W, H = sizes['square']['medium']
-        x, y, w, h = sizes['square']['small']
-        rectgl = Polygon(
-          ((X, Y), (X, H), (W, H), (W, Y)), 
-          holes=[((x, y), (x, h), (w, h), (w, y))]
-        )
-      elif facing in sizes[shape][size]:
-        x, y, w, h = sizes[shape][size][facing]
-        rectgl = Polygon(((x, y), (x, h), (w, h), (w, y)))
-      else:
-        raise NotImplementedError(f'{shape=} {size=} {facing=}')
-    else: 
-      raise NotImplementedError(f'{shape=} {size=}')
-
-    if self.VERBOSE: print(f'{shape=} {size=} {facing=} {x} {y} {w} {h}')
-    return rectgl
 
   def guide(self, direction):
     ''' expand facing to a pair of guidelines for meander
