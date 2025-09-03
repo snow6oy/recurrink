@@ -25,7 +25,7 @@ class Make:
     for pos in positions:
       label   = positions[pos][0]  
       cell    = Layer(clen=self.CLEN, pos=pos)
-      cell.background(cell=cells[label])
+      cell.background(geom=cells[label]['geom'])
       self.style.addBackground(pos, color=cells[label]['color'])
       for label in positions[pos]:
         if not label: continue
