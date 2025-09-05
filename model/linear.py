@@ -11,22 +11,26 @@ class SvgLinear:
 
   def __init__(self, clen):
     if clen % 9: raise ValueError(f'{clen} must divide by nine')
-    self.clen        = clen
-    self.grid        = list()
-    self.gridsize_mm = 270
+    self.clen   = clen
+    self.grid   = list()
+    self.unit   = 'mm'
+    self.gridsz = (270, 270)
+    self.border = 0
 
   def explode(self, block):
-    ''' prepare model for explosion
+    ''' prepare model by copying block.grid to exploded self
     '''
     b0, b1 = block.BLOCKSZ
-    gsize  = int(self.gridsize_mm / self.clen) # reduce to logical dimension
+    gsize  = int(self.gridsz[0] / self.clen) # reduce to logical dimension
     edge   = gsize * self.clen
 
     for z, layer in enumerate(block.grid):
       self.grid.append({})
       for style in layer:
         self.grid[z][style] = {'geom':list(), 'penam':str()}
-        exploded = self.walk(layer[style]['geom'], gsize, b0, b1, self.clen, edge)
+        exploded = self.walk(
+          layer[style]['geom'], gsize, b0, b1, self.clen, edge
+        )
         self.grid[z][style]['geom']  = exploded
         self.grid[z][style]['penam'] = layer[style]['penam']
     #pp.pprint(self.grid)
@@ -46,18 +50,29 @@ class SvgLinear:
       if self.VERBOSE: print()
     return cells
 
+  def build(self, block):
+    ''' like explode but just one block, more like a pop
+    '''
+    b0, b1      = block.BLOCKSZ
+    self.grid   = block.grid
+    self.unit   = 'px'
+    self.border = 2
+    self.gridsz = (b0 * self.clen, b1 * self.clen)
+
   def setSvgHeader(self):
     ''' start the markup
     '''
     ET.register_namespace('',"http://www.w3.org/2000/svg")
-    unit  = 'mm'
-    w = h = self.gridsize_mm
+    w, h = self.gridsz
+    unit = self.unit
+    b    = self.border
     root = ET.fromstring(f'''
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
       viewBox="0 0 {w} {h}" 
       width="{w}{unit}" height="{h}{unit}"
-      transform="scale(1)"></svg>
+      transform="scale(1)"
+      style="border: {b}{unit} solid #cccccc;"></svg>
     ''')
     comment = ET.Comment(f' cell length: {self.clen}')
     root.insert(0, comment)  # 0 is the index where comment is inserted

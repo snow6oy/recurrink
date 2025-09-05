@@ -24,12 +24,17 @@ class Styles:
     self.fill[pos].append(fill)
     self.fill_opacity[pos].append(color['opacity'])
 
+    # fallback to hex unless pen name was defined during init
     if fill in self.penam: self.fill_penam[pos].append(self.penam[fill])
     else: self.fill_penam[pos].append(fill)
 
     # strokes do not align with YAML where they are a separate object, hmm
     if stroke:
       sfill = stroke['fill']
+
+      if sfill not in self.penam:  # fallback 
+        self.penam[sfill] = sfill
+
       self.stroke[pos].append(sfill)
       self.stroke_penam[pos].append(self.penam[sfill])
       self.stroke_dasharray[pos].append(stroke['dasharray'])

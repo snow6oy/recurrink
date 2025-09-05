@@ -10,57 +10,25 @@ class Test(unittest.TestCase):
   def setUp(self):
     self.tf  = TmpFile()
 
-  def test_a(self):
-    ''' write preview of flatten as a wireframe
+  def test_a(self, LINE=True, BUILD=True, MODEL=None):
+    ''' prototype of build with SvgLinear()
+        PARAMS in caps should be set by argparse
     '''
-    svglin = SvgLinear(clen=54)
-    block  = Make(clen=54)
-    #pp.pprint(config.cells)
+    block  = Make(clen=90)
+    svglin = SvgLinear(clen=90)
+    MODEL  = MODEL if MODEL else 'linear_test_a'
+
     block.walk(config.positions, config.cells)
-    block.hydrateGrid()
-    svglin.explode(block)
-    svglin.render(model='minkscape')
+    if LINE: block.meander(padding=False)
+    block.hydrateGrid(line=LINE)
+    if BUILD: svglin.build(block)
+    else:     svglin.explode(block)
+    svglin.render(MODEL, line=LINE)
 
-  def test_3(self):
-    ''' generate config for meander
-    svg = LinearSvg()
-    blocksize = (3, 1)
-    block1    = self.gm.make(blocksize, config.positions, config.cells)
-    self.f.run(block1)
-    meander_conf = svg.wireframe(self.f.done, writeconf=True)
-    self.assertEqual(len(meander_conf), 207)
-    '''
+  def test_b(self): self.test_a(LINE=False, BUILD=False, MODEL='linear_test_b')
+  def test_c(self): self.test_a(LINE=False, BUILD=True, MODEL='linear_test_c')
+  def test_d(self): self.test_a(LINE=True, BUILD=False, MODEL='linear_test_d')
 
-  def test_4(self):
-    ''' Layout.Grid transforms a block into blocks according to position
-    expectedx = [5, 50, 5, 50, 5, 50, 5, 50, 5, 50, 5, 50]
-    expectedy = [5, 5, 20, 20, 35, 35, 50, 50, 65, 65, 80, 80]
-    grid      = Grid(scale=1, gridsize=90)
-    svg       = LinearSvg(scale=1, gridsize=90)
-    blocksize = (3, 1)
-    block1    = self.gm.make(blocksize, config.positions, config.cells)
-    blocks    = grid.walk(blocksize, block1)
-    for i, block in enumerate(blocks):
-      x, y = block[0].shape.bounds[:2]
-      self.assertEqual(expectedx[i], x)
-      self.assertEqual(expectedy[i], y)
-    '''
-
-  def test_5(self):
-    ''' write minkscape as 2d SVG
-    todo      = []
-    grid      = Grid(scale=1, gridsize=90)
-    svg       = LinearSvg(scale=1, gridsize=90)
-    blocksize = (3, 1)
-    conf      = self.tf.modelConf('minkscape')
-    block1    = self.gm.make(blocksize, config.positions, config.cells)
-    blocks    = grid.walk(blocksize, block1)
-    for b in blocks:
-      f = Flatten()
-      todo.append(f.run(b))
-    svgfile = svg.make('linearsvg_5', todo, meander_conf=conf['meander'])
-    svg.write(svgfile)
-    '''
 '''
 the
 end
