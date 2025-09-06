@@ -177,24 +177,21 @@ class PaletteMaker:
     return as_list
 
   def readInkscapePal(self, paldir, fn):
+    ''' paldir is set in config.py
+        fn: 'uniball.gpl'
     '''
-    paldir: '/home/gavin/.config/inkscape/palettes/'
-    fn: 'uniball.gpl'
-    '''
-    #found = list()
     found = dict()
     with open(f"{paldir}/{fn}") as pal:
       for line in pal.read().splitlines():
         bits   = line.split()
-        if bits[0] == 'GIMP' or bits[0] == 'Name:':
+        if bits[0] == 'GIMP' or bits[0] == 'Name:' or bits[0] == '#':
           continue
         r, g, b, *comments   = bits
         R, G, B = [int(r), int(g), int(b)]
         hexstr  = f'#{R:02x}{G:02x}{B:02x}'
-        #print(r, g, b, hexstr)
-        #found.append(hexstr)
-        found[hexstr] = comments[1]
-    #return tuple(found)
+        penam   = ' '.join(comments[1:])
+        #print(r, g, b, hexstr, penam)
+        found[hexstr] = penam
     return found
 
 '''

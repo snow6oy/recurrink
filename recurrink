@@ -258,8 +258,7 @@ elif (args.keyword == 'init'):
       generate an editable config file 
   '''
   if args.inkpal: # e.g. uniball.gpl
-    paldir  = '/home/gavin/.config/inkscape/palettes/'
-    palette = pmk.inkscapePal(paldir, f"{args.inkpal}.gpl")
+    palette = pmk.inkscapePal(PALDIR, f"{args.inkpal}.gpl")
     tf.exportPalfile(args.inkpal, palette) 
     print(f"{args.inkpal}.txt was written")
   elif args.palette in range(99) and args.model:

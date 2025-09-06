@@ -95,15 +95,16 @@ class config:
     'uniball',
     'copicsketch',
     'copic',
-    'stabilo68'
+    'stabilo68',
+    'sharpie'
   ]
   penam = [{}, {}, {
     '#F00': 'red', '#090': 'green', '#00F': 'blue'
   }]
   directory = {
-       'rinks': '/home/gavin/Dropbox/familia/rinks',
-        'pubq': '/home/gavin/Pictures/pubq',
-    'palettes': '/home/gavin/.config/inkscape/palettes/'
+       'rinks': '/Users/gavin/Dropbox/familia/rinks',
+        'pubq': '/Users/gavin/Pictures/pubq',
+    'palettes': '/Users/gavin/Library/Application Support/org.inkscape.Inkscape/config/inkscape/palettes'
   }
 
 

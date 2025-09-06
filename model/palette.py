@@ -33,7 +33,7 @@ class SvgPalette:
         <td style="width:20%">{op}</td>
         <td style="width:30%">{bg}</td>
         <td style="background-color:{bg};width:10%">
-          <div style="color: rgba({r}, {g}, {b}, {op})">◼</div>
+          <div style="color: rgba({r}, {g}, {b}, {op})">&#9673;</div>
         </td>
       </tr>'''
     return data
@@ -71,7 +71,7 @@ class SvgPalette:
 </script>
 <style>
     input#myInput { width: 220px; }
-    table#myTable { width: 50%; }
+    table#myTable { width: 100%; }
     table#myTable th { text-align: left; padding: 20px 0 10px; }
 </style>
 <body>
