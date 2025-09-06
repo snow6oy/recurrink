@@ -71,9 +71,9 @@ class SvgLinear:
       xmlns="http://www.w3.org/2000/svg" 
       viewBox="0 0 {w} {h}" 
       width="{w}{unit}" height="{h}{unit}"
-      transform="scale(1)"
-      style="border: {b}{unit} solid #cccccc;"></svg>
+      style="border: {b}{unit} solid #000000;"></svg>
     ''')
+    # transform="scale(1)" has not effect ?
     comment = ET.Comment(f' cell length: {self.clen}')
     root.insert(0, comment)  # 0 is the index where comment is inserted
     #ET.dump(root)

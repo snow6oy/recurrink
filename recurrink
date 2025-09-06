@@ -128,7 +128,6 @@ if (args.keyword == 'compare'):
   ''' compare palettes given ver and digest
       expect tmp/PALETTE.txt tmp/DIGEST.txt to exist already
   '''
-  print(f'{args.palette=} {args.digest=}')
   print(pmk.cmpPalettes(fnam[args.palette], args.digest))
 
 elif (args.keyword == 'commit'):
@@ -145,7 +144,6 @@ elif (args.keyword == 'commit'):
       add NEW_PAL to friendly_name
       use the index of config.friendly_name[] as arg
   '''
-  print(f'{args.author=} {args.size=} {args.palette=} {args.digest=}')
   if args.palette and args.digest:
     model      = view.read_meta(args.digest)[0]
     celldata   = tf.read(model, output=list())
@@ -197,7 +195,6 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
 elif (args.keyword == 'clone'):
   ''' pull from db to create tmp/MODEL.txt from digest
   '''
-  print(f'{args.digest=} {args.output=}')
   model, author, scale, ver = view.readMeta(digest=args.digest)
   if args.output == 'pal': # export view as palette
     palette = set(pal.read_view(args.digest))
@@ -236,8 +233,6 @@ elif (args.keyword == 'explode'):
       numbers of cells defined by cell length which is always divisible by 3
       to ensure whole numbers: clen must be one of: 9 18 27 45 54 90
   '''
-  print(f'{args.model=} {args.size=} {args.line=}')
-  print('-'*80)
   svglin     = SvgLinear(args.size)
   celldata   = tf.readConf(args.model)
   ver        = fnam.index(tf.VERSION) + 1
@@ -262,7 +257,6 @@ elif (args.keyword == 'init'):
   ''' pull a palette from db and write to tmpfile
       generate an editable config file 
   '''
-  print(f'{args.model=} {args.palette=} {args.inkpal=}')
   if args.inkpal: # e.g. uniball.gpl
     paldir  = '/home/gavin/.config/inkscape/palettes/'
     palette = pmk.inkscapePal(paldir, f"{args.inkpal}.gpl")
@@ -296,7 +290,6 @@ palette {fnam[ver]}""")
 elif (args.keyword == 'ls'):
   ''' list from db or config
   '''
-  print(f'{args.output=}')
   if args.output == 'pal': 
     [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
   else: print(modl.stats())
@@ -304,12 +297,10 @@ elif (args.keyword == 'ls'):
 elif (args.keyword == 'publish'):
   ''' used by reith to update pubdate
   '''
-  print(f'{args.digest=}')
   view.update(d)
   print(f"updated ok")
 
 elif (args.keyword == 'read'):
-  print(f'{args.model=} {args.digest=}')
   if args.model:
     bd        = BlockData(args.model)
     blocksize = modl.read(model=args.model)[2]
@@ -321,7 +312,6 @@ elif (args.keyword == 'read'):
 elif (args.keyword == 'build'):
   ''' generate an SVG from tmpfile using ElementTree
   '''
-  print(f'{args.model=} {args.size=} {args.palette=} {args.digest=} {args.line=}')
   if args.palette is not None or args.digest: # universal has index 0 :-/
     fn      = fnam[args.palette] if args.palette >=0 else args.digest
     palette = tf.importPalfile(fn)
@@ -329,9 +319,8 @@ elif (args.keyword == 'build'):
     print(f"palettes/{fn}.html was written")
   elif args.model and args.size:
     block     = Make(args.size)
-    '''
-      celldata  = config.cells
-    '''
+    svglin    = SvgLinear(args.size)
+
     if args.model == 'minkscape': # default model
       positions = config.positions
     else: # TODO get positions from tf.positions() after readConf
@@ -341,19 +330,22 @@ elif (args.keyword == 'build'):
     celldata  = tf.readConf(args.model)
     ver       = fnam.index(tf.VERSION)
     view.validate(celldata, ver=ver)
+    block.walk(positions, celldata)
 
     if args.line:
-      block.walk(positions, celldata)
       block.meander(padding=False)
-      svg.drawLine(block, svgfile=f'_.{args.model}._.line')
+      svgfile=f'{args.model}_line'
     else:
-      block.walk(positions, celldata)
-      svg.draw(block, svgfile=f'_.{args.model}._.box')
-    print(f'tmp/{args.model}.svg was built')
+      svgfile=f'{args.model}_box'
+
+    block.hydrateGrid(line=args.line)
+    svglin.build(block)
+    svglin.render(svgfile, line=args.line)
+    print(f'tmp/{svgfile}.svg was built')
   else:
     raise Warning(f'missing {args.model=}, {args.palette=} or {args.digest=}')
 
-print(f"--- {(time.time() - start_t)} seconds ---")
+print(f"--- {round(time.time() - start_t, 3)} seconds ---")
 '''
 the
 end
