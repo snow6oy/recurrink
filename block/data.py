@@ -267,16 +267,14 @@ AND model = %s;""", [model])
     tc = [a[0] for a in rows]
     return tc
 
-  def verByPenam(self, penam):
-    ''' return ver from a pen name e.g. stabilo68 returns 11
+  def inkPals(self):
+    ''' to replace config.friendly_names
     '''
     self.cursor.execute("""
-SELECT ver 
-FROM inkpal 
-WHERE gplfile = %s;""", [penam])
-    row = self.cursor.fetchone()
-    ver = int(row) if row else None
-    return ver
+SELECT ver, gplfile
+FROM inkpal;""")
+    rows = self.cursor.fetchall()
+    return rows
 
   def penNames(self, ver):
     ''' pen names from ver
