@@ -235,7 +235,7 @@ elif (args.keyword == 'explode'):
   '''
   svglin     = SvgLinear(args.size)
   celldata   = tf.readConf(args.model)
-  ver        = fnam.index(tf.VERSION) + 1
+  ver        = fnam.index(tf.VERSION)
   if args.model == 'minkscape': # default model
     positions = config.positions
     penam     = config.penam[2]  # pen names for htmstart pal

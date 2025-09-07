@@ -4,20 +4,17 @@ A Block is a collection of cells. The block module provides operations on the co
 
 ## Palette
 
-- add sharpie GPL
+- restore GPL files from DB for pals 8..11 
 - add stabilo fine
-- restore GPL files from DB
-
-- palette.html displays as HTML char not Hex code
-- pen names has both hex and text ??
-+ stroke has ##
+- stroke has ##
+- single-source-of-truth for palettes, see config.py in model/README
 - migrate universal PIDs to new palettes until 60
 - the problem of univsersal palette: solve by ranges color > r1 and < r2
-+ Stencil broke recurrink commit because it counted colours
+- Stencil broke recurrink commit because it counted colours
 - review doc/ddl-palett2.sql decide if benefits matches impact of schema change
-- single-source-of-truth for palettes, see config.py in model/README
 
 ## Meander
+
 - padding can be exposed to the interface, as meta in the conf?
 - meander: concentric could work for circles, triangles and diamonds
 - resurrect the original meander and apply N or E in conf 
@@ -53,7 +50,7 @@ The palette file is a tab-seperated list
 fill    opacity background
 #d7e3f4 0.5     #483737
 ```
-The penam in the GPL will become the PRIMARY KEY in the pens table.
+The hex in the GPL and ver will become a composite PRIMARY KEY in the pens table.
 
 ```
 ./recurrink commit --inkpal GPLFILE
@@ -65,6 +62,7 @@ Now palettes/GPLFILE is in sync with db.pens. Optionally add the new pens to the
 11 new colours 
 66 new entries
 ```
+To see the pen names in Inkscape explode has to pass them to the SVG.
 
 3. Block.styles recieves pen names from db
 4. Model.linear replaces group id with penam OR fallback to fill name
