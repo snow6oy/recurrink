@@ -18,7 +18,7 @@ subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
 parser_b = subparsers.add_parser('build', help='build svg from config')
 parser_b.add_argument(
   '-p', '--palette', type=int, choices=range(0, 99), metavar='[0-99]',
-  help='palette version to write as svg' 
+  help='palette version to write as html' 
 )
 parser_b.add_argument('-d', '--digest', help='palette from rink to write as svg')
 parser_b.add_argument('-m', '--model', help='name of model to build')
@@ -199,10 +199,11 @@ elif (args.keyword == 'clone'):
   if args.output == 'pal': # export view as palette
     palette = set(pal.read_view(args.digest))
     tf.exportPalfile(args.digest, palette) 
-    print(f"tmp/{args.digest}.txt was written")
+    print(f"palettes/{args.digest}.txt was written")
   else:   # assume we want celldata
     celldata  = view.read(digest=args.digest) #, output=list())
     #tf.conf(model, fnam[ver]) # conf state is a symlink
+    tf.setVersion(ver)
     tf.write(model, celldata)
     print(f"""
 cloning {model}
@@ -260,7 +261,7 @@ elif (args.keyword == 'init'):
   if args.inkpal: # e.g. uniball.gpl
     palette = pmk.inkscapePal(PALDIR, f"{args.inkpal}.gpl")
     tf.exportPalfile(args.inkpal, palette) 
-    print(f"{args.inkpal}.txt was written")
+    print(f"palettes/{args.inkpal}.txt was written")
   elif args.palette in range(99) and args.model:
     _model, src, celldata = view.generate(model=args.model, ver=args.palette)
     tf.conf(args.model, fnam[args.palette]) # conf state is a symlink
@@ -311,8 +312,8 @@ elif (args.keyword == 'read'):
 elif (args.keyword == 'build'):
   ''' generate an SVG from tmpfile using ElementTree
   '''
-  if args.palette is not None or args.digest: # universal has index 0 :-/
-    fn      = fnam[args.palette] if args.palette >=0 else args.digest
+  if args.palette or args.digest:
+    fn      = fnam[args.palette] if args.palette else args.digest
     palette = tf.importPalfile(fn)
     svgpal.render(fn, palette)
     print(f"palettes/{fn}.html was written")
