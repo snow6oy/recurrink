@@ -153,38 +153,60 @@ class Palette(Geometry):
         self.cursor.execute("""
 INSERT INTO colours (fill) VALUES (%s);""", [col])
 
+  # called from recurrink
+  #    createPaletteEntry from palswap.py
+  #    merge !!!
+  #'''
   def create_palette_entry(self, palette):
     ''' ver should be next increment ID of palette
         palette is an array used to create the colour entries
-    '''
-    for p in palette: 
+    ''' 
+    for p in palette:
       ver, fill, opacity, bg, relation = p # re-order
       self.cursor.execute("""
 INSERT INTO palette (ver, fill, bg, opacity, relation) VALUES (%s, %s, %s, %s, %s);
 """, [ver, fill, bg, opacity, relation])
 
-  def swap_palette(self, celldata, ver, view, old_ver=0):
+
+  def createPaletteEntry(self, palette):
+    ''' ver should be ID from inkpal table
+        palette is an array used to create the colour entries
+    '''
+    ver, fill, opacity, bg, relation = palette
+    self.cursor.execute("""
+INSERT INTO palette (ver, fill, bg, opacity, relation) 
+VALUES (%s, %s, %s, %s, %s)
+RETURNING pid;""", 
+      [ver, fill, bg, opacity, relation]
+    )
+    pid = self.cursor.fetchone()[0]
+    return pid
+
+  def swapPalette(self, pids, ver, rink):
     ''' WARN: we break the golden "Rinks Are Immutable" rule
       the reason is that collapsing universal palette requires 
       rinks to be moved to a new palette
       so we update a view generated with universal palette to use another
     '''
-    # old_pid = self.read_pid(ver=old_ver, palette=['#FFF', '#9ACD32', '0.5'])
-    pids = list()
-    for items in celldata: # get old and new pids
-      items.pop(0) # discard cell label 
-      #print(items[4:7])
-      pids.append(tuple([
-        self.read_pid(ver=ver, palette=items[4:7]),
-        view,
-        self.read_pid(ver=old_ver, palette=items[4:7]) 
-      ]))
-    # set new pid 
-    for new_old in set(pids): # send uniq pids for update
-      print(f"new pid = {new_old[0]} view {new_old[1]} old pid = {new_old[2]}")
-      self.cursor.execute("""UPDATE cells SET pid = %s WHERE view = %s AND pid = %s;""", new_old)
-    self.cursor.execute("""UPDATE views SET ver = %s WHERE view = %s;""", [ver, view])
-    return self.cursor.rowcount
+    for label in pids: # send uniq pids for update
+      new = pids[label]
+      ''' print(f"{rink=} {new=} {label=}")
+      '''
+      self.cursor.execute("""
+UPDATE cells 
+SET pid = %s 
+WHERE view = %s 
+AND cell = %s;""", 
+        [new, rink, label]
+      )
+    rownum = self.cursor.rowcount
+    self.cursor.execute("""
+UPDATE views 
+SET ver = %s 
+WHERE view = %s;""", 
+      [ver, rink]
+    )
+    return self.cursor.rowcount + rownum
 
   def read_item(self, pid):
     ''' not called and may no longer be needed 
@@ -210,7 +232,7 @@ AND view = %s;""", [view])
     palette = self.cursor.fetchall()
     return palette
 
-  def read_pid(self, ver, color): 
+  def readPid(self, ver, color): 
     palette = [color[k] for k in ['fill', 'background', 'opacity']]
     palette.append(ver)
     self.cursor.execute("""
@@ -221,11 +243,12 @@ AND bg = %s
 AND opacity = %s
 AND ver = %s;""", palette)
     pid = self.cursor.fetchone()
-#    return pid[0] if pid else None
-    if pid:
-      return pid[0]
+    if pid: return pid[0]
+    '''
+    return pid[0] if pid else None
     else:
       raise ValueError(f"unable to find pid for {palette}")
+    '''
 
   def read_cleanpids(self, palette):
     ''' used to collapse opacity in universal palette
@@ -326,6 +349,10 @@ VALUES (%s, %s, %s);""",
     self.read_palette(ver)
     if len(self.palette) == 0:
       raise ValueError(f"what version are you on about {ver}")
+    uniqfill = set()
+    [uniqfill.add(p[0]) for p in self.palette]
+    [uniqfill.add(p[2]) for p in self.palette]
+    self.uniqfill = uniqfill
 
   def generate_any(self, ver=None):
     ver = ver if ver else self.ver
@@ -343,7 +370,25 @@ VALUES (%s, %s, %s);""",
       one = Palette.read_any(self, ver=ver)
     return dict(zip(['fill','bg','fill_opacity'], one))
 
-
+  def validate(self, label, cell):
+    ''' raise error unless given data exists in palette
+    '''
+    if 'geom' in cell:
+      Geometry.validate(self, label, cell['geom']) 
+    if 'color' in cell:
+      fg = cell['color']['fill']
+      op = float(cell['color']['opacity'])
+      bg = cell['color']['background']
+      if op not in [None, 0, 0.5, 1]:
+        raise ValueError(f"validation error: >{label}< {op=} not ok {self.ver}")
+      elif fg not in self.uniqfill:
+        raise ValueError(f"validation error: >{label}< {fg=} not in {self.ver}")
+      elif bg and bg not in self.uniqfill:
+        raise ValueError(f"validation error: >{label}< {bg=} not in {self.ver}")
+    if 'stroke' in cell: 
+      f = cell["stroke"]
+      if f not in self.uniqfill:
+        raise ValueError(f"cell: >{label}< {f} stroke not in {self.ver}")
 
   # edge case where all values are valid but their combined value does not exit in palette
   def valzzzzz(self, cell, data):
@@ -366,7 +411,7 @@ VALUES (%s, %s, %s);""",
     if fo == 1 and data['fill'] == data['bg'] and data['stroke_width'] is None:
       print(f"WARNING: opaque fill on same background >{cell}< ver: {self.ver}")
  
-  def validate(self, label, cell):
+  def __validate(self, label, cell):
     ''' raise error unless given data exists in palette
     '''
     if 'geom' in cell:
@@ -394,19 +439,20 @@ class Strokes(Palette):
   def __init__(self, ver):
     super().__init__(ver)
 
-  def create(self, items):
+  def create(self, item):
     ''' each geometry in a cell has an optional stroke
     '''
-    if len(items) == 4:
-      sid = self.read_sid(strokes=items)
+    if len(item) == 4:
+      sid = self.readSid(item)
       if sid is None:
+        print(f'adding {item}')
         self.cursor.execute("""
 INSERT INTO strokes (sid, fill, width, dasharray, opacity)
 VALUES (DEFAULT, %s, %s, %s, %s)
-RETURNING sid;""", items)
+RETURNING sid;""", item)
         sid = self.cursor.fetchone()[0]
     else:
-      raise ValueError('need 4 items to create a stroke')
+      raise ValueError('need 4 vals in an item to create a stroke')
     return sid
 
   def read(self, sid):
@@ -421,17 +467,32 @@ WHERE sid = %s;""", [sid])
     else:
       raise ValueError("need a sid to find a stroke")
 
-  def read_sid(self, stroke):
-    strokes = [stroke[k] for k in ['fill','width','dasharray','opacity']]
+  def readSid(self, item):
     self.cursor.execute("""
 SELECT sid
 FROM strokes
 WHERE fill = %s
 AND width = %s
 AND dasharray = %s
-AND opacity = %s;""", strokes)
+AND opacity = %s;""", item)
     sid = self.cursor.fetchone()
     return sid[0] if sid else None
+
+  def swapSid(self, sids, ver, rink):
+    ''' WARN: we break the golden "Rinks Are Immutable" rule
+    '''
+    for label in sids: # send uniq pids for update
+      new = sids[label]
+      ''' print(f"{rink=} {new=} {label=}")
+      '''
+      self.cursor.execute("""
+UPDATE cells 
+SET sid = %s 
+WHERE view = %s 
+AND cell = %s;""", 
+        [new, rink, label]
+      )
+    return self.cursor.rowcount
 
   def read_any(self, ver, opacity):
     ''' a side effect of adding new Inkscape palettes is that SELECT returned None
@@ -492,8 +553,8 @@ ORDER BY random() LIMIT 1;""", [ver])
     ''' apply rules for defined palette and then these for stroke
     '''
     Palette.validate(self, cell, data)
-    if 'width' in data:
-      sw = int(data['width'])
+    if 'stroke_width' in data: 
+      sw = int(data['stroke_width'])
       if sw < min(self.zeroten) or sw > max(self.zeroten):
         raise ValueError(f"validation error: stroke width >{cell}<")
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -545,6 +606,21 @@ VALUES (%s, %s, %s, %s, %s);""", [digest, label, gid, pid, sid])
     [Strokes.validate(self, c, celldata[c]) for c in celldata]
 
 '''
-  the
-  end
+the
+end
+'''
+
+
+'''
+    # old_pid = self.read_pid(ver=old_ver, palette=['#FFF', '#9ACD32', '0.5'])
+    pids = list()
+    for items in celldata: # get old and new pids
+      items.pop(0) # discard cell label 
+      #print(items[4:7])
+      pids.append(tuple([
+        self.read_pid(ver=ver, palette=items[4:7]),
+        view,
+        self.read_pid(ver=old_ver, palette=items[4:7]) 
+      ]))
+    # set new pid 
 '''
