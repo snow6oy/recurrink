@@ -13,15 +13,20 @@ class Layer:
     self.clen      = clen     # length of cell
     self.pos       = pos      # logical position in block
 
-  def background(self, geom): 
+  def background(self, cell): 
     X, Y, W, H, *a = self.dimension(self.pos[0], self.pos[1], self.clen)
+    geom  = cell['geom']
+    empty = cell['color']['background'] is None
     ''' square rings have outer ring as bg
         others swap direction depending whether odd or even
     '''
-    if geom['name'] == 'sqring':
-      self.direction.append(('spiral', None)) # override Rectangle
-    elif self.pos[0] % 2: self.direction.append(('guided', 'EB','ET'))
-    else: self.direction.append(('guided', 'NL','NR'))
+    if empty:
+      self.direction.append((None, None))
+    else:
+      if geom['name'] == 'sqring':
+        self.direction.append(('spiral', None)) # override Rectangle
+      elif self.pos[0] % 2: self.direction.append(('guided', 'EB','ET'))
+      else: self.direction.append(('guided', 'NL','NR'))
     self.bft.append(Polygon(((X, Y), (X, H), (W, H), (W, Y))))
 
   def foreground(self, geom):

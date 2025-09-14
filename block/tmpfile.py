@@ -144,6 +144,8 @@ class TmpFile:
   def prettyHash(self, val, remove=False):
     ''' YAML looks nicer with FF00CC but database wants #FF00CC
     '''
+    if val is None:  # TODO or FFF ?
+      return         # ignore empty background
     rgb = str(val) # rgb must be a string but YAML can send int
     fix = str()
     if remove:          fix = rgb[1:]

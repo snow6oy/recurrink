@@ -158,7 +158,6 @@ class PaletteMaker:
     ''' convert a list into a set of unique pairs for overprinting fun
     '''
     penpal  = self.readInkscapePal(paldir, fn)
-    print(paldir, fn)
     pal  = list(penpal.keys())
     n    = len(pal)
     size = math.comb(n, 2)

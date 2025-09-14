@@ -6,7 +6,7 @@ from .styles import Styles
 
 class Make:
 
-  VERBOSE = False
+  VERBOSE = True
   BLOCKSZ = (3, 1)
   CLEN    = 9
   pp      = pprint.PrettyPrinter(indent=2)
@@ -25,7 +25,9 @@ class Make:
     for pos in positions:
       label   = positions[pos][0]  
       cell    = Layer(clen=self.CLEN, pos=pos)
-      cell.background(geom=cells[label]['geom'])
+      cell.background(cells[label])
+      ''' ['geom']) if cells[label]['color']['background']: 
+      '''
       self.style.addBackground(pos, color=cells[label]['color'])
       for label in positions[pos]:
         if not label: continue
@@ -94,7 +96,6 @@ class Make:
  
         polygn = self.polygon(pos, z)
         if polygn is None: continue
-        # print(f"{pos=} {z=} {polygn=}")
 
         algo, *guide  = self.guide[pos][z]
         if self.VERBOSE: print(f"{pos=} {z=} {algo=} {guide=}")
@@ -107,9 +108,14 @@ class Make:
           linestr = self.meanderGuided(polygn, guide, padding=padding)
         elif algo == 'border':
           linestr = polygn.exterior
+        elif algo is None: 
+          linestr = LineString() # cannot meander an empty background
         else:
           raise Warning(f"{pos} {z} {algo} not known to Meander")
-        self.guide[pos][z] = linestr # replace guide with Shapely.LineString
+        if linestr.geom_type in ['LineString', 'LinearRing']:
+          self.guide[pos][z] = linestr # replace guide with Shapely.LineString
+        '''
+        '''
 
   def setBlocksize(self, positions):
     ''' extract blocksize and set for downstream functions
@@ -158,12 +164,13 @@ class Make:
 
           style  = f + s + d + o + w
           geom   = self.guide[pos][z]    # fetch linestring
+          #print(pos, z, geom.geom_type)
         else:
           style  = f'fill:{fill};fill-opacity:0.5'
           geom   = polygn                # assign polygon
         if style in self.grid[z]:
           self.grid[z][style]['geom'].append(geom)
-        else:
+        elif self.style.fill[pos][z]:
           self.grid[z][style] = {
              'geom': list(), 
             'penam': self.style.fill_penam[pos][z] + f'_{z}'
