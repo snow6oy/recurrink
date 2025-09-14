@@ -96,7 +96,8 @@ class config:
     'copicsketch',
     'copic',
     'stabilo68',
-    'sharpie'
+    'sharpie',
+    'staedtler'
   ]
   penam = [{}, {}, {
     '#F00': 'red', '#090': 'green', '#00F': 'blue'
