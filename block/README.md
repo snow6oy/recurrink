@@ -5,7 +5,6 @@ A Block is a collection of cells. The block module provides operations on the co
 ## TODO
 ### Palette
 
-- add stabilo fine
 - single-source-of-truth for palettes, see config.py in model/README
 - Stencil broke recurrink commit because it counted colours
 
@@ -38,7 +37,7 @@ r   g   b      penam hex
 From the GPLFILE generate a palette text file with permutations of fg:op:bg.
 
 ```
-./recurrink init -p GPLFILE
+./recurrink init --inkpal GPLFILE
 
 palettes/stabilo68.txt
 ```
@@ -97,7 +96,7 @@ In the YAML set Background: ~
 
 relax validation so that at build time
 fg:bg:op are checked individually, not as a trio
-warn when opacity is a value other than (None,1,0.5)
+warn when opacity is a value other than (1, 0.5, 0)
 
 checks are done against pens table
 the colours table can be dropped
