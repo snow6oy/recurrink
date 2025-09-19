@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from block import TmpFile, Make, BlockData, Views
-from model import ModelData, Svg
+from model import ModelData, SvgLinear
 from config import *
 
 class Test(unittest.TestCase):
@@ -22,8 +22,8 @@ class Test(unittest.TestCase):
     # triangles yuck a2397e60976e01cba87a1e9e5467df2d
 
   def test_a(self, model=None, line=False):
-    block = Make() # default to clen: 9
-    svg   = Svg()
+    block = Make(clen=90) # default to clen: 9
+    svg   = SvgLinear(clen=90)
     view  = Views()
     tf    = TmpFile()
 
@@ -47,9 +47,12 @@ class Test(unittest.TestCase):
 
     if line:
       block.meander(padding=False)
-      svg.drawLine(block, svgfile=f'_.{model}._.line')
+      svgfile=f'{model}_line'
     else:
-      svg.draw(block, svgfile=f'_.{model}._.box')
+      svgfile = f'{model}_box'
+    block.hydrateGrid(line=line)
+    svg.build(block)
+    svg.render(svgfile, line=line)
 
   def test_b(self): self.test_a(line=True)
   def test_c(self): self.test_a(model='buleria')
