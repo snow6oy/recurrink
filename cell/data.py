@@ -135,9 +135,8 @@ class Palette(Geometry):
   def __init__(self, ver=0):
     super().__init__()
     self.ver = ver # universal is not a good default (better to override)
-    self.opacity = self.read_opacity()
+    self.opacity = self.read_opacity()  # between 0 and 1 check MDN
     self.zeroten = [n for n in range(1, 11)]
-
 
   ''' print a SQL string to STDOUT
   def create_colour_table(self, colours):
@@ -379,14 +378,14 @@ VALUES (%s, %s, %s);""",
       fg = cell['color']['fill']
       op = float(cell['color']['opacity'])
       bg = cell['color']['background']
-      if op not in [None, 0, 0.5, 1]:
+      if op < 0 or op > 1: 
         raise ValueError(f"validation error: >{label}< {op=} not ok {self.ver}")
       elif fg not in self.uniqfill:
         raise ValueError(f"validation error: >{label}< {fg=} not in {self.ver}")
       elif bg and bg not in self.uniqfill:
         raise ValueError(f"validation error: >{label}< {bg=} not in {self.ver}")
     if 'stroke' in cell: 
-      f = cell["stroke"]
+      f = cell["stroke"]['fill']
       if f not in self.uniqfill:
         raise ValueError(f"cell: >{label}< {f} stroke not in {self.ver}")
 
