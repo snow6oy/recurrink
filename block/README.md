@@ -70,9 +70,6 @@ Add the new pens to the palette table.
 To see the pen names in Inkscape use explode.
 Explode will pass them to the SVG.
 
-1. Block.styles recieves pen names from db
-1. Model.linear replaces group id with penam OR fallback to fill name
-
 ### Restore GPL file 
 
 > as somone setting up a new machine i want to restore GPL files from database
@@ -82,12 +79,53 @@ To restore GPL files from DB for pals 8..11
 python -m scripts.mkgplfile
 ```
 
-## Design
-
 ### Empty background
 > as a rink designer i want the plotter to ignore the background layer
 
 In the YAML set Background: ~
+
+### Palette conversion
+> as a plotter i want convert a rinks to use a new pen palette
+
+To prepare create YAML 
+`./recurrink clone -dRINKID`  
+Check clone made conf/MODEL.yaml.
+
+Export the old palette 
+`./recurrink clone -d RINKID -o pal`
+This will create a TXT file for palswap. 
+
+Build a rink with `./recurrink build -m MODEL` to create `tmp/MODEL.svg`  
+We will use this for comparison later.
+
+Then run 
+`python -mscripts.palswap build -d RINKID -p VER`  
+This will find-nearest colour and build.  
+`tmp/MODEL_PALSWAP.svg`  
+
+It may need some BADLENs to be fixed.
+Strokes may need to be added manually to palettes/DIGEST.txt
+
+Finally the new and old rinks can be compared visually.  
+Other palettes can be tried. Some palettes with fewer pens may collapse. Once ready.  
+`python -m scripts.palswap commit -dRINKID -pVER `   
+This will swap PIDs in the database and set VER to be the new palette for RINKID.
+Clone again and check db has updated to new version.
+
+ISSUES
+```
+buleria -
+   koto -
+  sonny white fg failed validation
+  eflat strokes removed from db
+  waltz white FG fixed!
+  bossa relaxed op validation
+
+palswap overwrites YAML cannot change manually
+```
+
+## Design
+Future ideas that have yet to be done.
 
 ### Palette validation
 > as a rink designer i want  
@@ -110,27 +148,3 @@ but a unique combination  should be silently added
 e.g. FF0000 0.1 00FF00  
 ver can be dropped from palette table
 this may cause PIDs with duplicate fg:op:bg combinationns?
-
-### Palette conversion
-> as a plotter i want convert all rinks to use pen palettes
-
-Build a rink with `./recurrink build -vRINKID`  
-Then run python `-m scripts.palswap RINKID VER`  
-This will find-nearest colour and build  
-`tmp/MODEL_PALSWAP.svg`  
-The new and old rinks are compared visually.  
-Other palettes can be tried. Once ready.  
-`python -m scripts.palswap MODEL ` 
-will swap PIDs in the database.  
-
-#### Find nearest colour
-```
-rgb1 is a list of FG:BG from old pal
-rgb2 is from new pal
-
-DISTANCE = 255 * 3
-distance = r1 - r2 + g1 - g2 + b1 - b2
-if distance < DISTANCE:
-  closest[rgb1] = rgb2
-  DISTANCE = distance
-```
