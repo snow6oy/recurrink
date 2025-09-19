@@ -6,7 +6,7 @@ from .styles import Styles
 
 class Make:
 
-  VERBOSE = True
+  VERBOSE = False
   BLOCKSZ = (3, 1)
   CLEN    = 9
   pp      = pprint.PrettyPrinter(indent=2)
