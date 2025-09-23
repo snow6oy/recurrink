@@ -148,3 +148,47 @@ but a unique combination  should be silently added
 e.g. FF0000 0.1 00FF00  
 ver can be dropped from palette table
 this may cause PIDs with duplicate fg:op:bg combinationns?
+
+### Database update the Cells and Geometry tables
+
+> as a code maintainer i want a data model
+> that represents how data is accessed
+
+#### Geometry table
+
+```
+ gid    | integer 
+ shape  | character varying(7)
+ size   | sizes
+ facing | direction
+ top    | boolean
+```
+every geometry has two entries for top
+
+#### Cells table
+
+```
+ view   | character(32)
+ cell   | character(1)
+ gid    | integer
+ pid    | integer 
+ sid    | integer
+```
+entries are unique by view and cell
+
+#### Proposed change
+Add a new column to the cells table for __layer__.
+The layer values could be: 0, 1, 2 for bg, fg and top
+Entries could be unique by view, cell and layer.
+The top column for geometry could be removed.
+The background field for palette can also be removed.
+Validation of each entry could vary according to layer.
+For example: background gid must be a medium square facing centre
+
+
+
+
+
+
+
+
