@@ -3,13 +3,14 @@ import os.path
 import unittest
 import pprint
 from cell import Palette
-from block import PaletteMaker
+from block import PaletteMaker, TmpFile
+from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
 
   def setUp(self):
-    self.p = Palette(ver=1)  # colour45 is default
+    self.p   = Palette(ver=1)  # colour45 is default
     self.pmk = PaletteMaker()
     self.defaults = {
       'fill': '#FFF',
@@ -21,11 +22,28 @@ class Test(unittest.TestCase):
     }
 
   def test_a(self):
-    gpldata = self.pmk.readInkscapePal(
-      '/home/gavin/.config/inkscape/palettes/', 'stabilo68.gpl'
-    )
-    pp.pprint(gpldata)
+    pal_dir = config.directory['palettes'] 
+    gpldata = self.pmk.readInkscapePal(pal_dir, 'uniball.gpl')
+    self.assertEqual(8, len(gpldata))
 
+  def test_b(self):
+    ''' first run ./recurrink init -p8
+        get pal from tf.importPalfile 
+        filter through block.palette.makeUnique()
+        and update db
+
+        in case dry run fails then DELETE from palette where pid = 1800;
+    '''
+    ver    = 8
+    tf     = TmpFile()
+    pal    = Palette(ver=ver)
+    txtpal = tf.importPalfile('uniball')
+    txtpal.append(['#2A7FFF', '0.5', '#DD55FF'])
+    txtpal.append(['#2A7FFF', '0.5', '#00FFFF'])
+    txtpal.append(['#2A7FFF', '0.5', '#D40000'])  # this one is the dup
+    pal.read_palette(ver)
+    new_pal = self.pmk.makeUnique(ver, pal, txtpal, dryrun=True)
+    self.assertEqual(2, len(new_pal))
 
   def test_0(self):
     p0 = Palette(ver=0)
@@ -194,3 +212,18 @@ class Test(unittest.TestCase):
     '''
     items = self.p.read_item(pid=4)
     self.assertEqual(items[0], '#C71585')
+
+  '''
+  method that call create_pal is palswap
+  palswap:getSetPids()
+
+
+  decide which celldata format to keep
+  '''
+
+'''
+the 
+end
+'''
+  
+
