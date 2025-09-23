@@ -7,6 +7,8 @@ from .tmpfile import TmpFile
 pp = pprint.PrettyPrinter(indent = 2)
 
 class PaletteMaker:
+
+  VERBOSE = False
   ''' palette logic
   '''
   def rgb_int(self, r, g, b):
@@ -129,10 +131,11 @@ class PaletteMaker:
 {same:3d} matching palette entries""")
     return out
 
-  def makeUnique(self, ver, pal, txtpal):
+  def makeUnique(self, ver, pal, txtpal, dryrun=False):
     ''' compare db and txt palettes and return difference
     '''
     new_pal = list()
+
     for p in txtpal: # avoid duplicating existing entry
       p[1] = float(p[1])
       test_entry = tuple(p[:3]) 
@@ -142,7 +145,10 @@ class PaletteMaker:
       rn = self.relation(n[0], n[2])
       n.append(rn)
       n.insert(0, ver)
-    pal.create_palette_entry(new_pal)
+      if dryrun:  # see unit tests t.palette.Test.test_b
+        print(f'dry run skipping INSERT {ver=} {n}')
+      else:
+        pid = pal.createPaletteEntry(n)
     return new_pal
 
   ''' INKSCAPE
