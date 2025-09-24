@@ -2,7 +2,7 @@ import unittest
 import pprint
 import os.path
 from block import TmpFile
-from config import *
+from cell.minkscape import *
 
 class Test(unittest.TestCase):
 
@@ -22,14 +22,14 @@ class Test(unittest.TestCase):
   def test_a(self):
     ''' create seed from minkscape YAML
     '''
-    #self.pp.pprint(config.cells)
-    seed = self.tf.digestString(config.cells)
+    #self.pp.pprint(minkscape.cells)
+    seed = self.tf.digestString(minkscape.cells)
     self.assertEqual(144, len(seed))
 
   def test_b(self):
     ''' make digest
     '''
-    self.tf.setDigest(celldata=config.cells)
+    self.tf.setDigest(celldata=minkscape.cells)
     self.assertEqual('265550a81314a36daa05b5ed2d81ee1d', self.tf.digest)
 
   def test_c(self):
@@ -51,7 +51,7 @@ class Test(unittest.TestCase):
   def test_f(self):
     ''' run test_e first
     '''
-    pal = self.tf.importPalfile('tmpfile_test_e')
+    pal = self.tf.importPalfile('t.tmpfile.Test.test_e')
     self.assertEqual(5, len(pal))
   
 
