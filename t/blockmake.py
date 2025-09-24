@@ -2,7 +2,7 @@ import unittest
 import pprint
 from shapely.geometry import MultiPolygon, Polygon
 from block import Make
-from config import *
+from cell.minkscape import *
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
@@ -14,28 +14,28 @@ class Test(unittest.TestCase):
     ''' make cell and check style
     '''
     bm = Make()
-    bm.walk(config.positions, config.cells)
+    bm.walk(minkscape.positions, minkscape.cells)
     self.assertEqual('#F00', bm.style.fill[(0,0)][0])
 
   def test_b(self):
     ''' cell geoms are kept in block1
     '''
     bm      = Make()
-    bm.walk(config.positions, config.cells)
+    bm.walk(minkscape.positions, minkscape.cells)
     self.assertEqual(9.0, bm.cells[(0,0)].geoms[0].bounds[-1])
 
   def test_c(self):
     ''' cells made with Shapely have direction
     '''
     bm      = Make()
-    bm.walk(config.positions, config.cells)
+    bm.walk(minkscape.positions, minkscape.cells)
     self.assertEqual('spiral', bm.guide[(0,0)][1][0])
 
   def test_d(self):
     ''' test type
     '''
     bm      = Make()
-    bm.walk(config.positions, config.cells)
+    bm.walk(minkscape.positions, minkscape.cells)
     cell    = bm.cells[0,0]
     self.assertEqual('MultiPolygon', cell.geom_type)
 
@@ -46,7 +46,7 @@ class Test(unittest.TestCase):
       (0, 0), (9, 0), (18, 0), (0, 0), (12, 0), (21, 3), (3, 3), (6, 3)
     ]
     bm      = Make()
-    bm.walk(config.positions, config.cells)
+    bm.walk(minkscape.positions, minkscape.cells)
     to_test = list()
     for z in range(3):
       for pos in bm.cells:
@@ -60,9 +60,9 @@ class Test(unittest.TestCase):
 
   def test_f(self):
     ''' filter block1 so that only cells with large shapes remain
-    cells =  config.cells
+    cells =  minkscape.cells
     cells['a']['size'] = 'large'
-    bm.walk(config.positions, config.cells)
+    bm.walk(minkscape.positions, minkscape.cells)
     large   = gm.largeShapes(block1)
     self.assertEqual('Polygon', large[0].geom_type)
     self.assertEqual('Polygon', large[1].geom_type)
@@ -73,7 +73,7 @@ class Test(unittest.TestCase):
     ''' extract overlap
     gm      = GeoMaker()
     blocksz = (3,1)
-    block1  = gm.makeShapelyCells(blocksz, config.positions, config.cells)
+    block1  = gm.makeShapelyCells(blocksz, minkscape.positions, minkscape.cells)
     large   = gm.largeShapes(block1)
     found   = gm.findNeighbours(block1, large)
     self.assertEqual(2, len(found))
@@ -109,7 +109,7 @@ class Test(unittest.TestCase):
     p4           = Polygon(((30, 20), (30, 40), (40, 40), (40, 20), (30, 20)))
     gm           = GeoMaker()
     blocksz      = (3,1)
-    block1       = gm.makeShapelyCells(blocksz, config.positions, config.cells)
+    block1       = gm.makeShapelyCells(blocksz, minkscape.positions, minkscape.cells)
     a1           = block1[0,0].bft[1]
     a1.this.name = 'multipolygon'
     a1.this.data = MultiPolygon([p1, p2])

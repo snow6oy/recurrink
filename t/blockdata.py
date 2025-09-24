@@ -1,7 +1,6 @@
 import unittest
 import pprint
 from block import BlockData
-from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):

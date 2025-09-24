@@ -4,7 +4,7 @@
 import unittest
 import pprint
 from cell import Layer
-from config import *
+from cell.minkscape import *
 from model import SvgWriter, SvgLinear
 from shapely.geometry import LinearRing, Polygon, MultiPolygon
 pp = pprint.PrettyPrinter(indent=2)
@@ -19,8 +19,8 @@ class Test(unittest.TestCase):
     ''' create a simple with bg and fg
     '''
     cell = Layer()
-    cell.background(config.cells['a']['geom'])
-    cell.foreground(config.cells['a']['geom'])
+    cell.background(minkscape.cells['a'])
+    cell.foreground(minkscape.cells['a']['geom'])
     mp = cell.polygon()
     self.assertEqual('MultiPolygon', mp.geom_type)
 
@@ -55,9 +55,9 @@ class Test(unittest.TestCase):
         cell.layer.foreground assembles the parts
     '''
     cell = Layer()
-    geom = config.cells['a']['geom']
+    geom = minkscape.cells['a']['geom']
     geom['name'] = 'sqring'
-    cell.background(geom)
+    cell.background(minkscape.cells['a'])
     cell.foreground(geom)
     p = cell.polygon()
     if self.VERBOSE: self.writer.plot(p, self.id())

@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from block import TmpFile, Make, BlockData, Views
 from model import ModelData, SvgLinear
-from config import *
+from cell.minkscape import *
 
 class Test(unittest.TestCase):
 
@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
     else:     
       model = 'minkscape'
       cells = tf.readConf(model)
-      block.walk(config.positions, cells)
+      block.walk(minkscape.positions, cells)
 
     if line:
       block.meander(padding=False)

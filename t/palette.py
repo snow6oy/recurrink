@@ -45,6 +45,10 @@ class Test(unittest.TestCase):
     new_pal = self.pmk.makeUnique(ver, pal, txtpal, dryrun=True)
     self.assertEqual(2, len(new_pal))
 
+  def test_c(self):
+    fnam = self.p.friendlyPenNames()
+    self.assertEqual('htmstarter', fnam[3])
+
   def test_0(self):
     p0 = Palette(ver=0)
     p0.loadPalette()

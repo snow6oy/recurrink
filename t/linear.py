@@ -1,8 +1,8 @@
 import unittest
 import pprint
+from cell.minkscape import *
 from block import TmpFile, Make
 from model import SvgLinear
-from config import *
 pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
@@ -18,7 +18,7 @@ class Test(unittest.TestCase):
     svglin = SvgLinear(clen=90)
     MODEL  = MODEL if MODEL else 'linear_test_a'
 
-    block.walk(config.positions, config.cells)
+    block.walk(minkscape.positions, minkscape.cells)
     if LINE: block.meander(padding=False)
     block.hydrateGrid(line=LINE)
     if BUILD: svglin.build(block)
