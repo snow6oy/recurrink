@@ -16,9 +16,15 @@ SVG generation uses Etree except for tests which use matplotlib.
 - recurrink commit --mm should mv tmp/MODEL_mm.svg to rinks/MODEL/mm/abc123.svg
 
 ### Config_py
-- move conf/minkscape.yaml to cell/ and remove from config.py
-- as a new installer i want to change config.py to suit my environment
-- merge db and config.py
+> as a new installer i want to change config.py to suit my environment
+
+- move conf/minkscape.yaml to cell/minkscape.py and remove from config.py
+    from cell.minkscape import *
+- merge db and config.py 
+    from config import * 
+    * will call Db.__init__()
+- replace friendly name with db.inkpal
+    fnam = self.p.friendlyPenNames()
 
 ### The Great Regression
 - split tests into (a) visual (b) logical
