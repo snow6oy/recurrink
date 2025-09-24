@@ -4,6 +4,25 @@ A model is a collection of blocks. The module handles outputs to SVG.
 
 SVG generation uses Etree except for tests which use matplotlib.
 
+## Runbook
+Recipes for reference
+
+### Config
+> as a new installer i want to change config.py to suit my environment
+```
+from config import * 
+```
+including this will call Db.__init__() and expose directory[path]
+
+> as a tester i want a sample rink 
+```
+from cell.minkscape import *
+```
+access data as minkscape.cells and minkscape.positions
+
+## Design
+things to do
+
 ### Sesanta
 - 60mm is small to plot on A3
 - move sesanta to model/sesanta and refactor to Block/Cell/Model
@@ -14,17 +33,6 @@ SVG generation uses Etree except for tests which use matplotlib.
 + reith broke because it uses old recurrink
 - abort delete when pubdate is not null
 - recurrink commit --mm should mv tmp/MODEL_mm.svg to rinks/MODEL/mm/abc123.svg
-
-### Config_py
-> as a new installer i want to change config.py to suit my environment
-
-- move conf/minkscape.yaml to cell/minkscape.py and remove from config.py
-    from cell.minkscape import *
-- merge db and config.py 
-    from config import * 
-    * will call Db.__init__()
-- replace friendly name with db.inkpal
-    fnam = self.p.friendlyPenNames()
 
 ### The Great Regression
 - split tests into (a) visual (b) logical
