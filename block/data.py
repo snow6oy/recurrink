@@ -1,6 +1,7 @@
 import random
 import psycopg2
-from model import Db, ModelData
+from config import Db
+from model import ModelData
 from cell import CellData
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):

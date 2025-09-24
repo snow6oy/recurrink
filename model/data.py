@@ -1,6 +1,6 @@
 import random
 import psycopg2
-from model.db import Db
+from config import Db
 
 class ModelData(Db):
   ''' models give us the base template to draw a rink
