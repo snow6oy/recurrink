@@ -10,6 +10,20 @@ from block import PaletteMaker, TmpFile, Views, BlockData, Make
 from cell import Palette
 from config import *
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+modl    = ModelData()
+pal     = Palette()
+pmk     = PaletteMaker()
+svg     = Svg()
+svgpal  = SvgPalette()
+tf      = TmpFile()
+view    = Views()
+WORKDIR = config.directory['rinks']
+PUBDIR  = config.directory['pubq']
+PALDIR  = config.directory['palettes']
+fnam    = pal.friendlyPenNames()
+pp      = pprint.PrettyPrinter(indent=2)
+start_t = time.time()
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''' get inputs from command line
 '''
 parser = argparse.ArgumentParser(prog='recurrink')
@@ -108,21 +122,7 @@ parser_p.add_argument(
 parser_r = subparsers.add_parser('read', help='get rink metadata')
 parser_r.add_argument('-m', '--model', help='name of base model')
 parser_r.add_argument('-d', '--digest', help='hex name with 32 char')
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 args    = parser.parse_args()
-modl    = ModelData()
-pal     = Palette()
-pmk     = PaletteMaker()
-svg     = Svg()
-svgpal  = SvgPalette()
-tf      = TmpFile()
-view    = Views()
-WORKDIR = config.directory['rinks']
-PUBDIR  = config.directory['pubq']
-PALDIR  = config.directory['palettes']
-fnam    = config.friendly_name  # list of palette names
-pp      = pprint.PrettyPrinter(indent=2)
-start_t = time.time()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if (args.keyword == 'compare'):
   ''' compare palettes given ver and digest
