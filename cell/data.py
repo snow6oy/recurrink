@@ -1,6 +1,6 @@
 import random
 import psycopg2
-from model import Db
+from config import *
 from .shape import *
 
 class Geometry(Db):
@@ -132,6 +132,8 @@ ORDER BY random() LIMIT 1;""", [top])
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Palette(Geometry):
 
+  VERBOSE = True
+
   def __init__(self, ver=0):
     super().__init__()
     self.ver = ver # universal is not a good default (better to override)
@@ -229,12 +231,8 @@ AND opacity = %s
 AND ver = %s;""", palette)
     pid = self.cursor.fetchone()
     if pid: return pid[0]
-    '''
-    return pid[0] if pid else None
-    else:
-      raise ValueError(f"unable to find pid for {palette}")
-    '''
-
+    elif self.VERBOSE: print(f"unable to find pid for {palette}")
+    
   def read_cleanpids(self, palette):
     ''' used to collapse opacity in universal palette
     '''
@@ -327,6 +325,16 @@ VALUES (%s, %s, %s);""",
           [ver, hexstr, gpldata[hexstr]]
         )
 
+  def friendlyPenNames(self):
+    ''' friendly names of pens
+    '''
+    self.cursor.execute("""
+SELECT gplfile
+FROM inkpal;""", [])
+    fnam = [name[0] for name in self.cursor.fetchall()]
+    fnam.insert(0, None) # avoid conditional zero error
+    return fnam
+
   def loadPalette(self, ver=None):
     ''' used to validate inputs from tmpfile
     '''
@@ -409,7 +417,9 @@ WHERE sid = %s;""", [sid])
     else:
       raise ValueError("need a sid to find a stroke")
 
-  def readSid(self, item):
+  def readSid(self, stroke):
+
+    item = list(stroke.values())
     self.cursor.execute("""
 SELECT sid
 FROM strokes
@@ -501,6 +511,7 @@ ORDER BY random() LIMIT 1;""", [ver])
         raise ValueError(f"validation error: stroke width >{cell}<")
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class CellData(Strokes):
+  VERBOSE = False
   ''' a cell is a member of a block and contains geometries, shapes and strokes
   '''
   def __init__(self, ver=None):
@@ -511,10 +522,10 @@ class CellData(Strokes):
     '''
     ok = True # used only by unit test
     gid = Geometry.read_gid(self, data['geom']) 
-    pid = Palette.read_pid(self, self.ver, data['color'])
-    if 'stroke' in data: sid = Strokes.read_sid(self, data['stroke'])
+    pid = Palette.readPid(self, self.ver, data['color'])
+    if 'stroke' in data: sid = Strokes.readSid(self, data['stroke'])
     else:                sid = None
-    #print(f'{digest} {label} {gid=} {pid=} {sid=}')
+    if self.VERBOSE: print(f'{digest} {label} {gid=} {pid=} {sid=}')
     try:
       self.cursor.execute("""
 INSERT INTO cells (view, cell, gid, pid, sid)
@@ -546,7 +557,6 @@ VALUES (%s, %s, %s, %s, %s);""", [digest, label, gid, pid, sid])
   def validate(self, celldata):
     self.loadPalette()
     [Strokes.validate(self, c, celldata[c]) for c in celldata]
-
 '''
 the
 end
