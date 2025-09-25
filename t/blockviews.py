@@ -1,21 +1,22 @@
 import unittest
 from block import Views
-from config import *
-
+from cell.minkscape import *
 import pprint
-pp = pprint.PrettyPrinter(indent=2)
+
 
 class Test(unittest.TestCase):
 
+  pp = pprint.PrettyPrinter(indent=2)
+
   def setUp(self):
-    self.v = Views()
-    self.digest = 'e4681aa9b7aef66efc6290f320b43e55'
+    self.VERBOSE = False
+    self.v       = Views()
+    self.digest  = 'e4681aa9b7aef66efc6290f320b43e55'
 
   def test_a(self):
     ''' get a view from db as a dictionary
     '''
     v1 = self.v.read(digest=self.digest)
-    #pp.pprint(v1)
     self.assertEqual(len(list(v1.keys())), 4)
     ''' get a view from db as a list
     '''
@@ -30,48 +31,39 @@ class Test(unittest.TestCase):
     self.assertEqual(author, 'machine')
     self.assertEqual(model, 'soleares')
     self.assertEqual(scale, 1.0)
-    self.assertEqual(ver, 2)
+    self.assertEqual(ver, 3)
 
   def test_c(self):
     ''' create a view and test that views also makes Cells()
         no insert will take place because view exists
     '''
-    '''
-    celldata = [
-      ['a','circle','small','all',False,'#000','#00F',1.0, None, 0, None, None],
-      ['b','triangl','medium','north',True,'#FFF','#F00',1.0,'#000',8,1,1.0],
-      ['c','square','small','all',True,'#FF0','#FFF',1.0,'#000',8,1,1.0],
-      ['d','line','large','south',False,'#000','#FF0',1.0,'#FFF',9,0,1.0]]
-    '''
-    celldata = config.cells
+    celldata = minkscape.cells
     digest = self.v.create(
-      self.digest, celldata, model='soleares', author='machine', ver=2
+      self.digest, celldata, model='soleares', author='machine', ver=3
     )
     self.assertEqual(digest, self.digest)
 
-  def testDelete(self):
+  def test_d(self):
     ''' test delete on a separate view to avoid impacting other tests
     '''
-    view = Views()
-    view.create('abcdefghijklmnopqrstuvwxyz012345', [], model='koto', author='human', ver=1)
-    self.assertTrue(view.delete('abcdefghijklmnopqrstuvwxyz012345')) 
+    digest   = 'abcdefghijklmnopqrstuvwxyz012345'
+    self.v.create(digest, {}, model='koto', author='human', ver=1)
+    self.assertTrue(self.v.delete(digest))
 
-  def testGenerate(self):
-    ''' test a model without compass
+  def test_e(self):
+    ''' generate a model without compass
     '''
-
     self.v.generate(1, model='afroclave')  
-    #pp.pprint(self.v.view)
+    if self.VERBOSE: self.pp.pprint(self.v.view)
     self.assertEqual(len(self.v.view.keys()), 14)
 
-  def testGenerateCompass(self):
+  def test_f(self):
     ''' fourfour model has compass defined
         generate_one and generate_all should be called
     '''
     ver = 2
     self.v.generate(ver, model='fourfour') # 'htmstarter') # 'arpeggio'
-    #pp.pprint(self.v.view)
-    self.assertTrue(self.v.view['a']['facing'], 'all')
+    self.assertEqual('C', self.v.view['a']['facing'])
 
   def zz():
     data = dict()
