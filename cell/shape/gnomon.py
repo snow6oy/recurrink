@@ -1,6 +1,7 @@
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, LineString
+from cell.meander import Line
 
-class Gnomon:
+class Gnomon(Line):
   ''' Gnomon has an area of IDGP that equals HPFB
     D  G  C
     I  P  F
@@ -37,7 +38,24 @@ class Gnomon:
       return Polygon(sizes[size][facing])
     else: raise IndexError(f"gnomon at sea {size} {facing}")
 
-  def guide(self, facing):
+  def draw(self, clen, dim, geom):
+    facing  = geom['facing']
+    guideln = self.guidelines(facing, clen, dim[:4])
+    points  = self.collectPoints(guideln)
+    square  = self.makeDiagonals(points)
+    # to make a gnomon slice by a third
+    sqlen   = len(list(square.coords))
+    if sqlen % 3: raise ValueError(f'Ouch! {sqlen} is not divisible by three')
+    if facing == 'NW' or facing == 'SE':
+      start   = int((sqlen / 3) * 2) - 1
+      stop    = -1
+    elif facing == 'SW' or facing == 'NE':
+      start   = 0
+      stop    = int(sqlen / 3) - 1
+    points  = list(square.coords)[start:stop]
+    return LineString(points)
+
+  def __guide(self, facing):
     ''' see Meander to check the codes 
     '''
     control = {
