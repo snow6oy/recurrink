@@ -46,15 +46,22 @@ class Layer:
        'circle': Circle()
     }
     shape   = shapes[name]
-    if name in ['circle', 'triangl', 'diamond']:
-      if 'stroke_width' in geom: sw  = geom['stroke_width']
-      else: sw = 0
-      dim = self.points(x, y, sw, self.clen)
-    else:
+    if 'stroke_width' in geom: sw  = geom['stroke_width']
+    else: sw = 0
+    if name == 'triangl':
+      dim = points = self.points(x, y, sw, self.clen)
+      self.direction.append(['selfsvc', shape.draw(points, geom)])
+    elif name == 'gnomon':
       dim = self.dimension(x, y, self.clen)
+      self.direction.append(['selfsvc', shape.draw(self.clen, dim, geom)])
+    else:
+      if name in ['circle', 'diamond']:
+        dim = self.points(x, y, sw, self.clen)
+      else:
+        dim = self.dimension(x, y, self.clen)
+      self.direction.append(shape.guide(geom['facing']))
     coords  = shape.coords(dim, geom)
     if coords.geom_type: self.bft.append(coords)
-    self.direction.append(shape.guide(geom['facing']))
 
 
   def polygon(self):
@@ -102,6 +109,24 @@ class Layer:
 
     swd = stroke_width
     cl  = clen
+    s   = tuple([X + cl / 2,   Y + swd])
+    e   = tuple([X + cl - swd, Y + cl / 2])
+    n   = tuple([X + cl / 2,   Y + cl - swd])
+    w   = tuple([X + swd,      Y + cl / 2])
+    ne  = tuple([X + cl - swd, Y + cl - swd])
+    se  = tuple([X + cl - swd, Y + swd] )
+    nw  = tuple([X + swd,      Y + cl - swd])
+    sw  = tuple([X + swd,      Y + swd])
+    mid = tuple([X + cl / 2,   Y + cl / 2])
+
+    return tuple([swd, cl, n, e, s, w, ne, se, nw, sw, mid])
+
+  def __points(self, x, y, stroke_width, clen):
+    X = x * clen
+    Y = y * clen
+
+    swd = stroke_width
+    cl  = clen
     n   = tuple([X + cl / 2,   Y + swd])
     e   = tuple([X + cl - swd, Y + cl / 2])
     s   = tuple([X + cl / 2,   Y + cl - swd])
@@ -113,6 +138,7 @@ class Layer:
     mid = tuple([X + cl / 2,   Y + cl / 2])
 
     return tuple([swd, cl, n, e, s, w, ne, se, nw, sw, mid])
+
 
   def setClock(self, padding=True):
     ''' position join point for composite meanders
