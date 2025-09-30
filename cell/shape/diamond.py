@@ -1,6 +1,6 @@
 from shapely.geometry import Polygon
 
-class Diamond():
+class Diamond:
   def __init__(self):
     self.name = 'diamond'
 

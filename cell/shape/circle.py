@@ -1,7 +1,7 @@
 import math
 from shapely.geometry import Point
 
-class Circle():
+class Circle:
   ''' circle plots badly (square wheels!) as Shape.draw()
       sets precision to whole number
       but aside from testing, it matters not as 

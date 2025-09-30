@@ -1,9 +1,13 @@
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, LineString, MultiLineString
+from cell.meander import Line
 
-class Triangle():
+# TODO inherit from Meander and return a polyln
+class Triangle(Line):
   ''' a linear ring wrapped in a Polygon 
       the wrapper is needed by transform
   '''
+  VERBOSE = False
+
   def __init__(self):
     self.name = 'triangl' # misspelt due to 7char limit when CSV
 
@@ -17,15 +21,18 @@ class Triangle():
       'E': (nw, e, sw),
       'W': (w, ne, se)
     }
-    """
-      'north': (nw, ne, s),
-      'south': (sw, n, se),
-      'east': (nw, e, sw),
-      'west': (w, ne, se),
-    """
     if facing in rings:
       return Polygon(rings[facing])
     else: raise IndexError(f"Cannot face triangle {facing}")
+
+  def draw(self, points, geom):
+    guideln = self.guideline(points, geom)
+    points  = self.collectPoints(guideln)
+    if len(points[0]) == len(points[1]):
+       polyln = self.makeDiagonals(points)
+    else:
+      raise ValueError(f'Ouch! {self.pp.pprint(points)}')
+    return polyln
 
   def validate(self, geom):
     if geom['facing'] == 'C':
@@ -33,7 +40,39 @@ class Triangle():
     if geom['size'] in ['small', 'large']:
       return 'wrong size'
 
-  def guide(self, facing): return ('border', None)
+  def guide(self, facing): return ('selfsvc', None)
+
+  # TODO avoid the cell length has to be even bug
+  def guideline(self, points, geom):
+    '''
+    nw- n -ne
+    |       |
+    w       e
+    |       |
+    sw- s -se
+    '''
+    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
+    if clen % 2: # odd length cannot meander
+      raise ValueError(f'{clen} is odd')
+    facing = geom['facing']
+
+    nw_s = LineString([nw, s])
+    ne_s = LineString([ne, s])
+    sw_n = LineString([sw, n])
+    se_n = LineString([se, n])
+    nw_e = LineString([nw, e])
+    sw_e = LineString([sw, e])
+    w_ne = LineString([w, ne])
+    w_se = LineString([w, se])
+    mls  = {
+      'N': [sw_n, se_n],
+      'S': [nw_s, ne_s],
+      'E': [nw_e, sw_e],
+      'W': [w_ne, w_se]
+    }
+    if self.VERBOSE: print(f'{facing=} {mls[facing]}')
+    if facing in mls: return MultiLineString(mls[facing])
+    else: raise IndexError(f'{facing} is unknown')
 
 '''
 the
