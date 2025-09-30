@@ -7,13 +7,13 @@ from cell import Layer
 from cell.minkscape import *
 from model import SvgWriter, SvgLinear
 from shapely.geometry import LinearRing, Polygon, MultiPolygon
-pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
 
   def setUp(self):
     self.VERBOSE = True
     self.writer  = SvgWriter()
+    self.pp      = pprint.PrettyPrinter(indent=2)
 
   def test_a(self):
     ''' create a simple with bg and fg
@@ -80,8 +80,23 @@ class Test(unittest.TestCase):
     for size in ['med', 'smal', 'lrge']:
       self.assertEqual(expt[size], rslt[size])
     
+  def test_f(self, x=0, y=0, stroke_width=0, clen=9):
+    ''' points
+    '''
+    layer  = Layer()
+    points = layer.points(x, y, stroke_width, clen)
+    # self.pp.pprint(points)
+    swd, cl, n, e, s, w, ne, se, nw, sw, mid = points
+    self.assertEqual((4.5,   9), n)
+    self.assertEqual((4.5,   0), s)
+    self.assertEqual((  9,4.5),  e)
+    self.assertEqual((  0,4.5),  w)
+    self.assertEqual((  9,  9), ne)
+    self.assertEqual((  9,  0), se)
+    self.assertEqual((  0,  9), nw)
+    self.assertEqual((  0,  0), sw)
+    self.assertEqual((4.5,4.5), mid)
+  
+  
 
-'''
-the
-end
-'''
+

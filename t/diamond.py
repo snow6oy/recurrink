@@ -25,6 +25,7 @@ class Test(unittest.TestCase):
     diamond = Diamond()
     polygn  = diamond.coords(points, self.cell['d']['geom'])
 
+
     self.assertEqual(diamond.name, 'diamond')
     if self.VERBOSE: self.writer.plot(polygn, self.id()) 
 '''

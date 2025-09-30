@@ -1,11 +1,12 @@
 import unittest
 import pprint
-from shapely.geometry import Polygon, LinearRing, LineString
+from shapely.geometry import Polygon, LinearRing, LineString, MultiLineString
 from block import Make, Meander 
 from model import SvgWriter
-pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
+  pp = pprint.PrettyPrinter(indent=2)
+
   def setUp(self):
     self.writer  = SvgWriter()
     self.VERBOSE = True
@@ -213,7 +214,7 @@ class Test(unittest.TestCase):
     cells = {
       'a': {
         'geom': { 
-          'name':'parabol', 'size':'medium', 'facing':'east', 'top':False
+          'name':'parabol', 'size':'medium', 'facing':'E', 'top':False
         }, 
         'color': {'background':'000', 'fill':'#F00', 'opacity':1}
        }
@@ -256,6 +257,27 @@ class Test(unittest.TestCase):
     stripes = m.makeStripes(points)
     self.writer.plotLine(stripes, self.id())
     '''
+
+  def test_q(self, facing='W', clen=18):
+    ''' diamond
+    '''
+    x0 = y0 = 0
+    x1 = y1 = clen / 2
+    x2 = y2 = clen
+    # Polygon is used to collect points
+    diamond = Polygon([(x0, y1), (x1, y0), (x2, y1), (x1, y2)])
+    m       = Meander(diamond)
+    guides  = m.guiDiamond(facing, clen=clen)
+    points  = m.collectPoints(guides)
+    stripes = m.makeDiagonals(points)
+    if self.VERBOSE: 
+      #self.writer.plot(diamond, self.id())
+      self.writer.plotLine(stripes, self.id())
+
+  def test_r(self): self.test_q(facing='E', clen=90)
+  def test_s(self): self.test_q(facing='N', clen=54)
+  def test_t(self): self.test_q(facing='S', clen=27)
+  def test_u(self): self.test_q(facing='C', clen=45)
 
 '''
 the
