@@ -108,6 +108,8 @@ class Make:
           linestr = self.meanderGuided(polygn, guide, padding=padding)
         elif algo == 'border':
           linestr = polygn.exterior
+        elif algo == 'selfsvc':
+          linestr = guide[0]
         elif algo is None: 
           linestr = LineString() # cannot meander an empty background
         else:
