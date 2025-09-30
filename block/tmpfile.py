@@ -6,6 +6,7 @@ import hmac
 import pprint
 from block import Views, BlockData
 from config import *
+from cell import Palette
 
 # TODO add palette
 
@@ -21,20 +22,21 @@ class TmpFile:
         using len(fnam) is risky because not enough entries
     '''
     USE_PEN_PALS = 7  # palettes with pens, not friends from abroad :-D
+    pal          = Palette()
+    fnam         = pal.friendlyPenNames()
     if ver is None:
-      ver = random.choice(range(USE_PEN_PALS, len(config.friendly_name)))
+      ver = random.choice(range(USE_PEN_PALS, len(fnam)))
     self.VERSION = ver
+    self.PALETTE = fnam[ver]
     return ver
 
   def write(self, model, cells):
     ''' wrap the data and make ready to write
     '''
-    ver   = self.VERSION
     bd    = BlockData(model)
     pos   = bd.readPositions(model)
     fgpos = self.positionBlock(pos)
     topos = self.positionBlock(pos, top=True)
-    pal   = config.friendly_name[ver]
     
     celldata = dict()
     for label in cells:
@@ -44,7 +46,7 @@ class TmpFile:
 
     metadata = {
       'model': model,
-      'palette': config.friendly_name[ver]
+      'palette': self.PALETTE
     }
     metadata['positions'] = { 'foreground': fgpos }
     if topos: metadata['positions']['top'] = topos
