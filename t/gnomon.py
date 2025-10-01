@@ -44,10 +44,13 @@ class Test(unittest.TestCase):
     ''' meander using Line class
     '''
     geom           = self.cells['d']['geom']
+    dim            = self.layer.dimension(0, 0, self.clen)
     geom['facing'] = facing if facing else 'NW' # override Easterly default
-    self.pp.pprint(geom)
+    if self.VERBOSE:
+      self.pp.pprint(dim)
+      self.pp.pprint(geom)
 
-    polyln  = self.g.draw(self.clen, geom)
+    polyln  = self.g.draw(self.clen, dim[:4], geom)
     if self.VERBOSE: self.writer.plotLine(polyln, self.id())
 
   def test_d(self): self.test_c(facing='SW')

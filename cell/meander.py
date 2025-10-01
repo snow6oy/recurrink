@@ -2,36 +2,9 @@ import pprint
 from shapely.geometry import Point, LineString, MultiLineString
 
 class Line:
-  VERBOSE = False
-  pp      = pprint.PrettyPrinter(indent=2)
 
-  def __guidelines(self, direction, shape=None):
-    '''
-    NW  N  NE      WT ET
-      ↖ ↑ ↗     NL +---+ NR
-    W ←   → E      |   | 
-      ↙ ↓ ↘     SL +---+ SR
-    SW  S  SE      WB EB
-    '''
-    padme      = shape if shape else self.shape
-    x, y, w, h = padme.bounds
-    mls        = []
-    guideline  = {
-      'NL': LineString([(x, y), (x, h)]), # North Left
-      'NE': LineString([(x, y), (w, h)]), # North East
-      'EB': LineString([(x, y), (w, y)]), # East Bottom
-      'SE': LineString([(x, h), (w, y)]), # South East
-      'SL': LineString([(x, h), (x, y)]), # South Left
-      'SW': LineString([(w, h), (x, y)]), # South West
-      'WB': LineString([(w, y), (x, y)]), # West Bottom
-      'NW': LineString([(w, y), (x, h)]), # North West
-      'NR': LineString([(w, y), (w, h)]), # North Right
-      'ET': LineString([(x, h), (w, h)]), # East Top
-      'SR': LineString([(w, h), (w, y)]), # South Right
-      'WT': LineString([(w, h), (x, h)])  # West Top
-    }
-    [mls.append(guideline[d]) for d in direction]
-    return MultiLineString(mls) 
+  # VERBOSE see children
+  pp      = pprint.PrettyPrinter(indent=2)
 
   def guidelines(self, facing, clen, bounds):
     '''  E - B - F
@@ -41,7 +14,7 @@ class Line:
          H - D - G 
     '''
     x, y, w, h = bounds  # X,Y because Shapely Transform not done yet
-    if clen % 2: 
+    if clen % 2:    # Consider this to be padding ?
       w -= 1        # Meander has issues with oddness
       h -= 1
     mls        = []
@@ -52,12 +25,19 @@ class Line:
     EG         = LineString([(x, h), (w, y)]) # South East
     EF         = LineString([(x, h), (w, h)]) # East Top
     HF         = LineString([(x, y), (w, h)]) # North East
+    HE         = LineString([(x, y), (x, h)]) # North Left
+    HG         = LineString([(x, y), (w, y)]) # East Bottom
     FH         = LineString([(w, h), (x, y)]) # South West
+    FG         = LineString([(w, h), (w, y)]) # South Right
     guideline  = {
+       'N': (HG, EF),
+       'S': (EF, HG),
+       'E': (EH, FG),
+       'W': (HE, GF),
       'NW': (GH, GE, GF),
       'SE': (EH, EG, EF),
       'SW': (EF, HF, GF),
-      'NE': (GH, FH, EH)
+      'NE': (GH, FH, EH),
     }
     return MultiLineString(guideline[facing])
 
@@ -75,7 +55,6 @@ class Line:
           pt = Point(x, y)
           if gl.intersects(pt):   # collect the points on the guideline
             points[i].append((x,y))
-    if self.VERBOSE: self.pp.pprint(points)
     return points
 
   def orderGrid(self, guideline):
@@ -95,6 +74,7 @@ class Line:
   def makeDiagonals(self, points):
     ''' collapse a 2dim array of points into a single LineString
     '''
+    #self.pp.pprint(points)
     sorted_points = []
     outer         = len(points)
     inner         = len(points[0])
@@ -106,11 +86,25 @@ class Line:
         start, stop, step = 0, outer, 1
       for o in range(start, stop, step):
         if self.VERBOSE: 
-          print(f'{o=} {i=} ', end='', flush=True) 
-          print(f'{points[o][i]}', end='', flush=True) 
+          #print(f'{o=} {i=} ', end='', flush=True) 
+          print(f'|{points[o][i]}| ', end='', flush=True) 
         sorted_points.append(points[o][i])
       if self.VERBOSE: print()
     return LineString(sorted_points)
+
+  def sliceByThird(self, facing, points):
+    ''' make diagonals covers the entire square
+        to convert to a gnomon the meandered line is shortened by 3
+    '''
+    ptlen     = len(points)
+    if ptlen % 3: raise ValueError(f'Ouch! {ptlen} is not divisible by three')
+    if facing == 'NW' or facing == 'SE':
+      start   = int((ptlen / 3) * 2) - 1
+      stop    = -1
+    elif facing == 'SW' or facing == 'NE':
+      start   = 0
+      stop    = int(ptlen / 3) - 1
+    return points[start:stop]
 
 '''
 the

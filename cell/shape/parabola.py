@@ -1,12 +1,19 @@
-from shapely.geometry import Polygon
+import pprint
+from shapely.geometry import Polygon, LineString, MultiLineString
+from cell.meander import Line
 
-class Parabola:
+class Parabola(Line):
   ''' u-shaped parallelograms
       north n south u ... 
   '''
   VERBOSE = False
+  pp      = pprint.PrettyPrinter(indent=2)
+
   def __init__(self):
     self.name = 'parabola'
+    super().__init__()
+
+  def validate(self, geom): pass
 
   def coords(self, dim, geom):
     ''' define the input so Shapely Polygon can create a U shape
@@ -20,33 +27,34 @@ class Parabola:
           'W': [(X,Y),(X,H),(W,H),(W,d),(a,d),(a,b),(W,b),(W,Y)],
           'E': [(X,Y),(X,b),(c,b),(c,d),(X,d),(X,H),(W,H),(W,Y)]
     }
-    """
-      'north': [(X,Y),(X,H),(W,H),(W,Y),(c,Y),(c,d),(a,d),(a,Y)],
-      'south': [(X,Y),(X,H),(a,H),(a,b),(c,b),(c,H),(W,H),(W,Y)],
-       'west': [(X,Y),(X,H),(W,H),(W,d),(a,d),(a,b),(W,b),(W,Y)],
-       'east': [(X,Y),(X,b),(c,b),(c,d),(X,d),(X,H),(W,H),(W,Y)],
-    """
     return Polygon(direction[facing])
 
-  def guide(self, facing):
-    ''' translate facing into another facing that gnomon and edge
-        will convert into the guide used by Meander
+  def draw(self, facing, clen, dim, padding=False):
+    ''' orchestrate the composite algorithm of meander
     '''
+    X, Y, W, H, a, b, c, d, *A = dim
     control = {
-      'N': ['NE', 'W'], 'S': ['SW', 'E'], 'E': ['SE', 'N'], 'W': ['NW', 'S']
+      'N': ['NE', 'W', X, Y, a, d],  # test g
+      'S': ['SW', 'E', c, b, W, H],  # test h
+      'E': ['SE', 'N', X, d, c, H],  # test i
+      'W': ['NW', 'S', a, Y, W, b]   # test f
     }
-    """
-      'north': ['NE', 'west'],
-      'south': ['SW', 'east'],
-       'east': ['SE', 'north'],
-       'west': ['NW', 'south'],
-    """
-    if facing in control:
-      control[facing].insert(0, 'composite')
-      return tuple(control[facing])
+    # facing for the composites
+    if facing in control: gface, eface = control[facing][:2]
     else: raise KeyError(f'all at sea > {facing} < without control')
+    if self.VERBOSE: print(f'{gface=} {eface=} {facing=}')
 
-  def validate(self, geom): pass
+    bounds  = dim[:4]
+    guideln = self.guidelines(gface, clen, bounds)
+    points  = self.collectPoints(guideln)
+    linstr  = self.makeDiagonals(points)
+    gnomon  = self.sliceByThird(gface, linstr.coords)
+
+    bounds  = control[facing][2:]
+    guideln = self.guidelines(eface, clen, bounds)
+    points  = self.collectPoints(guideln)
+    edge    = self.makeDiagonals(points)
+    return MultiLineString([gnomon, edge])
 
 '''
 the

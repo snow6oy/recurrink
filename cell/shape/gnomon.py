@@ -43,16 +43,7 @@ class Gnomon(Line):
     guideln = self.guidelines(facing, clen, dim[:4])
     points  = self.collectPoints(guideln)
     square  = self.makeDiagonals(points)
-    # to make a gnomon slice by a third
-    sqlen   = len(list(square.coords))
-    if sqlen % 3: raise ValueError(f'Ouch! {sqlen} is not divisible by three')
-    if facing == 'NW' or facing == 'SE':
-      start   = int((sqlen / 3) * 2) - 1
-      stop    = -1
-    elif facing == 'SW' or facing == 'NE':
-      start   = 0
-      stop    = int(sqlen / 3) - 1
-    points  = list(square.coords)[start:stop]
+    points  = self.sliceByThird(facing, square.coords)
     return LineString(points)
 
   def __guide(self, facing):
