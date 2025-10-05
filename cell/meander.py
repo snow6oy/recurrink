@@ -71,7 +71,7 @@ class Line:
     stop_y          += step_y
     return start_x, stop_x, step_x, start_y, stop_y, step_y
 
-  def makeDiagonals(self, points):
+  def makeStripes(self, points):
     ''' collapse a 2dim array of points into a single LineString
     '''
     #self.pp.pprint(points)
@@ -104,6 +104,7 @@ class Line:
     elif facing == 'SW' or facing == 'NE':
       start   = 0
       stop    = int(ptlen / 3) - 1
+    print(f'{start=} {stop=}')
     return points[start:stop]
 
 '''

@@ -29,7 +29,7 @@ class Triangle(Line):
     guideln = self.guideline(points, geom)
     points  = self.collectPoints(guideln)
     if len(points[0]) == len(points[1]):
-       polyln = self.makeDiagonals(points)
+       polyln = self.makeStripes(points)
     else:
       raise ValueError(f'Ouch! {self.pp.pprint(points)}')
     return polyln

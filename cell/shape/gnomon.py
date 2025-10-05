@@ -42,7 +42,7 @@ class Gnomon(Line):
     facing  = geom['facing']
     guideln = self.guidelines(facing, clen, dim[:4])
     points  = self.collectPoints(guideln)
-    square  = self.makeDiagonals(points)
+    square  = self.makeStripes(points)
     points  = self.sliceByThird(facing, square.coords)
     return LineString(points)
 
