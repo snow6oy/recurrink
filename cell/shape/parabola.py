@@ -30,27 +30,6 @@ class Parabola(Line):
     }
     return Polygon(direction[facing])
 
-  def joinStripes(self, p1, p2):
-    ''' orchestrate make stripes calls and join two points
-    '''
-    s1       = self.makeStripes(p1)
-    last_p1  = list(s1.coords)[-1] # sort the points before marking the last
-    s2       = self.makeStripes(p2)
-    s2       = list(s2.coords)      # extract list from LineString 
-    s2       = list(reversed(s2))   # 
-    first_p2 = s2[0]
-    if self.VERBOSE: print(f'{last_p1=} {first_p2=}')
-    s2.insert(0, last_p1)           # guess that last p1 matches first p2
-    s2       = LineString(s2)
-    mls      = MultiLineString([s1, s2])
-
-    stripe  = line_merge(mls)
-    if stripe.geom_type != 'LineString':
-      raise TypeError(f"""
-line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
-""")
-    return stripe
-
   def draw(self, facing, clen, dim, padding=False):
     ''' orchestrate the composite algorithm of meander
     '''
@@ -67,53 +46,63 @@ line merge failed {stripe.geom_type} is wrong type. Check {last_p1=} {first_p2=}
     if self.VERBOSE: print(f'{gface=} {eface=} {facing=}')
 
     bounds  = dim[:4]
-    print(f'{bounds=}')
     guideln = self.guidelines(gface, clen, bounds)
     points  = self.collectPoints(guideln)
     linstr  = self.makeStripes(points)
-    gnomon  = self.sliceByThird(gface, linstr.coords)
-    '''
-    self.pp.pprint(gnomon)
-    '''
-
-    bounds  = control[facing][2:]
-    guideln = self.guidelines(eface, clen, bounds)
-    points  = self.collectPoints(guideln)
-    edge    = self.makeStripes(eface, points)
-    linestr = self.joinStripes(gnomon, edge)
-    return linstr
-
-  def _draw(self, facing, clen, dim, padding=False):
-    ''' cannot pass MLS to model/linear
-    '''
-    X, Y, W, H, a, b, c, d, *A = dim
-    control = {
-      'N': ['NE', 'W', X, Y, a, d],  # test g
-      'S': ['SW', 'E', c, b, W, H],  # test h
-      'E': ['SE', 'N', X, d, c, H],  # test i
-      'W': ['NW', 'S', a, Y, W, b]   # test f
-    }
-    # facing for the composites
-    if facing in control: gface, eface = control[facing][:2]
-    else: raise KeyError(f'all at sea > {facing} < without control')
-    if self.VERBOSE: print(f'{gface=} {eface=} {facing=}')
-
-    bounds  = dim[:4]
-    guideln = self.guidelines(gface, clen, bounds)
-    points  = self.collectPoints(guideln)
-    linstr  = self.makeStripes(points)
-    gnomon  = self.sliceByThird(gface, linstr.coords)
+    sliced  = self.sliceByThird(gface, linstr.coords)
+    gnomon  = LineString(sliced)
 
     bounds  = control[facing][2:]
     guideln = self.guidelines(eface, clen, bounds)
     points  = self.collectPoints(guideln)
     edge    = self.makeStripes(points)
-    return LineString(gnomon)
-    '''
-    mls     = MultiLineString([gnomon, edge])
-    return line_merge(mls)
-    '''
+    joined  = self.joinStrings(gnomon, edge)
+    return joined
 
+  def reString(self, linstr, point, reverse=False, append=False, case=0):
+    ''' help simplify join strings
+    '''
+    coords = list(linstr.coords)
+    if reverse: coords = list(reversed(coords))
+    if append:
+      coords.append(point)
+    else:
+      coords.insert(0, point)
+    if case and self.VERBOSE: print(f'restrung case #{case}')
+    return LineString(coords)
+
+  def joinStrings(self, gnomon, edge):
+    ''' join two line strs into a single line
+
+    test with recurrink
+    document and commit
+    '''
+    g1, g2 = list(gnomon.boundary.geoms)
+    e1, e2 = list(edge.boundary.geoms)
+    if g2.x == e1.x or g2.y == e1.y: 
+      gnomon = self.reString(gnomon, e1, append=True, case=1)
+    elif g1.x == e1.x or g1.y == e1.y: 
+      gnomon = self.reString(gnomon, e1, reverse=True, append=True, case=2)
+    elif g2.x == e2.x or g2.y == e2.y: 
+      edge = self.reString(edge, g2, reverse=True, append=False, case=3)
+    elif g1.x == e2.x or g1.y == e2.y: 
+      gnomon = self.reString(gnomon, e2, reverse=True, append=True, case=3)
+    elif self.VERBOSE: 
+      print(f'''
+failed to find a matching condition
+{g1.x=} {g1.y=} {g2.x=} {g2.y=}
+{e1.x=} {e1.y=} {e2.x=} {e2.y=}''')
+      
+    mls    = MultiLineString([gnomon, edge])
+    ''' mls is ok to return for matplot but not model.linear
+    return mls
+    ''' 
+    stripe = line_merge(mls)
+    if stripe.geom_type != 'LineString':
+      raise TypeError(f"""
+line merge failed {stripe.geom_type} is wrong type. 
+""")
+    return stripe
 '''
 the
 end

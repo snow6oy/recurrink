@@ -33,7 +33,6 @@ class Layer:
     ''' Block.walk also calls here when top
     '''
     name   = geom['name'] if 'name' in geom else 'square'
-    print(f'{name}')
     x, y   = self.pos
     shapes = {
          'line': Rectangle(name),
@@ -52,12 +51,12 @@ class Layer:
     if name == 'triangl':
       dim = points = self.points(x, y, sw, self.clen)
       drawn = shape.draw(points, geom)
-      print(f'  {drawn.geom_type}')
+      #print(f'  {drawn.geom_type}')
       self.direction.append(['selfsvc', drawn])
     elif name == 'circle':
       dim = points = self.points(x, y, sw, self.clen)
       drawn = shape.draw(points, geom)
-      print(f'  {drawn.geom_type}')
+      #print(f'  {drawn.geom_type}')
       self.direction.append(['selfsvc', drawn])
       '''
       dim = self.points(x, y, sw, self.clen)
@@ -66,12 +65,12 @@ class Layer:
     elif name == 'gnomon':
       dim = self.dimension(x, y, self.clen)
       drawn = shape.draw(self.clen, dim, geom)
-      print(f'  {drawn.geom_type}')
+      #print(f'  {drawn.geom_type}')
       self.direction.append(['selfsvc', drawn])
     elif name == 'parabol':
       dim = self.dimension(x, y, self.clen)
       drawn = shape.draw(geom['facing'], self.clen, dim)
-      print(f'  {drawn.geom_type}')
+      #print(f'  {drawn.geom_type}')
       self.direction.append(['selfsvc', drawn])
     else:
       if name == 'diamond':

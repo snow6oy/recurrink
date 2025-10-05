@@ -29,11 +29,12 @@ class Line:
     HG         = LineString([(x, y), (w, y)]) # East Bottom
     FH         = LineString([(w, h), (x, y)]) # South West
     FG         = LineString([(w, h), (w, y)]) # South Right
+    FE         = LineString([(w, h), (x, h)]) # South Right
     guideline  = {
-       'N': (HG, EF),
-       'S': (EF, HG),
-       'E': (EH, FG),
-       'W': (HE, GF),
+       'N': (EH, FG),
+       'S': (HE, GF),
+       'E': (EF, HG),
+       'W': (FE, GH),
       'NW': (GH, GE, GF),
       'SE': (EH, EG, EF),
       'SW': (EF, HF, GF),
@@ -104,7 +105,7 @@ class Line:
     elif facing == 'SW' or facing == 'NE':
       start   = 0
       stop    = int(ptlen / 3) - 1
-    print(f'{start=} {stop=}')
+    #print(f'{start=} {stop=}')
     return points[start:stop]
 
 '''
