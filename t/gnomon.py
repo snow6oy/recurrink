@@ -21,7 +21,8 @@ class Test(unittest.TestCase):
     self.clen   = 18
     self.cells  = minkscape.cells
 
-  def test_a(self, f1=None, f2=None):
+  #def test_a(self, f1=None, f2=None):
+  def test_a(self, facing=None, size=None):
     ''' convert cell dimension for pos n to coords for Shapely.Polygon
     '''
     if f1 is None: f1 = {'facing': 'SW', 'size':'medium' }
