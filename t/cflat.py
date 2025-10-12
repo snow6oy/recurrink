@@ -33,7 +33,9 @@ class Test(unittest.TestCase):
 
       if not clone.is_file():
         print(f'cloning {digest}')
-        celldata  = view.read(digest=digest)
+        _, _, _, ver = view.readMeta(digest=digest)
+        celldata              = view.read(digest=digest)
+        tf.setVersion(ver)
         tf.write(model, celldata)
 
       b         = BlockData(model)
