@@ -40,17 +40,25 @@ fg.has_z > True
 > as a plotter i want diamonds and circles to be linear
 
 
-9. Move makeDiagonals to cell.shape.Diamond
-10. Add Circle
-1. Move Rectangular Meander with composites
-1. Rename coords/meander paint/draw
+TODO 
+1. Either keep meander.guidelnTriangl as guidelinePoints 
+   OR triangle.guidelines and override meander
+1. Make coords a private method for paint/draw
 11. Layer should make either polygn OR polyln
+12. Then Block.meander should stop processing guide
+1.  remove Rectangle(edge) if unused
 
 DONE  
+1. add spiral as Rectangle(name) test with recurrink
+1. Move Rectangular Meander with composites
+9. Move makeDiagonals to cell.shape.Diamond
+10. Add Circle
 1. Temporary scaffolding in Layer for Triangle
 4. Draw a triangle using recurrink
 1. Inherit Shape from Triangle
 6. Move/copy Meander to cell as Shape
+5. use inheritance to override base Meander?
+6. when meander is evoked do not create a Polygon
 
 DONE WITH IMPLICATIONS
 - Shape.guideline will need to substitute polygon.bounds with clen
@@ -61,5 +69,9 @@ WONT DO.
 - Fix bug with half.sized triangles North and South
 
 
-Also consider That if points + dimension only make Blocks
-then why process XY as Shapely.transform does it too  ?
+Geometry offsets in points + dimension make positions in Blocks
+Shapely.transform positions blocks in a model
+
+_ does top work when LINEAR
+
+

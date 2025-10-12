@@ -7,11 +7,12 @@ class Layer:
   VERBOSE = False
 
   # TODO expose padding so Block.walk() can init
-  def __init__(self, pos=tuple([0,0]), clen=9): 
+  def __init__(self, pos=tuple([0,0]), clen=9, linear=False): 
     self.bft       = list()
     self.direction = list()   # make guide for meander
     self.clen      = clen     # length of cell
     self.pos       = pos      # logical position in block
+    self.linear    = linear   # use draw instead of paint
 
   def background(self, cell): 
     X, Y, W, H, *a = self.dimension(self.pos[0], self.pos[1], self.clen)
@@ -48,39 +49,31 @@ class Layer:
     shape   = shapes[name]
     if 'stroke_width' in geom: sw  = geom['stroke_width']
     else: sw = 0
-    if name == 'triangl':
+    if name in ['triangl', 'circle', 'diamond']:
       dim = points = self.points(x, y, sw, self.clen)
       drawn = shape.draw(points, geom)
       #print(f'  {drawn.geom_type}')
       self.direction.append(['selfsvc', drawn])
-    elif name == 'circle':
-      dim = points = self.points(x, y, sw, self.clen)
-      drawn = shape.draw(points, geom)
-      #print(f'  {drawn.geom_type}')
-      self.direction.append(['selfsvc', drawn])
-      '''
-      dim = self.points(x, y, sw, self.clen)
-      self.direction.append(shape.guide(geom['facing']))
-      '''
-    elif name == 'gnomon':
+    elif name in ['gnomon', 'parabol']:
       dim = self.dimension(x, y, self.clen)
       drawn = shape.draw(self.clen, dim, geom)
       #print(f'  {drawn.geom_type}')
       self.direction.append(['selfsvc', drawn])
-    elif name == 'parabol':
-      dim = self.dimension(x, y, self.clen)
-      drawn = shape.draw(geom['facing'], self.clen, dim)
-      #print(f'  {drawn.geom_type}')
-      self.direction.append(['selfsvc', drawn])
     else:
-      if name == 'diamond':
-        dim = self.points(x, y, sw, self.clen)
-      else:
-        dim = self.dimension(x, y, self.clen)
+      dim = self.dimension(x, y, self.clen)
+      drawn = shape.draw(self.clen, dim, geom)
+      self.direction.append(['selfsvc', drawn])
+      '''
+      print(f'  {drawn.geom_type}')
+      dim = self.dimension(x, y, self.clen)
       self.direction.append(shape.guide(geom['facing']))
-    coords  = shape.coords(dim, geom)
-    if coords.geom_type: self.bft.append(coords)
+      '''
 
+    if name in ['line','edge','square','sqring']:
+      polygn = shape.paint(dim, geom)
+    else:
+      polygn = shape.coords(dim,geom)
+    if polygn.geom_type: self.bft.append(polygn)
 
   def polygon(self):
     return MultiPolygon(self.bft)

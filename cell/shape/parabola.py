@@ -30,10 +30,11 @@ class Parabola(Line):
     }
     return Polygon(direction[facing])
 
-  def draw(self, facing, clen, dim, padding=False):
+  def draw(self, clen, dim, geom, padding=False):
     ''' orchestrate the composite algorithm of meander
     '''
     X, Y, W, H, a, b, c, d, *A = dim
+    facing  = geom['facing']
     control = {
       'N': ['NE', 'W', X, Y, a, d],  # test g
       'S': ['SW', 'E', c, b, W, H],  # test h

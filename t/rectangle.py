@@ -1,4 +1,5 @@
 import unittest
+import pprint
 from cell.minkscape import *
 from cell.shape import Rectangle
 from cell import Layer
@@ -7,6 +8,8 @@ from shapely.geometry import LineString, Polygon
 
 
 class Test(unittest.TestCase):
+
+  pp = pprint.PrettyPrinter(indent=2)
 
   def setUp(self):
     ''' celldata for minkscape 
@@ -24,16 +27,26 @@ class Test(unittest.TestCase):
     '''
     expect = Polygon(((0, 0), (0, 9), (9, 9), (9, 0)))
     r      = Rectangle('square')
-    polygn = Polygon(r.coords(self.dim, minkscape.cells['a']['geom']))
+    polygn = Polygon(r.paint(self.dim, minkscape.cells['a']['geom']))
     self.assertEqual(expect, polygn) 
     if self.VERBOSE: self.writer.plot(polygn, self.id())
 
-  def test_b(self):
-    ''' rectangle square has a spiral guide
+  def test_b(self, name='square', facing='N', size='medium'):
+    ''' meander using Line class
     '''
-    r     = Rectangle('square')
-    guide = r.guide('C')
-    self.assertEqual('spiral', guide[0])
+    geom           = self.cell['b']['geom']
+    geom['facing'] = facing 
+    geom['name']   = name
+    geom['size']   = size
+    dim  = self.layer.dimension(0, 0, self.clen)
+    r    = Rectangle(name)
+
+    if self.VERBOSE:
+      self.pp.pprint(dim)
+      self.pp.pprint(geom)
+
+    polyln  = r.draw(self.clen, dim, geom)
+    if self.VERBOSE: self.writer.plotLine(polyln, self.id())
 
   def test_c(self):
     ''' rectangle makes a big square
@@ -42,7 +55,7 @@ class Test(unittest.TestCase):
     r      = Rectangle('square')
     geom   = minkscape.cells['a']['geom']
     geom['size'] = 'large'
-    polygn = Polygon(r.coords(self.dim, geom))
+    polygn = Polygon(r.paint(self.dim, geom))
     if self.VERBOSE: self.writer.plot(polygn, self.id())
     self.assertEqual(expect, polygn) 
 
@@ -52,7 +65,7 @@ class Test(unittest.TestCase):
     self.cell['a']['geom']['size'] = 'small'
     square = Rectangle('square')
     dim    = self.layer.dimension(0, 0, self.clen)
-    polygn = square.coords(dim, self.cell['a']['geom'])
+    polygn = square.paint(dim, self.cell['a']['geom'])
     if self.VERBOSE: 
       self.writer.plot(polygn, self.id())
 
@@ -61,6 +74,13 @@ class Test(unittest.TestCase):
     '''
     line = Rectangle('line')
     self.assertEqual(line.name, 'line')
+
+  def test_f(self): self.test_b(size='small', name='spiral')
+  def test_g(self): self.test_b(name='spiral')
+  def test_h(self): self.test_b(name='line')
+  def test_i(self): self.test_b(name='line', facing='E')
+  def test_j(self): self.test_b(facing='C')
+
 '''
 the
 end

@@ -13,13 +13,31 @@ class Gnomon(Line):
   def __init__(self):
     self.name = 'gnomon'
 
-  def coords(self, dim, kwargs):
+  def validate(self, geom): 
+    if geom['size'] in ['large', 'small']: 
+      return 'strictly medium'
+
+  def draw(self, clen, dim, geom):
+    facing  = geom['facing']
+    guideln = self.guidelines(facing, clen, dim[:4])
+    points  = self.collectPoints(guideln)
+    square  = self.makeStripes(points)
+    points  = self.sliceByThird(facing, square.coords)
+    return LineString(points)
+
+  def paint(self, dim, kwargs):
+    ''' wrapper around coords
+    '''
+    facing  = kwargs['facing']
+    size    = kwargs['size']
+    coords  = self.coords(dim, facing, size)
+    return Polygon(coords)
+
+  def coords(self, dim, facing, size):
     ''' define the input so Shapely Polygon can create an L shape
     '''
     X, Y, W, H, a, b, c, d, *A = dim
 
-    facing  = kwargs['facing']
-    size    = kwargs['size']
     sizes   = {
       'medium': {
           'NW': [(X, Y), (X, H), (W, H), (W, d), (a, d), (a, Y)],
@@ -35,16 +53,9 @@ class Gnomon(Line):
        }
     }
     if size in sizes and facing in sizes[size]: 
-      return Polygon(sizes[size][facing])
-    else: raise IndexError(f"gnomon at sea {size} {facing}")
-
-  def draw(self, clen, dim, geom):
-    facing  = geom['facing']
-    guideln = self.guidelines(facing, clen, dim[:4])
-    points  = self.collectPoints(guideln)
-    square  = self.makeStripes(points)
-    points  = self.sliceByThird(facing, square.coords)
-    return LineString(points)
+      return sizes[size][facing]
+    else: 
+      raise IndexError(f"gnomon at sea {size} {facing}")
 
   def __guide(self, facing):
     ''' see Meander to check the codes 
@@ -59,11 +70,6 @@ class Gnomon(Line):
     '''
     if facing in control: return control[facing]
     else: raise KeyError(f'all at sea > {facing} <')
-
-  def validate(self, geom): 
-    if geom['size'] in ['large', 'small']: 
-      return 'strictly medium'
-
 
 '''
 the

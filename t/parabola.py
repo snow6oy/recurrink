@@ -55,24 +55,22 @@ class Test(unittest.TestCase):
         only intersect at their tail ends
     '''
     gnomon = LineString([
-      (0, 0),
-      (0, 8),
-      (8, 8),
-      (8, 7),
-      (1, 7),
-      (1, 0),
+      (2, 6),
       (2, 0),
-      (2, 6)
+      (1, 0),
+      (1, 7),
+      (8, 7),
+      (8, 8),
+      (0, 8),
+      (0, 0)
     ])
     edge = LineString([
-      (5, 6),
-      (5, 0),
-      (6, 0),
       (6, 6),
-      (7, 6),
+      (6, 0),
       (7, 0),
-      (8, 0),
-      (8, 6)
+      (7, 6),
+      (8, 6),
+      (8, 0)
     ])
     polyln = self.p.joinStrings(gnomon, edge)
     if self.VERBOSE: self.writer.plotLine(polyln, self.id())

@@ -1,22 +1,76 @@
-from shapely.geometry import Polygon
-class Rectangle:
+from shapely.geometry import Polygon, LineString
+from cell.meander import Line
+from cell.spiral import Spiral
+
+class Rectangle(Line):
 
   VERBOSE = False
 
   def __init__(self, name):
     self.name = name
 
-  def coords(self, dim, kwargs):
+  def validate(self, geom):
+   if geom['name'] == 'square' and geom['facing'] != 'C': 
+     return 'must face center'
+
+  def draw(self, clen, dim, geom):
+    ''' rectangle interface to meander
+        when called and Linear:True
+        returns a Shapely.LineString
+    '''
+    bounds = self.coords(
+      dim,
+      shape=geom['name'],
+      size=geom['size'],
+      facing=geom['facing']
+    )
+    linestr = LineString()
+
+    if self.name == 'spiral':
+      spiral  = Spiral()
+      linestr = LineString(spiral.make(clen, bounds))
+    else:
+      facing  = geom['facing']
+      guideln = self.guidelines(facing, clen, bounds)
+      points  = self.collectPoints(guideln)
+      linestr = self.makeStripes(points)
+    return linestr
+
+  def paint(self, dim, kwargs):
+    ''' rectangle in Surface mode
+        returns a Shapely.polygon
+    '''
+    rectgl = None
+    coords = self.coords(
+      dim,
+      shape=kwargs['name'],
+      size=kwargs['size'],
+      facing=kwargs['facing']
+    )
+    if len(coords) > 4:
+      X, Y, W, H, x, y, w, h = coords
+      rectgl = Polygon(
+        ((X, Y), (X, H), (W, H), (W, Y)), 
+        holes=[((x, y), (x, h), (w, h), (w, y))]
+      )
+    elif len(coords) == 4:
+      x, y, w, h = coords
+      rectgl     = Polygon(((x, y), (x, h), (w, h), (w, y)))
+    return rectgl
+
+  def coords(self, dim, shape, size, facing):
     ''' calculate bounding coords for a Shapely polygon
     '''
     X, Y, W, H, a, b, c, d, A, B, C, D = dim
 
-    rectgl = None
-    shape  = kwargs['name']
-    size   = kwargs['size']
-    facing = kwargs['facing']
+    coords = None
     sizes  = {
       'square': {
+        'small': [a, b, c, d],
+       'medium': [X, Y, W, H],
+        'large': [A, B, C, D]
+      },
+      'spiral': {   # just an alias for square
         'small': [a, b, c, d],
        'medium': [X, Y, W, H],
         'large': [A, B, C, D]
@@ -28,7 +82,7 @@ class Rectangle:
           'E': [X, b, W, d],
           'W': [X, b, W, d]
         },
-        'small': {  # TODO same as small square so deprecate in the interface
+        'small': {  # same as small square. could deprecate in the interface
           'N': [a, b, c, d],
           'S': [a, b, c, d],
           'E': [a, b, c, d],
@@ -51,45 +105,23 @@ class Rectangle:
       }
     }
     if shape == 'sqring':
-      X, Y, W, H = sizes['square']['medium']
-      x, y, w, h = sizes['square']['small']
-      rectgl = Polygon(
-        ((X, Y), (X, H), (W, H), (W, Y)), 
-        holes=[((x, y), (x, h), (w, h), (w, y))]
-      )
+      coords = sizes['square']['medium'] + sizes['square']['small']
     elif shape in sizes and size in sizes[shape]:
-      if shape == 'square':
-        x, y, w, h = sizes[shape][size]
-        rectgl = Polygon(((x, y), (x, h), (w, h), (w, y)))
+      if shape == 'square' or shape == 'spiral':
+        coords = sizes[shape][size]
       elif facing in sizes[shape][size]:
-        x, y, w, h = sizes[shape][size][facing]
-        rectgl = Polygon(((x, y), (x, h), (w, h), (w, y)))
+        coords = sizes[shape][size][facing]
       else:
         raise NotImplementedError(f'{shape=} {size=} {facing=}')
     else: 
       raise NotImplementedError(f'{shape=} {size=}')
     if self.VERBOSE: print(f'{shape=} {size=} {facing=} {x} {y} {w} {h}')
-    return rectgl
-    """
-          'south': [a, Y, c, H],
-          'north': [a, Y, c, H],
-           'east': [X, b, W, d],
-           'west': [X, b, W, d],
-          'north': [a, b, c, d], 
-          'south': [a, b, c, d],
-           'east': [a, b, c, d],
-           'west': [a, b, c, d],
-         'north': [a, B, c, D],
-         'south': [a, B, c, D],
-          'west': [A, b, C, d],
-          'east': [A, b, C, d],
-          'south': [a, Y, W, b],
-          'north': [X, d, c, H],
-           'east': [W, b, c, H],
-           'west': [X, Y, a, d],
-    """
+    #return rectgl
+    return coords
 
-  def guide(self, direction):
+
+  # TODO remove once Block.meander refactored
+  def __guide(self, direction):
     ''' expand facing to a pair of guidelines for meander
     '''
     control = {
@@ -99,21 +131,9 @@ class Rectangle:
       'E': ('guided', 'SL', 'SR'),
       'W': ('guided', 'NL', 'NR')
     }
-    """
-        'all': ('spiral', None), 
-      'north': ('guided', 'EB', 'ET'),
-      'south': ('guided', 'EB', 'ET'),
-       'east': ('guided', 'SL', 'SR'),
-       'west': ('guided', 'NL', 'NR'),
-    """
     if direction in control: return control[direction]
     else: # abandon if there are no guidelines defined
       raise KeyError(f'all at sea > {direction=} {self.name=} not found')
-
-  def validate(self, geom):
-   if geom['name'] == 'square' and geom['facing'] != 'C': 
-     return 'must face center'
-
 
 '''
 the
