@@ -31,6 +31,7 @@ class Line:
     FG         = LineString([(w, h), (w, y)]) # South Right
     FE         = LineString([(w, h), (x, h)]) # South Right
     guideline  = {
+       'C': (EH, FG),      # alias for safety 
        'N': (EH, FG),
        'S': (HE, GF),
        'E': (EF, HG),
@@ -41,6 +42,57 @@ class Line:
       'NE': (GH, FH, EH),
     }
     return MultiLineString(guideline[facing])
+
+  # TODO avoid the cell length has to be even bug
+  def guidelnTriangle(self, points, geom, shape='rectangle'):
+    '''  E - B - F
+         |       |
+         A       C
+         |       |
+         H - D - G 
+    '''
+    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
+    if clen % 2: # odd length cannot meander
+      raise ValueError(f'{clen} is odd')
+    facing = geom['facing']
+    bounds = [sw[0], sw[1], ne[0], ne[1]]
+
+
+    ED   = LineString([nw, s])
+    FD   = LineString([ne, s])
+    HB   = LineString([sw, n])
+    GB   = LineString([se, n])
+    EC   = LineString([nw, e])
+    HC   = LineString([sw, e])
+    AF   = LineString([w, ne])
+    AG   = LineString([w, se])
+    BC   = LineString([n,  e])
+    AD   = LineString([w,  s])
+
+    AB   = LineString([w,  n])
+    CB   = LineString([e,  n])
+    CD   = LineString([e,  s])
+    DC   = LineString([s,  e])
+    mls  = {
+      'triangle': {
+        'N': [HB, GB],
+        'S': [ED, FD],
+        'E': [EC, HC],
+        'W': [AF, AG]
+      },
+      'diamond': {
+        'N': [AB, CB],
+        'E': [BC, DC],
+        'S': [AD, CD],
+        'W': [AB, AD],
+        'C': [BC, AD]
+      }
+    }
+    if self.VERBOSE: print(f'{facing=} {mls[facing]}')
+    if shape in mls and facing in mls[shape]: 
+      return MultiLineString(mls[shape][facing])
+    else: 
+      raise IndexError(f'{shape} {facing} is unknown')
 
   def collectPoints(self, guidelines):
     ''' collect the points intersecting the shape

@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
     points  = self.layer.points(0, 0, 1, self.clen)
     geom    = self.cell['d']['geom']
     if facing: geom['facing'] = facing # override Easterly default
-    self.pp.pprint(geom)
+    #self.pp.pprint(geom)
 
     polyln  = self.triangl.draw(points, geom)
     if self.VERBOSE: self.writer.plotLine(polyln, self.id())

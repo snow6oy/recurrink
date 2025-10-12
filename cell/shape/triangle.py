@@ -26,7 +26,8 @@ class Triangle(Line):
     else: raise IndexError(f"Cannot face triangle {facing}")
 
   def draw(self, points, geom):
-    guideln = self.guideline(points, geom)
+    #guideln = self.guideline(points, geom)
+    guideln = self.guidelnTriangle(points, geom, shape='triangle')
     points  = self.collectPoints(guideln)
     if len(points[0]) == len(points[1]):
        polyln = self.makeStripes(points)
@@ -64,11 +65,14 @@ class Triangle(Line):
     sw_e = LineString([sw, e])
     w_ne = LineString([w, ne])
     w_se = LineString([w, se])
+    n_e  = LineString([n,  e])
+    w_s  = LineString([w,  s])
     mls  = {
       'N': [sw_n, se_n],
       'S': [nw_s, ne_s],
       'E': [nw_e, sw_e],
-      'W': [w_ne, w_se]
+      'W': [w_ne, w_se],
+      'C': [n_e,   w_s]
     }
     if self.VERBOSE: print(f'{facing=} {mls[facing]}')
     if facing in mls: return MultiLineString(mls[facing])
