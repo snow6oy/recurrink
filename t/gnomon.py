@@ -21,15 +21,15 @@ class Test(unittest.TestCase):
     self.clen   = 18
     self.cells  = minkscape.cells
 
-  #def test_a(self, f1=None, f2=None):
-  def test_a(self, facing=None, size=None):
+  def test_a(self, f1=None, f2=None):
+  #def test_a(self, facing=None, size=None):
     ''' convert cell dimension for pos n to coords for Shapely.Polygon
     '''
     if f1 is None: f1 = {'facing': 'SW', 'size':'medium' }
     if f2 is None: f2 = {'facing': 'NE', 'size':'small' }
     dim = (0, 6, 6, 12, 2.0, 8.0, 4.0, 10.0, 8.0, 8.0, 10.0, 10.0)
-    c1  = self.g.coords(dim, f1)
-    c2  = self.g.coords(dim, f2)
+    c1  = self.g.coords(dim, f1['facing'], f1['size'])
+    c2  = self.g.coords(dim, f2['facing'], f2['size'])
     mp  = MultiPolygon([Polygon(c1), Polygon(c2)])
     if self.VERBOSE: self.writer.plot(mp, self.id())
 
