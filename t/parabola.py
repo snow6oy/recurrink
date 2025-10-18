@@ -20,16 +20,15 @@ class Test(unittest.TestCase):
     self.clen    = 12
 
   def test_a(self):
-    ''' start simple
+    ''' start simple who am i ?
     '''
     self.assertEqual(self.p.name, 'parabola')
 
   def test_b(self, facing='S'):
     ''' south parabola contructs ok with cell length 15
     '''
-    kwargs = {'facing': facing, 'size': 'medium'}
     dim    = (0, 0, 14, 14, 5, 5, 10, 10)
-    coords = self.p.coords(dim, kwargs)
+    coords = self.p.coords(dim, facing)
     if self.VERBOSE: self.writer.plot(Polygon(coords), self.id())
 
   def test_c(self): self.test_b(facing='W')
@@ -37,12 +36,10 @@ class Test(unittest.TestCase):
   def test_e(self): self.test_b(facing='E')
 
   def test_f(self, facing='W', ccw=False):
-    ''' west meander CCW = False
+    ''' default meander is west meander
     '''
     dim    = self.layer.dimension(0, 0, self.clen)
-    #self.pp.pprint(dim)
-
-    polyln = self.p.draw(facing, self.clen, dim)
+    polyln = self.p.draw(self.clen, dim, {'facing': facing})
     if self.VERBOSE: self.writer.plotLine(polyln, self.id())
 
   def test_g(self): self.test_f(facing='N')

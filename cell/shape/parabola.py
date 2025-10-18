@@ -16,19 +16,24 @@ class Parabola(Line):
 
   def validate(self, geom): pass
 
-  def coords(self, dim, geom):
+  def paint(self, dim, geom):
+    facing = geom['facing']
+    print(facing)
+    coords = self.coords(dim, facing)
+    return Polygon(coords)
+
+  def coords(self, dim, facing):
     ''' define the input so Shapely Polygon can create a U shape
     '''
     X, Y, W, H, a, b, c, d, *A = dim
 
-    facing    = geom['facing']
     direction = {
           'N': [(X,Y),(X,H),(W,H),(W,Y),(c,Y),(c,d),(a,d),(a,Y)],
           'S': [(X,Y),(X,H),(a,H),(a,b),(c,b),(c,H),(W,H),(W,Y)],
           'W': [(X,Y),(X,H),(W,H),(W,d),(a,d),(a,b),(W,b),(W,Y)],
           'E': [(X,Y),(X,b),(c,b),(c,d),(X,d),(X,H),(W,H),(W,Y)]
     }
-    return Polygon(direction[facing])
+    return direction[facing]
 
   def draw(self, clen, dim, geom, padding=False):
     ''' orchestrate the composite algorithm of meander
