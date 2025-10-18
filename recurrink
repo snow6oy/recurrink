@@ -240,16 +240,15 @@ elif (args.keyword == 'explode'):
   if args.model == 'minkscape': # default model
     positions = config.positions
     penam     = config.penam[2]  # pen names for htmstart pal
-    block     = Make(args.size, pen_names=penam)
+    block     = Make(args.size, linear=args.line, pen_names=penam)
   else:                         # TODO source positions from model
     bd        = BlockData(args.model)
     positions = bd.readPositions(args.model)
     penam     = bd.penNames(ver)
-    block     = Make(args.size, pen_names=penam)
+    block     = Make(args.size, linear=args.line, pen_names=penam)
 
   block.walk(positions, celldata)
-  if args.line: 
-    block.meander(padding=False)
+  #if args.line: block.meander(padding=False)
   block.hydrateGrid()
   svglin.explode(block)
   svglin.render(args.model, line=args.line)
