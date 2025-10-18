@@ -26,7 +26,7 @@ class Test(unittest.TestCase):
     self.cell['d']['geom']['facing'] = 'C'
 
     points  = self.layer.points(0, 0, 0, self.clen)
-    polygn  = self.diamond.coords(points, self.cell['d']['geom'])
+    polygn  = self.diamond.paint(points, self.cell['d']['geom'])
 
     self.assertEqual(self.diamond.name, 'diamond')
     if self.VERBOSE: self.writer.plot(polygn, self.id()) 
@@ -37,7 +37,7 @@ class Test(unittest.TestCase):
     points  = self.layer.points(0, 0, 1, self.clen)
     geom    = self.cell['a']['geom']
     if facing: geom['facing'] = facing # override Easterly default
-    self.pp.pprint(geom)
+    #self.pp.pprint(geom)
 
     polyln  = self.diamond.draw(points, geom)
     if self.VERBOSE: self.writer.plotLine(polyln, self.id())

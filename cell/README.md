@@ -47,6 +47,7 @@ TODO
 11. Layer should make either polygn OR polyln
 12. Then Block.meander should stop processing guide
 1.  remove Rectangle(edge) if unused
+1.  fix large circles t.circle.Test.test_e
 
 DONE  
 1. add spiral as Rectangle(name) test with recurrink

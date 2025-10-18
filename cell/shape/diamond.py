@@ -13,10 +13,18 @@ class Diamond(Line):
 
   def guide(self, facing): return ('border', None)
 
-  def coords(self, points, geom):
-
-    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
+  def paint(self, points, geom):
+    ''' return polygon
+    '''
     facing = geom['facing']
+    coords = self.coords(points, facing)
+    return Polygon(coords)
+
+  def coords(self, points, facing):
+    ''' extract points according to facing
+        return tuples for Shapely
+    '''
+    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
     rings  = {
           'C': (w, n, e, s),
           'W': (w, n, s),
@@ -25,7 +33,7 @@ class Diamond(Line):
           'S': (w, e, s)
     }
     if facing in rings:
-      return Polygon(rings[facing])
+      return rings[facing]
     else:
       raise IndexError(f"Cannot face diamond {facing}")
 

@@ -29,19 +29,19 @@ class Test(unittest.TestCase):
     geom         = self.cell['c']['geom']
     geom['name'] = 'circle'
     geom['size'] = 'large'
-    x, y, stroke_width, clen = 3, 3, 0, 9
-    points = self.layer.points(x, y, stroke_width, clen)
-    polygn = self.circle.coords(points, geom)
+    x, y, stroke_width, clen = 3, 3, 0, self.clen
+    points = self.layer.points(x, y, stroke_width, self.clen)
+    polygn = self.circle.paint(points, geom)
     self.assertEqual('Polygon', polygn.geom_type)
     if self.VERBOSE: self.writer.plot(polygn, self.id())
 
   def test_c(self, size='medium'):
-    ''' concentric circles
+    ''' linear circles
     '''
     points  = self.layer.points(0, 0, 0, self.clen)
     geom    = self.cell['c']['geom']
     if size: geom['size'] = size
-    self.pp.pprint(geom)
+    #self.pp.pprint(geom)
 
     polyln  = self.circle.draw(points, geom)
     if self.VERBOSE: self.writer.plotLine(polyln, self.id())
@@ -54,7 +54,7 @@ class Test(unittest.TestCase):
     '''
     points  = self.layer.points(0, 0, 0, self.clen)
     geom    = self.cell['c']['geom']
-    polyln  = self.circle.drawLine(points, geom)
+    polyln  = self.circle.draw(points, geom)
     '''
     for g in polyln.geoms:
       print(g.geom_type)
