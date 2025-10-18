@@ -11,18 +11,25 @@ class Triangle(Line):
   def __init__(self):
     self.name = 'triangl' # misspelt due to 7char limit when CSV
 
-  def coords(self, points, geom):
-
-    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
+  def paint(self, points, geom):
+    ''' public wrapper of coords
+        returns Shapely object
+    '''
     facing = geom['facing']
+    coords = self.coords(points, facing)
+    return Polygon(coords)
+
+  def coords(self, points, facing):
+    ''' extract tuples from points and facing
+    '''
+    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
     rings = {
       'N': (nw, ne, s),
       'S': (sw, n, se),
       'E': (nw, e, sw),
       'W': (w, ne, se)
     }
-    if facing in rings:
-      return Polygon(rings[facing])
+    if facing in rings: return rings[facing]
     else: raise IndexError(f"Cannot face triangle {facing}")
 
   def draw(self, points, geom):

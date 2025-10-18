@@ -26,7 +26,7 @@ class Test(unittest.TestCase):
     self.assertEqual(self.triangl.name, 'triangl')
     geom   = self.cell['d']['geom']
     points = self.layer.points(0, 0, 1, self.clen)
-    polygn = self.triangl.coords(points, geom)
+    polygn = self.triangl.paint(points, geom)
 
     self.assertEqual(1, points[0])
     if self.VERBOSE: self.writer.plot(polygn, self.id())
