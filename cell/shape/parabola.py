@@ -18,7 +18,6 @@ class Parabola(Line):
 
   def paint(self, dim, geom):
     facing = geom['facing']
-    print(facing)
     coords = self.coords(dim, facing)
     return Polygon(coords)
 

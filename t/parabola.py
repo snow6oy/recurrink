@@ -23,6 +23,9 @@ class Test(unittest.TestCase):
     ''' start simple who am i ?
     '''
     self.assertEqual(self.p.name, 'parabola')
+    dim    = (0, 0, 270, 270, 90, 90, 180, 180)
+    polygn = self.p.paint(dim, {'facing': 'N'})
+    if self.VERBOSE: self.writer.plot(polygn, self.id())
 
   def test_b(self, facing='S'):
     ''' south parabola contructs ok with cell length 15
