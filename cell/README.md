@@ -41,15 +41,15 @@ fg.has_z > True
 
 
 TODO 
-1. Either keep meander.guidelnTriangl as guidelinePoints 
-   OR triangle.guidelines and override meander
-1. Make coords a private method for paint/draw
 11. Layer should make either polygn OR polyln
 12. Then Block.meander should stop processing guide
 1.  remove Rectangle(edge) if unused
 1.  fix large circles t.circle.Test.test_e
 
 DONE  
+1. Either keep meander.guidelnTriangl as guidelinePoints 
+   OR triangle.guidelines and override meander
+1. Make coords a private method for paint/draw
 1. add spiral as Rectangle(name) test with recurrink
 1. Move Rectangular Meander with composites
 9. Move makeDiagonals to cell.shape.Diamond

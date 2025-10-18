@@ -11,7 +11,11 @@ class Diamond(Line):
     if geom['size'] in ['large', 'small']: 
       return 'wrong size'
 
-  def guide(self, facing): return ('border', None)
+  def draw(self, points, geom):
+    guideln = self.guidelines(points, geom)
+    points  = self.collectPoints(guideln)
+    linstr  = self.makeStripes(points)
+    return linstr
 
   def paint(self, points, geom):
     ''' return polygon
@@ -37,60 +41,45 @@ class Diamond(Line):
     else:
       raise IndexError(f"Cannot face diamond {facing}")
 
-  def draw(self, points, geom):
-    #guideln = self.guidelines(points, geom)
-    guideln = self.guidelnTriangle(points, geom, shape='diamond')
-    points  = self.collectPoints(guideln)
-    linstr  = self.makeStripes(points)
-    return linstr
 
-  '''
+  # TODO avoid the cell length has to be even bug
   def guidelines(self, points, geom):
-    t = Triangle()
-    return t.guideline(points, geom)
+    '''  e - B - f
+         |       |
+         A       C
+         |       |
+         h - D - g 
 
-  def zz():
-       B
-     /   \
-    A     C
-     \   /
-       D
-
-    meander cannot handle odd cell length
-    brute force to even length by reduction
+         diamonds only know ABCD
+    '''
     swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
+    if clen % 2: # odd length cannot meander
+      raise ValueError(f'{clen} is odd')
     facing = geom['facing']
+    bounds = [sw[0], sw[1], ne[0], ne[1]]
 
-    oddlen  = False
-    if clen % 2:
-      clen  -= 1
-      oddlen = True
-    x0 = y0 = 0
-    x1 = y1 = clen / 2
-    x2 = y2 = clen
-    if oddlen:
-      self.shape = Polygon([(x0, y1), (x1, y0), (x2, y1), (x1, y2)])
-      print(f'{clen=} {facing=} {x0=} {x1=} {x2=} {y0=} {y1=} {y2=}')
-    AB      = LineString([(x0,y1), (x1,y2)])
-    AD      = LineString([(x0,y1), (x1,y0)])
-    BC      = LineString([(x1,y2), (x2,y1)])
-    CB      = LineString([(x2,y1), (x1,y2)])
-    CD      = LineString([(x2,y1), (x1,y0)])
-    DC      = LineString([(x1,y0), (x2,y1)])
-    mls     = {
+    AB   = LineString([w,  n])
+    AD   = LineString([w,  s])
+    BC   = LineString([n,  e])
+    CB   = LineString([e,  n])
+    CD   = LineString([e,  s])
+    DC   = LineString([s,  e])
+
+    mls  = {
       'N': [AB, CB],
       'E': [BC, DC],
       'S': [AD, CD],
       'W': [AB, AD],
       'C': [BC, AD]
     }
+    if self.VERBOSE: print(f'{facing=} {mls[facing]}')
     if facing in mls: 
       return MultiLineString(mls[facing])
     else: 
-      raise IndexError(f'{facing} is unknown')
-  '''
+      raise IndexError(f'{facing=} is unknown')
+
+  def __guide(self, facing): return ('border', None)
 '''
 the
 end
 '''
-

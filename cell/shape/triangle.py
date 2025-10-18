@@ -33,8 +33,7 @@ class Triangle(Line):
     else: raise IndexError(f"Cannot face triangle {facing}")
 
   def draw(self, points, geom):
-    #guideln = self.guideline(points, geom)
-    guideln = self.guidelnTriangle(points, geom, shape='triangle')
+    guideln = self.guidelines(points, geom)
     points  = self.collectPoints(guideln)
     if len(points[0]) == len(points[1]):
        polyln = self.makeStripes(points)
@@ -48,43 +47,42 @@ class Triangle(Line):
     if geom['size'] in ['small', 'large']:
       return 'wrong size'
 
-  def guide(self, facing): return ('selfsvc', None)
-
-  # TODO avoid the cell length has to be even bug
-  def guideline(self, points, geom):
-    '''
-    nw- n -ne
-    |       |
-    w       e
-    |       |
-    sw- s -se
+  def guidelines(self, points, geom):
+    '''  E - B - F
+         |       |
+         A       C
+         |       |
+         H - D - G 
     '''
     swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
     if clen % 2: # odd length cannot meander
       raise ValueError(f'{clen} is odd')
     facing = geom['facing']
+    bounds = [sw[0], sw[1], ne[0], ne[1]]
 
-    nw_s = LineString([nw, s])
-    ne_s = LineString([ne, s])
-    sw_n = LineString([sw, n])
-    se_n = LineString([se, n])
-    nw_e = LineString([nw, e])
-    sw_e = LineString([sw, e])
-    w_ne = LineString([w, ne])
-    w_se = LineString([w, se])
-    n_e  = LineString([n,  e])
-    w_s  = LineString([w,  s])
+    ED   = LineString([nw, s])
+    FD   = LineString([ne, s])
+    HB   = LineString([sw, n])
+    GB   = LineString([se, n])
+    EC   = LineString([nw, e])
+    HC   = LineString([sw, e])
+    AF   = LineString([w, ne])
+    AG   = LineString([w, se])
+    BC   = LineString([n,  e])
+    AD   = LineString([w,  s])
     mls  = {
-      'N': [sw_n, se_n],
-      'S': [nw_s, ne_s],
-      'E': [nw_e, sw_e],
-      'W': [w_ne, w_se],
-      'C': [n_e,   w_s]
+      'N': [HB, GB],
+      'S': [ED, FD],
+      'E': [EC, HC],
+      'W': [AF, AG]
     }
     if self.VERBOSE: print(f'{facing=} {mls[facing]}')
-    if facing in mls: return MultiLineString(mls[facing])
-    else: raise IndexError(f'{facing} is unknown')
+    if facing in mls: 
+      return MultiLineString(mls[facing])
+    else: 
+      raise IndexError(f'{facing=} is unknown')
 
+  def __guide(self, facing): return ('selfsvc', None)
 '''
 the
 end

@@ -49,29 +49,16 @@ class Layer:
     shape   = shapes[name]
     if 'stroke_width' in geom: sw  = geom['stroke_width']
     else: sw = 0
+
     if name in ['triangl', 'circle', 'diamond']:
       dim = points = self.points(x, y, sw, self.clen)
       drawn = shape.draw(points, geom)
       self.direction.append(['selfsvc', drawn])
-    elif name in ['gnomon', 'parabol']:
-      dim = self.dimension(x, y, self.clen)
-      drawn = shape.draw(self.clen, dim, geom)
-      self.direction.append(['selfsvc', drawn])
     else:
       dim = self.dimension(x, y, self.clen)
       drawn = shape.draw(self.clen, dim, geom)
-      self.direction.append(['selfsvc', drawn])
-      '''
-      #print(f'  {drawn.geom_type}')
-      #print(f'  {drawn.geom_type}')
-      print(f'  {drawn.geom_type}')
-      dim = self.dimension(x, y, self.clen)
-      self.direction.append(shape.guide(geom['facing']))
-      '''
-    if name in ['line','edge','square','sqring']:
-      polygn = shape.paint(dim, geom)
-    else:
-      polygn = shape.coords(dim,geom)
+    self.direction.append(['selfsvc', drawn])
+    polygn = shape.paint(dim, geom)
     if polygn.geom_type: self.bft.append(polygn)
 
   def polygon(self):
