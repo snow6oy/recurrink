@@ -1,10 +1,13 @@
 import unittest
+import pprint
 from pathlib import Path
 from block import TmpFile, Make, BlockData, Views
 from model import ModelData, SvgLinear
 from cell.minkscape import *
 
 class Test(unittest.TestCase):
+
+  pp = pprint.PrettyPrinter(indent=2)
 
   def setUp(self):
     self.models = {
@@ -22,7 +25,7 @@ class Test(unittest.TestCase):
     # triangles yuck a2397e60976e01cba87a1e9e5467df2d
 
   def test_a(self, model=None, line=False):
-    block = Make(clen=90) # default to clen: 9
+    block = Make(clen=90, linear=line) # default to clen: 9
     svg   = SvgLinear(clen=90)
     view  = Views()
     tf    = TmpFile()
@@ -34,7 +37,7 @@ class Test(unittest.TestCase):
       if not clone.is_file():
         print(f'cloning {digest}')
         _, _, _, ver = view.readMeta(digest=digest)
-        celldata              = view.read(digest=digest)
+        celldata     = view.read(digest=digest)
         tf.setVersion(ver)
         tf.write(model, celldata)
 
@@ -47,12 +50,8 @@ class Test(unittest.TestCase):
       cells = tf.readConf(model)
       block.walk(minkscape.positions, cells)
 
-    if line:
-      block.meander(padding=False)
-      svgfile=f'{model}_line'
-    else:
-      svgfile = f'{model}_box'
-    block.hydrateGrid(line=line)
+    svgfile = f'{model}_line' if line else f'{model}_box'
+    block.hydrateGrid()
     svg.build(block)
     svg.render(svgfile, line=line)
 

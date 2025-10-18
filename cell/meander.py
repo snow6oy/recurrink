@@ -15,7 +15,7 @@ class Line:
 
     diamonds triangles and circles override this method
     '''
-    x, y, w, h = bounds  # X,Y because Shapely Transform not done yet
+    x, y, w, h = bounds  # X,Y because Shapely Transform happens later
     if clen % 2:    # Consider this to be padding ?
       w -= 1        # Meander has issues with oddness
       h -= 1

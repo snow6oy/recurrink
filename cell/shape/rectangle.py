@@ -18,35 +18,29 @@ class Rectangle(Line):
         when called and Linear:True
         returns a Shapely.LineString
     '''
-    bounds = self.coords(
-      dim,
-      shape=geom['name'],
-      size=geom['size'],
-      facing=geom['facing']
-    )
-    linestr = LineString()
+    bounds = self.coords(dim, size=geom['size'], facing=geom['facing'])
+    linstr = LineString()
 
     if self.name == 'spiral':
       spiral  = Spiral()
-      linestr = LineString(spiral.make(clen, bounds))
+      linstr = LineString(spiral.make(clen, bounds))
+    elif self.name == 'sqring':
+      # TODO split bounds and orchestrate calls to meander
+      # see parabola for inspiration
+      linstr = LineString()
     else:
       facing  = geom['facing']
       guideln = self.guidelines(facing, clen, bounds)
       points  = self.collectPoints(guideln)
-      linestr = self.makeStripes(points)
-    return linestr
+      linstr = self.makeStripes(points)
+    return linstr
 
   def paint(self, dim, kwargs):
     ''' rectangle in Surface mode
         returns a Shapely.polygon
     '''
     rectgl = None
-    coords = self.coords(
-      dim,
-      shape=kwargs['name'],
-      size=kwargs['size'],
-      facing=kwargs['facing']
-    )
+    coords = self.coords(dim, size=kwargs['size'], facing=kwargs['facing'])
     if len(coords) > 4:
       X, Y, W, H, x, y, w, h = coords
       rectgl = Polygon(
@@ -58,7 +52,7 @@ class Rectangle(Line):
       rectgl     = Polygon(((x, y), (x, h), (w, h), (w, y)))
     return rectgl
 
-  def coords(self, dim, shape, size, facing):
+  def coords(self, dim, size, facing):
     ''' calculate bounding coords for a Shapely polygon
     '''
     X, Y, W, H, a, b, c, d, A, B, C, D = dim
@@ -104,18 +98,18 @@ class Rectangle(Line):
         }
       }
     }
-    if shape == 'sqring':
+    if self.name == 'sqring':
       coords = sizes['square']['medium'] + sizes['square']['small']
-    elif shape in sizes and size in sizes[shape]:
-      if shape == 'square' or shape == 'spiral':
-        coords = sizes[shape][size]
-      elif facing in sizes[shape][size]:
-        coords = sizes[shape][size][facing]
+    elif self.name in sizes and size in sizes[self.name]:
+      if self.name == 'square' or self.name == 'spiral':
+        coords = sizes[self.name][size]
+      elif facing in sizes[self.name][size]:
+        coords = sizes[self.name][size][facing]
       else:
-        raise NotImplementedError(f'{shape=} {size=} {facing=}')
+        raise NotImplementedError(f'{self.name=} {size=} {facing=}')
     else: 
-      raise NotImplementedError(f'{shape=} {size=}')
-    if self.VERBOSE: print(f'{shape=} {size=} {facing=} {x} {y} {w} {h}')
+      raise NotImplementedError(f'{self.name=} {size=}')
+    if self.VERBOSE: print(f'{self.name=} {size=} {facing=} {x} {y} {w} {h}')
     #return rectgl
     return coords
 

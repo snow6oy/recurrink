@@ -97,22 +97,24 @@ class SvgLinear:
         '''
         g = ET.SubElement(self.root, f"{self.ns}g", id=layer[style]['penam'])
         g.set('style', style)  # 'fill:#FFF;stroke:#000;stroke-width:1'
-        #print(style)
         for shape in layer[style]['geom']:
           ''' SVG polygon
+          print(shape.geom_type)
           '''
           uniqid += 1
           p  = ET.SubElement(g, f"{self.ns}{elem}", id=str(uniqid))
           points = str()
-          if not line and len(shape.interiors): # Square Ring has a hole
+          #if not line and len(shape.interiors): # Square Ring has a hole
+          # Square Ring has a hole
+          if shape.geom_type == 'Polygon' and len(shape.interiors): 
             outer  = list(shape.exterior.coords)
             inner  = list(shape.interiors)
             coords = outer 
             [inner_p.append(list(lring.coords)) for lring in inner]
-          elif line:
-            coords = list(shape.coords)
-          else:
+          elif shape.geom_type == 'Polygon':
             coords = list(shape.boundary.coords)
+          else: # should be LineString
+            coords = list(shape.coords)
           for c in coords:
             coord = ','.join(map(str, c))
             points += f"{coord} "

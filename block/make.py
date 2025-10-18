@@ -1,5 +1,5 @@
 import pprint
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import Polygon, LineString, MultiPolygon
 from cell import Layer
 from .meander import Meander
 from .styles import Styles
@@ -11,10 +11,11 @@ class Make:
   CLEN    = 9
   pp      = pprint.PrettyPrinter(indent=2)
 
-  def __init__(self, clen=9, pen_names=dict()): 
+  def __init__(self, clen=9, linear=False, pen_names=dict()): 
     self.cells  = dict()
     self.style  = Styles(pen_names)
-    self.guide  = dict()
+    self.linear = linear
+    #self.guide  = dict()
     self.grid   = [{} for _ in range(3)] # unique style for each layer
     if clen: self.CLEN = clen
 
@@ -24,9 +25,10 @@ class Make:
     self.setBlocksize(positions)
     for pos in positions:
       label   = positions[pos][0]  
-      cell    = Layer(clen=self.CLEN, pos=pos)
+      cell    = Layer(clen=self.CLEN, pos=pos, linear=self.linear)
       cell.background(cells[label])
       ''' ['geom']) if cells[label]['color']['background']: 
+      print(f"{label} {cells[label]['color']['background']}")
       '''
       self.style.addBackground(pos, color=cells[label]['color'])
       for label in positions[pos]:
@@ -39,85 +41,7 @@ class Make:
         else:
           cell.foreground(cells[label]['geom'])
           self.style.add(pos, color=cells[label]['color'], stroke=strokedata)
-      self.cells[pos] = cell.polygon()
-      self.guide[pos] = cell.direction
-
-  def meanderSpiral(self, cell, pos):
-    ''' return an empty for square ring 
-        otherwise a spiral linestr 
-    '''
-    linestr = LineString()
-    m = Meander(cell)
-    linestr = LineString(m.spiral(self.CLEN, pos))
-    return linestr
-
-  def meanderComposite(self, meta, pos, padding):
-    ''' orchestrate the composite algorithm of meander
-    '''
-    f1, f2 = meta # facing for the composites
-    cell   = Layer(clen=self.CLEN, pos=pos)
-    #cell.foreground(shape='gnomon', facing=f1, size='medium')
-    #cell.foreground(shape='edge',   facing=f2, size='small')
-    cell.foreground(geom={'name':'gnomon', 'facing':f1, 'size':'medium'})
-    cell.foreground(geom={'name':'edge', 'facing':f2, 'size':'small'})
-
-    clockwise = cell.setClock(padding=padding)
-    composite = cell.polygon()
-    gd        = cell.direction[0][1:]  # ignore algo
-    gd        = gd if clockwise else list(reversed(gd))
-    ed        = cell.direction[1][1:]
-    ed        = ed if clockwise else list(reversed(ed))
-    gnomon    = Meander(composite.geoms[0])
-    if padding: gnomon.pad()
-    g_guide   = gnomon.guidelines(gd)
-    if self.VERBOSE: print(f'{f1=} {gd=} {f2=} {ed=}')
-    g_points  = gnomon.collectPoints(g_guide)
-
-    edge      = Meander(composite.geoms[1])
-    if padding: edge.pad()
-    e_guide   = edge.guidelines(ed)
-    e_points  = edge.collectPoints(e_guide)
-    return edge.joinStripes(g_points, e_points)
-
-  def meanderGuided(self, cell, guide, padding):
-    ''' orchestrate the guided algorithm of meander
-    '''
-    m      = Meander(cell)
-    padme  = m.pad() if padding else m.shape
-    gline  = m.guidelines(guide, shape=padme)  # ('EB', 'ET'))
-    points = m.collectPoints(gline, shape=padme)
-    return LineString(m.makeStripes(points))
-
-  def meander(self, padding=True):
-    ''' transform polygons into lines
-    '''
-    for z in range(3): # bg 0 fg 1 top 2
-      for pos in self.cells:
- 
-        polygn = self.polygon(pos, z)
-        if polygn is None: continue
-
-        algo, *guide  = self.guide[pos][z]
-        if self.VERBOSE: print(f"{pos=} {z=} {algo=} {guide=}")
-
-        if algo == 'spiral':
-          linestr = self.meanderSpiral(polygn, pos)
-        elif algo == 'composite':
-          linestr = self.meanderComposite(guide, pos, padding=padding)
-        elif algo == 'guided':
-          linestr = self.meanderGuided(polygn, guide, padding=padding)
-        elif algo == 'border':
-          linestr = polygn.exterior
-        elif algo == 'selfsvc':
-          linestr = guide[0]
-        elif algo is None: 
-          linestr = LineString() # cannot meander an empty background
-        else:
-          raise Warning(f"{pos} {z} {algo} not known to Meander")
-        if linestr.geom_type in ['LineString', 'LinearRing']:
-          self.guide[pos][z] = linestr # replace guide with Shapely.LineString
-        '''
-        '''
+      self.cells[pos] = cell.bft
 
   def setBlocksize(self, positions):
     ''' extract blocksize and set for downstream functions
@@ -126,11 +50,9 @@ class Make:
     y = [p[1] for p in list(positions.keys())]
     self.BLOCKSZ = (max(x) + 1, max(y) + 1)
 
-  def polygon(self, pos, z): 
+  def polygon(self, c, pos, z): 
     ''' lookup cell in layer
     '''
-    c = self.cells[pos]
-
     if z == 2 and len(c.geoms) > 2: polygn = c.geoms[2]
     elif z == 2: polygn = None
     elif z == 1 and len(c.geoms) > 1:
@@ -143,18 +65,17 @@ class Make:
     elif z == 0: polygn = c.geoms[z]     # bg
     return polygn
 
-  def hydrateGrid(self, line=False):
+  def hydrateGrid(self):
     ''' convert one block into a list of polygons
         each list has a unique style for each layer
         0 s1 [p1 p2], s2 [p1]
     '''
     for z in range(3): 
       for pos in self.cells:
-        #print(z, pos)
-        polygn = self.polygon(pos, z)
-        if not polygn: continue
+        if z == len(self.cells[pos]): continue
+
         fill = self.style.fill[pos][z]
-        if line:
+        if self.linear:
           f = 'fill:none;'
             # TODO what if there is a stroke ?
           s = f'stroke:{fill};'    
@@ -165,11 +86,16 @@ class Make:
           w = f'stroke-width:0.7;' 
 
           style  = f + s + d + o + w
-          geom   = self.guide[pos][z]    # fetch linestring
-          #print(pos, z, geom.geom_type)
+          geom   = self.cells[pos][z] # LineString
+
         else:
           style  = f'fill:{fill};fill-opacity:0.5'
-          geom   = polygn                # assign polygon
+          multip = MultiPolygon(self.cells[pos])
+          geom   = self.polygon(multip, pos, z) # assign MultiPolygon
+
+        if self.linear and geom.geom_type != 'LineString':
+          raise TypeError(f'{geom.geom_type} not expected')
+
         if style in self.grid[z]:
           self.grid[z][style]['geom'].append(geom)
         elif self.style.fill[pos][z]:
@@ -181,7 +107,6 @@ class Make:
         
     #self.pp.pprint(self.grid)
     return None
- 
 '''
 the
 end

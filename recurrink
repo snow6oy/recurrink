@@ -250,7 +250,7 @@ elif (args.keyword == 'explode'):
   block.walk(positions, celldata)
   if args.line: 
     block.meander(padding=False)
-  block.hydrateGrid(line=args.line)
+  block.hydrateGrid()
   svglin.explode(block)
   svglin.render(args.model, line=args.line)
 
@@ -324,7 +324,7 @@ elif (args.keyword == 'build'):
     svgpal.render(fn, palette)
     print(f"palettes/{fn}.html was written")
   elif args.model and args.size:
-    block     = Make(args.size)
+    block     = Make(args.size, linear=args.line)
     svglin    = SvgLinear(args.size)
 
     if args.model == 'minkscape': # default model
@@ -339,12 +339,12 @@ elif (args.keyword == 'build'):
     block.walk(positions, celldata)
 
     if args.line:
-      block.meander(padding=False)
+      #block.meander(padding=False)
       svgfile=f'{args.model}_line'
     else:
       svgfile=f'{args.model}_box'
 
-    block.hydrateGrid(line=args.line)
+    block.hydrateGrid()
     svglin.build(block)
     svglin.render(svgfile, line=args.line)
     print(f'tmp/{svgfile}.svg was built')

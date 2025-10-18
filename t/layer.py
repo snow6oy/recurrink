@@ -96,6 +96,18 @@ class Test(unittest.TestCase):
     self.assertEqual((  0,  9), nw)
     self.assertEqual((  0,  0), sw)
     self.assertEqual((4.5,4.5), mid)
+
+  def test_g(self, x=0):
+    ''' background alternates direction in Linear mode
+    '''
+    cell = Layer(pos=tuple([x, 0]), linear=True)
+    cell.background(minkscape.cells['a'])
+
+    linstr = cell.bft[0]
+    self.assertEqual('LineString', linstr.geom_type)
+    if self.VERBOSE: self.writer.plotLine(linstr, self.id())
+
+  def test_h(self): self.test_g(x=1)
   
   
 

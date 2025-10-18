@@ -14,7 +14,7 @@ A Cell is always a MultiPolygon and can contain up to three Polygons.
 
 `background: null`  in YAML will cause it to be ignored
 
-### Design
+## Design
 
 - raise warning when background is present and top:True
 - CLEN + POS = Shapely.bounds. Need this for Sesanta e.g. cell.bounds = (0,0,5,12)
@@ -23,7 +23,7 @@ A Cell is always a MultiPolygon and can contain up to three Polygons.
 - Extend facing so small shapes can be placed in any of 9 cubes 
   `N E S W NE SW NW SE C`
 
-## Refactor Layer
+### Refactor top as Shapely z
 
 > as a code maintainer i want a consistent way to navigate a Cell
 
@@ -36,15 +36,16 @@ bg.has_z > False
 fg.has_z > True
 ```
 
+### Add all shapes to Linear
 
 > as a plotter i want diamonds and circles to be linear
-
 
 TODO 
 11. Layer should make either polygn OR polyln
 12. Then Block.meander should stop processing guide
 1.  remove Rectangle(edge) if unused
 1.  fix large circles t.circle.Test.test_e
+1.  Square Rings 
 
 DONE  
 1. Either keep meander.guidelnTriangl as guidelinePoints 
