@@ -2,11 +2,13 @@
 
 The Cell module uses Shapely to implement the geometrical properties of a rink.
 
-A Cell is always a MultiPolygon and can contain up to three Polygons.
+In Paint mode a Cell is a MultiPolygon that contains up to three Polygons.
 
 1. Background
 1. Foreground
 1. Top (optional)
+
+A cell is a LineString when in Draw mode.
 
 ## Runbook
 
@@ -40,40 +42,21 @@ fg.has_z > True
 
 > as a plotter i want diamonds and circles to be linear
 
-TODO 
-11. Layer should make either polygn OR polyln
-12. Then Block.meander should stop processing guide
-1.  remove Rectangle(edge) if unused
 1.  fix large circles t.circle.Test.test_e
 1.  Square Rings 
+1.  remove Rectangle(edge) if unused
 
-DONE  
-1. Either keep meander.guidelnTriangl as guidelinePoints 
-   OR triangle.guidelines and override meander
-1. Make coords a private method for paint/draw
-1. add spiral as Rectangle(name) test with recurrink
-1. Move Rectangular Meander with composites
-9. Move makeDiagonals to cell.shape.Diamond
-10. Add Circle
+
+## Release notes
+
+### 2025-10-19
+
+1. Layer makes either polygn OR polyln
+1. Triangle and Diamond guidelines override meander
+1. Coords is a private method for paint/draw
+1. Added spiral as Rectangle(name) test with recurrink
+1. Added Circle to meander
 1. Temporary scaffolding in Layer for Triangle
-4. Draw a triangle using recurrink
-1. Inherit Shape from Triangle
-6. Move/copy Meander to cell as Shape
-5. use inheritance to override base Meander?
-6. when meander is evoked do not create a Polygon
-
-DONE WITH IMPLICATIONS
-- Shape.guideline will need to substitute polygon.bounds with clen
-- Gnomon surface test will need another solution
-
-WONT DO.
-- Temporary scaffolding in Make for Triangle
-- Fix bug with half.sized triangles North and South
-
-
-Geometry offsets in points + dimension make positions in Blocks
-Shapely.transform positions blocks in a model
-
-_ does top work when LINEAR
-
-
+4. Drew a triangle using meander
+6. Moved Meander to cell
+1. Fixed bug with half.sized triangles North and South

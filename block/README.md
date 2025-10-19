@@ -79,11 +79,6 @@ To restore GPL files from DB for pals 8..11
 python -m scripts.mkgplfile
 ```
 
-### Empty background
-> as a rink designer i want the plotter to ignore the background layer
-
-In the YAML set Background: ~
-
 ### Palette conversion
 > as a plotter i want convert a rinks to use a new pen palette
 
@@ -98,7 +93,7 @@ This will create a TXT file for palswap.
 Build a rink with `./recurrink build -m MODEL` to create `tmp/MODEL.svg`  
 We will use this for comparison later.
 
-Then run 
+Then run palswap with the new palette
 `python -mscripts.palswap build -d RINKID -p VER`  
 This will find-nearest colour and build.  
 `tmp/MODEL_PALSWAP.svg`  
