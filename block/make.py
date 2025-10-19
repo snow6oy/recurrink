@@ -1,7 +1,6 @@
 import pprint
 from shapely.geometry import Polygon, LineString, MultiPolygon
 from cell import Layer
-from .meander import Meander
 from .styles import Styles
 
 class Make:

@@ -20,6 +20,8 @@ from cell.minkscape import *
 ```
 access data as minkscape.cells and minkscape.positions
 
+> as a designer i want to experiment by plotting a test block 
+
 ## Design
 things to do
 
@@ -28,6 +30,13 @@ things to do
 - move sesanta to model/sesanta and refactor to Block/Cell/Model
 - support Linear.grid data model for custom SVG work
 - experiment with SVG points: small polygons/circles or short polylines ?
+
+### Write SVG as Block without Matplot
+_ Review sizes. Odds are bad, 36 is missing and smaller than 18, e.g. 6
+_ change argparse so build defaults to 90
+_ build should stop using matplot lib because
+  sizes, stroke widths, scale, palettes
+_ split SvgLinear so that SvgPaint and SvgDraw inherit from Svg
 
 ### Publish and Build
 + reith broke because it uses old recurrink

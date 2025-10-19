@@ -40,58 +40,6 @@ class SvgWriter(Svg):
      )
      plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
 
-class zz:
-
-  VERBOSE    = False
-  ADD_POINTS = False
-
-  def __draw(self, b1, svgfile):
-    ''' plot a shapely box
-    '''
-    fig, ax = plt.subplots() 
-    ax.set_aspect('equal')    # make x and y axis the same and set to CLEN
-    plt.axis([0, (b1.BLOCKSZ[0] * b1.CLEN), 0, (b1.BLOCKSZ[1] * b1.CLEN)])
-
-    for z in range(3): # bg 0 fg 1 top 2
-      for pos in b1.cells:
-
-        polygn = b1.polygon(pos, z)
-        if polygn is None: continue
-        if self.VERBOSE:
-          print(f"{z} {pos} {polygn.geom_type} {b1.style.fill[pos]}")
-        
-        shapely.plotting.plot_polygon(
-          polygn, ax=ax, add_points=self.ADD_POINTS,
-          facecolor=b1.style.fill[pos][z],
-          edgecolor=b1.style.stroke[pos][z], 
-          linewidth=b1.style.stroke_width[pos][z], alpha=.5
-        )
-
-    t_class, t_name = self.fileName(svgfile)
-    plt.title(f"{t_class} {t_name}")
-    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
-
-  def __drawLine(self, block, svgfile):
-    ''' preview a meandered plotfile
-    '''
-    fig, ax = plt.subplots() 
-    width   = block.BLOCKSZ[0] * block.CLEN
-    height  = block.BLOCKSZ[1] * block.CLEN
-    ax.set_aspect('equal') # make x and y axis the same and set to CLEN
-    plt.axis([0, width, 0, height])
-
-    for pos in block.guide:
-      for z, linestr in enumerate(block.guide[pos]):
-        if self.VERBOSE: print(f'{pos=} {z=} {block.style.fill[pos]=}')
-        shapely.plotting.plot_line(
-          linestr, ax=ax, add_points=self.ADD_POINTS,
-          color=block.style.fill[pos][z]
-        )
-
-    t_class, t_name = self.fileName(svgfile)
-    plt.title(f"{t_class} {t_name}")
-    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
-
 '''
 the
 end
