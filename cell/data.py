@@ -418,8 +418,12 @@ WHERE sid = %s;""", [sid])
       raise ValueError("need a sid to find a stroke")
 
   def readSid(self, stroke):
-
-    item = list(stroke.values())
+    ''' palswap and recurrink send dicts and lists :/
+    '''
+    if isinstance(stroke, dict):
+      item = list(stroke.values())
+    else:
+      item = stroke
     self.cursor.execute("""
 SELECT sid
 FROM strokes

@@ -309,14 +309,14 @@ elif (args.keyword == 'read'):
     print(' '.join(view[:2]))
 
 elif (args.keyword == 'build'):
-  ''' generate an SVG from tmpfile using ElementTree
+  ''' generate an SVG from tmpfile or an HTML palette
   '''
   # TODO somefink smells funky
   if args.palette:
     fn      = fnam[args.palette]
     palette = tf.importPalfile(fn)
     svgpal.render(fn, palette)
-    print(f"palettes/{fn}.txt was written")
+    print(f"palettes/{fn}.html was written")
   elif args.digest:
     fn      = args.digest
     palette = tf.importPalfile(fn)
