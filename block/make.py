@@ -64,7 +64,7 @@ class Make:
     elif z == 0: polygn = c.geoms[z]     # bg
     return polygn
 
-  def hydrateGrid(self):
+  def hydrateGrid(self, stroke_width=0.7):
     ''' convert one block into a list of polygons
         each list has a unique style for each layer
         0 s1 [p1 p2], s2 [p1]
@@ -82,7 +82,8 @@ class Make:
           o = f'stroke-opacity:{self.style.stroke_opacity[pos][z]};'
             # TODO fix tmpfile to support <1 self.style.stroke_width[pos][z]
             # w = f'stroke-width:{self.style.stroke_width[pos][z]};'
-          w = f'stroke-width:0.7;' 
+          #w = f'stroke-width:0.7;' 
+          w = f'stroke-width:{stroke_width};' 
 
           style  = f + s + d + o + w
           geom   = self.cells[pos][z] # LineString

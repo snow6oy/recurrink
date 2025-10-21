@@ -5,7 +5,7 @@ import unittest
 import pprint
 from cell import Layer
 from cell.minkscape import *
-from model import SvgWriter, SvgLinear
+from model import SvgWriter, SvgModel
 from shapely.geometry import LinearRing, Polygon, MultiPolygon
 
 class Test(unittest.TestCase):
@@ -39,7 +39,7 @@ class Test(unittest.TestCase):
     gsize   = 3
     edge    = gsize * CLEN
 
-    svglin  = SvgLinear(CLEN)
+    svglin  = SvgModel(CLEN)
     model   = svglin.walk(block, gsize, b0, b1, CLEN, edge)
     mp      = MultiPolygon(model)
     if self.VERBOSE: self.writer.plot(mp, self.id())

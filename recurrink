@@ -5,7 +5,7 @@ import argparse
 import time
 import random
 import pprint
-from model import ModelData, Svg, SvgPalette, SvgLinear
+from model import ModelData, SvgModel, SvgPalette, SvgWriter
 from block import PaletteMaker, TmpFile, Views, BlockData, Make
 from cell import Palette
 from config import *
@@ -13,7 +13,6 @@ from config import *
 modl    = ModelData()
 pal     = Palette()
 pmk     = PaletteMaker()
-svg     = Svg()
 svgpal  = SvgPalette()
 tf      = TmpFile()
 view    = Views()
@@ -37,14 +36,19 @@ parser_b.add_argument(
 parser_b.add_argument('-d', '--digest', help='palette from rink to write as svg')
 parser_b.add_argument('-m', '--model', help='name of model to build')
 parser_b.add_argument(
-  "-s", "--size", help='cell length', nargs='?', type=int, 
-  choices=[9,18,27,45,54,90], const=9 
+  "-s", "--size", help='cell lengths: 18 36 54 90', nargs='?', 
+  type=int, const=54
 )
+parser_b.add_argument(
+  '-l', '--line',  help='pen width *0.7 or omit to paint', nargs='?',
+  type=float, const=0.7
+)
+"""
 parser_b.add_argument(
   '-l', '--line',  help='output for plotter', 
   action=argparse.BooleanOptionalAction
 )
-
+"""
 parser_m = subparsers.add_parser(
   'compare', help='compare palettes: tmpfile to db'
 )
@@ -62,8 +66,8 @@ parser_c.add_argument(
 )
 parser_c.add_argument("-m", "--model", help="name of model to commit") 
 parser_c.add_argument(
-  "-s", "--size", help='cell length', nargs='?', type=int, 
-  choices=[9,18,27,45,54,90], const=9, required=True
+  "-s", "--size", help='cell lengths: 18 36 54 90', nargs=1, 
+  type=int, required=True
 )
 parser_c.add_argument(
   "-p", "--palette", help='new palette to create', type=int, 
@@ -88,8 +92,8 @@ parser_e = subparsers.add_parser(
   'explode', help='stamp a block across the grid'
 )
 parser_e.add_argument(
-  "-s", "--size", help='cell length', nargs='?', 
-  type=int, choices=[9,18,27,45,54,90], const=9, required=True
+  "-s", "--size", help='cell lengths: 18 36 54 90', nargs=1, 
+  type=int, required=True
 )
 parser_e.add_argument(
   '-l', '--line',  help='output for plotter', 
@@ -234,24 +238,23 @@ elif (args.keyword == 'explode'):
       numbers of cells defined by cell length which is always divisible by 3
       to ensure whole numbers: clen must be one of: 9 18 27 45 54 90
   '''
-  svglin     = SvgLinear(args.size)
+  svglin     = SvgModel(args.size)
   celldata   = tf.readConf(args.model)
   ver        = fnam.index(tf.VERSION)
   if args.model == 'minkscape': # default model
     positions = config.positions
     penam     = config.penam[2]  # pen names for htmstart pal
-    block     = Make(args.size, linear=args.line, pen_names=penam)
+    block     = Make(args.size, linear=bool(args.line), pen_names=penam)
   else:                         # TODO source positions from model
     bd        = BlockData(args.model)
     positions = bd.readPositions(args.model)
     penam     = bd.penNames(ver)
-    block     = Make(args.size, linear=args.line, pen_names=penam)
+    block     = Make(args.size, linear=bool(args.line), pen_names=penam)
 
   block.walk(positions, celldata)
-  #if args.line: block.meander(padding=False)
-  block.hydrateGrid()
+  block.hydrateGrid(stroke_width=args.line)
   svglin.explode(block)
-  svglin.render(args.model, line=args.line)
+  svglin.render(args.model, line=bool(args.line))
 
 elif (args.keyword == 'init'):
   ''' pull a palette from db and write to tmpfile
@@ -323,8 +326,8 @@ elif (args.keyword == 'build'):
     svgpal.render(fn, palette)
     print(f"palettes/{fn}.html was written")
   elif args.model and args.size:
-    block     = Make(args.size, linear=args.line)
-    svglin    = SvgLinear(args.size)
+    block     = Make(args.size, linear=bool(args.line))
+    svglin    = SvgModel(args.size)
 
     if args.model == 'minkscape': # default model
       positions = config.positions
@@ -337,18 +340,15 @@ elif (args.keyword == 'build'):
     view.validate(celldata, ver=ver)
     block.walk(positions, celldata)
 
-    if args.line:
-      #block.meander(padding=False)
-      svgfile=f'{args.model}_line'
-    else:
-      svgfile=f'{args.model}_box'
-
-    block.hydrateGrid()
+    svgfile   = args.model
+    svgfile  += '_line' if bool(args.line) else '_box'
+    block.hydrateGrid(stroke_width=args.line)
     svglin.build(block)
-    svglin.render(svgfile, line=args.line)
+    svglin.render(svgfile, line=bool(args.line))
     print(f'tmp/{svgfile}.svg was built')
   else:
-    raise Warning(f'missing {args.model=}, {args.palette=} or {args.digest=}')
+    raise Warning(f'''missing argument
+{args.model=}, {args.size}, {args.palette=} or {args.digest=}''')
 
 print(f"--- {round(time.time() - start_t, 3)} seconds ---")
 '''

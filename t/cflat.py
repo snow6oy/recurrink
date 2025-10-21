@@ -2,7 +2,7 @@ import unittest
 import pprint
 from pathlib import Path
 from block import TmpFile, Make, BlockData, Views
-from model import ModelData, SvgLinear
+from model import ModelData, SvgModel
 from cell.minkscape import *
 
 class Test(unittest.TestCase):
@@ -26,7 +26,7 @@ class Test(unittest.TestCase):
 
   def test_a(self, model=None, line=False):
     block = Make(clen=90, linear=line) # default to clen: 9
-    svg   = SvgLinear(clen=90)
+    svg   = SvgModel(clen=90)
     view  = Views()
     tf    = TmpFile()
 
@@ -47,7 +47,7 @@ class Test(unittest.TestCase):
       block.walk(positions, cells)
     else:     
       model = 'minkscape'
-      cells = tf.readConf(model)
+      cells = minkscape.cells # tf.readConf(model)
       block.walk(minkscape.positions, cells)
 
     svgfile = f'{model}_line' if line else f'{model}_box'
