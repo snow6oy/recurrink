@@ -3,6 +3,7 @@ import pprint
 from shapely.geometry import MultiPolygon, Polygon
 from block import Make
 from cell.minkscape import *
+from model import SvgModel
 
 class Test(unittest.TestCase):
 
@@ -57,6 +58,17 @@ class Test(unittest.TestCase):
     if self.VERBOSE: pp.pprint(to_test)
     self.assertEqual(len(expected), len(to_test))
     [self.assertEqual(e, to_test[i]) for i, e in enumerate(expected)]
+
+  def test_f(self):
+    ''' 2 layer
+    '''
+    bm = Make(90)
+    svg = SvgModel(90)
+    bm.walkTwo(minkscape.positions, minkscape.cells)
+    bm.hydrateGrid()
+    svg.build(bm)
+    svg.render('blockmake_test_f')
+  
 '''
 the 
 end

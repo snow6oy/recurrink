@@ -1,5 +1,6 @@
 import random
 import psycopg2
+import pprint
 from config import Db
 from model import ModelData
 from cell import CellData
@@ -8,6 +9,8 @@ class Views(Db):
   ''' a rink (View is the old name) is an instance of a model
       a rink is a collection of blocks with a set of unique attributes
   '''
+  pp = pprint.PrettyPrinter(indent=2)
+
   def __init__(self):
     self.view = dict() # cell data goes here
     self.header = [
@@ -38,6 +41,7 @@ WHERE view = %s;""", [digest])
     self, digest, celldata, model=str(), author=str(), 
     ver=int(), scale=1.0, colournum=0
   ):
+    #self.pp.pprint(celldata)
     ''' create views metadata and try Cells()
     '''
     try:

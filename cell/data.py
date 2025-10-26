@@ -1,4 +1,5 @@
 import random
+import pprint
 import psycopg2
 from config import *
 from .shape import *
@@ -420,8 +421,10 @@ WHERE sid = %s;""", [sid])
   def readSid(self, stroke):
     ''' palswap and recurrink send dicts and lists :/
     '''
-    if isinstance(stroke, dict):
-      item = list(stroke.values())
+    if isinstance(stroke, dict): # order is important
+      item = [
+        stroke['fill'], stroke['width'],stroke['dasharray'], stroke['opacity'] 
+      ]
     else:
       item = stroke
     self.cursor.execute("""
@@ -516,6 +519,7 @@ ORDER BY random() LIMIT 1;""", [ver])
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class CellData(Strokes):
   VERBOSE = False
+  pp      = pprint.PrettyPrinter(indent=2)
   ''' a cell is a member of a block and contains geometries, shapes and strokes
   '''
   def __init__(self, ver=None):
@@ -527,15 +531,17 @@ class CellData(Strokes):
     ok = True # used only by unit test
     gid = Geometry.read_gid(self, data['geom']) 
     pid = Palette.readPid(self, self.ver, data['color'])
-    if 'stroke' in data: sid = Strokes.readSid(self, data['stroke'])
-    else:                sid = None
-    if self.VERBOSE: print(f'{digest} {label} {gid=} {pid=} {sid=}')
+    if pid is None: return None # ignore empty background cell
+    if 'stroke' in data: 
+      sid = Strokes.readSid(self, data['stroke'])
+    else:                
+      sid = None
     try:
       self.cursor.execute("""
 INSERT INTO cells (view, cell, gid, pid, sid)
 VALUES (%s, %s, %s, %s, %s);""", [digest, label, gid, pid, sid])
     except psycopg2.errors.UniqueViolation:  # 23505 
-      ok = False
+      if self.VERBOSE: print(f'{digest} {label} {gid=} {pid=} {sid=}')
     return ok
 
   def generate(self, top, 

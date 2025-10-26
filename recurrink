@@ -40,15 +40,13 @@ parser_b.add_argument(
   type=int, const=54
 )
 parser_b.add_argument(
-  '-l', '--line',  help='pen width *0.7 or omit to paint', nargs='?',
-  type=float, const=0.7
-)
-"""
-parser_b.add_argument(
-  '-l', '--line',  help='output for plotter', 
+  '-l', '--line',  help='stroke width *0.7 or omit to paint',
   action=argparse.BooleanOptionalAction
 )
-"""
+parser_b.add_argument(
+  '-z', '--layer',  help='numof layers *3 or 2', nargs='?', const=3, type=int
+)
+
 parser_m = subparsers.add_parser(
   'compare', help='compare palettes: tmpfile to db'
 )
@@ -66,12 +64,12 @@ parser_c.add_argument(
 )
 parser_c.add_argument("-m", "--model", help="name of model to commit") 
 parser_c.add_argument(
-  "-s", "--size", help='cell lengths: 18 36 54 90', nargs=1, 
+  "-s", "--size", help='cell lengths: 18 36 54 90', nargs='?', 
   type=int, required=True
 )
 parser_c.add_argument(
   "-p", "--palette", help='new palette to create', type=int, 
-  choices=range(0, 99), metavar='[0-99]'  #, required=True
+  choices=range(0, 99), metavar='[0-99]' #, required=True
 )
 parser_c.add_argument('-d', '--digest', help='swap rink to use palette')
 parser_c.add_argument("-i", "--inkpal", help='Insert GPLFILE to pens table')
@@ -92,8 +90,7 @@ parser_e = subparsers.add_parser(
   'explode', help='stamp a block across the grid'
 )
 parser_e.add_argument(
-  "-s", "--size", help='cell lengths: 18 36 54 90', nargs=1, 
-  type=int, required=True
+  "-s", "--size", help='cell lengths: 18 36 54 90', type=int, required=True
 )
 parser_e.add_argument(
   '-l', '--line',  help='output for plotter', 
@@ -102,6 +99,9 @@ parser_e.add_argument(
 parser_e.add_argument(
   '-m', '--model', help='model to be exploded', 
   nargs='?', const='minkscape', required=True
+)
+parser_e.add_argument(
+  '-z', '--layer',  help='numof layers *3 or 2', nargs='?', const=3, type=int
 )
 
 parser_i = subparsers.add_parser('init', help='set config to create new image')
@@ -202,6 +202,7 @@ elif (args.keyword == 'clone'):
   model, author, scale, ver = view.readMeta(digest=args.digest)
   if args.output == 'pal': # export view as palette
     palette = set(pal.read_view(args.digest))
+    print(palette)
     tf.exportPalfile(args.digest, palette) 
     print(f"palettes/{args.digest}.txt was written")
   else:   # assume we want celldata
@@ -236,7 +237,7 @@ elif (args.keyword == 'explode'):
   ''' assumptions: gridsize is A3 (297 x 420 mm) 
       image is square: with margins grid is 270 x 270
       numbers of cells defined by cell length which is always divisible by 3
-      to ensure whole numbers: clen must be one of: 9 18 27 45 54 90
+      to ensure whole numbers: clen should be: 9 18 27 36 45 54 90 ..
   '''
   svglin     = SvgModel(args.size)
   celldata   = tf.readConf(args.model)
@@ -251,10 +252,11 @@ elif (args.keyword == 'explode'):
     penam     = bd.penNames(ver)
     block     = Make(args.size, linear=bool(args.line), pen_names=penam)
 
-  block.walk(positions, celldata)
-  block.hydrateGrid(stroke_width=args.line)
+  block.walk(positions, celldata, z=args.layer)
+  block.hydrateGrid()
   svglin.explode(block)
   svglin.render(args.model, line=bool(args.line))
+  print(f'tmp/{args.model}.svg was exploded')
 
 elif (args.keyword == 'init'):
   ''' pull a palette from db and write to tmpfile
@@ -338,11 +340,11 @@ elif (args.keyword == 'build'):
     celldata  = tf.readConf(args.model)
     ver       = fnam.index(tf.VERSION)
     view.validate(celldata, ver=ver)
-    block.walk(positions, celldata)
+    block.walk(positions, celldata, z=args.layer)
 
     svgfile   = args.model
     svgfile  += '_line' if bool(args.line) else '_box'
-    block.hydrateGrid(stroke_width=args.line)
+    block.hydrateGrid()
     svglin.build(block)
     svglin.render(svgfile, line=bool(args.line))
     print(f'tmp/{svgfile}.svg was built')

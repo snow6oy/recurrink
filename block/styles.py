@@ -20,6 +20,7 @@ class Styles:
     ]
         assign values
     '''
+    self.hydratePos(pos)
     fill  = color['fill']
     self.fill[pos].append(fill)
     self.fill_opacity[pos].append(color['opacity'])
@@ -53,14 +54,9 @@ class Styles:
     self.background[pos] = '#' + color['background']
         initialise the attributes we need
     '''
+    self.hydratePos(pos)
     bgcol = color['background']
 
-    if pos not in self.fill:             self.fill[pos]             = []
-    if pos not in self.fill_opacity:     self.fill_opacity[pos]     = []
-    if pos not in self.stroke:           self.stroke[pos]           = []
-    if pos not in self.stroke_dasharray: self.stroke_dasharray[pos] = []
-    if pos not in self.stroke_opacity:   self.stroke_opacity[pos]   = []
-    if pos not in self.stroke_width:     self.stroke_width[pos]     = []
     self.fill[pos].append(bgcol)
     self.fill_opacity[pos].append(1)
     self.stroke[pos].append(None)
@@ -68,12 +64,21 @@ class Styles:
     self.stroke_opacity[pos].append(1)
     self.stroke_width[pos].append(0)
 
-    if pos not in self.fill_penam:   self.fill_penam[pos]   = []
-    if pos not in self.stroke_penam: self.stroke_penam[pos] = []
-
     if bgcol in self.penam: self.fill_penam[pos].append(self.penam[bgcol])
     else: self.fill_penam[pos].append(bgcol)
     self.stroke_penam[pos].append(None)
+
+  def hydratePos(self, pos):
+    ''' styles are indexed by their position in the blok
+    '''
+    if pos not in self.fill:             self.fill[pos]             = []
+    if pos not in self.fill_opacity:     self.fill_opacity[pos]     = []
+    if pos not in self.stroke:           self.stroke[pos]           = []
+    if pos not in self.stroke_dasharray: self.stroke_dasharray[pos] = []
+    if pos not in self.stroke_opacity:   self.stroke_opacity[pos]   = []
+    if pos not in self.stroke_width:     self.stroke_width[pos]     = []
+    if pos not in self.fill_penam:       self.fill_penam[pos]       = []
+    if pos not in self.stroke_penam:     self.stroke_penam[pos]     = []
 
   def __addPenam(self):
     ''' fake minkscape

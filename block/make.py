@@ -18,10 +18,15 @@ class Make:
     self.grid   = [{} for _ in range(3)] # unique style for each layer
     if clen: self.CLEN = clen
 
-  def walk(self, positions, cells):
+  def walk(self, positions, cells, z=3):
     ''' navigate the model and populate cells
     '''
     self.setBlocksize(positions)
+    if z is None or z == 3: self.walkThree(positions, cells)
+    elif z == 2: self.walkTwo(positions, cells)
+    else: raise ValueError(f'{z} can only be 2 or 3')
+    
+  def walkThree(self, positions, cells, z=3):
     for pos in positions:
       label   = positions[pos][0]  
       cell    = Layer(clen=self.CLEN, pos=pos, linear=self.linear)
@@ -32,8 +37,7 @@ class Make:
       self.style.addBackground(pos, color=cells[label]['color'])
       for label in positions[pos]:
         if not label: continue
-        if 'stroke' in cells[label]: strokedata = cells[label]['stroke']
-        else: strokedata = None
+        strokedata = self.setStroke(cells[label])
         if bool(cells[label]['geom']['top']):
           cell.foreground(cells[label]['geom'])
           self.style.add(pos, color=cells[label]['color'], stroke=strokedata)
@@ -41,6 +45,42 @@ class Make:
           cell.foreground(cells[label]['geom'])
           self.style.add(pos, color=cells[label]['color'], stroke=strokedata)
       self.cells[pos] = cell.bft
+
+  def walkTwo(self, positions, cells):
+    ''' create no more than two layers
+        plots with three are too muddy
+        white space lets a rink breathe
+    '''
+    self.setBlocksize(positions)
+    for pos in positions:
+      label_0, label_1 = positions[pos]  # labels ('a', 'b')
+      if self.VERBOSE: 
+        print(f'{label_0} {label_1} {pos} ', end='', flush=True)
+
+      cell = Layer(clen=self.CLEN, pos=pos, linear=self.linear)
+      # First Layer
+      if label_1 is None: # layer 3 was not defined
+        cell.background(cells[label_0])
+        self.style.addBackground(pos, color=cells[label_0]['color'])
+      else:
+        strokedata = self.setStroke(cells[label_1])
+        cell.foreground(cells[label_1]['geom'])
+        self.style.add(pos, color=cells[label_1]['color'], stroke=strokedata)
+
+      # Second Layer
+      strokedata = self.setStroke(cells[label_0])
+      cell.foreground(cells[label_0]['geom'])
+      self.style.add(pos, color=cells[label_0]['color'], stroke=strokedata)
+      if self.VERBOSE: print(f' {len(cell.bft)=}')
+      self.cells[pos] = cell.bft
+
+  def setStroke(self, cell):
+    strokedata = None
+    if 'stroke' in cell: strokedata = cell['stroke']
+    return strokedata
+
+
+
 
   def setBlocksize(self, positions):
     ''' extract blocksize and set for downstream functions
@@ -64,11 +104,12 @@ class Make:
     elif z == 0: polygn = c.geoms[z]     # bg
     return polygn
 
-  def hydrateGrid(self, stroke_width=0.7):
+  def hydrateGrid(self):
     ''' convert one block into a list of polygons
         each list has a unique style for each layer
         0 s1 [p1 p2], s2 [p1]
     '''
+    stroke_width = 0.7 # force to help Inkscape
     for z in range(3): 
       for pos in self.cells:
         if z == len(self.cells[pos]): continue
@@ -82,7 +123,6 @@ class Make:
           o = f'stroke-opacity:{self.style.stroke_opacity[pos][z]};'
             # TODO fix tmpfile to support <1 self.style.stroke_width[pos][z]
             # w = f'stroke-width:{self.style.stroke_width[pos][z]};'
-          #w = f'stroke-width:0.7;' 
           w = f'stroke-width:{stroke_width};' 
 
           style  = f + s + d + o + w

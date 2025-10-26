@@ -31,12 +31,25 @@ things to do
 - support Linear.grid data model for custom SVG work
 - experiment with SVG points: small polygons/circles or short polylines ?
 
-### Write SVG as Block without Matplot
-_ Review sizes. Odds are bad, 36 is missing and smaller than 18, e.g. 6
-_ change argparse so build defaults to 90
-_ build should stop using matplot lib because
-  sizes, stroke widths, scale, palettes
-_ split SvgLinear so that SvgPaint and SvgDraw inherit from Svg
+### Bring back the scale parameter!
+The rectangle will plot as 45x45 mm. 
+Meanders with a 1mm gap will also scale down to half the size.
+How?
+```
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 180" width="270mm" height="90mm">
+  <rect x="90" y="0" width="90" height="90" />
+</svg>
+```
+The viewbox has maxX and maxY values that are double that of the viewport.
+The viewport is defined by the width and height. 
+- 2 * 270 = 540
+- 2 *  90 = 180
+
+This makes the rectangle appear half size. 
+Building RINKs with a scale of .5 implies that 3 more rectangles are needed to fill the space.
+
+
+
 
 ### Publish and Build
 + reith broke because it uses old recurrink
@@ -71,3 +84,8 @@ _ split SvgLinear so that SvgPaint and SvgDraw inherit from Svg
 an entity diagram of the DB 1..n
 
 ![](../tutorial/dbentity.svg)
+
+## Release notes
+_ argparse allows any cell length but warns if indivisible by 9
+_ build has stopped using matplot lib because
+_ SvgLinear became SvgModel and SvgWriter moved to tester.py

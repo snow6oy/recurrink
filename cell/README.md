@@ -16,9 +16,14 @@ A cell is a LineString when in Draw mode.
 
 `background: null`  in YAML will cause it to be ignored
 
+
+> as a designer i want no more than two layers because more is muddy
+
+- when background is present and top:True then ignore background 
+  and validate bft <= 2 in length
+
 ## Design
 
-- raise warning when background is present and top:True
 - CLEN + POS = Shapely.bounds. Need this for Sesanta e.g. cell.bounds = (0,0,5,12)
 - move data.py to block/* because data access pattern is not by cell
 - size can use Shapely.buffer and facing transform,e.g E == 90 degrees
@@ -43,6 +48,7 @@ fg.has_z > True
 > as a plotter i want diamonds and circles to be linear
 
 1.  fix large circles t.circle.Test.test_e
+1.  triangles became inverted in Linear:True
 1.  Square Rings 
 1.  remove Rectangle(edge) if unused
 
