@@ -48,8 +48,21 @@ The viewport is defined by the width and height.
 This makes the rectangle appear half size. 
 Building RINKs with a scale of .5 implies that 3 more rectangles are needed to fill the space.
 
+### Combinations of Cell length, Size and Scale
+These give nice whole numbers.
+```
+len  siz  scale
+---------------
+16 / 40 = 0.4
+10 / 25 = 0.4
+12 / 30 = 0.4
+ 8 / 20 = 0.4
+ 4 / 10 = 0.4
 
-
+18 / 36 = 0.5
+12 / 24 = 0.5
+ 9 / 18 = 0.5
+```
 
 ### Publish and Build
 + reith broke because it uses old recurrink
