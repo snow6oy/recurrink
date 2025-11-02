@@ -50,11 +50,11 @@ class Test(unittest.TestCase):
   def test_e(self): self.test_c(size='large')
 
   def test_f(self):
-    ''' single line
+    ''' concentric (unused but nice)
     '''
     points  = self.layer.points(0, 0, 0, self.clen)
     geom    = self.cell['c']['geom']
-    polyln  = self.circle.draw(points, geom)
+    polyln  = self.circle.drawConcentric(points, geom)
     '''
     for g in polyln.geoms:
       print(g.geom_type)

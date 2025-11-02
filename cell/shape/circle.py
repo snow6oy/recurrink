@@ -20,16 +20,17 @@ class Circle:
     ''' line for meander
         uses Shapely.intersection to extract line part inside circle
     '''
-    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
     size   = geom['size']
-    x, y   = mid
-    radius = self.getRadius(size, clen, swidth)
-    circle = Point(x, y).buffer(radius)
-    points = list()
+    points = self.adjustSize(size, points)
+    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
 
+    radius = self.getRadius(size, clen, swidth)
+    x, y   = mid
+    circle = Point(x, y).buffer(radius)
+    X, Y   = sw
+    W, H   = ne
+    points = list()
     points.append(Point(w))
-    X, Y = sw
-    W, H = ne
     #print(f'{clen=} {mid=} {ne=} {sw=} {X=} {Y=} {W=} {H=}')
 
     for i in range(X, W):
@@ -75,6 +76,25 @@ class Circle:
     if size in sizes:
       radius = sizes[size]
       return int(radius)
+  
+  def adjustSize(self, size, points):
+    ''' only bother to adjust e w sw ne as no other points are used by circle
+    '''
+    swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
+    offset = int(clen / 6)
+    sizes  = {
+      'small': [offset, int(clen - offset)],
+      'large': [int(offset * -1), int(clen + offset)]
+    }
+    if size in sizes:
+      mn, mx = sizes[size]   # offset
+      w      = tuple([mn, w[1]]) 
+      e      = tuple([mx, e[1]])
+      sw     = tuple([mn, mn])
+      ne     = tuple([mx, mx])
+    points   = swidth, clen, n, e, s, w, ne, se, nw, sw, mid 
+    # print(f'{w=} {sw=} {ne=} {clen=}')
+    return points
 
   def drawConcentric(self, points, geom):
     ''' make rings for meander
@@ -92,7 +112,6 @@ class Circle:
       rings.append(c.boundary)
     return MultiLineString(rings)
 
-  def __guide(self, facing): return ('border', None)
 '''
 the
 end
