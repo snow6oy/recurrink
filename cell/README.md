@@ -19,8 +19,10 @@ A cell is a LineString when in Draw mode.
 
 > as a designer i want no more than two layers because more is muddy
 
-- when background is present and top:True then ignore background 
-  and validate bft <= 2 in length
+`recurrink -z 2`
+
+When background is present and top:True and layer is 2 then ignore background.
+The number of layers can be validated as bft <= 2 in length.
 
 ## Design
 
@@ -52,6 +54,22 @@ fg.has_z > True
 1.  Square Rings 
 1.  remove Rectangle(edge) if unused
 
+### Process stroke in Linear mode
+
+Option A: Either Polygon or Polyline
+
+```
+if stroke then elem is polygon, fill is none
+  stroke fill, width, dash are set and opacity is ignored
+else elem is polyline, fill is none
+  stroke fill is set from fill and width from fill_opacity
+```
+
+Option B: Stroke AND Polyline
+
+Generate stroke as boundary of polygon. Print both
+- LinearRing
+- LineString
 
 ## Release notes
 
