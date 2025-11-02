@@ -44,7 +44,8 @@ parser_b.add_argument(
   action=argparse.BooleanOptionalAction
 )
 parser_b.add_argument(
-  '-z', '--layer',  help='numof layers *3 or 2', nargs='?', const=3, type=int
+  '-z', '--layer',  metavar='2-3', help='numof layers *3 or 2', 
+  nargs='?', const=3, type=int
 )
 
 parser_m = subparsers.add_parser(
