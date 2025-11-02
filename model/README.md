@@ -50,14 +50,12 @@ Building RINKs with a scale of .5 implies that 3 more rectangles are needed to f
 
 ### Combinations of Cell length, Size and Scale
 These give nice whole numbers.
+For example, with a size of 40 and a scale of 0.4 the cell len will be 16.
 ```
 len  siz  scale
 ---------------
-16 / 40 = 0.4
-10 / 25 = 0.4
+24 / 60 = 0.4
 12 / 30 = 0.4
- 8 / 20 = 0.4
- 4 / 10 = 0.4
 
 18 / 36 = 0.5
 12 / 24 = 0.5
