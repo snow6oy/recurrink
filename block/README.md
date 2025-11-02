@@ -129,6 +129,10 @@ Future ideas that have yet to be done.
 
 relax validation so that at build time
 fg:bg:op are checked individually, not as a trio
+
+see:
+> Palette.uniqfill
+
 warn when opacity is a value other than (1, 0.5, 0)
 
 checks are done against pens table
@@ -143,6 +147,17 @@ but a unique combination  should be silently added
 e.g. FF0000 0.1 00FF00  
 ver can be dropped from palette table
 this may cause PIDs with duplicate fg:op:bg combinationns?
+
+### PALSWAP issues
+
+- uniball fails to detect as wants lowercase but gets UPPER
+option A: convert uniball to lower and test existing rinks can clone
+option B: add case flag and validate in prefferred case for each pen
+
+
+- validation fails as uniball has only 28 permutations
+
+
 
 ### Database update the Cells and Geometry tables
 
