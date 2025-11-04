@@ -1,7 +1,8 @@
 import unittest
 import pprint
 from shapely.geometry import Polygon, LinearRing, LineString, MultiLineString
-from block import Make, Meander 
+from block import Make
+from cell.meander import Line
 from model import SvgWriter
 
 class Test(unittest.TestCase):
@@ -10,27 +11,23 @@ class Test(unittest.TestCase):
   def setUp(self):
     self.writer  = SvgWriter()
     self.VERBOSE = True
+    self.ln      = Line()
 
   def test_a(self): 
-    ''' guidelines for East with plot of before and after padding
+    ''' guidelines for East with plot
     '''
-    r       = Meander(Polygon([(3,3),(3,15),(15,15),(15,3)]))
-    padme   = r.pad()
-    guides  = r.guidelines(('EB','ET'), shape=padme)
-    if self.VERBOSE: self.writer.plot(r.shape, self.id())
-    # [print(list(g.coords)) for g in list(guides.geoms)]
+    guides = self.ln.guidelines(facing='E', clen=15, bounds=(3, 3, 15, 15))
+    if self.VERBOSE: self.writer.plotLine(guides, self.id())
     g = list(guides.geoms)[0]
-    self.assertEqual(g.coords[0],(4.0,4.0))
+    self.assertEqual(g.coords[0],(3.0, 14.0))
 
   def test_b(self): 
     ''' Rectangle with plot of stripes
     '''
-    expect  = [(4,4),(14,14)]
-    r       = Meander(Polygon([(3,3),(3,15),(15,15),(15,3)]))
-    padme   = r.pad()
-    guides  = r.guidelines(('EB','ET'), shape=padme)
-    pnts    = r.collectPoints(guides, shape=padme)
-    stripes = r.makeStripes(pnts)
+    expect  = [(3, 14), (14, 14)]
+    guides = self.ln.guidelines(facing='E', clen=15, bounds=(3, 3, 15, 15))
+    pnts    = self.ln.collectPoints(guides)
+    stripes = self.ln.makeStripes(pnts)
     first   = list(stripes.coords)[0]
     last    = list(stripes.coords)[-1]
     if self.VERBOSE: self.writer.plotLine(stripes, self.id())
@@ -39,15 +36,15 @@ class Test(unittest.TestCase):
 
   def test_c(self):
     ''' Gnomon
-    '''
     g       = Meander(Polygon([(3,3),(3,15),(15,15),(15,11),(7,11),(7,3)]))
     padme   = g.pad()
-    guides  = g.guidelines(('WB','NW','NR'), shape=padme)  # (270,315,360))
-    pnts    = g.collectPoints(guides, shape=padme)
-    stripes = g.makeStripes(pnts)
+    '''
+    guides  = self.ln.guidelines('NW', clen=40, bounds=(0, 0, 40, 40))
+    pnts    = self.ln.collectPoints(guides)
+    stripes = self.ln.makeStripes(pnts)
     if self.VERBOSE: self.writer.plotLine(stripes, self.id())
-    self.assertEqual((6,4),list(stripes.coords)[0])
-    self.assertEqual((14,14),list(stripes.coords)[-1])
+    self.assertEqual((40, 0), list(stripes.coords)[0])
+    self.assertEqual((40,40),list(stripes.coords)[-1])
 
   def test_d(self):
     ''' Parabola South

@@ -41,7 +41,7 @@ class Layer:
       self.bft.append(Polygon(((X, Y), (X, H), (W, H), (W, Y))))
 
   def foreground(self, geom):
-    ''' Block.walk also calls here when top
+    ''' Block.walk calls here when forgeground or top
     '''
     if 'stroke_width' in geom: sw = geom['stroke_width']
     else: sw = 0

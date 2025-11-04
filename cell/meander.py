@@ -1,9 +1,10 @@
 import pprint
+from shapely import set_precision
 from shapely.geometry import Point, LineString, MultiLineString
 
 class Line:
 
-  # VERBOSE see children
+  VERBOSE = False # also see children
   pp      = pprint.PrettyPrinter(indent=2)
 
   def guidelines(self, facing, clen, bounds):
@@ -43,7 +44,14 @@ class Line:
       'SW': (EF, HF, GF),
       'NE': (GH, FH, EH),
     }
-    return MultiLineString(guideline[facing])
+    '''
+    without precise collectPoints will fail 
+     gl: MULTILINESTRING ((46.666666666666664 13.333333333333332 ..
+    pgl: MULTILINESTRING ((47 13 ..
+    '''
+    gl  = MultiLineString(guideline[facing])
+    pgl = set_precision(gl, grid_size=1)
+    return pgl
 
   def collectPoints(self, guidelines):
     ''' collect the points intersecting the shape

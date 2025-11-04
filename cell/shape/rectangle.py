@@ -27,12 +27,13 @@ class Rectangle(Line):
     elif self.name == 'sqring':
       # TODO split bounds and orchestrate calls to meander
       # see parabola for inspiration
-      linstr = LineString()
+      pass
     else:
       facing  = geom['facing']
       guideln = self.guidelines(facing, clen, bounds)
       points  = self.collectPoints(guideln)
       linstr = self.makeStripes(points)
+      #print(f'{self.name} {len(linstr.coords)=}')
     return linstr
 
   def paint(self, dim, kwargs):
