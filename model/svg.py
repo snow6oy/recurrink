@@ -5,40 +5,50 @@ from shapely.geometry import Polygon
 
 class SvgModel:
  
+  MAX_LEN = 270   # 1080 if px but not done that yet
   VERBOSE = False
   pp      = pprint.PrettyPrinter(indent = 2)
 
-  def __init__(self, clen):
-    if clen % 9: 
-      print(f'WARNING {clen} does not divide by nine')
-    self.clen   = clen
+  def __init__(self, clen, scale=1.0):
+    scaled =  clen * scale
+    if scaled % 2:
+      print(f'WARNING {clen} does not meander')
+    elif scaled < 3 or scaled > 90:
+      raise ValueError(f'{clen=} * {scale=} exceeded safe limit')
+    self.border = 0
     self.grid   = list()
     self.unit   = 'mm'
-    self.gridsz = (270, 270)
-    self.border = 0
+
+    self.clen   = clen
+    cellnum     = round(self.MAX_LEN / scaled)
+    gridsz      = int(cellnum * scaled)
+    viewbx      = int(cellnum * clen)
+
+    self.gridsz = (gridsz, gridsz)
+    self.viewbx = (viewbx, viewbx)
 
   def explode(self, block):
     ''' prepare model by copying block.grid to exploded self
     '''
-    b0, b1 = block.BLOCKSZ
-    gsize  = int(self.gridsz[0] / self.clen) # reduce to logical dimension
-    edge   = gsize * self.clen
+    b0, b1  = block.BLOCKSZ
+    edge    = self.viewbx[0]
+    cellnum = int(edge / self.clen)
 
     for z, layer in enumerate(block.grid):
       self.grid.append({})
       for style in layer:
         self.grid[z][style] = {'geom':list(), 'penam':str()}
         exploded = self.walk(
-          layer[style]['geom'], gsize, b0, b1, self.clen, edge
+          layer[style]['geom'], cellnum, b0, b1, self.clen, edge
         )
         self.grid[z][style]['geom']  = exploded
         self.grid[z][style]['penam'] = layer[style]['penam']
     #pp.pprint(self.grid)
 
-  def walk(self, block, gsize, b0, b1, CLEN, edge):
+  def walk(self, block, cellnum, b0, b1, CLEN, edge):
     cells = list()
-    for y in range(0, gsize, b1):
-      for x in range(0, gsize, b0):
+    for y in range(0, cellnum, b1):
+      for x in range(0, cellnum, b0):
         for p in block:
           ''' all cells in block use same x,y coord for transform
           '''
@@ -55,21 +65,22 @@ class SvgModel:
     '''
     b0, b1      = block.BLOCKSZ
     self.grid   = block.grid
-    #self.unit   = 'px'
     self.border = 2
     self.gridsz = (b0 * self.clen, b1 * self.clen)
+    self.viewbx = (b0 * self.clen, b1 * self.clen)
 
   def setSvgHeader(self):
     ''' start the markup
     '''
     ET.register_namespace('',"http://www.w3.org/2000/svg")
     w, h = self.gridsz
+    W, H = self.viewbx
     unit = self.unit
     b    = self.border
     root = ET.fromstring(f'''
     <svg 
       xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 {w} {h}" 
+      viewBox="0 0 {W} {H}" 
       width="{w}{unit}" height="{h}{unit}"
       style="border: {b}{unit} solid #000000;"></svg>
     ''')

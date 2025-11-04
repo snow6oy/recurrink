@@ -91,7 +91,10 @@ parser_e = subparsers.add_parser(
   'explode', help='stamp a block across the grid'
 )
 parser_e.add_argument(
-  "-s", "--size", help='cell lengths: 18 36 54 90', type=int, required=True
+  "-s", "--size", help='cell lengths: 18-40', type=int, required=True
+)
+parser_e.add_argument(
+  "-f", "--factor", help='scale factor: 0.4-1.0', type=float
 )
 parser_e.add_argument(
   '-l', '--line',  help='output for plotter', 
@@ -235,11 +238,12 @@ elif (args.keyword == 'delete'):
 
 elif (args.keyword == 'explode'):
   ''' assumptions: gridsize is A3 (297 x 420 mm) 
-      image is square: with margins grid is 270 x 270
-      numbers of cells defined by cell length which is always divisible by 3
+      image is square: with margins grid approximate 270 x 270
+      numbers of cells defined by cell length which prefers to be divisible by 3
       to ensure whole numbers: clen should be: 9 18 27 36 45 54 90 ..
   '''
-  svglin     = SvgModel(args.size)
+  if args.factor: svglin = SvgModel(args.size, args.factor)
+  else:           svglin = SvgModel(args.size)
   celldata   = tf.readConf(args.model)
   ver        = fnam.index(tf.VERSION)
   if args.model == 'minkscape': # default model
