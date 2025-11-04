@@ -7,6 +7,10 @@ SVG generation uses Etree except for tests which use matplotlib.
 ## Runbook
 Recipes for reference
 
+> as a plotter i want smooth pen strokes
+
+check that antialiasing is enabled in Inkscape
+
 ### Config
 > as a new installer i want to change config.py to suit my environment
 ```
