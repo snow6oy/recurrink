@@ -36,16 +36,20 @@ parser_b.add_argument(
 parser_b.add_argument('-d', '--digest', help='palette from rink to write as svg')
 parser_b.add_argument('-m', '--model', help='name of model to build')
 parser_b.add_argument(
-  "-s", "--size", help='cell lengths: 18 36 54 90', nargs='?', 
-  type=int, const=54
+  "-s", "--size", help='cell lengths: 18-40', nargs='?', 
+  type=int, const=18
 )
 parser_b.add_argument(
-  '-l', '--line',  help='stroke width *0.7 or omit to paint',
-  action=argparse.BooleanOptionalAction
+  "-f", "--factor", help='scale factor: 0.4-1.0', 
+  type=float, nargs='?', const=1.0
 )
 parser_b.add_argument(
   '-z', '--layer',  metavar='2-3', help='numof layers *3 or 2', 
   nargs='?', const=3, type=int
+)
+parser_b.add_argument(
+  '-l', '--line',  help='draw lines or omit to paint',
+  action=argparse.BooleanOptionalAction
 )
 
 parser_m = subparsers.add_parser(
@@ -331,9 +335,9 @@ elif (args.keyword == 'build'):
     palette = tf.importPalfile(fn)
     svgpal.render(fn, palette)
     print(f"palettes/{fn}.html was written")
-  elif args.model and args.size:
+  elif args.model and args.size and args.factor:
     block     = Make(args.size, linear=bool(args.line))
-    svglin    = SvgModel(args.size)
+    svglin    = SvgModel(args.size, args.factor)
 
     if args.model == 'minkscape': # default model
       positions = config.positions
@@ -354,7 +358,12 @@ elif (args.keyword == 'build'):
     print(f'tmp/{svgfile}.svg was built')
   else:
     raise Warning(f'''missing argument
-{args.model=}, {args.size}, {args.palette=} or {args.digest=}''')
+{args.palette=} 
+{args.digest=}
+{args.model=} 
+{args.size=}
+{args.factor=}
+''')
 
 print(f"--- {round(time.time() - start_t, 3)} seconds ---")
 '''

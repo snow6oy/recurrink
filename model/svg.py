@@ -18,7 +18,7 @@ class SvgModel:
     self.border = 0
     self.grid   = list()
     self.unit   = 'mm'
-
+    self.scaled = scaled
     self.clen   = clen
     cellnum     = round(self.MAX_LEN / scaled)
     gridsz      = int(cellnum * scaled)
@@ -66,8 +66,8 @@ class SvgModel:
     b0, b1      = block.BLOCKSZ
     self.grid   = block.grid
     self.border = 2
-    self.gridsz = (b0 * self.clen, b1 * self.clen)
-    self.viewbx = (b0 * self.clen, b1 * self.clen)
+    self.gridsz = (b0 * self.scaled, b1 * self.scaled)
+    self.viewbx = (b0 * self.clen,   b1 * self.clen)
 
   def setSvgHeader(self):
     ''' start the markup
