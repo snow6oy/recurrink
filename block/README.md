@@ -158,6 +158,26 @@ option B: add case flag and validate in prefferred case for each pen
 - validation fails as uniball has only 28 permutations
 
 
+### Palette is called directly from recurrink
+
+```
+pal.friendlyPenNames()
+pal.loadPalette(ver=ver)     # merge fg bg stroke into uniqfill 
+pal.updatePids(ver, swp, celldata)
+pal.swapPalette(pids, ver, dig)
+pal.swap_palette(celldata, ver, digest)
+pal.create_colours(missing_colours)
+pal.read_palette(args.palette)
+pal.penNames(args.inkpal, gpldata)
+pal.read_view(args.digest))
+```
+Everything else in Cell is called from recurrink from Block
+
+1. Move Palette to Block
+2. Proxy requests to Palette through View (as Strokes)
+
+
+
 
 ### Database update the Cells and Geometry tables
 

@@ -203,6 +203,18 @@ class TmpFile:
     data = [d.split() for d in data[1:]] # ignore header and split on space
     return data
 
+  def getOldColors(self, dig):
+    ''' read old colours from palettes/DIGEST.txt
+
+    to generate palettes/DIGEST.txt as list of colour from rink to swap
+    ./recurrink clone -d2fcb3c6c178814262c116e16b62c6a19 -opal
+    '''
+    oc  = set()
+    old_pal = self.importPalfile(dig)
+    [oc.add(c[0]) for c in old_pal]
+    [oc.add(c[2]) for c in old_pal]
+    return oc
+
 '''
 the
 end

@@ -3,7 +3,7 @@ import psycopg2
 import pprint
 from config import Db
 from model import ModelData
-from cell import CellData
+from cell import CellData, Strokes
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Views(Db):
   ''' a rink (View is the old name) is an instance of a model
@@ -120,6 +120,14 @@ WHERE view = %s;""", [digest])
     else:
       raise ValueError(f"not expecting this kinda digest '{digest}'")
     return meta
+
+  def updateSids(self, ver, dig, swp, celldata):
+    ''' proxy to cell.strokes so that recurrink stays clean
+    '''
+    strokes = Strokes(ver)
+    sids    = strokes.updateSids(swp, celldata)
+    count   = strokes.swapSid(sids, ver, dig)
+    return count
 
   def generate(self, ver, model=None): 
     ''' source celldata from compass or database or None

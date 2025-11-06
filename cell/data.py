@@ -74,6 +74,27 @@ AND cell = %s;""",
       )
     return self.cursor.rowcount
 
+  def updateSids(self, swp, celldata):
+    ''' insert new SID unless exists already
+    '''
+    sids = dict()
+    for label in celldata:
+      if 'stroke' not in celldata[label]: continue
+      old_stroke = celldata[label]['stroke']
+      item = [
+        swp[old_stroke].lower(),
+        celldata[label]['stroke_width'],
+        celldata[label]['stroke_dasharray'],
+        celldata[label]['stroke_opacity']
+      ]
+      sid = self.readSid(item)
+      if sid: sids[label] = sid
+      else:
+        sid = self.create(item)
+        sids[label] = sid
+    return sids
+  
+
   def read_any(self, ver, opacity):
     ''' a side effect of adding new Inkscape palettes is that SELECT returned None
         the opacity limit has been relaxed so that init can work randomly

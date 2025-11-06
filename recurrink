@@ -51,6 +51,10 @@ parser_b.add_argument(
   '-l', '--line',  help='draw lines or omit to paint',
   action=argparse.BooleanOptionalAction
 )
+parser_b.add_argument(
+  '-x', '--exchange',  help='exchange colours to -p as new svg',
+  action=argparse.BooleanOptionalAction
+)
 
 parser_m = subparsers.add_parser(
   'compare', help='compare palettes: tmpfile to db'
@@ -69,8 +73,11 @@ parser_c.add_argument(
 )
 parser_c.add_argument("-m", "--model", help="name of model to commit") 
 parser_c.add_argument(
-  "-s", "--size", help='cell lengths: 18 36 54 90', nargs='?', 
-  type=int, required=True
+  "-s", "--size", help='cell lengths: 18-40', nargs='?', type=int
+)
+parser_c.add_argument(
+  '-x', '--exchange',  help='exchange colours to -p in db',
+  action=argparse.BooleanOptionalAction
 )
 parser_c.add_argument(
   "-p", "--palette", help='new palette to create', type=int, 
@@ -110,6 +117,10 @@ parser_e.add_argument(
 )
 parser_e.add_argument(
   '-z', '--layer',  help='numof layers *3 or 2', nargs='?', const=3, type=int
+)
+parser_e.add_argument(
+  '-x', '--exchange',  help='exchange colours to -p and write db',
+  action=argparse.BooleanOptionalAction
 )
 
 parser_i = subparsers.add_parser('init', help='set config to create new image')
@@ -156,7 +167,19 @@ elif (args.keyword == 'commit'):
       add NEW_PAL to friendly_name
       use the index of config.friendly_name[] as arg
   '''
-  if args.palette and args.digest:
+  if args.palette and args.digest and args.exchange:
+    dig       = args.digest  # '180f1989f54ff03291ec31e164f2a79f'
+    celldata  = view.read(digest=dig) 
+    ver       = args.palette # use onlyi pen pals 8..12 please
+    oc        = tf.getOldColors(dig)
+    pal.loadPalette(ver=ver)     # merge fg bg stroke into uniqfill 
+    nc        = pmk.setLookUp(pal.uniqfill) # for search the new colour
+    swp       = pmk.swapColors(oc, nc)
+    pids      = pal.updatePids(ver, swp, celldata)
+    rownum    = pal.swapPalette(pids, ver, dig)
+    rownum   += view.updateSids(ver, dig, swp, celldata) # {'a': 309, 'b': 310
+    print(f'{ver} {dig} {rownum} updates')
+  elif args.palette and args.digest:
     model      = view.read_meta(args.digest)[0]
     celldata   = tf.read(model, output=list())
     numupdated = pal.swap_palette(celldata, ver, digest)
@@ -175,20 +198,19 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
   elif args.inkpal:
     gpldata = pmk.readInkscapePal(PALDIR, f'{args.inkpal}.gpl')
     pal.penNames(args.inkpal, gpldata)
-
-  elif args.author and args.model:
+  elif args.author and args.model and args.size:
+    scale    = args.factor if args.factor else 1.0
     celldata = tf.readConf(args.model)
     metadata = tf.readConf(args.model, meta=True)
     pal      = metadata['palette']
     ver      = fnam.index(pal)
-    size     = args.size / 10  # make it fit scale type in db
     lc       = -1  # TODO colournum should have a real value
     tf.setDigest(celldata=celldata)
     #print(f''' {tf.digest} {len(celldata.keys())} {args.model=} {args.author=} {ver=}, {size=} colournum {lc}''')
     if os.path.isdir(f"{WORKDIR}/{args.model}"):
       if view.create(
         tf.digest, celldata, model=args.model, author=args.author, 
-        ver=ver, scale=size, colournum=lc
+        ver=ver, scale=scale, colournum=lc
       ):
         if os.path.isfile(f"tmp/{args.model}.svg"):
           svgname = f"{WORKDIR}/{args.model}/{tf.digest}.svg"
@@ -202,7 +224,14 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
     else:
       raise FileNotFoundError(f"{args.model} not found in {WORKDIR}")
     print(response)
-  else: print("cannot commit: missing model, author or palette")
+  else: 
+    print(f'''cannot commit missing args:
+{args.model=}
+{args.author=}
+{args.palette=} 
+{args.inkpal=} 
+{args.digest=} 
+{args.exchange=}''')
 
 elif (args.keyword == 'clone'):
   ''' pull from db to create tmp/MODEL.txt from digest
@@ -324,8 +353,35 @@ elif (args.keyword == 'read'):
 elif (args.keyword == 'build'):
   ''' generate an SVG from tmpfile or an HTML palette
   '''
-  # TODO somefink smells funky
-  if args.palette:
+  if args.palette and args.digest and args.exchange:
+    dig       = args.digest  # '180f1989f54ff03291ec31e164f2a79f'
+    celldata  = view.read(digest=dig) 
+    model     = view.readMeta(dig)[0] # model auth scale ver
+    bd        = BlockData(model)
+    positions = bd.readPositions(model)
+    ver       = args.palette # use onlyi pen pals 8..12 please
+    tf.setVersion(ver)
+    oc        = tf.getOldColors(dig)
+    pal.loadPalette(ver=ver)     # merge fg bg stroke into uniqfill 
+    nc        = pmk.setLookUp(pal.uniqfill) # for search the new colour
+    swp       = pmk.swapColors(oc, nc)
+    print(f'''{len(oc)} to swap
+{len(nc)} to search
+''')
+    pp.pprint(swp)
+    tf.write(model, celldata)   # write new colors to conf/palswap.yaml
+    celldata  = tf.readConf(model) # dubble write to reformat celldata :sob:
+    view.validate(celldata, ver=ver)
+    svgfile   = model + '_exchange'
+    svg       = SvgModel(18) # size of preview palswap.svg
+    block     = Make(18, linear=False)
+    # start to build
+    block.walk(positions, celldata)
+    block.hydrateGrid()
+    svg.build(block)
+    svg.render(svgfile, line=False)
+    print(f'tmp/{svgfile}.svg was built')
+  elif args.palette:
     fn      = fnam[args.palette]
     palette = tf.importPalfile(fn)
     svgpal.render(fn, palette)

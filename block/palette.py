@@ -1,6 +1,7 @@
 import math
 import pprint
 import random
+from math import sqrt
 from colorsys import rgb_to_hsv, hsv_to_rgb
 from .tmpfile import TmpFile
 
@@ -9,6 +10,16 @@ pp = pprint.PrettyPrinter(indent = 2)
 class PaletteMaker:
 
   VERBOSE = False
+  BADLEN = {
+    '#FFF': '#ffffff',
+    '#CCC': '#cccccc',
+    '#000': '#000000',
+    '#F00': '#ff0000',
+    '#FF0': '#ffff00',
+    '#00F': '#0000ff',
+    '#F0F': '#ff00ff',  
+    '#0FF': '#000fff'
+  }
   ''' palette logic
   '''
   def rgb_int(self, r, g, b):
@@ -198,6 +209,74 @@ class PaletteMaker:
         #print(r, g, b, hexstr, penam)
         found[hexstr] = penam
     return found
+
+  def updateCells(self, celldata, swp):
+    ''' apply new color set to celldata
+    '''
+    for label in celldata:
+      for k in ['bg', 'fill', 'stroke']:
+        if k in celldata[label]:
+          oc = celldata[label][k]
+          #print(f'{label=} {oc=} {k=}')
+          if k == 'bg' and oc in ['#FFF', '#fff', '#ffffff']:
+            #print('make null background')
+            celldata[label][k] = None
+          elif k == 'stroke':
+            print(f'WARNING {oc=} stroke alert!')
+            celldata[label][k] = swp[oc]
+          else:
+            celldata[label][k] = swp[oc]
+    return celldata
+
+  def setLookUp(self, uniqfill):
+    ''' prepare table of new colours for lookup
+    '''
+    colours = list()
+    for uf in uniqfill:
+      if uf in self.BADLEN:
+        rgb = self.hex_rgb(self.BADLEN[uf])
+      elif uf and len(uf) == 7:
+        rgb = self.hex_rgb(uf)
+      if uf: colours.append(tuple(rgb))
+    return colours
+
+  def swapColors(self, oc, nc):
+    ''' find the new colour that is closest to the old
+        and replace
+    '''
+    swp = dict()
+    for old_color in oc:
+      anylen = old_color
+      if old_color in self.BADLEN:
+        anylen = self.BADLEN[old_color]
+      elif old_color and len(old_color) < 7:
+        raise ValueError(f'{old_color} has bad length')
+      rgb       = self.hex_rgb(anylen)
+      new_color = self.closestColor(rgb, nc)
+      swp[old_color] = self.rgbToHex(new_color)
+    return swp
+
+  def closestColor(self, rgb, nc):
+    ''' do The Real Work right here!
+    '''
+    r, g, b = rgb
+    color_diffs = []
+    for color in nc:
+      cr, cg, cb = color
+      color_diff = sqrt((r - cr)**2 + (g - cg)**2 + (b - cb)**2)
+      color_diffs.append((color_diff, color))
+    return min(color_diffs)[1]
+
+  def rgbToHex(self, rgb):
+    r, g, b = rgb
+    ## Ensure values are within 0-255 range
+    r = max(0, min(r, 255))
+    g = max(0, min(g, 255))
+    b = max(0, min(b, 255))
+
+    ## Convert to hexadecimal and remove '0x' prefix
+    hex_color = '#{:02x}{:02x}{:02x}'.format(r, g, b)
+    return hex_color
 
 '''
 the

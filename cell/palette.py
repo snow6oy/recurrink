@@ -7,9 +7,9 @@ class Palette(Geometry):
 
   VERBOSE = True
 
-  def __init__(self, ver=0):
+  def __init__(self, ver=None):
     super().__init__()
-    self.ver = ver # universal is not a good default (better to override)
+    self.ver = ver # None is not a good default (better to override)
     self.opacity = self.read_opacity()  # between 0 and 1 check MDN
     self.zeroten = [n for n in range(1, 11)]
 
@@ -41,6 +41,28 @@ RETURNING pid;""",
       [ver, fill, bg, opacity, relation]
     )
     return self.cursor.fetchone()[0]
+
+  def updatePids(self, ver, swp, celldata):
+    ''' either get or set pids for new pal
+        return pids[a] = new_pid
+    ''' 
+    pids = dict()
+
+    for label in celldata:
+      fg = celldata[label]['fill']
+      bg = celldata[label]['bg']
+      color = {
+              'fill': swp[fg],
+        'background': swp[bg],
+           'opacity': 0.5
+      }
+      pid = self.readPid(ver, color)
+      if pid: pids[label] = pid
+      else:
+        entry = (tuple([ver, swp[fg], 0.5, swp[bg], 0]))
+        pid   = self.createPaletteEntry(entry)
+        pids[label] = pid
+    return pids
 
   def swapPalette(self, pids, ver, rink):
     ''' WARN: we break the golden "Rinks Are Immutable" rule
