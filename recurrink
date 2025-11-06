@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 import os
+import sys
 import argparse
 import time
 import random
@@ -25,135 +26,184 @@ start_t = time.time()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ''' get inputs from command line
 '''
-parser = argparse.ArgumentParser(prog='recurrink')
-subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
+def main(args):
+  parser = argparse.ArgumentParser(prog='recurrink')
+  subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
+  parser_b = subparsers.add_parser('build', help='build svg from config')
+  parser_k = subparsers.add_parser('clone', help='get copy of config')
+  parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
+  parser_m = subparsers.add_parser('compare', help='compare palettes')
+  parser_d = subparsers.add_parser('delete', help='remove rink from db')
+  parser_e = subparsers.add_parser('explode', help='stamp blocks on the grid')
+  parser_i = subparsers.add_parser('init', help='generate config')
+  parser_l = subparsers.add_parser('ls', help='list models or palettes')
+  parser_p = subparsers.add_parser('publish', help='add release date to db')
+  parser_r = subparsers.add_parser('read', help='get rink metadata')
 
-parser_b = subparsers.add_parser('build', help='build svg from config')
-parser_b.add_argument(
-  '-p', '--palette', type=int, choices=range(0, 99), metavar='[0-99]',
-  help='palette version to write as html' 
-)
-parser_b.add_argument('-d', '--digest', help='palette from rink to write as svg')
-parser_b.add_argument('-m', '--model', help='name of model to build')
-parser_b.add_argument(
-  "-s", "--size", help='cell lengths: 18-40', nargs='?', 
-  type=int, const=18
-)
-parser_b.add_argument(
-  "-f", "--factor", help='scale factor: 0.4-1.0', 
-  type=float, nargs='?', const=1.0
-)
-parser_b.add_argument(
-  '-z', '--layer',  metavar='2-3', help='numof layers *3 or 2', 
-  nargs='?', const=3, type=int
-)
-parser_b.add_argument(
-  '-l', '--line',  help='draw lines or omit to paint',
-  action=argparse.BooleanOptionalAction
-)
-parser_b.add_argument(
-  '-x', '--exchange',  help='exchange colours to -p as new svg',
-  action=argparse.BooleanOptionalAction
-)
-
-parser_m = subparsers.add_parser(
-  'compare', help='compare palettes: tmpfile to db'
-)
-parser_m.add_argument(
-  "-p", "--palette", help='read palette from version in db', type=int, 
-  choices=range(0, 99), metavar='[0-99]', required=True
-)
-parser_m.add_argument(
-  '-d', '--digest', help='read palette from rink in tmpfile', required=True
-)
-
-parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
-parser_c.add_argument( 
-  "-a", "--author", choices=['human', 'machine'], nargs='?', const='human'
-)
-parser_c.add_argument("-m", "--model", help="name of model to commit") 
-parser_c.add_argument(
-  "-s", "--size", help='cell lengths: 18-40', nargs='?', type=int
-)
-parser_c.add_argument(
-  '-x', '--exchange',  help='exchange colours to -p in db',
-  action=argparse.BooleanOptionalAction
-)
-parser_c.add_argument(
-  "-p", "--palette", help='new palette to create', type=int, 
-  choices=range(0, 99), metavar='[0-99]' #, required=True
-)
-parser_c.add_argument('-d', '--digest', help='swap rink to use palette')
-parser_c.add_argument("-i", "--inkpal", help='Insert GPLFILE to pens table')
-
-parser_k = subparsers.add_parser('clone', help='get copy of config')
-parser_k.add_argument('-d', '--digest', help='rink to clone', required=True)
-parser_k.add_argument(
-  '-o', '--output', nargs='?', choices=['cell','pal'], const='cell',
-  help='clone celldata by default, else palette data'
-)
-
-parser_d = subparsers.add_parser('delete')
-parser_d.add_argument(
-  '-d', '--digest', help='rink to remove from db', required=True
-)
-
-parser_e = subparsers.add_parser(
-  'explode', help='stamp a block across the grid'
-)
-parser_e.add_argument(
-  "-s", "--size", help='cell lengths: 18-40', type=int, required=True
-)
-parser_e.add_argument(
-  "-f", "--factor", help='scale factor: 0.4-1.0', type=float
-)
-parser_e.add_argument(
-  '-l', '--line',  help='output for plotter', 
-  action=argparse.BooleanOptionalAction
-)
-parser_e.add_argument(
-  '-m', '--model', help='model to be exploded', 
-  nargs='?', const='minkscape', required=True
-)
-parser_e.add_argument(
-  '-z', '--layer',  help='numof layers *3 or 2', nargs='?', const=3, type=int
-)
-parser_e.add_argument(
-  '-x', '--exchange',  help='exchange colours to -p and write db',
-  action=argparse.BooleanOptionalAction
-)
-
-parser_i = subparsers.add_parser('init', help='set config to create new image')
-parser_i.add_argument('-m', '--model', help='randomly generate conf for model')
-parser_i.add_argument(
-  "-p", "--palette", type=int, choices=range(0, 99), metavar='[0-99]',
-  help='palette version to initialise'
-)
-parser_i.add_argument("-i", "--inkpal", help='GPL source to generate palette')
-
-parser_l = subparsers.add_parser('ls', help='list models or palettes')
-parser_l.add_argument(
-  "-o", "--output", choices=['model','pal'], const='model', nargs='?', 
-  help='model by default'
-)
-
-parser_p = subparsers.add_parser('publish', help='add release date to db')
-parser_p.add_argument(
-  '-d', '--digest', help='rink to mark as released', required=True
-)
-
-parser_r = subparsers.add_parser('read', help='get rink metadata')
-parser_r.add_argument('-m', '--model', help='name of base model')
-parser_r.add_argument('-d', '--digest', help='hex name with 32 char')
-args    = parser.parse_args()
+  parser_b.add_argument(
+    '-p', '--palette', 
+    help='palette version to write as html',
+    type=int, choices=range(0, 99), metavar='[0-99]'
+  )
+  parser_b.add_argument(
+    '-d', '--digest', 
+    help='palette from rink to write as svg'
+  )
+  parser_b.add_argument(
+    '-m', '--model', 
+    help='name of model to build'
+  )
+  parser_b.add_argument(
+    "-s", "--size", 
+    help='cell lengths: 18-40', 
+    nargs='?', type=int, const=18
+  )
+  parser_b.add_argument(
+    "-f", "--factor", 
+    help='scale factor: 0.4-1.0', 
+    type=float, nargs='?', const=1.0
+  )
+  parser_b.add_argument(
+    '-z', '--layer',  
+    help='numof layers *3 or 2', 
+    metavar='2-3', nargs='?', const=3, type=int
+  )
+  parser_b.add_argument(
+    '-l', '--line',  
+    help='draw lines or omit to paint',
+    action=argparse.BooleanOptionalAction
+  )
+  parser_b.add_argument(
+    '-x', '--exchange',  
+    help='exchange colours to -p as new svg',
+    action=argparse.BooleanOptionalAction
+  )
+  parser_m.add_argument(
+    "-p", "--palette", 
+    help='read palette from version in db', 
+    type=int, choices=range(0, 99), metavar='[0-99]', required=True
+  )
+  parser_m.add_argument(
+    '-d', '--digest', 
+    help='read palette from rink in tmpfile', 
+    required=True
+  )
+  parser_c.add_argument( 
+    "-a", "--author", 
+    choices=['human', 'machine'], nargs='?', const='human'
+  )
+  parser_c.add_argument(
+    "-m", "--model", 
+    help="name of model to commit"
+  ) 
+  parser_c.add_argument(
+    "-s", "--size", 
+    help='cell lengths: 18-40', 
+    nargs='?', type=int
+  )
+  parser_c.add_argument(
+    '-x', '--exchange',  
+    help='exchange colours to -p in db',
+    action=argparse.BooleanOptionalAction
+  )
+  parser_c.add_argument(
+    "-p", "--palette", 
+    help='new palette to create', 
+    type=int, choices=range(0, 99), metavar='[0-99]'
+  )
+  parser_c.add_argument(
+    '-d', '--digest', 
+    help='swap rink to use palette'
+  )
+  parser_c.add_argument(
+    "-i", "--inkpal", 
+    help='Insert GPLFILE to pens table'
+  )
+  parser_k.add_argument(
+    '-d', '--digest', 
+    help='rink to clone', required=True
+  )
+  parser_k.add_argument(
+    '-o', '--output', 
+    help='clone celldata by default, else palette data',
+    nargs='?', choices=['cell','pal'], const='cell',
+  )
+  parser_d.add_argument(
+    '-d', '--digest', 
+    help='rink to remove from db', 
+    required=True
+  )
+  parser_e.add_argument(
+    "-s", "--size", 
+    help='cell lengths: 18-40', 
+    type=int, required=True
+  )
+  parser_e.add_argument(
+    "-f", "--factor", 
+    help='scale factor: 0.4-1.0', 
+    type=float
+  )
+  parser_e.add_argument(
+    '-l', '--line',  
+    help='output for plotter', 
+    action=argparse.BooleanOptionalAction
+  )
+  parser_e.add_argument(
+    '-m', '--model', 
+    help='model to be exploded', 
+    nargs='?', const='minkscape', required=True
+  )
+  parser_e.add_argument(
+    '-z', '--layer',  
+    help='numof layers *3 or 2', 
+    nargs='?', const=3, type=int
+  )
+  parser_e.add_argument(
+    '-x', '--exchange',  
+    help='exchange colours to -p and write db',
+    action=argparse.BooleanOptionalAction
+  )
+  parser_i.add_argument(
+    '-m', '--model', 
+    help='randomly generate conf for model'
+  )
+  parser_i.add_argument(
+    "-p", "--palette", 
+    help='palette version to initialise',
+    type=int, choices=range(0, 99), metavar='[0-99]'
+  )
+  parser_i.add_argument(
+    "-i", "--inkpal", 
+    help='GPL source to generate palette'
+  )
+  parser_l.add_argument(
+    "-o", "--output", 
+    help='list pal or model by default',
+    choices=['model','pal'], const='model', nargs='?' 
+  )
+  parser_p.add_argument(
+    '-d', '--digest', 
+    help='rink to mark as released', 
+    required=True
+  )
+  
+  parser_r.add_argument(
+    '-m', '--model', 
+    help='name of base model'
+  )
+  parser_r.add_argument(
+    '-d', '--digest', 
+    help='hex name with 32 char'
+  )
+  return parser.parse_args()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-if (args.keyword == 'compare'):
+def compare(args):
   ''' compare palettes given ver and digest
       expect tmp/PALETTE.txt tmp/DIGEST.txt to exist already
   '''
   print(pmk.cmpPalettes(fnam[args.palette], args.digest))
 
-elif (args.keyword == 'commit'):
+def commit(args):
   ''' read config, write to database and return digest
       clean file system except for tmp/model.txt
 
@@ -233,7 +283,7 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
 {args.digest=} 
 {args.exchange=}''')
 
-elif (args.keyword == 'clone'):
+def clone(args):
   ''' pull from db to create tmp/MODEL.txt from digest
   '''
   model, author, scale, ver = view.readMeta(digest=args.digest)
@@ -251,7 +301,7 @@ cloning {model}
 with {len(celldata)} cells
 palette {fnam[ver]}""")
 
-elif (args.keyword == 'delete'): 
+def delete(args):
   # as delete has no help text it is not listed by argparse
   print(f'{args.digest=}')
   ''' both svg and view must exist for the delete to succeed
@@ -269,7 +319,7 @@ elif (args.keyword == 'delete'):
     else: raise FileNotFoundError(f'SVG not deleted {model}/{args.digest}')
   else: raise ValueError(f'nothing named {args.digest} in database')
 
-elif (args.keyword == 'explode'):
+def explode(args):
   ''' assumptions: gridsize is A3 (297 x 420 mm) 
       image is square: with margins grid approximate 270 x 270
       numbers of cells defined by cell length which prefers to be divisible by 3
@@ -295,7 +345,7 @@ elif (args.keyword == 'explode'):
   svglin.render(args.model, line=bool(args.line))
   print(f'tmp/{args.model}.svg was exploded')
 
-elif (args.keyword == 'init'):
+def init(args):
   ''' pull a palette from db and write to tmpfile
       generate an editable config file 
   '''
@@ -328,20 +378,20 @@ palette {fnam[args.palette]}""")
 initialising {model} with {len(celldata)} cells from {src}
 palette {fnam[ver]}""")
 
-elif (args.keyword == 'ls'):
+def ls(args):
   ''' list from db or config
   '''
   if args.output == 'pal': 
     [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
   else: print(modl.stats())
 
-elif (args.keyword == 'publish'):
+def publish(args):
   ''' used by reith to update pubdate
   '''
   view.update(d)
   print(f"updated ok")
 
-elif (args.keyword == 'read'):
+def read(args):
   if args.model:
     bd        = BlockData(args.model)
     blocksize = modl.read(model=args.model)[2]
@@ -350,7 +400,7 @@ elif (args.keyword == 'read'):
     view = view.readMeta(digest=args.digest)
     print(' '.join(view[:2]))
 
-elif (args.keyword == 'build'):
+def build(args):
   ''' generate an SVG from tmpfile or an HTML palette
   '''
   if args.palette and args.digest and args.exchange:
@@ -421,7 +471,23 @@ elif (args.keyword == 'build'):
 {args.factor=}
 ''')
 
-print(f"--- {round(time.time() - start_t, 3)} seconds ---")
+if __name__ == "__main__":
+  args = main(sys.argv[1:])
+  if   args.keyword == 'compare': compare(args)
+  elif args.keyword == 'commit':  commit(args)
+  elif args.keyword == 'clone':   clone(args)
+  elif args.keyword == 'delete':  delete(args)
+  elif args.keyword == 'explode': explode(args)
+  elif args.keyword == 'init':    init(args)
+  elif args.keyword == 'ls':      ls(args)
+  elif args.keyword == 'publish': publish(args)
+  elif args.keyword == 'read':    read(args)
+  elif args.keyword == 'build':   build(args)
+  else:
+    print(f'usage: {sys.argv[0]} --help')
+    sys.exit(1)
+  print(f"--- {round(time.time() - start_t, 3)} seconds ---")
+
 '''
 the
 end
