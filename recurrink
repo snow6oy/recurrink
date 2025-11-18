@@ -141,7 +141,7 @@ def main(args):
   parser_e.add_argument(
     "-f", "--factor", 
     help='scale factor: 0.4-1.0', 
-    type=float
+    nargs='?', const=1.0, type=float
   )
   parser_e.add_argument(
     '-l', '--line',  
@@ -218,6 +218,7 @@ def commit(args):
       use the index of config.friendly_name[] as arg
   '''
   if args.palette and args.digest and args.exchange:
+    pal       = Palette()    # throws error but pal was assigned already???
     dig       = args.digest  # '180f1989f54ff03291ec31e164f2a79f'
     celldata  = view.read(digest=dig) 
     ver       = args.palette # use onlyi pen pals 8..12 please
@@ -249,7 +250,6 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
     gpldata = pmk.readInkscapePal(PALDIR, f'{args.inkpal}.gpl')
     pal.penNames(args.inkpal, gpldata)
   elif args.author and args.model and args.size:
-    scale    = args.factor if args.factor else 1.0
     celldata = tf.readConf(args.model)
     metadata = tf.readConf(args.model, meta=True)
     pal      = metadata['palette']
@@ -260,7 +260,7 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
     if os.path.isdir(f"{WORKDIR}/{args.model}"):
       if view.create(
         tf.digest, celldata, model=args.model, author=args.author, 
-        ver=ver, scale=scale, colournum=lc
+        ver=ver, scale=args.factor, colournum=lc
       ):
         if os.path.isfile(f"tmp/{args.model}.svg"):
           svgname = f"{WORKDIR}/{args.model}/{tf.digest}.svg"
@@ -419,6 +419,7 @@ def build(args):
 {len(nc)} to search
 ''')
     pp.pprint(swp)
+    celldata  = pmk.updateCells(celldata, swp)
     tf.write(model, celldata)   # write new colors to conf/palswap.yaml
     celldata  = tf.readConf(model) # dubble write to reformat celldata :sob:
     view.validate(celldata, ver=ver)
