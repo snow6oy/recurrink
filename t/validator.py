@@ -29,6 +29,26 @@ class Test(unittest.TestCase):
     ''' Decimal 
     '''
     self.test_a(1.0, 'b', 'stroke', 'opacity')
+
+  def test_d(self):
+    ''' stroke is optional
+    '''
+    iv        = InputValidator()
+    no_stroke = minkscape.cells
+    del no_stroke['a']['stroke']
+    cells = iv.validate(no_stroke)
+    self.assertTrue(isinstance(cells, dict)) # return error
+
+  def test_e(self):
+    ''' catch invalid input
+    '''
+    iv        = InputValidator()
+    bad_data  = minkscape.cells
+    bad_data['a']['stroke']['opacity'] = 'ONE'
+
+    cells     = iv.validate(bad_data)
+    self.assertFalse(isinstance(cells, dict)) # return error
+
 '''
 the
 end

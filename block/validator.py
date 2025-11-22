@@ -1,7 +1,7 @@
 from enum import Enum
 from decimal import Decimal
-from pydantic import BaseModel, Field, RootModel, field_serializer
-from typing import Literal, Dict
+from pydantic import BaseModel, Field, RootModel, ValidationError, field_serializer
+from typing import Literal, Dict, Optional
 # see hack in sitelib site-packages/pydantic_extra_types/__init__.py 
 from pydantic_extra_types import Color      
 
@@ -22,7 +22,7 @@ class Stroke(BaseModel):
 class Color(BaseModel):
   opacity   : Decimal = Field(gt=0, le=1)
   fill      : Color
-  background: Color
+  background: Optional[Color] = None
 
   @field_serializer('fill')
   def serializerFill(self, fill: Color):
@@ -30,32 +30,35 @@ class Color(BaseModel):
 
   @field_serializer('background')
   def serializerBackground(self, background: Color):
-    return background.as_hex(format='long')
+    if background is not None:
+      return background.as_hex(format='long')
 
   @field_serializer('opacity')
   def serializerOpacity(self, opacity: Decimal):
     return float(opacity)
 
 class Geoname(str, Enum):
-  square   = 'square'
-  line     = 'line'
-  circle   = 'circle'
-  triangl  = 'triangl'
-  diamond  = 'diamond'
-  gnomon   = 'gnomon'
-  parabola = 'parabola'
-  sqring   = 'sqring'
+  ''' names truncated because original storage was tab separated
+  '''
+  square  = 'square'
+  line    = 'line'
+  circle  = 'circle'
+  triangl = 'triangl'
+  diamond = 'diamond'
+  gnomon  = 'gnomon'
+  parabol = 'parabol'
+  # sqring   = 'sqring' sqring aint a thing
 
 class Geom(BaseModel, use_enum_values=True):
   name: Geoname
   size: Literal['small', 'medium', 'large']
-  facing: Literal['C', 'N', 'E', 'S', 'W']
+  facing: Literal['C', 'N', 'E', 'S', 'W', 'NE', 'NW', 'SE', 'SW']
   top: bool
 
 class Cell(BaseModel):
   geom  : Geom
   color : Color
-  stroke: Stroke
+  stroke: Optional[Stroke] = None
 
 class Cells(RootModel):
   root : Dict[str, Cell]
@@ -69,12 +72,15 @@ class Cells(RootModel):
 class InputValidator:
 
   def validate(self, incoming):
-    model = Cells(incoming)        # pydantic model will apply model constraints
-    ''' see also t.validator
+    ''' examples to access model directly
     print(f"{float(model['a'].color.opacity)=}")             # Decimal
     print(f"{model['a'].color.fill.as_hex(format='long')=}") # Color
     print(f"{model['a'].stroke.dasharray=}")                 # int
     '''
+    try:
+      model = Cells(incoming)        # pydantic model will apply model constraints
+    except ValidationError as err:
+      return err  
     cells = model.model_dump()  # obtain clean dictionary output with serializers
     return cells
 
