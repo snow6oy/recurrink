@@ -10,11 +10,12 @@ A Block is a collection of cells. The block module provides operations on the co
 
 ### Meander
 
-- padding can be exposed to the interface, as meta in the conf?
-- meander: concentric could work for circles, triangles and diamonds
-- resurrect the original meander and apply N or E in conf 
-- add meander.style as a YAML attribute
-
+- triangles should be denser
+- padding is the gap between pen strokes given to Meander
+  it should be exposed through opacity 
+  CLEN * opacity = ncs # number of cell strokes
+  e.g. CLEN:10 opacity:0.5 then ncs = 5
+  gap = CLEN / ncs
 
 ## Runbook
 ### Create a new palette with pen names
@@ -118,6 +119,22 @@ buleria -
 
 palswap overwrites YAML cannot change manually
 ```
+### Celldata technical validation
+Using Pydantic check data typing.
+Business logic such as palette taxonomy is not included.
+
+> celldata should be validated whenever TmpFile reads or writes
+> to ensure that commit, init and clone maintain data integrity
+
+Implement by inheriting TmplFile(InputValidator)
+When invalid data is found halt execution
+
+
+
+
+
+
+
 
 ## Design
 Future ideas that have yet to be done.
@@ -214,11 +231,4 @@ The top column for geometry could be removed.
 The background field for palette can also be removed.
 Validation of each entry could vary according to layer.
 For example: background gid must be a medium square facing centre
-
-
-
-
-
-
-
 
