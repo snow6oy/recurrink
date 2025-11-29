@@ -397,8 +397,8 @@ def read(args):
     blocksize = modl.read(model=args.model)[2]
     print(bd.prettyPrint(args.model, blocksize[0], blocksize[1]))
   else:  # reith is consumer
-    view = view.readMeta(digest=args.digest)
-    print(' '.join(view[:2]))
+    v = view.readMeta(digest=args.digest)
+    print(' '.join(v[:2]))
 
 def build(args):
   ''' generate an SVG from tmpfile or an HTML palette
