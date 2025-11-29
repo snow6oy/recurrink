@@ -4,17 +4,18 @@ import yaml
 import random
 import hmac
 import pprint
-from block import Views, BlockData
+from block import Views, BlockData, InputValidator
 from config import *
 from cell import Palette
 
 # TODO add palette
 
-class TmpFile:
+class TmpFile(InputValidator):
 
-  BLOCKSZ = tuple()
-  VERSION = 1
-  pp      = pprint.PrettyPrinter(indent=2)
+  BLOCKSZ   = tuple()
+  VERSION   = 1
+  pp        = pprint.PrettyPrinter(indent=2)
+  meta_tags = ['model', 'palette', 'positions'] # defaults will be popped
 
   def setVersion(self, ver=None):
     ''' Version is badly named reference to palette index
@@ -51,7 +52,11 @@ class TmpFile:
     metadata['positions'] = { 'foreground': fgpos }
     if topos: metadata['positions']['top'] = topos
 
-    self.writeConf(model, metadata, celldata)
+    safecells  = self.validate(celldata)
+    if isinstance(safecells, dict):
+      self.writeConf(model, metadata, celldata)
+    else:
+      raise TypeError(safecells)  # error string
 
   def writeConf(self, model, metadata, celldata):
     ''' PyYAML flow style None is different from False
@@ -65,34 +70,45 @@ class TmpFile:
   def readConf(self, model, meta=False):
     ''' read YAML
     '''
-    meta_tags = ['model', 'palette', 'positions'] # defaults will be popped
 
     with open(f'conf/{model}.yaml', 'r') as yf:
       conf = yaml.safe_load(yf)
 
     self.VERSION = conf['palette']
     if meta:
-      meta_vals = [conf[key] for key, val in conf.items() if key in meta_tags]
-      metadata  = dict(zip(meta_tags, meta_vals))
-      return metadata
+      conf = self.readMeta(conf)
     else:
-      if 'defaults' in conf:      # copy defaults 
-        defaults = conf.pop('defaults')
-        for key in defaults:
-          for val in defaults[key]:
-            for cell in conf:
-              if key in conf[cell]:
-                conf[cell][key][val] = defaults[key][val]
+      conf = self.readCells(conf)
+    return conf
 
-      for tag in meta_tags: del conf[tag] # remove meta data
-      for label in conf: # add the hash #rrggbb
-        for cs in conf[label]:
-          if cs in ['color', 'stroke']:
-            for fb in conf[label][cs]:
-              if fb in ['fill', 'background']: # skip opacity
-                conf[label][cs][fb] = self.prettyHash(conf[label][cs][fb])
-      self.setDigest(celldata=conf) 
-    return conf 
+  def readCells(self, conf):
+    if 'defaults' in conf:      # copy defaults 
+      defaults = conf.pop('defaults')
+      for key in defaults:
+        for val in defaults[key]:
+          for cell in conf:
+            if key in conf[cell]:
+              conf[cell][key][val] = defaults[key][val]
+
+    for tag in self.meta_tags: del conf[tag] # remove meta data
+    for label in conf: # add the hash #rrggbb
+      for cs in conf[label]:
+        if cs in ['color', 'stroke']:
+          for fb in conf[label][cs]:
+            if fb in ['fill', 'background']: # skip opacity
+              conf[label][cs][fb] = self.prettyHash(conf[label][cs][fb])
+    # handover to pydantic
+    safecells  = self.validate(conf)
+    if isinstance(safecells, dict):
+      self.setDigest(celldata=safecells) 
+    else:
+      raise TypeError(safecells)  # error string
+    return safecells
+
+  def readMeta(self, conf):
+    meta_vals = [conf[key] for key, val in conf.items() if key in self.meta_tags]
+    metadata  = dict(zip(self.meta_tags, meta_vals))
+    return metadata
 
   def setDigest(self, celldata=None):
     if celldata is None: # non-reversable 

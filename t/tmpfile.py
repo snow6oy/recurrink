@@ -33,14 +33,18 @@ class Test(unittest.TestCase):
     self.assertEqual('265550a81314a36daa05b5ed2d81ee1d', self.tf.digest)
 
   def test_c(self):
-    ''' Read celldata only, no meta stuff '''
-    if os.path.isfile(f'conf/{self.model}.yaml'):
-      celldata = self.tf.readConf(self.model)
-      for label in celldata:
-        self.assertTrue(label, 'geom' in celldata[label])
+    ''' Read celldata only, no meta stuff 
+    '''
+    if not os.path.isfile(f'conf/{self.model}.yaml'):
+      self.test_g()
+    celldata = self.tf.readConf(self.model)
+    for label in celldata:
+      self.assertTrue(label, 'geom' in celldata[label])
 
   def test_d(self):
     ''' read the meta stuff'''
+    if not os.path.isfile(f'conf/{self.model}.yaml'):
+      self.test_g()
     metadata = self.tf.readConf(self.model, meta=True)
     self.assertEqual(3, len(metadata.keys()))
 
@@ -53,6 +57,20 @@ class Test(unittest.TestCase):
     '''
     pal = self.tf.importPalfile('t.tmpfile.Test.test_e')
     self.assertEqual(5, len(pal))
+
+  def test_g(self):
+    ''' help test_c and test_d 
+    '''
+    pos = self.tf.positionBlock(minkscape.positions)
+    metadata = { 
+      'model':'minkscape', 
+      'palette': None, 
+      'positions': {
+        'foreground': pos
+      } 
+    }
+    #self.pp.pprint(metadata)
+    self.tf.writeConf('minkscape', metadata, minkscape.cells)
   
 
 '''
