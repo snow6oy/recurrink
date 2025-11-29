@@ -5,7 +5,7 @@ from typing import Literal, Dict, Optional
 # see hack in sitelib site-packages/pydantic_extra_types/__init__.py 
 from pydantic_extra_types import Color      
 
-class Stroke(BaseModel):
+class StrokeModel(BaseModel):
   fill       : Color
   dasharray  : int = None
   opacity    : Decimal = Field(gt=0, le=1)  # should default to 1 ?
@@ -19,7 +19,7 @@ class Stroke(BaseModel):
   def serializerOpacity(self, opacity: Decimal):
     return float(opacity)
 
-class Color(BaseModel):
+class ColorModel(BaseModel):
   opacity   : Decimal = Field(gt=0, le=1)
   fill      : Color
   background: Optional[Color] = None
@@ -49,19 +49,19 @@ class Geoname(str, Enum):
   parabol = 'parabol'
   # sqring   = 'sqring' sqring aint a thing
 
-class Geom(BaseModel, use_enum_values=True):
+class GeomModel(BaseModel, use_enum_values=True):
   name: Geoname
   size: Literal['small', 'medium', 'large']
   facing: Literal['C', 'N', 'E', 'S', 'W', 'NE', 'NW', 'SE', 'SW']
   top: bool
 
-class Cell(BaseModel):
-  geom  : Geom
-  color : Color
-  stroke: Optional[Stroke] = None
+class CellModel(BaseModel):
+  geom  : GeomModel
+  color : ColorModel
+  stroke: Optional[StrokeModel] = None
 
-class Cells(RootModel):
-  root : Dict[str, Cell]
+class CellsModel(RootModel):
+  root : Dict[str, CellModel]
 
   def __iter__(self):
     return iter(self.root)
@@ -78,7 +78,7 @@ class InputValidator:
     print(f"{model['a'].stroke.dasharray=}")                 # int
     '''
     try:
-      model = Cells(incoming)        # pydantic model will apply model constraints
+      model = CellsModel(incoming)        # pydantic model will apply model constraints
     except ValidationError as err:
       return err  
     cells = model.model_dump()  # obtain clean dictionary output with serializers

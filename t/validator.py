@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
     '''
     self.test_a(1.0, 'b', 'stroke', 'opacity')
 
-  def test_d(self):
+  def test_e(self):
     ''' stroke is optional
     '''
     iv        = InputValidator()
@@ -39,7 +39,7 @@ class Test(unittest.TestCase):
     cells = iv.validate(no_stroke)
     self.assertTrue(isinstance(cells, dict)) # return error
 
-  def test_e(self):
+  def test_d(self):
     ''' catch invalid input
     '''
     iv        = InputValidator()
