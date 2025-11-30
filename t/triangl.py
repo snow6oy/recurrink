@@ -4,7 +4,6 @@ from cell.shape import Triangle
 from cell.minkscape import *
 from cell import Layer
 from model import SvgWriter
-from block import Meander
 
 class Test(unittest.TestCase):
 
