@@ -443,7 +443,6 @@ def build(args):
     svgpal.render(fn, palette)
     print(f"palettes/{fn}.html was written")
   elif args.model and args.size and args.factor:
-    block     = Make(args.size, linear=bool(args.line))
     svglin    = SvgModel(args.size, args.factor)
 
     if args.model == 'minkscape': # default model
@@ -454,7 +453,9 @@ def build(args):
     
     celldata  = tf.readConf(args.model)
     ver       = fnam.index(tf.VERSION)
+    penam     = bd.penNames(ver)
     view.validate(celldata, ver=ver)
+    block     = Make(args.size, linear=bool(args.line), pen_names=penam)
     block.walk(positions, celldata, z=args.layer)
 
     svgfile   = args.model

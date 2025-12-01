@@ -110,6 +110,7 @@ class Make:
         0 s1 [p1 p2], s2 [p1]
     '''
     stroke_width = 0.7 # force to help Inkscape
+    uniq_penams  = dict() # have we seen this pen before
     for z in range(3): 
       for pos in self.cells:
         if z == len(self.cells[pos]): continue
@@ -120,7 +121,8 @@ class Make:
             # TODO what if there is a stroke ?
           s = f'stroke:{fill};'    
           d = f'stroke-dasharray:{self.style.stroke_dasharray[pos][z]};'
-          o = f'stroke-opacity:{self.style.stroke_opacity[pos][z]};'
+          #o = f'stroke-opacity:{self.style.stroke_opacity[pos][z]};'
+          o = f'stroke-opacity:{self.style.fill_opacity[pos][z]};'
             # TODO fix tmpfile to support <1 self.style.stroke_width[pos][z]
             # w = f'stroke-width:{self.style.stroke_width[pos][z]};'
           w = f'stroke-width:{stroke_width};' 
@@ -139,9 +141,13 @@ class Make:
         if style in self.grid[z]:
           self.grid[z][style]['geom'].append(geom)
         elif self.style.fill[pos][z]:
+          penam              = self.style.fill_penam[pos][z]
+          if penam in uniq_penams: uniq_penams[penam] +=1
+          else:                    uniq_penams[penam] = 0 
+          #print(pos, z, penam)
           self.grid[z][style] = {
              'geom': list(), 
-            'penam': self.style.fill_penam[pos][z] + f'_{z}'
+            'penam': f'{penam}_{z}{uniq_penams[penam]}'
           }
           self.grid[z][style]['geom'].append(geom)
         

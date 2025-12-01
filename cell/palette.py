@@ -273,7 +273,7 @@ FROM inkpal;""", [])
         raise ValueError(f"validation error: >{label}< {fg=} not in {self.ver}")
       elif bg and bg not in self.uniqfill:
         raise ValueError(f"validation error: >{label}< {bg=} not in {self.ver}")
-    if 'stroke' in cell: 
+    if 'stroke' in cell and cell['stroke']: 
       f = cell["stroke"]['fill']
       if f not in self.uniqfill:
         raise ValueError(f"cell: >{label}< {f} stroke not in {self.ver}")

@@ -126,6 +126,8 @@ class TmpFile(InputValidator):
     seed = str()
     for label in celldata: 
       for k in celldata[label]:
+        if celldata[label][k] is None: # empty strokes became None
+          continue
         for item in celldata[label][k]:
           seed += str(celldata[label][k][item])
     return seed

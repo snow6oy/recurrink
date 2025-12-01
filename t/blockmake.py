@@ -68,6 +68,26 @@ class Test(unittest.TestCase):
     bm.hydrateGrid()
     svg.build(bm)
     svg.render('blockmake_test_f')
+
+  def test_g(self):
+    ''' pens that appear in multiple styles
+        must still have unique names
+    '''
+    expected    = ['#F00_00', '#F00_11', '#F00_12', '#F00_13', '#F00_24', '#F00_25']
+    same_colour = minkscape.cells      # should be deep copy?
+    opacities   = [0.1, 0.2, 0.3, 0.4] # different styles to make test case
+    penams      = list()
+    for label, cell in same_colour.items():
+      cell['color']['fill'] = '#F00'   # same pen to force test
+      cell['color']['opacity'] = opacities.pop()
+    bm = Make(linear=True)
+    bm.walk(minkscape.positions, same_colour)
+    bm.hydrateGrid()
+    for layer in bm.grid:
+      for style in layer:
+        penams.append(layer[style]['penam'] )
+    self.assertEqual(penams, expected)
+
   
 '''
 the 
