@@ -89,13 +89,13 @@ Check clone made conf/MODEL.yaml.
 
 Export the old palette 
 `./recurrink clone -d RINKID -o pal`
-This will create a TXT file for palswap. 
+This will create a TXT file for build exchange.
 
 Build a rink with `./recurrink build -m MODEL` to create `tmp/MODEL.svg`  
 We will use this for comparison later.
 
-Then run palswap with the new palette
-`python -mscripts.palswap build -d RINKID -p VER`  
+Then run build exchange with the new palette
+`./recurrink build -x -d RINKID -p VER`
 This will find-nearest colour and build.  
 `tmp/MODEL_PALSWAP.svg`  
 
@@ -129,12 +129,12 @@ Business logic such as palette taxonomy is not included.
 Implement by inheriting TmplFile(InputValidator)
 When invalid data is found halt execution
 
-
-
-
-
-
-
+### Palette selection
+The right way is through the interface
+```
+./recurrink ls -opal
+```
+The wrong way is with SQL (because versions used to be zero based).
 
 ## Design
 Future ideas that have yet to be done.
