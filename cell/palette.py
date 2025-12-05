@@ -6,7 +6,8 @@ from .geometry import Geometry
 class Palette(Geometry):
 
   VERBOSE = False
-  BADLEN = {            # any change here to be done in block.palette too
+  pp      = pprint.PrettyPrinter(indent=2)
+  BADLEN  = {            # any change here to be done in block.palette too
     '#FFF': '#ffffff',
     '#CCC': '#cccccc',
     '#000': '#000000',
@@ -16,7 +17,6 @@ class Palette(Geometry):
     '#F0F': '#ff00ff',
     '#0FF': '#000fff'
   }
-  pp      = pprint.PrettyPrinter(indent=2)
 
   def __init__(self, ver=None):
     super().__init__()
@@ -180,14 +180,16 @@ FROM cells, palette
 WHERE cells.pid = palette.pid
 AND view = %s;""", [view])
     palette = self.cursor.fetchall()
-    return palette
+    strokes = self.readStrokeFill(view)
+    return palette + strokes
 
   def readStrokeFill(self, view):
     ''' export strokes for block palette
+  
     '''
     palette = list()
     self.cursor.execute("""
-SELECT fill, opacity 
+SELECT fill, opacity, NULL
 FROM cells, strokes 
 WHERE cells.sid=strokes.sid 
 AND view = %s;""", [view])
@@ -230,9 +232,11 @@ ORDER BY random() LIMIT 1;""", [ver])
     return list(self.cursor.fetchone())
 
   def read_compliment(self, ver):
-    ''' compliment is defined as any relation whether 1 same:same or 2 same:opposite
+    ''' compliment is defined as any relation 
+        whether 1 same:same or 2 same:opposite
         once the use-cases are defined these should be split
-        colours with multiple palette entries have the relation entry as priority
+        colours with multiple palette entries 
+        have the relation entry as priority
     '''
     self.complimentary = dict()
     self.cursor.execute("""

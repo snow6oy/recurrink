@@ -153,14 +153,14 @@ class PaletteMaker:
       for k in ['bg', 'fill', 'stroke']:
         if k in celldata[label]:
           oc = celldata[label][k]
-          #print(f'{label=} {oc=} {k=}')
           if k == 'bg' and oc in ['#FFF', '#fff', '#ffffff']:
             #print('make null background')
             celldata[label][k] = None
-          elif k == 'stroke' and oc not in swp:
-            print(f'WARNING {oc=} stroke alert!')
-          else:
+          #elif k == 'stroke' and oc not in swp:
+          elif oc in swp:
             celldata[label][k] = swp[oc]
+          else:
+            raise KeyError(f'{label=} {k=} {oc=} not found')
     return celldata
 
   def setLookUp(self, uniqfill):
@@ -182,6 +182,7 @@ class PaletteMaker:
     print(oc)
     swp = dict()
     for old_color in oc:
+      if old_color == 'None': continue # strokes do not have backgrounds
       anylen = old_color
       if old_color in self.BADLEN:
         anylen = self.BADLEN[old_color]

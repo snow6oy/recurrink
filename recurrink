@@ -290,7 +290,6 @@ def clone(args):
   model, author, scale, ver = view.readMeta(digest=args.digest)
   if args.output == 'pal': # export view as palette
     palette = set(pal.read_view(args.digest))
-    print(palette)
     tf.exportPalfile(args.digest, palette) 
     print(f"palettes/{args.digest}.txt was written")
   else:   # assume we want celldata
