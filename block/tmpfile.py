@@ -45,6 +45,7 @@ class TmpFile(InputValidator):
       cell = self.refactorCell(label, cell)
       celldata[label] = cell
 
+    print() # flush refactorCell
     metadata = {
       'model': model,
       'palette': self.PALETTE
