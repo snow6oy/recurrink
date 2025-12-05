@@ -5,7 +5,18 @@ from .geometry import Geometry
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Palette(Geometry):
 
-  VERBOSE = True
+  VERBOSE = False
+  BADLEN = {            # any change here to be done in block.palette too
+    '#FFF': '#ffffff',
+    '#CCC': '#cccccc',
+    '#000': '#000000',
+    '#F00': '#ff0000',
+    '#FF0': '#ffff00',
+    '#00F': '#0000ff',
+    '#F0F': '#ff00ff',
+    '#0FF': '#000fff'
+  }
+  pp      = pprint.PrettyPrinter(indent=2)
 
   def __init__(self, ver=None):
     super().__init__()
@@ -90,6 +101,64 @@ WHERE view = %s;""",
     )
     return self.cursor.rowcount + rownum
 
+  def colour_check(self, palette):
+    ''' compare the new palette against the main colour list
+        return a list of those that are missing
+    '''
+    colours     = self.read_colours()
+    #self.pp.pprint(colours)
+    fill        = set([p[0] for p in palette])
+    backgrounds = set([p[2] for p in palette])
+    for c in colours:
+      if c in fill:               fill.remove(c)
+      if c in backgrounds: backgrounds.remove(c)
+    missing = list(fill) + list(backgrounds)
+    return set(missing)
+
+  def collapse_opacity(self, ver, pal):
+    ''' for each opacity to be collapsed
+        select palette entry with bad opacity
+        find nearest pid
+        update cells table so view with old pid uses new pid
+    '''
+    pal.load_palette(ver=ver)
+    #new_pid = pal.read_pid(['#C71585', '#FFF', '0.9'])
+    for old_fo in [0.6]:  # 9, 0.7, 0.4, 0.3, 0.1]:
+      #print(old_fo)
+      to_clean = [p for p in pal.palette if p[1] == old_fo]
+      for tc in to_clean:
+        old_pid = pal.read_pid([tc[0], tc[2], tc[1]])
+        new_opacity, new_pid = self.find_opacity(ver, tc, pal)
+        if new_pid:
+          print(f"UPDATE cells SET pid = {new_pid} WHERE pid = {old_pid};")
+        else:
+          pass
+          #relation = self.relation(tc[0], tc[2])
+          #print(f"INSERT INTO palette (ver, fill, bg, opacity, relation) VALUES (0,'{tc[0]}', '{tc[2]}', {new_opacity}, {relation});")
+
+  def find_opacity(self, tc):
+    ''' find the nearest opacity to the one we want to deprecate
+        return the nearest op and pid, if it already exists in db
+    '''
+    old_fo = tc[1]
+    available = self.read_cleanpids([tc[0], tc[2]])
+    #pp.pprint(available)
+    candidates = list()
+    for candidate in [1, 0.8, 0.5, 0.2]:
+      if candidate > old_fo:
+        nearest = (candidate * 10) - (old_fo * 10)
+      else:
+        nearest = (old_fo * 10) - (candidate * 10)
+      pid = None
+      for a in available:
+        if candidate == a[1]: # compare opacities
+          pid = a[0]
+          break
+      candidates.append([candidate, int(nearest), pid])
+    new_pid = sorted(candidates, key=lambda x: x[1], reverse=False)
+    #pp.pprint(new_pid)
+    return new_pid[0][0], new_pid[0][2]
+
   def read_item(self, pid):
     ''' not called and may no longer be needed 
     '''
@@ -110,7 +179,18 @@ SELECT fill, opacity, bg
 FROM cells, palette
 WHERE cells.pid = palette.pid
 AND view = %s;""", [view])
-    # palette = [p[0] for p in self.cursor.fetchall()]
+    palette = self.cursor.fetchall()
+    return palette
+
+  def readStrokeFill(self, view):
+    ''' export strokes for block palette
+    '''
+    palette = list()
+    self.cursor.execute("""
+SELECT fill, opacity 
+FROM cells, strokes 
+WHERE cells.sid=strokes.sid 
+AND view = %s;""", [view])
     palette = self.cursor.fetchall()
     return palette
 
@@ -172,7 +252,8 @@ FROM palette
 WHERE ver = %s
 ORDER BY relation, fill, opacity;""", [ver])
     self.palette = self.cursor.fetchall()
-    self.read_compliment(ver)
+    self.read_compliment(ver) # who calls here ???
+    return self.palette 
 
   def read_opacity(self, fill=None, bg=None):
     if fill and bg: # opacity varies according to fill when ver is universal
@@ -238,8 +319,12 @@ FROM inkpal;""", [])
     if len(self.palette) == 0:
       raise ValueError(f"what version are you on about {ver}")
     uniqfill = set()
-    [uniqfill.add(p[0]) for p in self.palette]
-    [uniqfill.add(p[2]) for p in self.palette]
+    for p in self.palette:  # align with Pydantic.Color
+      fg, op, bg = p
+      if fg in self.BADLEN: fg = self.BADLEN[fg]
+      uniqfill.add(fg.lower())
+      if bg in self.BADLEN: bg = self.BADLEN[bg]
+      if bg: uniqfill.add(bg.lower())
     self.uniqfill = uniqfill
 
   def generate_any(self, ver=None):

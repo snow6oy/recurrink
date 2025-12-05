@@ -5,12 +5,11 @@ from math import sqrt
 from colorsys import rgb_to_hsv, hsv_to_rgb
 from .tmpfile import TmpFile
 
-pp = pprint.PrettyPrinter(indent = 2)
-
 class PaletteMaker:
-
+  ''' palette logic
+  '''
   VERBOSE = False
-  BADLEN = {
+  BADLEN  = {
     '#FFF': '#ffffff',
     '#CCC': '#cccccc',
     '#000': '#000000',
@@ -20,8 +19,8 @@ class PaletteMaker:
     '#F0F': '#ff00ff',  
     '#0FF': '#000fff'
   }
-  ''' palette logic
-  '''
+  pp      = pprint.PrettyPrinter(indent = 2)
+
   def rgb_int(self, r, g, b):
     ''' the compliment of #dc143c is #14dcb4
       https://www.w3schools.com/colors/colors_hexadecimal.asp
@@ -63,65 +62,6 @@ class PaletteMaker:
     else:
       raise ValueError('fill is required')
 
-  def colour_check(self, p, palette):
-    ''' compare the new palette against the main colour list
-        return a list of those that are missing
-    '''
-    colours = p.read_colours()
-    fill = set([p[0] for p in palette])
-    backgrounds = set([p[2] for p in palette])
-    for c in colours:
-      if c in fill:
-        fill.remove(c)
-      if c in backgrounds:
-        backgrounds.remove(c)
-    missing = list(fill) + list(backgrounds)
-    return set(missing)
-
-  def collapse_opacity(self, ver, pal):
-    ''' for each opacity to be collapsed
-        select palette entry with bad opacity
-        find nearest pid
-        update cells table so view with old pid uses new pid
-    '''
-    pal.load_palette(ver=ver)
-    #new_pid = pal.read_pid(['#C71585', '#FFF', '0.9'])
-    for old_fo in [0.6]:  # 9, 0.7, 0.4, 0.3, 0.1]:
-      #print(old_fo)
-      to_clean = [p for p in pal.palette if p[1] == old_fo]
-      for tc in to_clean:
-        old_pid = pal.read_pid([tc[0], tc[2], tc[1]])
-        new_opacity, new_pid = self.find_opacity(ver, tc, pal)
-        if new_pid:
-          print(f"UPDATE cells SET pid = {new_pid} WHERE pid = {old_pid};")
-        else:
-          pass
-          #relation = self.relation(tc[0], tc[2])
-          #print(f"INSERT INTO palette (ver, fill, bg, opacity, relation) VALUES (0,'{tc[0]}', '{tc[2]}', {new_opacity}, {relation});")
-
-  def find_opacity(self, ver, tc, pal):
-    ''' find the nearest opacity to the one we want to deprecate
-        return the nearest op and pid, if it already exists in db
-    '''
-    old_fo = tc[1]
-    available = pal.read_cleanpids([tc[0], tc[2]])
-    #pp.pprint(available)
-    candidates = list()
-    for candidate in [1, 0.8, 0.5, 0.2]:
-      if candidate > old_fo:
-        nearest = (candidate * 10) - (old_fo * 10)
-      else:
-        nearest = (old_fo * 10) - (candidate * 10)
-      pid = None
-      for a in available:
-        if candidate == a[1]: # compare opacities
-          pid = a[0]
-          break
-      candidates.append([candidate, int(nearest), pid])
-    new_pid = sorted(candidates, key=lambda x: x[1], reverse=False)
-    #pp.pprint(new_pid)
-    return new_pid[0][0], new_pid[0][2]
-
   def cmpPalettes(self, digest, fn):
     ''' count matching entries of two palettes
     '''
@@ -142,24 +82,20 @@ class PaletteMaker:
 {same:3d} matching palette entries""")
     return out
 
-  def makeUnique(self, ver, pal, txtpal, dryrun=False):
+  def makeUnique(self, ver, dbpal, txtpal):
     ''' compare db and txt palettes and return difference
     '''
-    new_pal = list()
+    new_pal     = list()
 
     for p in txtpal: # avoid duplicating existing entry
-      p[1] = float(p[1])
+      p[1]       = float(p[1])
       test_entry = tuple(p[:3]) 
-      if (test_entry not in pal.palette): # its empty the very first time
+      if (test_entry not in dbpal): # its empty the very first time
         new_pal.append(list(test_entry))
-    for n in new_pal: # decorate palette before INSERTing
+    for n in new_pal: # decorate palette with ver relations before returning
       rn = self.relation(n[0], n[2])
       n.append(rn)
       n.insert(0, ver)
-      if dryrun:  # see unit tests t.palette.Test.test_b
-        print(f'dry run skipping INSERT {ver=} {n}')
-      else:
-        pid = pal.createPaletteEntry(n)
     return new_pal
 
   ''' INKSCAPE
@@ -221,9 +157,8 @@ class PaletteMaker:
           if k == 'bg' and oc in ['#FFF', '#fff', '#ffffff']:
             #print('make null background')
             celldata[label][k] = None
-          elif k == 'stroke':
+          elif k == 'stroke' and oc not in swp:
             print(f'WARNING {oc=} stroke alert!')
-            celldata[label][k] = swp[oc]
           else:
             celldata[label][k] = swp[oc]
     return celldata
@@ -244,6 +179,7 @@ class PaletteMaker:
     ''' find the new colour that is closest to the old
         and replace
     '''
+    print(oc)
     swp = dict()
     for old_color in oc:
       anylen = old_color
@@ -277,7 +213,6 @@ class PaletteMaker:
     ## Convert to hexadecimal and remove '0x' prefix
     hex_color = '#{:02x}{:02x}{:02x}'.format(r, g, b)
     return hex_color
-
 '''
 the
 end
