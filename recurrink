@@ -217,8 +217,8 @@ def commit(args):
       add NEW_PAL to friendly_name
       use the index of config.friendly_name[] as arg
   '''
+  pal = Palette()    # throws error but pal was assigned already???
   if args.palette and args.digest and args.exchange:
-    pal       = Palette()    # throws error but pal was assigned already???
     dig       = args.digest  # '180f1989f54ff03291ec31e164f2a79f'
     celldata  = view.read(digest=dig) 
     ver       = args.palette # use onlyi pen pals 8..12 please
@@ -238,13 +238,14 @@ def commit(args):
 update {numupdated} view 
 swapping {args.digest} to palette {fnam[args.palette]}""")
   elif args.palette:
-    palette         = tf.importPalfile(fnam[args.palette])
-    missing_colours = pmk.colour_check(pal, palette)
+    txtpal          = tf.importPalfile(fnam[args.palette])
+    missing_colours = pal.colour_check(txtpal)
     if len(missing_colours): # add any new colours 
       pal.create_colours(missing_colours)
       print(f"{len(missing_colours)} new colours ")
-    pal.read_palette(args.palette)
-    new_pal = pmk.makeUnique(args.palette, pal, palette)
+    dbpal   = pal.read_palette(args.palette)
+    new_pal = pmk.makeUnique(args.palette, dbpal, txtpal)
+    [pal.createPaletteEntry(n) for n in new_pal]
     print(f"{len(new_pal)} new entries")
   elif args.inkpal:
     gpldata = pmk.readInkscapePal(PALDIR, f'{args.inkpal}.gpl')
@@ -289,6 +290,7 @@ def clone(args):
   model, author, scale, ver = view.readMeta(digest=args.digest)
   if args.output == 'pal': # export view as palette
     palette = set(pal.read_view(args.digest))
+    print(palette)
     tf.exportPalfile(args.digest, palette) 
     print(f"palettes/{args.digest}.txt was written")
   else:   # assume we want celldata
@@ -463,7 +465,7 @@ def build(args):
     block.hydrateGrid()
     svglin.build(block)
     svglin.render(svgfile, line=bool(args.line))
-    print(f'tmp/{svgfile}.svg was built')
+    print(f'tmp/{svgfile}.svg was built with pal {fnam[ver]}')
   else:
     raise Warning(f'''missing argument
 {args.palette=} 
