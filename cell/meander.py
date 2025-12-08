@@ -5,7 +5,7 @@ from shapely.geometry import Point, LineString, MultiLineString
 class Line:
 
   VERBOSE = False # also see children
-  pp      = pprint.PrettyPrinter(indent=2)
+  pp      = pprint.PrettyPrinter(indent=2, width=120)
 
   def guidelines(self, facing, clen, bounds):
     '''  E - B - F
@@ -53,15 +53,16 @@ class Line:
     pgl = set_precision(gl, grid_size=1)
     return pgl
 
-  def collectPoints(self, guidelines):
+  def collectPoints(self, guidelines, facing=None):
     ''' collect the points intersecting the shape
         gridwalk the bounding box and collect Points() touching the guidelines
         grouped by the guidelines
     '''
     points  = []
     for i, gl in enumerate(list(guidelines.geoms)):
-      points.append([]) # template
-      start_x, stop_x, step_x, start_y, stop_y, step_y = self.orderGrid(gl)
+      points.append([])          # template
+      (start_x, stop_x, step_x,  # facing is only for triangles
+       start_y, stop_y, step_y) = self.orderGrid(gl, facing)
       for y in range(start_y, stop_y, step_y):
         for x in range(start_x, stop_x, step_x):
           pt = Point(x, y)
@@ -69,7 +70,7 @@ class Line:
             points[i].append((x,y))
     return points
 
-  def orderGrid(self, guideline):
+  def orderGrid(self, guideline, facing=None):
     ''' private method to simplify collectPoints()
         calculate the grid order by converting LineString
         into parameters for iteration
