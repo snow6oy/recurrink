@@ -1,0 +1,53 @@
+@startchen
+
+entity colours {
+ fill : HEX
+}
+entity inkpal {
+ ver: INT
+ gplfile: STR
+}
+entity palette {
+ pid: INT
+ ver: INT
+ fill: HEX
+ bg: HEX:
+ opacity: FLOAT
+ relation: INT
+}
+entity cells {
+  pid: INT
+  sid: INT
+}
+entity pens {
+ ver: INT
+ fill: HEX
+ penam: STR
+}
+entity strokes {
+ sid: INT
+ fill: HEX
+ width: FLOAT
+ dasharray: FLOAT
+ opacity: FLOAT
+}
+
+relationship A {
+}
+A -1- pens
+A -N- palette
+relationship B {
+}
+B -1- palette
+B -N- cells
+relationship C {
+}
+C -1- strokes
+C -N- cells
+relationship D {
+}
+D -1- inkpal
+D -N- pens
+
+@endchen
+

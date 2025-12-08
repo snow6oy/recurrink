@@ -1,7 +1,27 @@
-@startchen
+@startuml
+
+entity blocks {
+ model: STR 
+ position: INT
+ cell: CHAR 
+ top: BOOL
+}
 
 entity colours {
  fill : HEX
+}
+entity compass {
+  model: STR 
+ cell: CHAR
+ pair: CHAR
+ facing: STR
+}
+entity geometry {
+ gid: INT
+ shape: STR
+ size: STR
+ facing: CHAR
+ top: BOOL
 }
 entity inkpal {
  ver: INT
@@ -16,9 +36,19 @@ entity palette {
  relation: INT
 }
 entity cells {
+  view: CHAR
+  cell: CHAR
+  gid: INT
   pid: INT
   sid: INT
 }
+entity models {
+  model: STR
+  uniqcells: INT
+  blocksizexy: INT
+  scale: DECIMAL
+}
+
 entity pens {
  ver: INT
  fill: HEX
@@ -31,23 +61,28 @@ entity strokes {
  dasharray: FLOAT
  opacity: FLOAT
 }
+entity views {
+  view: CHAR
+  model: STR
+  author: STR
+  scale: DECIMAL
+  created: DATE
+  colournum: INT
+  ver: INT
+  pubdate: DATE
+}
 
-relationship A {
-}
-A -1- pens
-A -N- palette
-relationship B {
-}
-B -1- palette
-B -N- cells
-relationship C {
-}
-C -1- strokes
-C -N- cells
-relationship D {
-}
-D -1- inkpal
-D -N- pens
 
-@endchen
+cells *-- palette
+cells *-- strokes
+cells *-- geometry
+cells *-- views
+cells *-- blocks
+palette *-- pens
+palette *-- inkpal
+palette *-- colours
+blocks *-- models
+compass *-- models
+views *-- models
 
+@enduml

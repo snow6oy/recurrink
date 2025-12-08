@@ -1,0 +1,73 @@
+@startuml
+
+entity blocks {
+  mid: STR 
+  position: INT
+  cell: CHAR 
+  top: BOOL
+}
+entity compass {
+  mid: STR 
+  cell: CHAR
+  pair: CHAR
+  facing: STR
+}
+entity geometry {
+  rinkid: CHAR
+  cell: CHAR
+  layer: INT
+  name: STR
+  size: STR
+  facing: CHAR
+}
+entity inkpal {
+ ver: INT
+ gplfile: STR
+}
+entity palette {
+  rinkid: CHAR
+  cell: CHAR
+  layer: INT
+  ver: INT
+  fill: HEX
+  opacity: DECIMAL
+}
+entity models {
+  mid: INT
+  model: STR
+}
+entity pens {
+  ver: INT
+  fill: HEX
+  penam: STR
+}
+entity strokes {
+  rinkid: CHAR
+  cell: CHAR
+  layer: INT
+  fill: HEX
+  width: DECIMAL
+  dasharray: DECIMAL
+  opacity: DECIMAL
+}
+entity rinks {
+  rinkid: CHAR
+  mid: STR
+  size: INT
+  factor: DECIMAL
+  created: DATE
+  ver: INT
+  pubdate: DATE
+}
+
+
+strokes *-- rinks
+geometry *-- rinks
+palette *-- rinks
+rinks *-- blocks
+palette *-- pens
+pens *-- inkpal
+blocks *-- models
+compass *-- models
+
+@enduml
