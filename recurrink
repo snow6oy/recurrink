@@ -231,7 +231,7 @@ def commit(args):
     rownum   += view.updateSids(ver, dig, swp, celldata) # {'a': 309, 'b': 310
     print(f'{ver} {dig} {rownum} updates')
   elif args.palette and args.digest:
-    model      = view.read_meta(args.digest)[0]
+    model      = view.readMeta(args.digest)[0]
     celldata   = tf.read(model, output=list())
     numupdated = pal.swap_palette(celldata, ver, digest)
     print(f"""
