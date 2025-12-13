@@ -1,5 +1,11 @@
 @startuml
 
+' add packages
+' ------+-----------------------------
+' cell  | geometry strokes palette
+' block | rinks pens
+' model | compass blocks inkpal models
+
 entity blocks {
   mid: STR 
   position: INT
