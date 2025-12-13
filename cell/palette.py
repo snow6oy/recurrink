@@ -293,11 +293,17 @@ WHERE gplfile = %s;""", [penam])
     ver = row[0] if len(row) else None
     return ver
 
-  def penNames(self, penam, gpldata):
+  def penNames(self, penam, gpldata, ver=0):
     ''' pen names keyed by ver:hex
     '''
-    ver = self.verByPenam(penam)
-    if ver:
+    if ver > 0: # grab everything and run
+      self.cursor.execute("""
+SELECT * 
+FROM pens
+WHERE ver = %s;""", [ver])
+      return self.cursor.fetchall()
+    else:
+      ver = self.verByPenam(penam)
       for hexstr in gpldata:
         self.cursor.execute("""
 INSERT INTO pens (ver, fill, penam)
