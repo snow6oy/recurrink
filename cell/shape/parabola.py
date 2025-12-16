@@ -27,10 +27,10 @@ class Parabola(Line):
     X, Y, W, H, a, b, c, d, *A = dim
 
     direction = {
-          'N': [(X,Y),(X,H),(W,H),(W,Y),(c,Y),(c,d),(a,d),(a,Y)],
-          'S': [(X,Y),(X,H),(a,H),(a,b),(c,b),(c,H),(W,H),(W,Y)],
-          'W': [(X,Y),(X,H),(W,H),(W,d),(a,d),(a,b),(W,b),(W,Y)],
-          'E': [(X,Y),(X,b),(c,b),(c,d),(X,d),(X,H),(W,H),(W,Y)]
+      'S': [(X,Y),(X,H),(W,H),(W,Y),(c,Y),(c,d),(a,d),(a,Y)],
+      'N': [(X,Y),(X,H),(a,H),(a,b),(c,b),(c,H),(W,H),(W,Y)],
+      'W': [(X,Y),(X,H),(W,H),(W,d),(a,d),(a,b),(W,b),(W,Y)],
+      'E': [(X,Y),(X,b),(c,b),(c,d),(X,d),(X,H),(W,H),(W,Y)]
     }
     return direction[facing]
 
@@ -40,8 +40,8 @@ class Parabola(Line):
     X, Y, W, H, a, b, c, d, *A = dim
     facing  = geom['facing']
     control = {
-      'N': ['NE', 'W', X, Y, a, d],  # test g
-      'S': ['SW', 'E', c, b, W, H],  # test h
+      'S': ['NE', 'W', X, Y, a, d],  # test g
+      'N': ['SW', 'E', c, b, W, H],  # test h
       'E': ['SE', 'N', X, d, c, H],  # test i
       'W': ['NW', 'S', a, Y, W, b]   # test f
     }

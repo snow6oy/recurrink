@@ -81,14 +81,16 @@ class Test(unittest.TestCase):
       self.assertEqual(expt[size], rslt[size])
     
   def test_f(self, x=0, y=0, stroke_width=0, clen=9):
-    ''' points
+    ''' test some common points
+        expect resuts based on SVG coordinates
+        https://jenkov.com/tutorials/svg/svg-coordinate-system.html
     '''
     layer  = Layer()
     points = layer.points(x, y, stroke_width, clen)
-    # self.pp.pprint(points)
+    #self.pp.pprint(points)
     swd, cl, n, e, s, w, ne, se, nw, sw, mid = points
-    self.assertEqual((4.5,   9), n)
-    self.assertEqual((4.5,   0), s)
+    self.assertEqual((4.5,   0), n)
+    self.assertEqual((4.5,   9), s)
     self.assertEqual((  9,4.5),  e)
     self.assertEqual((  0,4.5),  w)
     self.assertEqual((  9,  9), ne)

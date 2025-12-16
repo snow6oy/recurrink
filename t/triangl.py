@@ -19,18 +19,21 @@ class Test(unittest.TestCase):
     self.layer   = Layer()
     self.writer  = SvgWriter()
 
-  def test_a(self, guide=False):
+  def test_a(self, facing=None):
     ''' draw a triangle
+        N and S are flipped because matplotlib uses cartesian coordinates
     '''
     self.assertEqual(self.triangl.name, 'triangl')
     geom   = self.cell['d']['geom']
+    if facing: geom['facing'] = facing
     points = self.layer.points(0, 0, 1, self.clen)
+    print(points)
     polygn = self.triangl.paint(points, geom)
 
     self.assertEqual(1, points[0])
     if self.VERBOSE: self.writer.plot(polygn, self.id())
 
-  def test_b(self): pass
+  def test_b(self): self.test_a(facing='N')
     
   def test_c(self): self.test_f(facing='N')
   def test_d(self): self.test_f(facing='S')

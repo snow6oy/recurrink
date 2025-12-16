@@ -39,12 +39,17 @@ class Line:
        'S': (HE, GF),
        'E': (EF, HG),
        'W': (FE, GH),
+      'SW': (HG, EG, FG),
+      'NE': (FE, GE, HE),
+      'NW': (FE, FH, FG),
+      'SE': (HG, HF, HE),
+    }
+    '''
       'NW': (GH, GE, GF),
       'SE': (EH, EG, EF),
       'SW': (EF, HF, GF),
       'NE': (GH, FH, EH),
-    }
-    '''
+
     without precise collectPoints will fail 
      gl: MULTILINESTRING ((46.666666666666664 13.333333333333332 ..
     pgl: MULTILINESTRING ((47 13 ..

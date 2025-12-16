@@ -24,8 +24,8 @@ class Triangle(Line):
     '''
     swidth, clen, n, e, s, w, ne, se, nw, sw, mid = points
     rings = {
-      'N': (nw, ne, s),
-      'S': (sw, n, se),
+      'S': (nw, ne, s),
+      'N': (sw, n, se),
       'E': (nw, e, sw),
       'W': (w, ne, se)
     }

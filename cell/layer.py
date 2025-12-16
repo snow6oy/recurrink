@@ -109,19 +109,21 @@ class Layer:
     return tuple([X, Y, W, H, a, b, c, d, A, B, C, D])
 
   def points(self, x, y, stroke_width, clen):
+    ''' coordinate system is SVG t.layer.test_f
+    '''
     X = x * clen
     Y = y * clen
 
     swd = stroke_width
     cl  = clen
-    s   = tuple([X + cl / 2,   Y + swd])
+    n   = tuple([X + cl / 2,   Y + swd])
     e   = tuple([X + cl - swd, Y + cl / 2])
-    n   = tuple([X + cl / 2,   Y + cl - swd])
+    s   = tuple([X + cl / 2,   Y + cl - swd])
     w   = tuple([X + swd,      Y + cl / 2])
-    ne  = tuple([X + cl - swd, Y + cl - swd])
-    se  = tuple([X + cl - swd, Y + swd] )
-    nw  = tuple([X + swd,      Y + cl - swd])
-    sw  = tuple([X + swd,      Y + swd])
+    se  = tuple([X + cl - swd, Y + cl - swd])
+    ne  = tuple([X + cl - swd, Y + swd] )
+    sw  = tuple([X + swd,      Y + cl - swd])
+    nw  = tuple([X + swd,      Y + swd])
     mid = tuple([X + cl / 2,   Y + cl / 2])
 
     return tuple([swd, cl, n, e, s, w, ne, se, nw, sw, mid])

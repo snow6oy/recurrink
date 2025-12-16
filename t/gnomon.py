@@ -11,7 +11,7 @@ from model import SvgWriter
 
 class Test(unittest.TestCase):
 
-  VERBOSE = True
+  VERBOSE = False
   pp      = pprint.PrettyPrinter(indent=2)
 
   def setUp(self):
@@ -41,12 +41,12 @@ class Test(unittest.TestCase):
       f2={'facing': 'SE', 'size':'small' }
     )
 
-  def test_c(self, facing=None):
+  def test_c(self, facing='NW'):
     ''' meander using Line class
     '''
     geom           = self.cells['d']['geom']
     dim            = self.layer.dimension(0, 0, self.clen)
-    geom['facing'] = facing if facing else 'NW' # override Easterly default
+    geom['facing'] = facing
     if self.VERBOSE:
       self.pp.pprint(dim)
       self.pp.pprint(geom)
@@ -57,6 +57,28 @@ class Test(unittest.TestCase):
   def test_d(self): self.test_c(facing='SW')
   def test_e(self): self.test_c(facing='NE')
   def test_f(self): self.test_c(facing='SE')
+
+  def test_g(self, facing='NW', size='medium'):
+    ''' paint gnomons
+    '''
+    geom           = self.cells['a']['geom']
+    dim            = self.layer.dimension(0, 0, self.clen)
+    geom['facing'] = facing
+    geom['size']   = size
+    if self.VERBOSE:
+      self.pp.pprint(dim)
+      self.pp.pprint(geom)
+
+    polygn  = self.g.paint(dim, geom)
+    if self.VERBOSE: self.writer.plot(polygn, self.id())
+
+  def test_h(self): self.test_g(facing='SW')
+  def test_i(self): self.test_g(facing='NE', size='small')
+  def test_j(self): self.test_g(facing='SE', size='small')
+'''
+the
+end
+'''
 '''
 the
 end

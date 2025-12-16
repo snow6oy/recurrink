@@ -19,11 +19,11 @@ class Test(unittest.TestCase):
     self.writer  = SvgWriter()
     self.diamond = Diamond()
 
-  def test_a(self):
+  def test_a(self, facing='C'):
     ''' diamond
     '''
     self.cell['d']['geom']['name']   = 'diamond'
-    self.cell['d']['geom']['facing'] = 'C'
+    self.cell['d']['geom']['facing'] = facing
 
     points  = self.layer.points(0, 0, 0, self.clen)
     polygn  = self.diamond.paint(points, self.cell['d']['geom'])
@@ -31,12 +31,12 @@ class Test(unittest.TestCase):
     self.assertEqual(self.diamond.name, 'diamond')
     if self.VERBOSE: self.writer.plot(polygn, self.id()) 
 
-  def test_b(self, facing=None):
+  def test_b(self, facing='C'):
     ''' meander using Line class
     '''
     points  = self.layer.points(0, 0, 1, self.clen)
     geom    = self.cell['a']['geom']
-    if facing: geom['facing'] = facing # override Easterly default
+    geom['facing'] = facing
     #self.pp.pprint(geom)
 
     polyln  = self.diamond.draw(points, geom)
@@ -46,6 +46,9 @@ class Test(unittest.TestCase):
   def test_d(self): self.test_b(facing='S')
   def test_e(self): self.test_b(facing='E')
   def test_f(self): self.test_b(facing='W')
+
+  def test_g(self): self.test_a(facing='N')
+  def test_h(self): self.test_a(facing='S')
 
 '''
 the

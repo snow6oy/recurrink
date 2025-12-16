@@ -35,21 +35,25 @@ class Gnomon(Line):
 
   def coords(self, dim, facing, size):
     ''' define the input so Shapely Polygon can create an L shape
+
+        +--+         +-           -+
+        |  |  medium |     small   |
+        +--+         +--+
     '''
     X, Y, W, H, a, b, c, d, *A = dim
 
     sizes   = {
       'medium': {
-          'NW': [(X, Y), (X, H), (W, H), (W, d), (a, d), (a, Y)],
-          'SW': [(X, Y), (X, H), (a, H), (a, b), (W, b), (W, Y)],
-          'SE': [(X, Y), (X, b), (c, b), (c, H), (W, H), (W, Y)],
-          'NE': [(X, d), (X, H), (W, H), (W, Y), (c, Y), (c, d)] 
+          'SW': [(X, Y), (X, H), (W, H), (W, d), (a, d), (a, Y)],
+          'NW': [(X, Y), (X, H), (a, H), (a, b), (W, b), (W, Y)],
+          'NE': [(X, Y), (X, b), (c, b), (c, H), (W, H), (W, Y)],
+          'SE': [(X, d), (X, H), (W, H), (W, Y), (c, Y), (c, d)] 
        },
        'small': {
-          'NW': [(X, b), (X, H), (c, H), (c, d), (a, d), (a, b)],
-          'SW': [(X, Y), (X, d), (a, d), (a, b), (c, b), (c, Y)],
-          'SE': [(a, Y), (a, b), (c, b), (c, d), (W, d), (W, Y)],
-          'NE': [(a, d), (a, H), (W, H), (W, b), (c, b), (c, d)] 
+          'SW': [(X, b), (X, H), (c, H), (c, d), (a, d), (a, b)],
+          'NW': [(X, Y), (X, d), (a, d), (a, b), (c, b), (c, Y)],
+          'NE': [(a, Y), (a, b), (c, b), (c, d), (W, d), (W, Y)],
+          'SE': [(a, d), (a, H), (W, H), (W, b), (c, b), (c, d)] 
        }
     }
     if size in sizes and facing in sizes[size]: 
