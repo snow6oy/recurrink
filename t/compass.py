@@ -10,15 +10,15 @@ class Test(unittest.TestCase):
   def setUp(self):
     self.compass = Compass('timpani')
 
-  def test_1(self):
+  def test_a(self):
     ''' lookup recipe for mirroring from model or None
     '''
     pairs, axis = self.compass.one('j')  # j is on the northeast axis
     #print(pairs, axis)
     self.assertEqual(pairs[1], 'j')
-    self.assertEqual(axis, 'northeast')
+    self.assertEqual(axis, 'NE')
 
-  def test_2(self):
+  def test_b(self):
     ''' lookup recipe for mirroring from model or None
     '''
     self.assertTrue(self.compass.all('k'))
