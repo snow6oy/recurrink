@@ -27,7 +27,6 @@ class Test(unittest.TestCase):
     geom   = self.cell['d']['geom']
     if facing: geom['facing'] = facing
     points = self.layer.points(0, 0, 1, self.clen)
-    print(points)
     polygn = self.triangl.paint(points, geom)
 
     self.assertEqual(1, points[0])
