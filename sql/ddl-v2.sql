@@ -54,11 +54,15 @@ CREATE TABLE blocks (
 DROP TABLE rinks CASCADE;
 CREATE TABLE rinks (
   rinkid CHAR(32) PRIMARY KEY,     -- assume digest makes unique IDs
-  mid INT NOT NULL,
-  factor NUMERIC(3,2) NOT NULL,
+  mid INT,
   ver INT,
+  clen INT [],
+  factor NUMERIC(3,2),
   created timestamp DEFAULT current_timestamp,
-  FOREIGN KEY (mid) REFERENCES models (mid)
+  pubdate timestamp,
+  FOREIGN KEY (mid) REFERENCES models (mid),
+  FOREIGN KEY (ver) REFERENCES inkpal (ver),
+  UNIQUE (rinkid)
 );
 
 DROP TABLE geometry CASCADE;
@@ -78,6 +82,7 @@ CREATE TABLE strokes (
   rinkid CHAR(32),
   cell CHAR(1),
   layer SMALLINT,
+  ver INT NOT NULL,
   fill VARCHAR(7),
   opacity FLOAT DEFAULT 1.0,
   width INT DEFAULT 0,
