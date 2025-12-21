@@ -112,7 +112,7 @@ ORDER BY cell;""", [digest])
     meta = list()
     if digest:
       self.cursor.execute("""
-SELECT model, author, scale, ver
+SELECT model, author, scale, ver, pubdate, created
 FROM views
 WHERE view = %s;""", [digest])
       row = self.cursor.fetchone()
