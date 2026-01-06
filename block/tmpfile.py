@@ -15,7 +15,7 @@ class TmpFile(InputValidator):
   BLOCKSZ   = tuple()
   VERSION   = 1
   pp        = pprint.PrettyPrinter(indent=2)
-  meta_tags = ['model', 'palette', 'positions'] # defaults will be popped
+  meta_tags = ['id', 'model', 'palette', 'positions'] # defaults will be popped
 
   def setVersion(self, ver=None):
     ''' Version is badly named reference to palette index
@@ -31,7 +31,8 @@ class TmpFile(InputValidator):
     self.PALETTE = fnam[ver]
     return ver
 
-  def write(self, model, cells):
+  # superceded by dbmigrator
+  def write(self, model, rinkid, cells):
     ''' wrap the data and make ready to write
     '''
     bd    = BlockData(model)
@@ -47,6 +48,7 @@ class TmpFile(InputValidator):
 
     print() # flush refactorCell
     metadata = {
+      'id': rinkid,
       'model': model,
       'palette': self.PALETTE
     }
@@ -145,6 +147,7 @@ class TmpFile(InputValidator):
       block[x] = row
     return block
 
+  # Superceded by block.dbmigrator
   def positionBlock(self, positions, top=False):
     ''' make positions pretty for yaml
     '''

@@ -316,7 +316,8 @@ VALUES (%s, %s, %s);""",
     '''
     self.cursor.execute("""
 SELECT gplfile
-FROM inkpal;""", [])
+FROM inkpal
+ORDER BY ver;""", [])
     fnam = [name[0] for name in self.cursor.fetchall()]
     fnam.insert(0, None) # avoid conditional zero error
     return fnam

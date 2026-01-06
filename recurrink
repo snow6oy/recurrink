@@ -7,7 +7,7 @@ import time
 import random
 import pprint
 from model import ModelData, SvgModel, SvgPalette, SvgWriter
-from block import PaletteMaker, TmpFile, Views, BlockData, Make
+from block import PaletteMaker, TmpFile, Views, BlockData, Make, Db2
 from cell import Palette
 from config import *
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -17,6 +17,7 @@ pmk     = PaletteMaker()
 svgpal  = SvgPalette()
 tf      = TmpFile()
 view    = Views()
+db2     = Db2()
 WORKDIR = config.directory['rinks']
 PUBDIR  = config.directory['pubq']
 PALDIR  = config.directory['palettes']
@@ -126,7 +127,7 @@ def main(args):
   parser_k.add_argument(
     '-o', '--output', 
     help='clone celldata by default, else palette data',
-    nargs='?', choices=['cell','pal'], const='cell',
+    nargs='?', choices=['cell','pal', 'db2'], const='cell',
   )
   parser_d.add_argument(
     '-d', '--digest', 
@@ -287,16 +288,26 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
 def clone(args):
   ''' pull from db to create tmp/MODEL.txt from digest
   '''
-  model, author, scale, ver = view.readMeta(digest=args.digest)
+  (model, 
+   author, 
+   scale, 
+   ver, 
+   pubdate,
+   created)  = view.readMeta(digest=args.digest)
   if args.output == 'pal': # export view as palette
     palette = set(pal.read_view(args.digest))
     tf.exportPalfile(args.digest, palette) 
     print(f"palettes/{args.digest}.txt was written")
+  elif args.output == 'db2':  # celldata from new db
+    _, rinkdata     = db2.rinks(args.digest)
+    model, metadata = db2.rinkMeta(rinkdata)
+    celldata        = db2.cellData(rinkdata)
+    tf.writeConf(model, metadata, celldata)
+    print(f"{args.digest} was cloned from db2")
   else:   # assume we want celldata
     celldata  = view.read(digest=args.digest) #, output=list())
-    #tf.conf(model, fnam[ver]) # conf state is a symlink
     tf.setVersion(ver)
-    tf.write(model, celldata)
+    tf.write(model, args.digest, celldata)
     print(f"""
 cloning {model}
 with {len(celldata)} cells
@@ -421,7 +432,7 @@ def build(args):
 ''')
     pp.pprint(swp)
     celldata  = pmk.updateCells(celldata, swp)
-    tf.write(model, celldata)   # write new colors to conf/palswap.yaml
+    tf.write(model, args.digest, celldata)   # new colors to conf/palswap.yaml
     celldata  = tf.readConf(model) # dubble write to reformat celldata :sob:
     view.validate(celldata, ver=ver)
     svgfile   = model + '_exchange'
@@ -454,6 +465,7 @@ def build(args):
     
     celldata  = tf.readConf(args.model)
     ver       = fnam.index(tf.VERSION)
+    print(f'{ver=}')
     penam     = bd.penNames(ver)
     view.validate(celldata, ver=ver)
     block     = Make(args.size, linear=bool(args.line), pen_names=penam)

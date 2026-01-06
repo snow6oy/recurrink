@@ -15,9 +15,9 @@ CREATE TABLE inkpal (
 INSERT into INKPAL (gplfile)
 VALUES
   ('uniball'),
+  ('copicsketch'),
   ('copic'),
   ('stabilo68'),
-  ('copicsketch'),
   ('sharpie'),
   ('staedtler');
 
