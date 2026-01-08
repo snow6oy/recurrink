@@ -1,10 +1,8 @@
 import psycopg2
 import pprint
-#from block import Views, BlockData
-#from block.data import Compass
-#from cell import Palette
+from cell.transform import Transform
 
-class Db2:
+class Db2(Transform):
 
   BLOCKSZ = tuple()
   ''' access pattern
@@ -250,7 +248,65 @@ VALUES (%s, %s, %s, %s, %s, %s, %s);""",
     elif celldata:   return self.geometryWrite(rinkid, celldata)
     else:            raise ValueError(f'cannot find geometries for {rinkid}')
 
+  def geometryRead(self, rinkid):
+    ''' read geometry by rinkid
+    '''
+    geom = dict()
+    self.cursor.execute("""  
+SELECT *
+FROM geometry
+WHERE rinkid = %s
+ORDER BY cell, layer;""", 
+      [rinkid]   # implicit order by cell layer 
+    )
+    for row in self.cursor.fetchall():
+      label, z = row[1:3]
+      if label not in geom: geom[label] = list()
+      has_content = [True for x in row[3:] if x] # test for empty strings
+      if has_content:
+        geom[label].insert(z, row[3:])
+      else:
+        geom[label].insert(z, tuple())
+    return geom
+
   def geometryWrite(self, rinkid, celldata):
+    ''' create image layers as database rows
+        FG is mandatory BG and TOP are optional
+
+        Empty backgrounds are saved as empty strings. Other options
+        1. use dummy values e.g. Z Z Z
+        2. relax table definition and write nulls
+        Omitting the row altogether is NOT an option 
+        because an empty background needs to be explicit
+
+        see t.geometry for details
+    '''
+    new_record_count = 0
+    celldata         = self.dataV1(celldata) # convert v1 to layered format
+
+    for label, cell in celldata.items():
+      for z, layer in enumerate(cell):
+        if len(layer):
+          name, size, facing = layer[:3]
+          self.cursor.execute("""
+INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
+VALUES (%s, %s, %s, %s, %s, %s);""",
+            (rinkid, label, z, name, size, facing)
+          )
+          #print(rinkid, label, z, name, size, facing)
+        elif z == 0:
+          self.cursor.execute("""
+INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
+VALUES (%s, %s, %s, %s, %s, %s);""",
+            (rinkid, label, z, '', '', '')
+          )
+          #print(rinkid, label, z, name, size, facing)
+        else:
+          raise ValueError('can only make assumptions in background layer')
+        new_record_count += 1
+    return new_record_count, celldata
+
+  def __geometryWrite(self, rinkid, celldata):
     ''' create image layers as database rows
         FG is mandatory BG and TOP are optional
         see t.geometry for details
@@ -290,61 +346,6 @@ VALUES (%s, %s, %s, %s, %s, %s);""",
 
       new_record_count += 1
     return new_record_count, geom
-
-  def _geometryWrite(self, rinkid, celldata):
-    new_record_count = 0
-    geom             = dict()
-    for label, cell in celldata.items():
-      if label not in geom: geom[label] = list()
-      name   = cell['shape']
-      size   = cell['size']
-      facing = cell['facing']
-      if bool(cell['top']):
-        self.cursor.execute("""
-INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 2, name, size, facing)
-        )
-        ######
-        # Appending none works when label is unique
-        # e.g. cell x only has top
-        # But when label is both fg and top this may lead 
-        # to data loss
-        #####
-        [geom[label].append(None) for empty in range(len(geom[label]), 2)]
-        geom[label].append(tuple([name, size, facing])) # assume top is last
-      else:
-        self.cursor.execute("""
-INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 0, 'square', 'medium', 'C')
-        )
-        geom[label].append(tuple(['square', 'medium', 'C'])) # z 0
-        self.cursor.execute("""
-INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 1, name, size, facing)
-        )
-        geom[label].append(tuple([name, size, facing])) # z 1
-      new_record_count += 1
-    return new_record_count, geom
-
-  def geometryRead(self, rinkid):
-    ''' read geometry by rinkid
-    '''
-    geom = dict()
-    self.cursor.execute("""  
-SELECT *
-FROM geometry
-WHERE rinkid = %s;""", 
-      [rinkid]   # implicit order by cell layer 
-    )
-    for row in self.cursor.fetchall():
-      label, z = row[1:3]
-      if label not in geom: geom[label] = list()
-      #[geom[label].append(None) for empty in range(len(geom[label]), z)]
-      geom[label].insert(z, row[3:])
-    return geom
 
   def strokes(self, rinkid, ver, celldata=dict()):
     new_record_count = 0

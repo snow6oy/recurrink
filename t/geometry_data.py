@@ -16,15 +16,20 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     self.db2    = Db2()
     self.rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
 
-  def test_a(self, label='a', fg=True, bg=False, top=False, expected=0, i=0):
-    # print(f'{fg=} {bg=} {top=} {self.id()}')
-    expected = 1 if self.id() == 't.geometry_write.Test.test_a' else expected
+  def test_a(self, label='a', fg=True, bg=False, top=False, expected=2):
+    #print(f'{fg=} {bg=} {top=} {self.id()}')
     cell = {
-          'bg': None,
-       'shape': 'circle',
-        'size': 'medium',
-      'facing': 'C',
-         'top': top
+                'bg': None,
+             'shape': 'circle',
+              'size': 'medium',
+            'facing': 'C',
+               'top': top,
+              'fill': '#ccff00',
+      'fill_opacity': 1.0,
+            'stroke': '#ff00cc',
+    'stroke_opacity': 0.5,
+      'stroke_width': 1,
+  'stroke_dasharray': 2
     }
     if bg: cell['bg'] = '#00cc00',
     if top and not fg: cell['top'] = False
@@ -32,28 +37,39 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     celldata     = { label: cell }
     nrc, written = self.db2.geometryWrite(self.rinkid, celldata)
     #self.pp.pprint(written)
+    self.assertEqual(expected, nrc) # check rows were inserted
 
-    self.assertEqual(1, nrc) # check rows were inserted
-    self.assertEqual(len(written[label]), expected) # num of layers
-    self.assertEqual('circle', written[label][i][0]) # position of FG or TOP
-
-  def test_b(self): self.test_a(label='b', fg=True, bg=True, expected=2, i=1)
+  def test_b(self): self.test_a(label='b', fg=True, bg=True, expected=2)
   def test_c(self): 
-    self.test_a(label='c', fg=True, bg=True, top=True, expected=3, i=1)
+    self.test_a(label='c', fg=True, bg=True, top=True, expected=3)
   def test_d(self):
-    self.test_a(label='d', fg=False, bg=True, top=True, expected=2, i=1)
-  def test_e(self): self.test_a(label='e', fg=True, top=True, expected=2, i=0)
+    self.test_a(label='d', fg=False, bg=True, top=True, expected=2)
+  def test_e(self): self.test_a(label='e', fg=True, top=True, expected=3)
 
   def test_f(self):
     ''' read test cell from geometry table
     '''
     expected = {
-      'a': 1, 'b': 2, 'c': 3, 'd': 2, 'e': 2
+      'a': 2, 'b': 2, 'c': 3, 'd': 2, 'e': 3
     } 
     cells    = self.db2.geometryRead(self.rinkid)
+    self.pp.pprint(cells)
     for label in ['a', 'b', 'c', 'd', 'e']:
       self.assertEqual(expected[label], len(cells[label]))
     
+  def test_g(self):
+    cell = {
+          'bg': None,
+       'shape': 'circle',
+        'size': 'medium',
+      'facing': 'C',
+         'top': top
+    }
+    self.pp.pprint(cell)
+    cell = self.db2.dataV1({'a': cell})
+    self.pp.pprint(cell)
+
+
 
   def test_z(self):
     print( """
@@ -110,5 +126,3 @@ e	0
 e	1
 
 '''
-'''
-

@@ -11,8 +11,8 @@ class Test(unittest.TestCase):
     self.cells = minkscape.cells
 
   def test_a(self, label='a', fg=True, bg=False, top=False, expected=0, i=1):
-    print(f'{fg=} {bg=} {top=} {self.id()}')
-    expected = 2 if self.id() == 't.geometry_data2.Test.test_a' else expected
+    #print(f'{fg=} {bg=} {top=} {self.id()}')
+    expected = 2 if self.id() == 't.transform.Test.test_a' else expected
     cell = self.tx.dataV2(self.cells['a'])
     cell['shape'] = 'circle'
     cell['top']   = top
@@ -21,7 +21,7 @@ class Test(unittest.TestCase):
 
     celldata = { label: cell }
     written  = self.tx.dataV1(celldata)
-    self.pp.pprint(written)
+    #self.pp.pprint(written)
 
     self.assertEqual(len(written[label]), expected) # num of layers
     self.assertEqual('circle', written[label][i][0]) # position of FG or TOP
