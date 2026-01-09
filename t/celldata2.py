@@ -5,7 +5,7 @@ from block import Db2
 # TODO merge with t.geometry
 class Test(unittest.TestCase):
   ''' tests depend on this entry 
-      needs to run after mid:1 and ver:1 have been created
+      run after mid:1 and ver:1 have been created
 
 INSERT INTO rinks (rinkid, mid, ver)
 VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
@@ -15,15 +15,12 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     self.pp     = pprint.PrettyPrinter(indent=2)
     self.db2    = Db2()
     self.rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
-
-  def test_a(self, label='a', fg=True, bg=False, top=False, expected=2):
-    #print(f'{fg=} {bg=} {top=} {self.id()}')
-    cell = {
+    self.cell = {
                 'bg': None,
              'shape': 'circle',
               'size': 'medium',
             'facing': 'C',
-               'top': top,
+               'top': False,
               'fill': '#ccff00',
       'fill_opacity': 1.0,
             'stroke': '#ff00cc',
@@ -31,12 +28,16 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
       'stroke_width': 1,
   'stroke_dasharray': 2
     }
+
+  def test_a(self, label='a', fg=True, bg=False, top=False, expected=2):
+    #print(f'{fg=} {bg=} {top=} {self.id()}')
+    cell = self.cell
+    cell['top'] = top
     if bg: cell['bg'] = '#00cc00',
-    if top and not fg: cell['top'] = False
+    if top and not fg: cell['top'] = False # demote to layer 1
 
     celldata     = { label: cell }
     nrc, written = self.db2.geometryWrite(self.rinkid, celldata)
-    #self.pp.pprint(written)
     self.assertEqual(expected, nrc) # check rows were inserted
 
   def test_b(self): self.test_a(label='b', fg=True, bg=True, expected=2)
@@ -53,29 +54,67 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
       'a': 2, 'b': 2, 'c': 3, 'd': 2, 'e': 3
     } 
     cells    = self.db2.geometryRead(self.rinkid)
-    self.pp.pprint(cells)
+    #self.pp.pprint(cells)
     for label in ['a', 'b', 'c', 'd', 'e']:
       self.assertEqual(expected[label], len(cells[label]))
     
   def test_g(self):
-    cell = {
-          'bg': None,
-       'shape': 'circle',
-        'size': 'medium',
-      'facing': 'C',
-         'top': top
-    }
-    self.pp.pprint(cell)
+    ''' test the transformer
+    '''
+    cell = self.cell
+    #self.pp.pprint(cell)
     cell = self.db2.dataV1({'a': cell})
-    self.pp.pprint(cell)
+    self.assertFalse(len(cell['a'][0]))
+    self.assertTrue(len(cell['a'][1]))
 
+  def test_h(self, label='h', bg=None):
+    ver          = 1
+    cell         = self.cell
+    cell['bg']   = bg if bg else None
+    celldata     = { label: cell }
+    nrc, written = self.db2.paletteWrite(self.rinkid, ver, celldata)
+    #print(f'{nrc=}')
+    #self.pp.pprint(written)
+    self.assertEqual(2, nrc)
 
+  def test_i(self): self.test_h(label='i', bg='#000000')
+
+  def test_j(self):
+    pal = self.db2.paletteRead(self.rinkid)
+    self.assertTrue(pal)
+
+  def test_k(self, label='k', width=1, top=False):
+    ''' write strokes
+    '''
+    ver          = 1
+    cell         = self.cell
+    cell['stroke_width'] = width
+    cell['top']  = top
+    
+    celldata     = { label: cell }
+    nrc, written = self.db2.strokeWrite(self.rinkid, ver, celldata)
+    self.assertTrue(nrc >= 2)
+    # print(f'{nrc=}')
+    # self.pp.pprint(written)
+
+  def test_l(self): self.test_k(label='l', width=0)
+  def test_m(self): self.test_k(label='m', top=True)
+
+  def test_n(self):
+    ''' read strokes
+    '''
+    expected = { 'k': 2, 'l': 2, 'm': 3 }
+    s        = self.db2.strokeRead(self.rinkid)
+    [self.assertEqual(expected[label], len(s[label])) for label in ['k', 'l', 'm']] 
+    #self.pp.pprint(s)
 
   def test_z(self):
     print( """
-Now remember, after each run need to manually clean
+Now remember to clean up after the test
 
 DELETE FROM geometry WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
+DELETE FROM palette  WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
+DELETE FROM strokes  WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
 """)
 
 
@@ -97,7 +136,7 @@ are also TOP.
 These should be allocated a BG as if they were a FG
 And demoted to layer 1
 
-cell	z    ver
+cell	z    BGs
 --------------------
 a     0    n
 a     1    y
@@ -112,17 +151,6 @@ e     0    n
 e	    1    y
 e	    2    y
 
-cell	z
----------
-a 0
-b 0
-b	1
-c	0
-c	1
-c	2
-d	0
-d	1
-e	0
-e	1
-
+the 
+end
 '''

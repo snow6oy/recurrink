@@ -270,10 +270,10 @@ ORDER BY cell, layer;""",
     return geom
 
   def geometryWrite(self, rinkid, celldata):
-    ''' create image layers as database rows
-        FG is mandatory BG and TOP are optional
+    ''' create cell layers as database rows
+        BG and FG are mandatory. TOP is optional
 
-        Empty backgrounds are saved as empty strings. Other options
+        Empty backgrounds are saved as empty strings. Other options considered
         1. use dummy values e.g. Z Z Z
         2. relax table definition and write nulls
         Omitting the row altogether is NOT an option 
@@ -306,113 +306,6 @@ VALUES (%s, %s, %s, %s, %s, %s);""",
         new_record_count += 1
     return new_record_count, celldata
 
-  def __geometryWrite(self, rinkid, celldata):
-    ''' create image layers as database rows
-        FG is mandatory BG and TOP are optional
-        see t.geometry for details
-    '''
-    new_record_count = 0
-    geom             = dict()
-    for label, cell in celldata.items():
-      if label not in geom: geom[label] = list()
-      name   = cell['shape']
-      size   = cell['size']
-      facing = cell['facing']
-
-      if cell['bg']:
-        self.cursor.execute("""
-INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 0, 'square', 'medium', 'C')
-        )
-        geom[label].append(tuple(['square', 'medium', 'C'])) # z 0
-
-      z = len(geom[label])
-      self.cursor.execute("""
-INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-        (rinkid, label, z, name, size, facing)
-      )
-      geom[label].append(tuple([name, size, facing])) # z 1
-
-      if bool(cell['top']):
-        z = len(geom[label])
-        self.cursor.execute("""
-INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, z, name, size, facing)
-        )
-        geom[label].append(tuple([name, size, facing])) # assume top is last
-
-      new_record_count += 1
-    return new_record_count, geom
-
-  def strokes(self, rinkid, ver, celldata=dict()):
-    new_record_count = 0
-    ''' record stroke data, if any
-    '''
-    self.cursor.execute("""  
-SELECT *
-FROM strokes
-WHERE rinkid = %s;""", 
-      [rinkid] 
-    )
-    dbrows = self.cursor.fetchall()
-    if dbrows: 
-      strk = dict()
-      for row in dbrows:
-        label = row[1]
-        z     = row[2]
-        if label in strk:
-          strk[label].insert(z, row[4:])
-        else:
-          strk[label] = list()
-          strk[label].insert(0, tuple())  # background hack
-          items = list(row[5:])
-          items.insert(0, self.prettyHash(row[4], remove=True))
-          strk[label].insert(z, items)
-      return new_record_count, strk
-
-    strk = dict()
-    for label, cell in celldata.items():
-      if 'stroke' in cell:
-        fill      = cell['stroke']
-        opacity   = cell['stroke_opacity']
-        width     = cell['stroke_width']
-        dasharray = cell['stroke_dasharray']
-      else:
-        continue
-      if label not in strk: strk[label] = list()
-      if bool(cell['top']):
-        self.cursor.execute("""
-INSERT INTO strokes (rinkid, cell, layer, ver, fill, opacity, width, dasharray)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 2, ver, fill, opacity, width, dasharray)
-        )
-        strk[label].insert(2, tuple([ver, fill, opacity, width, dasharray])) 
-      else:
-        self.cursor.execute("""
-INSERT INTO strokes (rinkid, cell, layer, ver, fill, opacity, width, dasharray)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 1, ver, fill, opacity, width, dasharray)
-        )
-        strk[label].insert(0, tuple())
-        strk[label].insert(1, tuple([ver, fill, opacity, width, dasharray])) 
-      new_record_count += 1
-    return new_record_count, strk
-
-  def prettyHash(self, val, remove=False):
-    ''' YAML looks nicer with FF00CC but database wants #FF00CC
-    '''
-    if val is None:  # TODO or FFF ?
-      return         # ignore empty background
-    rgb = str(val) # rgb must be a string but YAML can send int
-    fix = str()
-    if remove:          fix = rgb[1:]
-    elif rgb[0] == '#': fix = rgb
-    else:               fix = '#' + str(rgb)
-    return fix
-
   def palette(self, rinkid, ver, celldata=dict()):
     ''' read and write a block palette 
     '''
@@ -423,95 +316,86 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""",
 
   def paletteRead(self, rinkid):
     ''' read palette by rinkid
+ 
+        TODO prettify hash in TmpFile
     '''
     self.cursor.execute("""  
 SELECT *
 FROM palette
-WHERE rinkid = %s;""", 
+WHERE rinkid = %s
+ORDER BY cell, layer;""", 
       [rinkid] 
     )
     pal = dict()
     for row in self.cursor.fetchall():
       label, z = row[1:3]
       if label not in pal: pal[label] = list()
-      items      = list(row[5:])
-      # fill in gaps
-      #[pal[label].append(None) for _ in range(len(pal[label]), z)]
-      items.insert(0, self.prettyHash(row[4], remove=True))
-      pal[label].insert(z, tuple(items))
+      pal[label].append(row[4:])
     return pal
 
   def paletteWrite(self, rinkid, ver, celldata):
-    ''' write and return new entries
+    ''' write new entries in palette table
     '''
     new_record_count = 0
-    pal              = dict()
+    celldata         = self.dataV1(celldata) # convert v1 to layered format
+
     for label, cell in celldata.items():
-      if label not in pal: pal[label] = list()
-      fill      = cell['fill']
-      opacity   = cell['fill_opacity']
+      for z, layer in enumerate(cell):
+        if len(layer):
+          fill, opacity = layer[3:5]
+        elif z == 0: # no bg
+          fill, opacity = None, None
+        else:
+          raise ValueError(f'palette got an empty layer {label}')
 
-      if cell['bg']:
-        self.cursor.execute("""
-INSERT INTO palette (rinkid, cell, layer, ver, fill, opacity)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 0, ver, cell['bg'], 1)
-        )
-        pal[label].insert(0, tuple([ver, cell['bg'], 1]))
-
-      z = len(pal[label])
-      self.cursor.execute("""
-INSERT INTO palette (rinkid, cell, layer, ver, fill, opacity)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-        (rinkid, label, z, ver, fill, opacity)
-      )
-      pal[label].insert(z, tuple([ver, fill, opacity])) 
-
-      if bool(cell['top']):
-        z = len(pal[label])
         self.cursor.execute("""
 INSERT INTO palette (rinkid, cell, layer, ver, fill, opacity)
 VALUES (%s, %s, %s, %s, %s, %s);""",
           (rinkid, label, z, ver, fill, opacity)
         )
-        pal[label].insert(z, tuple([ver, fill, opacity])) 
+        new_record_count += 1
+    return new_record_count, celldata
 
-      new_record_count += 1
-    return new_record_count, pal
+  def strokes(self, rinkid, ver, celldata=dict()):
+    strokes         = self.strokeRead(rinkid)
+    if stroke:      return 0, strokes
+    elif celldata:  return self.strokeWrite(rinkid, ver, celldata)
+    else:           raise ValueError('not found {rinkid=}')
 
-  def _paletteWrite(self, rinkid, ver, celldata):
-    ''' write and return new entries
+  def strokeRead(self, rinkid):
+    self.cursor.execute("""  
+SELECT *
+FROM strokes
+WHERE rinkid = %s;""", 
+      [rinkid] 
+    )
+    sk = dict()
+    for row in self.cursor.fetchall():
+      label, z = row[1:3]
+      if label not in sk: sk[label] = list()
+      sk[label].append(row[4:])
+    return sk
+
+  def strokeWrite(self, rinkid, ver, celldata):
+    ''' record stroke data, if any
     '''
     new_record_count = 0
-    pal              = dict()
+    celldata         = self.dataV1(celldata)
     for label, cell in celldata.items():
-      if label not in pal: pal[label] = list()
-      fill      = cell['fill']
-      opacity   = cell['fill_opacity']
-      if bool(cell['top']):
+      for z, layer in enumerate(cell):
+        if z and len(layer) == 9:
+          fill, opacity, width, dasharray = layer[5:]
+        else: # either is background or stroke width is zero
+          fill, opacity, width, dasharray = None, None, None, None
+
         self.cursor.execute("""
-INSERT INTO palette (rinkid, cell, layer, ver, fill, opacity)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          # ('2558c8da8ed39d47f50c36b9a7ae1531', 'g', 2, 4, '#d4aa00', 0.5)
-          (rinkid, label, 2, ver, fill, opacity)
+INSERT INTO strokes (rinkid, cell, layer, ver, fill, opacity, width, dasharray)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""",
+          (rinkid, label, z, ver, fill, opacity, width, dasharray)
         )
-        [pal[label].append(None) for _ in range(len(pal[label]), 2)]
-        pal[label].insert(2, tuple([ver, fill, opacity])) 
-      else:
-        self.cursor.execute("""
-INSERT INTO palette (rinkid, cell, layer, ver, fill, opacity)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 0, ver, cell['bg'], 1)
-        )
-        pal[label].insert(0, tuple([ver, cell['bg'], 1]))
-        self.cursor.execute("""
-INSERT INTO palette (rinkid, cell, layer, ver, fill, opacity)
-VALUES (%s, %s, %s, %s, %s, %s);""",
-          (rinkid, label, 1, ver, fill, opacity)
-        )
-        pal[label].insert(1, tuple([ver, fill, opacity])) 
-      new_record_count += 1
-    return new_record_count, pal
+        # print(fill, opacity, width, dasharray)
+        new_record_count += 1
+    return new_record_count, celldata
 
   def rinkMeta(self, rinkdata):
     ''' gather metadata from db to write conf/MODEL.yaml
@@ -559,49 +443,6 @@ VALUES (%s, %s, %s, %s, %s, %s);""",
 
       if label in stk: 
         s = dict(zip(['fill', 'opacity', 'width', 'dasharray'], stk[label][1]))
-        celldata[label] = {
-          'geom': g,
-        'stroke': s,
-         'color': p
-        }
-      else: 
-        celldata[label] = { 'geom': g, 'color': p }
-    nrc, rinkdata = self.rinks(rinkid)
-    print(f'{nrc} new rink(s)') if nrc else print(f'got {len(rinkdata)=}')
-    '''
-    self.pp.pprint(pos)
-    self.pp.pprint(rinkdata)
-    self.pp.pprint(celldata)
-    '''
-    return celldata
-
-  def __cellData(self, rinkdata):
-    ''' gather celldata from db to write conf/MODEL.yaml
-    '''
-    rinkid        = rinkdata[0]
-    nrc, geom     = self.geometry(rinkid)
-    print(f'{nrc} new geom') if nrc else print(f'got {len(geom)=}')
-    nrc, stk      = self.strokes(rinkid, rinkdata[2])
-    print(f'{nrc} new strokes') if nrc else print(f'got {len(stk)=}')
-    nrc, pal      = self.palette(rinkid, rinkdata[2])
-    print(f'{nrc} new palettes') if nrc else print(f'got {len(pal)=}')
-
-    celldata      = dict()
-    ######################
-    for label in geom:
-      #print(f'{label=} {len(geom[label])}')
-      if len(geom[label]) == 2: 
-        g             = dict(zip(['name', 'size', 'facing'], geom[label][1]))
-        g['top']      = False
-        p               = dict(zip(['fill', 'opacity'], pal[label][1]))
-        p['background'] = pal[label][0][0]
-      elif len(geom[label]) == 3: # for when top is true 
-        g             = dict(zip(['name', 'size', 'facing'], geom[label][2]))
-        g['top']      = True
-        p               = dict(zip(['fill', 'opacity'], pal[label][2]))
-        p['background'] = None
-      if label in stk: 
-        s = dict(zip(['fill', 'opacity', 'width', 'dasharray'], stk[label][1])) 
         celldata[label] = {
           'geom': g,
         'stroke': s,
