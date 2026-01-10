@@ -11,9 +11,9 @@ class Db:
 
 class config:
   directory = {
-       'rinks': '/Users/gavin/Dropbox/familia/rinks',
-        'pubq': '/Users/gavin/Pictures/pubq',
-    'palettes': '/Users/gavin/Library/Application Support/org.inkscape.Inkscape/config/inkscape/palettes'
+       'rinks': '/home/gavin/Dropbox/familia/rinks',
+        'pubq': '/home/gavin/Pictures/pubq',
+    'palettes': '/home/gavin/.config/inkscape/palettes'
   }
 '''
 the
