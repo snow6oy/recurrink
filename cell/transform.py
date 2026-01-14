@@ -1,7 +1,8 @@
 import psycopg2
 import pprint
+from config import Db2
 
-class Transform:
+class Transform(Db2):
 
   ''' generic functions to convert celldata to cellrows and back again
       celldata is flat as returned by db1
@@ -22,7 +23,7 @@ class Transform:
         cell['fill'],
         cell['fill_opacity']
       ]
-      if cell['stroke_width'] > 0:
+      if 'stroke_width' in cell and cell['stroke_width'] > 0:
         row += [
           cell['stroke'],
           cell['stroke_opacity'],

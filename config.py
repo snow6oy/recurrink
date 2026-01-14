@@ -9,6 +9,15 @@ class Db:
     connection.autocommit = True
     self.cursor = connection.cursor()
 
+class Db2:
+
+  def __init__(self):
+    ''' new target
+    '''
+    connection  = psycopg2.connect(dbname='recurrink2')
+    connection.autocommit = True
+    self.cursor = connection.cursor()
+
 class config:
   directory = {
        'rinks': '/home/gavin/Dropbox/familia/rinks',

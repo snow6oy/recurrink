@@ -1,6 +1,5 @@
 import psycopg2
 import pprint
-from config import Db2
 from cell.transform import Transform
 
 class BlockData2(Transform):
@@ -10,14 +9,14 @@ class BlockData2(Transform):
   '''
   def __init__(self):
     self.pp     = pprint.PrettyPrinter(indent=2)
+    super().__init__()
 
-  def pens(self, pens, ver):
-    new_ver   = self.version(ver)
+  def pens(self, pens, new_ver):
     pen_count = self.pensRead(new_ver)
-    #print(f'{ver=} {new_ver=} {pen_count=}')
+    #print(f'{new_ver=} {pen_count=}')
     if pen_count:   return 0, pens
     elif pens:      return self.pensWrite(pens, new_ver)
-    else            raise TypeError('expected known ver or new pens')
+    else:           raise TypeError('expected known ver or new pens')
 
   def pensRead(self, ver):
     self.cursor.execute("""
@@ -26,7 +25,7 @@ FROM pens
 WHERE ver = %s;""", [ver])
     return self.cursor.fetchone()[0]
 
-  def pensWrite(self, pens, ver):
+  def pensWrite(self, pens, new_ver):
     ''' pen sets are defined in the inkpal table
         currently there are six
 new_ver old_ver
@@ -38,26 +37,22 @@ new_ver old_ver
 6       13      staedtler
     '''
     new_record_count = 0
-    new_pen          = tuple()
 
     for pen in pens:
-      tmp     = list(pen)
-      tmp[0]  = new_ver
-      new_pen = tuple(tmp)
-      if pcount == 0:
-        #print(new_pen)
-        try:
-          self.cursor.execute("""
+      _, fill, name = pen  # ignore old ver
+      try:
+        self.cursor.execute("""
 INSERT INTO pens (ver, fill, penam)
-VALUES (%s, %s, %s);""", new_pen
-          )
-        except psycopg2.errors.UniqueViolation:  # 23505 
-          raise KeyError(f'{ver=} and {fill=} must be unique')
-        new_record_count += 1
-    return new_record_count, new_pen
+VALUES (%s, %s, %s);""", [new_ver, fill, name]
+        )
+      except psycopg2.errors.UniqueViolation:  # 23505 
+        raise KeyError(f'{new_ver=} and {fill=} must be unique')
+      new_record_count += 1
+    return new_record_count, pens
 
   def version(self, ver):
-    ''' attempt to replace non-plottable palettes
+    ''' replace non-plottable palettes
+        consumers of this class are expected to convert beforehand
     '''
     if ver < 8: # stop right there
       raise ValueError(f'palette conversion needed for {ver}')
@@ -68,7 +63,7 @@ VALUES (%s, %s, %s);""", new_pen
     if rinkdata:   
       return 0, rinkdata
     elif mid and len(meta) == 3:
-      return self.rinksWrite(mid, meta, size, factor)
+      return self.rinksWrite(rinkid, mid, meta, size, factor)
     else: 
       raise TypeError('cannot create rink without mid and meta')
 
@@ -80,10 +75,9 @@ WHERE rinkid = %s;""", [rinkid]
     )
     return self.cursor.fetchone()
 
-  def rinksWrite(self, mid, meta, size, factor):
+  def rinksWrite(self, rinkid, mid, meta, size, factor):
     new_record_count      = 1
     ver, pubdate, created = meta
-    ver                   = self.version(ver)
 
     self.cursor.execute("""
 INSERT INTO rinks (rinkid, mid, ver, clen, factor, created, pubdate)
