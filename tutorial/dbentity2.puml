@@ -26,7 +26,7 @@ entity geometry {
   size: STR
   facing: CHAR
 }
-entity inkpal {
+entity pens {
  ver: INT
  gplfile: STR
 }
@@ -42,7 +42,7 @@ entity models {
   mid: INT
   model: STR
 }
-entity pens {
+entity colors {
   ver: INT
   fill: HEX
   penam: STR
@@ -71,8 +71,8 @@ strokes *-- rinks
 geometry *-- rinks
 palette *-- rinks
 rinks *-- blocks
-palette *-- pens
-pens *-- inkpal
+palette *-- colors
+colors *-- pens
 blocks *-- models
 compass *-- models
 
