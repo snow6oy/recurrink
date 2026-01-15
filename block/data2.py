@@ -11,21 +11,21 @@ class BlockData2(Transform):
     self.pp     = pprint.PrettyPrinter(indent=2)
     super().__init__()
 
-  def pens(self, pens, new_ver):
-    pen_count = self.pensRead(new_ver)
+  def colors(self, colors, new_ver):
+    pen_count = self.colorsRead(new_ver)
     #print(f'{new_ver=} {pen_count=}')
-    if pen_count:   return 0, pens
-    elif pens:      return self.pensWrite(pens, new_ver)
-    else:           raise TypeError('expected known ver or new pens')
+    if pen_count:   return 0, colors
+    elif colors:      return self.colorsWrite(colors, new_ver)
+    else:           raise TypeError('expected known ver or new colors')
 
-  def pensRead(self, ver):
+  def colorsRead(self, ver):
     self.cursor.execute("""
 SELECT count(*) 
-FROM pens
+FROM colors
 WHERE ver = %s;""", [ver])
     return self.cursor.fetchone()[0]
 
-  def pensWrite(self, pens, new_ver):
+  def colorsWrite(self, colors, new_ver):
     ''' pen sets are defined in the inkpal table
         currently there are six
 new_ver old_ver
@@ -38,17 +38,17 @@ new_ver old_ver
     '''
     new_record_count = 0
 
-    for pen in pens:
-      _, fill, name = pen  # ignore old ver
+    for entry in colors:
+      _, fill, name = entry  # ignore old ver
       try:
         self.cursor.execute("""
-INSERT INTO pens (ver, fill, penam)
+INSERT INTO colors (ver, fill, penam)
 VALUES (%s, %s, %s);""", [new_ver, fill, name]
         )
       except psycopg2.errors.UniqueViolation:  # 23505 
         raise KeyError(f'{new_ver=} and {fill=} must be unique')
       new_record_count += 1
-    return new_record_count, pens
+    return new_record_count, colors
 
   def version(self, ver):
     ''' replace non-plottable palettes

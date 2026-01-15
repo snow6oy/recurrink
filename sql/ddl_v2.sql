@@ -6,13 +6,13 @@ CREATE TABLE models (
   model VARCHAR(50)
 );
 
-DROP TABLE inkpal CASCADE;
-CREATE TABLE inkpal (
+DROP TABLE pens CASCADE;
+CREATE TABLE pens (
   ver serial PRIMARY KEY,
   gplfile VARCHAR(50)
 );
 
-INSERT into INKPAL (gplfile)
+INSERT into PENS (gplfile)
 VALUES
   ('uniball'),
   ('copicsketch'),
@@ -22,8 +22,8 @@ VALUES
   ('staedtler');
 
 
-DROP TABLE pens CASCADE;
-CREATE TABLE pens (
+DROP TABLE colors CASCADE;
+CREATE TABLE colors (
   ver INT,
   fill VARCHAR(7) CHECK (fill ~* '^#[a-f0-9]{6}$'),  -- enforce once
   penam VARCHAR(50),

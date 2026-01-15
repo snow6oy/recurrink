@@ -15,22 +15,22 @@ class Test(unittest.TestCase):
     self.rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' # fake rink
 
   def test_a(self):
-    pens      = list() # empty to avoid creating unwanted records
-    nrc, pens = self.bd.pens(pens, self.ver)
+    colors      = list() # empty to avoid creating unwanted records
+    nrc, colors = self.bd.colors(colors, self.ver)
     self.assertFalse(nrc)
 
   def test_b(self):
-    pen_count = self.bd.pensRead(self.ver)
+    pen_count = self.bd.colorsRead(self.ver)
     self.assertEqual(30, pen_count)
 
   def test_c(self):
     ''' 99 is not a valid value 
-        but pensWrite ignores it anyway and forces new ver
+        but colorsWrite ignores it anyway and forces new ver
 
-DELETE FROM pens WHERE ver = 4 AND penam = 'zz';
+DELETE FROM colors WHERE ver = 4 AND penam = 'zz';
     '''
-    pens      = [[99, '#999999', 'zz']]
-    nrc, pens = self.bd.pensWrite(pens, self.ver)
+    colors      = [[99, '#999999', 'zz']]
+    nrc, colors = self.bd.colorsWrite(colors, self.ver)
     self.assertEqual(1, nrc)
 
   def test_d(self):

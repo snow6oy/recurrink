@@ -1,6 +1,6 @@
 import unittest
 import pprint
-from block import Db2
+from cell.data2 import CellData2
 
 # TODO merge with t.geometry
 class Test(unittest.TestCase):
@@ -13,7 +13,7 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
 
   def setUp(self):
     self.pp     = pprint.PrettyPrinter(indent=2)
-    self.db2    = Db2()
+    self.cd2    = CellData2()
     self.rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
     self.cell = {
                 'bg': None,
@@ -37,7 +37,7 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     if top and not fg: cell['top'] = False # demote to layer 1
 
     celldata     = { label: cell }
-    nrc, written = self.db2.geometryWrite(self.rinkid, celldata)
+    nrc, written = self.cd2.geometryWrite(self.rinkid, celldata)
     self.assertEqual(expected, nrc) # check rows were inserted
 
   def test_b(self): self.test_a(label='b', fg=True, bg=True, expected=2)
@@ -53,7 +53,7 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     expected = {
       'a': 2, 'b': 2, 'c': 3, 'd': 2, 'e': 3
     } 
-    cells    = self.db2.geometryRead(self.rinkid)
+    cells    = self.cd2.geometryRead(self.rinkid)
     #self.pp.pprint(cells)
     for label in ['a', 'b', 'c', 'd', 'e']:
       self.assertEqual(expected[label], len(cells[label]))
@@ -63,7 +63,7 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     '''
     cell = self.cell
     #self.pp.pprint(cell)
-    cell = self.db2.dataV1({'a': cell})
+    cell = self.cd2.dataV1({'a': cell})
     self.assertFalse(len(cell['a'][0]))
     self.assertTrue(len(cell['a'][1]))
 
@@ -72,7 +72,7 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     cell         = self.cell
     cell['bg']   = bg if bg else None
     celldata     = { label: cell }
-    nrc, written = self.db2.paletteWrite(self.rinkid, ver, celldata)
+    nrc, written = self.cd2.paletteWrite(self.rinkid, ver, celldata)
     #print(f'{nrc=}')
     #self.pp.pprint(written)
     self.assertEqual(2, nrc)
@@ -80,7 +80,7 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
   def test_i(self): self.test_h(label='i', bg='#000000')
 
   def test_j(self):
-    pal = self.db2.paletteRead(self.rinkid)
+    pal = self.cd2.paletteRead(self.rinkid)
     self.assertTrue(pal)
 
   def test_k(self, label='k', width=1, top=False):
@@ -92,7 +92,7 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     cell['top']  = top
     
     celldata     = { label: cell }
-    nrc, written = self.db2.strokeWrite(self.rinkid, ver, celldata)
+    nrc, written = self.cd2.strokeWrite(self.rinkid, ver, celldata)
     self.assertTrue(nrc >= 2)
     # print(f'{nrc=}')
     # self.pp.pprint(written)
@@ -104,8 +104,10 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     ''' read strokes
     '''
     expected = { 'k': 2, 'l': 2, 'm': 3 }
-    s        = self.db2.strokeRead(self.rinkid)
-    [self.assertEqual(expected[label], len(s[label])) for label in ['k', 'l', 'm']] 
+    s        = self.cd2.strokeRead(self.rinkid)
+    [self.assertEqual(
+      expected[label], 
+      len(s[label])) for label in ['k','l','m']] 
     #self.pp.pprint(s)
 
   def test_z(self):
