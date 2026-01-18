@@ -11,7 +11,8 @@ class BlockData2(Transform):
     self.pp     = pprint.PrettyPrinter(indent=2)
     super().__init__()
 
-  def colors(self, colors, new_ver):
+  def colors(self, colors, ver=0):
+    new_ver   = ver # we can only understand new ver around here OKAY? 
     pen_count = self.colorsRead(new_ver)
     #print(f'{new_ver=} {pen_count=}')
     if pen_count:   return 0, colors
@@ -58,14 +59,15 @@ VALUES (%s, %s, %s);""", [new_ver, fill, name]
       raise ValueError(f'palette conversion needed for {ver}')
     return ver - 7
 
-  def rinks(self, rinkid, mid=0, meta=list(), size=None, factor=None):
+  def rinks(self, rinkid, mid=0, ver=0, dates=list(), size=None, factor=None):
     rinkdata = self.rinksRead(rinkid)
     if rinkdata:   
       return 0, rinkdata
-    elif mid and len(meta) == 3:
-      return self.rinksWrite(rinkid, mid, meta, size, factor)
+    elif mid and ver:
+      return self.rinksWrite(rinkid, mid, ver, dates, size, factor)
     else: 
-      raise TypeError('cannot create rink without mid and meta')
+      raise TypeError(f'cannot create rink without {mid=} and {ver=}')
+
 
   def rinksRead(self, rinkid):
     self.cursor.execute("""
@@ -75,9 +77,9 @@ WHERE rinkid = %s;""", [rinkid]
     )
     return self.cursor.fetchone()
 
-  def rinksWrite(self, rinkid, mid, meta, size, factor):
-    new_record_count      = 1
-    ver, pubdate, created = meta
+  def rinksWrite(self, rinkid, mid, ver, dates, size, factor):
+    new_record_count = 1
+    pubdate, created = dates
 
     self.cursor.execute("""
 INSERT INTO rinks (rinkid, mid, ver, clen, factor, created, pubdate)
