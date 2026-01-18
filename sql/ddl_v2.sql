@@ -12,14 +12,15 @@ CREATE TABLE pens (
   gplfile VARCHAR(50)
 );
 
-INSERT into PENS (gplfile)
+INSERT INTO pens (gplfile)
 VALUES
   ('uniball'),
   ('copicsketch'),
   ('copic'),
   ('stabilo68'),
   ('sharpie'),
-  ('staedtler');
+  ('staedtler'),
+  ('stabilo88');
 
 
 DROP TABLE colors CASCADE;
@@ -27,7 +28,7 @@ CREATE TABLE colors (
   ver INT,
   fill VARCHAR(7) CHECK (fill ~* '^#[a-f0-9]{6}$'),  -- enforce once
   penam VARCHAR(50),
-  FOREIGN KEY (ver) REFERENCES inkpal (ver),
+  FOREIGN KEY (ver) REFERENCES pens (ver),
   UNIQUE (ver, fill)
 );
 
@@ -53,21 +54,21 @@ CREATE TABLE blocks (
 -- an instance of a model is rink
 DROP TABLE rinks CASCADE;
 CREATE TABLE rinks (
-  rinkid CHAR(32) PRIMARY KEY,     -- assume digest makes unique IDs
-  mid INT NOT NULL,
-  ver INT NOT NULL,
+  rinkid CHAR(32) PRIMARY KEY,     -- digest anyways makes unique IDs
+  mid INT,
+  ver INT,
   clen INT,
   factor NUMERIC(3,2),
   created timestamp DEFAULT current_timestamp,
   pubdate timestamp,
   FOREIGN KEY (mid) REFERENCES models (mid),
-  FOREIGN KEY (ver) REFERENCES inkpal (ver),
+  FOREIGN KEY (ver) REFERENCES pens (ver),
   UNIQUE (rinkid)
 );
 
 DROP TABLE geometry CASCADE;
 CREATE TABLE geometry (
-  rinkid CHAR(32) NOT NULL,
+  rinkid CHAR(32),
   cell CHAR(1) NOT NULL,
   layer SMALLINT NOT NULL,
   name VARCHAR(7),
@@ -79,7 +80,7 @@ CREATE TABLE geometry (
 
 DROP TABLE strokes CASCADE;
 CREATE TABLE strokes (
-  rinkid CHAR(32) NOT NULL,
+  rinkid CHAR(32),
   cell CHAR(1) NOT NULL,
   layer SMALLINT NOT NULL,
   ver INT NOT NULL,
@@ -93,14 +94,14 @@ CREATE TABLE strokes (
 
 DROP TABLE palette;
 CREATE TABLE palette (
-  rinkid CHAR(32) NOT NULL,
+  rinkid CHAR(32),
   cell CHAR(1) NOT NULL,
   layer SMALLINT NOT NULL,
   ver INT NOT NULL,
   fill VARCHAR(7),
   opacity FLOAT DEFAULT 1.0,
   FOREIGN KEY (rinkid) REFERENCES rinks (rinkid),
-  FOREIGN KEY (ver) REFERENCES inkpal (ver),
+  FOREIGN KEY (ver) REFERENCES pens (ver),
   UNIQUE (rinkid, cell, layer)
 );
 
