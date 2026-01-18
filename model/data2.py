@@ -83,43 +83,13 @@ VALUES (%s, %s, %s, %s);""", (mid, pos_int, cell, top)
       new_record_count += 1
     return new_record_count, blocks
 
-  ''' make positions pretty for yaml
-  BLOCKSZ = tuple()
-  def setBlocksize(self, positions):
-    x = [p[0] for p in list(positions.keys())]
-    y = [p[1] for p in list(positions.keys())]
-    self.BLOCKSZ = (max(x) + 1, max(y) + 1)
-
-  def emptyBlock(self):
-    block = list(range(self.BLOCKSZ[1]))
-    for x in block:
-      row      = list(range(self.BLOCKSZ[0]))
-      block[x] = row
-    return block
-
-  def positionBlock(self, positions, top=False):
-    self.setBlocksize(positions)
-    i     = 1 if top else 0
-    block = self.emptyBlock()
-    for p in positions:
-      x, y = p
-      block[y][x] = positions[p][i]
-
-    if top: # does this model have any cells with top?
-      truth = list()
-      for row in block:
-        truth.append(all(t is None for t in row))
-      if truth.count(True) == len(block): block = None
-    return block
-  '''
-
   def compass(self, mid, conf):
     ''' retrieve compass entries by mid, optionally add new
     '''
-    entries          = self.compassRead(mid)
-    if len(entries): return 0, entries
-    elif len(conf):  return self.compassWrite(mid, conf)
-    else:            raise TypeError('expected either mid or conf')
+    entries = self.compassRead(mid)
+    if len(entries):          return 0, entries
+    elif conf and len(conf):  return self.compassWrite(mid, conf)
+    else:                     return 0, None
 
   def compassWrite(self, mid, conf):
     new_record_count = 0

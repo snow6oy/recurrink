@@ -1,0 +1,344 @@
+#!/usr/bin/env python
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'''
+HOW TO swap pals and migrate
+
+palswap clone -d594647b855a722894079086ffdff9b92 -o
+palswap build -mwaltz -o -z
+# check tmp/waltz_db1.svg
+palswap clone -d594647b855a722894079086ffdff9b92 -opal -p8
+palswap build -mwaltz -opal -z
+# compare tmp/waltz_pal.svg and if new pal ok
+palswap commit -mwaltz -o
+# and then copy to db1
+palswap commit -mwaltz -odb2
+palswap clone -d594647b855a722894079086ffdff9b92 -odb2
+palswap build -mwaltz -odb2 -z
+# compare tmp/waltz_db2.svg to check for db migration errors
+'''
+
+import sys
+import argparse
+import pprint
+from model import ModelData, SvgModel
+from model.data2 import ModelData2
+from block import PaletteMaker, TmpFile, Views, BlockData, Make
+from block.data import Compass
+from block.data2 import BlockData2
+from block.tmpfile2 import TmpFile2
+from cell import Palette, Strokes
+from cell.data2 import CellData2
+from config import *
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+pal     = Palette()
+pmk     = PaletteMaker()
+tf      = TmpFile()
+view    = Views()
+md2     = ModelData2()
+bd2     = BlockData2()
+cd2     = CellData2()
+tf2     = TmpFile2()
+fnam    = pal.friendlyPenNames()
+pp      = pprint.PrettyPrinter(indent=2)
+view  = Views()
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''' get inputs from command line
+    see block/README.md Palette conversion
+'''
+def main(args):
+  parser     =  argparse.ArgumentParser(prog='palswap')
+  subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
+  parser_b   = subparsers.add_parser('build',  help='build svg from config')
+  parser_k   = subparsers.add_parser('clone',  help='get copy of config')
+  parser_c   = subparsers.add_parser('commit', help='write to db')
+
+  arg_p = {
+    'help'    : 'new palette to try',
+    'type'    : int, 
+    'choices' : range(1, 99), 
+    'metavar' : '[1-99]'
+  }
+  arg_z = {
+    'help'   : 'numof layers *3 or 2', 
+    'metavar': '2-3', 
+    'nargs'  : '?', 
+    'const'  : 3, 
+    'type'   : int
+  }
+  arg_o = {
+    'help'   : 'output refers to db1 by default',
+    'nargs'  : '?', 
+    'choices': ['db1','pal', 'db2'], 
+    'const'  : 'db1'
+  }
+  arg_m = { 'help': 'name of model (yaml) to use as input', 'required': True }
+  arg_d = { 'help': 'rinkid to write as yaml', 'required': True }
+
+  parser_k.add_argument('-p', '--palette', **arg_p)
+  parser_k.add_argument('-d', '--digest',  **arg_d)
+  parser_k.add_argument('-o', '--output',  **arg_o)
+  parser_b.add_argument('-m', '--model',   **arg_m)
+  parser_b.add_argument('-z', '--layer',   **arg_z)
+  parser_b.add_argument('-o', '--output',  **arg_o)
+  parser_c.add_argument('-m', '--model',   **arg_m)
+  parser_c.add_argument('-o', '--output',  **arg_o)
+  return parser.parse_args()
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+def clone(args):
+  if args.digest:
+    (model, 
+    author, 
+     scale, 
+       ver, 
+   pubdate,
+   created) = view.readMeta(digest=args.digest)
+  if   args.output == 'db2': cloneDb2(args.digest, model, ver)   # celldata from new db
+  elif args.output == 'db1': cloneDb1(args.digest, model, ver)   # db1
+  elif args.output == 'pal': clonePal(args.digest, args.palette) # swap colours
+  else:                      print('check input -o without a value = db1')
+
+def cloneDb1(rinkid, model, ver):  # assume we want celldata from db1
+  ''' pull from db1 to create tmp/MODEL.yaml
+  '''
+  celldata  = view.read(digest=args.digest) #, output=list())
+  tf.setVersion(ver)
+  tf.write(model, args.digest, celldata)
+  print(f"""
+cloning {model} {rinkid} from db1
+with {len(celldata)} cells
+using {fnam[ver]} pens""")
+
+def cloneDb2(rinkid, model, ver):
+  ''' pull from db2 to create tmp/MODEL.yaml
+  '''
+  _, mid          = md2.model(name=model)
+  new_ver         = bd2.version(ver)
+  print(f'{mid=} {new_ver=}')
+  _, rinkdata     = bd2.rinks(rinkid)
+  model, metadata = tf2.rinkMeta(rinkdata)
+  celldata        = tf2.cellData(rinkdata)
+  tf.writeConf(model, metadata, celldata)
+  print(f"""
+cloning {model} {rinkid} from db2
+with {len(celldata)} cells
+using {fnam[ver]} pens""")
+
+def clonePal(rinkid, ver):
+  ''' write a conf using the new pal
+  '''
+  model    = view.readMeta(rinkid)[0] # model auth scale ver
+  bd       = BlockData(model)
+  print(f'{ver=} {rinkid=} {model}')
+  swp      = swapOldnew(ver, rinkid)
+  celldata = view.read(digest=rinkid)
+  position = bd.readPositions(model)
+  celldata = pmk.updateCells(celldata, swp) # transform celldata
+
+  view.validate(celldata, ver=ver)
+  tf.write(model, rinkid, celldata)         # write new colors to conf/palswap.yaml
+
+def swapOldnew(ver, rinkid):
+  ''' do the swap right here
+  '''
+  pal     = Palette(ver)
+  palette = set(pal.read_view(rinkid))
+  tf.exportPalfile(rinkid, palette) 
+  print(f"palettes/{rinkid}.txt was written")
+
+  tf.setVersion(ver=ver)
+  pal.loadPalette()     # merge fg bg stroke into uniqfill 
+  oc      = tf.getOldColors(rinkid)
+  nc      = pmk.setLookUp(pal.uniqfill) # for search the new colour
+  print(f'''{len(oc)} to swap
+{len(nc)} to search
+''')
+  swp      = pmk.swapColors(oc, nc)
+  uniqnew  = set(list(swp.values()))
+  print(f'{len(uniqnew)} new colours')
+  pp.pprint(swp)
+  return swp
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+def commit(args):
+  if args.output is None:      
+    print('check input e.g. -o writes to db1 by default')
+  elif args.output == 'db1': commitDb1(args.model)
+  elif args.output == 'db2': commitDb2(args.model)
+  else                     : print(f'cannot commit to {args.output}')
+
+def commitDb1(model):
+  ''' read yaml and update db1 with new pal
+      
+      example inputs: ver 9 is copicsketch. only 8..12 can work
+      rinkid '180f1989f54ff03291ec31e164f2a79f'
+  '''
+  metadata  = tf.readConf(model, meta=True)
+  rinkid    = metadata['id']
+  ver       = fnam.index(tf.VERSION)
+  celldata  = view.read(digest=rinkid) # to be updated
+
+  stk      = Strokes(ver)
+  pal      = Palette(ver=ver) 
+  swp      = swapOldnew(ver, rinkid)   # same as tmp/MODEL_db1.svg after clone -opal
+  pids     = pal.updatePids(ver, swp, celldata)
+  rownum   = pal.swapPalette(pids, ver, rinkid)
+  sids     = stk.updateSids(swp, celldata) # {'a': 309, 'b': 310, ..
+  rownum  += stk.swapSid(sids, ver, rinkid)
+  print(f'{ver=} {rinkid} {model}')
+  pp.pprint(sids)
+  print(f'{rownum} updated db1')
+
+def commitDb2(model):
+  ''' after pal swap
+      copy rink from db1 to db2
+  '''
+  metadata  = tf.readConf(model, meta=True)
+  rinkid    = metadata['id']
+  rinkmeta  = view.readMeta(rinkid)
+  bd        = BlockData(rinkmeta[0])
+  blocks    = bd.readPositions(rinkmeta[0]) 
+
+  # Model
+  nrc, mid  = md2.model(name=rinkmeta[0])
+  print(f'{model} {rinkid}')
+  print(f'model {nrc} new records') if nrc else print(
+    f'{rinkmeta[0]} {mid=} found'
+  )
+  pens         = md2.pens()
+  print(f'old ver {rinkmeta[3]} num of pens {len(pens) - 1}')
+  nrc, blocks  = md2.blocks(mid, blocks)
+  print(f'blok {nrc} new records') if nrc else print(f'{len(blocks)=} found')
+  compass      = Compass(rinkmeta[0])
+  nrc, compass = md2.compass(mid, compass.conf)
+  if nrc:       print(f'comp {nrc} new records') 
+  elif compass: print(f'{len(compass)=} found')
+  else:         print('no compass')
+  
+  # Block
+  ver           = bd2.version(rinkmeta[3])
+  print(f'{ver=} is new converted from old ver {rinkmeta[3]}') 
+  pal           = Palette(ver=ver) 
+  pens          = pal.penNames(None, dict(), ver=rinkmeta[3])
+  nrc, colors   = bd2.colors(pens, ver=ver)
+  print(f'colors {nrc} new records') if nrc else print(f'{len(colors)=} found')
+  nrc, rinkdata = bd2.rinks(rinkid, mid, ver, rinkmeta[4:])
+  print(f'rink {nrc} new records') if nrc else print(f'{len(rinkdata)=} found')
+  celldata = view.read(digest=rinkid) 
+  
+  # Cell
+  nrc, geom = cd2.geometry(rinkid, celldata)
+  print(f'geom {nrc} new records') if nrc else print(f'{len(geom)=} found')
+  nrc, stk = cd2.strokes(rinkid, rinkdata[2], celldata)
+  print(f' stk {nrc} new records') if nrc else print(f'{len(stk)=} found')
+  nrc, pal = cd2.palette(rinkid, rinkdata[2], celldata)
+  print(f' pal {nrc} new records') if nrc else print(f'{len(pal)=} found')
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+def build(args):
+  ''' generate an SVG from tmpfile or an HTML palette
+  '''
+  if args.output is None or args.layer is None:      
+    print('check input e.g. -o gives defaul value = db1')
+  else:                       
+    buildOut(args.model, args.output, args.layer)
+
+def buildOut(model, output, layer, size=90, factor=1):
+  svglin    = SvgModel(size, factor)
+  bd        = BlockData(args.model)
+  positions = bd.readPositions(args.model)
+    
+  celldata  = tf.readConf(model)
+  ver       = fnam.index(tf.VERSION)
+  print(f'{ver=}')
+  penam     = bd.penNames(ver)
+  view.validate(celldata, ver=ver)
+  block     = Make(size, linear=False, pen_names=penam)
+  block.walk(positions, celldata, z=layer)
+
+  svgfile   = f'{model}_{output}'
+  block.hydrateGrid()
+  svglin.build(block)
+  svglin.render(svgfile, line=False)
+  print(f'tmp/{svgfile} was built with pal {fnam[ver]}')
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+def __build():
+  if False:
+    ###########################  
+
+    svgfile   = model + '_exchange'
+    svg       = SvgModel(18) # size of preview palswap.svg
+    block     = Make(18, linear=False)
+    # start to build
+    block.walk(positions, celldata)
+    block.hydrateGrid()
+    svg.build(block)
+    svg.render(svgfile, line=False)
+    print(f'tmp/{svgfile}.svg was built')
+  elif args.model and args.size and args.factor:
+    raise Warning(f'''missing argument
+{args.palette=} 
+{args.digest=}
+{args.model=} 
+{args.size=}
+{args.factor=}
+''')
+
+def renderSwap(mdl, ver, positions):
+  DEPTH     = 2  # swap to 3 to walk through all layers
+  celldata  = tf.readConf(mdl)
+  view.validate(celldata, ver=ver)
+  svgfile   = mdl + '_palswap'
+  svg       = SvgModel(90) # size of preview palswap.svg
+  block     = Make(90, linear=False)
+  # start to build
+  block.walk(positions, celldata, z=DEPTH)
+  block.hydrateGrid()
+  svg.build(block)
+  svg.render(svgfile, line=False)
+  print(f'tmp/{svgfile}.svg was built')
+
+def __clonePal():
+  positions = bd.readPositions(model)
+  ver       = args.palette # use onlyi pen pals 8..12 please
+  tf.setVersion(ver)
+  oc        = tf.getOldColors(dig)
+  pal.loadPalette(ver=ver)     # merge fg bg stroke into uniqfill 
+  nc        = pmk.setLookUp(pal.uniqfill) # for search the new colour
+  swp       = pmk.swapColors(oc, nc)
+  print(f'''{len(oc)} to swap
+{len(nc)} to search
+''')
+  pp.pprint(swp)
+  celldata  = pmk.updateCells(celldata, swp)
+  tf.write(model, args.digest, celldata)   # new colors to conf/palswap.yaml
+
+def __getOldColors(dig):
+  ''' read old colours from palettes/DIGEST.txt
+
+  to generate palettes/DIGEST.txt as list of colour from rink to swap
+  ./recurrink clone -d2fcb3c6c178814262c116e16b62c6a19 -opal
+  '''
+  oc  = set()
+  old_pal = tf.importPalfile(dig)
+  [oc.add(c[0]) for c in old_pal]
+  [oc.add(c[2]) for c in old_pal]
+  return oc
+
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+if __name__ == "__main__":
+  args = main(sys.argv[1:])
+  if   args.keyword == 'clone':   clone(args)
+  elif args.keyword == 'build':   build(args)
+  elif args.keyword == 'commit':  commit(args)
+  else:
+    print(f'usage: {sys.argv[0]} --help')
+    sys.exit(1)
+'''
+the
+end
+'''
