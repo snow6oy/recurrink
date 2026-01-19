@@ -7,13 +7,16 @@ import pprint
 from block import Views, BlockData, InputValidator
 from config import *
 from cell import Palette
-
-# TODO add palette
+# db2 will change once data2 merges
+from model.data2 import ModelData2
+from block.data2 import BlockData2
+from cell.data2 import CellData2
 
 class TmpFile(InputValidator):
 
   BLOCKSZ   = tuple()
   VERSION   = 1
+  VERBOSE   = True
   pp        = pprint.PrettyPrinter(indent=2)
   meta_tags = ['id', 'model', 'palette', 'positions'] # defaults will be popped
 
@@ -60,6 +63,20 @@ class TmpFile(InputValidator):
       self.writeConf(model, metadata, celldata)
     else:
       raise TypeError(safecells)  # error string
+
+  def writePretty(self, model, metadata, celldata):
+    ''' make the fills pretty be removing # 
+    '''
+    for label in celldata: # remove the hash in #rrggbb
+      for cs in celldata[label]:
+        if cs in ['color', 'stroke']:
+          for fb in celldata[label][cs]:
+            if fb in ['fill', 'background']: # skip opacity
+              celldata[label][cs][fb] = self.prettyHash(
+                celldata[label][cs][fb], remove=True
+              )
+              print(f'{label=} {cs=} {fb=}')
+    self.writeConf(model, metadata, celldata)
 
   def writeConf(self, model, metadata, celldata):
     ''' PyYAML flow style None is different from False
@@ -237,8 +254,74 @@ class TmpFile(InputValidator):
     [oc.add(c[2]) for c in old_pal]
     return oc
 
+  ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+  def rinkMeta(self, rinkdata):
+    ''' gather metadata from db to write conf/MODEL.yaml
+    '''
+    md2      = ModelData2()
+    _, model = md2.model(mid=rinkdata[1])
+    if self.VERBOSE: print(f'got {model=}')
+    _, pos   = md2.blocks(mid=rinkdata[1])
+    if self.VERBOSE: print(f'got {len(pos)=} blocks')
+    pens     = md2.pens(ver=rinkdata[2])
+    if self.VERBOSE: print(f'got {pens=}')
+
+    metadata = {
+      'id': rinkdata[0],
+      'model': model,
+      'palette': pens
+    }
+    fgpos = self.positionBlock(pos)
+    topos = self.positionBlock(pos, top=True)
+    metadata['positions'] = { 'foreground': fgpos }
+    if topos: metadata['positions']['top'] = topos
+ 
+    return model, metadata
+
+  # move to tmpfile # move to tmpfile # move to tmpfile # move to tmpfile 
+  def cellData(self, rinkdata):
+    ''' gather celldata from db to write conf/MODEL.yaml
+    '''
+    cd2     = CellData2()
+    bd2     = BlockData2()
+    rinkid  = rinkdata[0]
+    _, geom = cd2.geometry(rinkid)
+    if self.VERBOSE: print(f'got {len(geom)=}')
+    _, stk  = cd2.strokes(rinkid, rinkdata[2])
+    if self.VERBOSE: print(f'got {len(stk)=}')
+    _, pal  = cd2.palette(rinkid, rinkdata[2])
+    if self.VERBOSE: print(f'got {len(pal)=}')
+
+    celldata      = dict()
+    ######################
+    for label in geom:
+      #print(f'{label=} {len(geom[label])}')
+      g = dict(zip(['name', 'size', 'facing'], geom[label][-1]))
+      z = len(geom[label]) 
+      g['top'] = True if z == 3 else False
+      p  = dict(zip(['fill', 'opacity'], pal[label][-1]))
+      p['background'] = pal[label][0][0] if z > 1 else None
+
+      if label in stk and stk[label][1][0]: 
+        s = dict(zip(['fill', 'opacity', 'width', 'dasharray'], stk[label][1]))
+        celldata[label] = {
+          'geom': g,
+        'stroke': s,
+         'color': p
+        }
+      else: 
+        celldata[label] = { 'geom': g, 'color': p }
+    _, rinkdata = bd2.rinks(rinkid)
+    if self.VERBOSE: print(f'got {len(rinkdata)=}')
+    '''
+    self.pp.pprint(pal)
+    self.pp.pprint(pos)
+    self.pp.pprint(rinkdata)
+    self.pp.pprint(celldata)
+    '''
+    return celldata
+
 '''
 the
 end
 '''
-

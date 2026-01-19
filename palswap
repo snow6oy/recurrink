@@ -1,19 +1,18 @@
 #!/usr/bin/env python
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-'''
-HOW TO swap pals and migrate
+''' HOW TO swap pals and migrate
 
-palswap clone -d594647b855a722894079086ffdff9b92 -o
-palswap build -mwaltz -o -z
-# check tmp/waltz_db1.svg
-palswap clone -d594647b855a722894079086ffdff9b92 -opal -p8
-palswap build -mwaltz -opal -z
+palswap clone -d RINKID -o
+palswap build -m MODEL -z -o
+# check tmp/MODEL_db1.svg
+palswap clone -d RINKID -opal -p VER
+palswap build -m MODEL -z -opal
 # compare tmp/waltz_pal.svg and if new pal ok
-palswap commit -mwaltz -o
-# and then copy to db1
-palswap commit -mwaltz -odb2
-palswap clone -d594647b855a722894079086ffdff9b92 -odb2
-palswap build -mwaltz -odb2 -z
+palswap commit -m MODEL -o
+# and then copy to db2
+palswap commit -m MODEL -odb2
+palswap clone -d RINKID -odb2
+palswap build -m MODEL -z -odb2
 # compare tmp/waltz_db2.svg to check for db migration errors
 '''
 
@@ -25,7 +24,7 @@ from model.data2 import ModelData2
 from block import PaletteMaker, TmpFile, Views, BlockData, Make
 from block.data import Compass
 from block.data2 import BlockData2
-from block.tmpfile2 import TmpFile2
+# from block.tmpfile2 import TmpFile2
 from cell import Palette, Strokes
 from cell.data2 import CellData2
 from config import *
@@ -38,7 +37,7 @@ view    = Views()
 md2     = ModelData2()
 bd2     = BlockData2()
 cd2     = CellData2()
-tf2     = TmpFile2()
+# tf2     = TmpFile2()
 fnam    = pal.friendlyPenNames()
 pp      = pprint.PrettyPrinter(indent=2)
 view  = Views()
@@ -102,9 +101,9 @@ def clone(args):
 def cloneDb1(rinkid, model, ver):  # assume we want celldata from db1
   ''' pull from db1 to create tmp/MODEL.yaml
   '''
-  celldata  = view.read(digest=args.digest) #, output=list())
+  celldata  = view.read(digest=rinkid) #, output=list())
   tf.setVersion(ver)
-  tf.write(model, args.digest, celldata)
+  tf.write(model, rinkid, celldata)
   print(f"""
 cloning {model} {rinkid} from db1
 with {len(celldata)} cells
@@ -117,9 +116,9 @@ def cloneDb2(rinkid, model, ver):
   new_ver         = bd2.version(ver)
   print(f'{mid=} {new_ver=}')
   _, rinkdata     = bd2.rinks(rinkid)
-  model, metadata = tf2.rinkMeta(rinkdata)
-  celldata        = tf2.cellData(rinkdata)
-  tf.writeConf(model, metadata, celldata)
+  model, metadata = tf.rinkMeta(rinkdata)
+  celldata        = tf.cellData(rinkdata)
+  tf.writePretty(model, metadata, celldata)
   print(f"""
 cloning {model} {rinkid} from db2
 with {len(celldata)} cells
@@ -135,8 +134,6 @@ def clonePal(rinkid, ver):
   celldata = view.read(digest=rinkid)
   position = bd.readPositions(model)
   celldata = pmk.updateCells(celldata, swp) # transform celldata
-
-  view.validate(celldata, ver=ver)
   tf.write(model, rinkid, celldata)         # write new colors to conf/palswap.yaml
 
 def swapOldnew(ver, rinkid):
@@ -225,7 +222,7 @@ def commitDb2(model):
   print(f'colors {nrc} new records') if nrc else print(f'{len(colors)=} found')
   nrc, rinkdata = bd2.rinks(rinkid, mid, ver, rinkmeta[4:])
   print(f'rink {nrc} new records') if nrc else print(f'{len(rinkdata)=} found')
-  celldata = view.read(digest=rinkid) 
+  celldata      = view.read(digest=rinkid) 
   
   # Cell
   nrc, geom = cd2.geometry(rinkid, celldata)
