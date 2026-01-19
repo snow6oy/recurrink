@@ -75,7 +75,7 @@ class TmpFile(InputValidator):
               celldata[label][cs][fb] = self.prettyHash(
                 celldata[label][cs][fb], remove=True
               )
-              print(f'{label=} {cs=} {fb=}')
+              #print(f'{label=} {cs=} {fb=}')
     self.writeConf(model, metadata, celldata)
 
   def writeConf(self, model, metadata, celldata):
