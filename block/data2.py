@@ -7,24 +7,28 @@ class BlockData2(Transform):
   INPUT params needed for searching and/or data for new records
   OUTPUT either nrc:0 and selected entries OR nrc:1+ and new entries
   '''
+  pp = pprint.PrettyPrinter(indent=2)
+
   def __init__(self):
-    self.pp     = pprint.PrettyPrinter(indent=2)
     super().__init__()
 
-  def colors(self, colors, ver=0):
+  #def colors(self, colors, ver=0):
+  def colors(self, ver, colors=None):
     new_ver   = ver # we can only understand new ver around here OKAY? 
-    pen_count = self.colorsRead(new_ver)
+    colors    = self.colorsRead(new_ver)
+    pen_count = len(colors)
     #print(f'{new_ver=} {pen_count=}')
     if pen_count:   return 0, colors
-    elif colors:      return self.colorsWrite(colors, new_ver)
-    else:           raise TypeError('expected known ver or new colors')
+    elif colors:    return self.colorsWrite(colors, new_ver)
+    else:           raise TypeError(f'expected known ver {ver=} or new colors')
 
   def colorsRead(self, ver):
     self.cursor.execute("""
-SELECT count(*) 
+SELECT fill, penam
 FROM colors
 WHERE ver = %s;""", [ver])
-    return self.cursor.fetchone()[0]
+    #return self.cursor.fetchone()[0]
+    return self.cursor.fetchall()
 
   def colorsWrite(self, colors, new_ver):
     ''' pen sets are defined in the inkpal table

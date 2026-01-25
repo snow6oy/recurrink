@@ -83,7 +83,7 @@ VALUES (%s, %s, %s, %s);""", (mid, pos_int, cell, top)
       new_record_count += 1
     return new_record_count, blocks
 
-  def compass(self, mid, conf):
+  def compass(self, mid, conf=None):
     ''' retrieve compass entries by mid, optionally add new
     '''
     entries = self.compassRead(mid)
