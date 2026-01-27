@@ -26,10 +26,13 @@ class TmpFile(InputValidator):
         using len(fnam) is risky because not enough entries
     '''
     USE_PEN_PALS = 7  # palettes with pens, not friends from abroad :-D
+    '''
     pal          = Palette()
     fnam         = pal.friendlyPenNames()
-    if ver is None:
-      ver = random.choice(range(USE_PEN_PALS, len(fnam)))
+    '''
+    md2  = ModelData2()
+    fnam = md2.pens()
+    if ver is None: ver = random.choice(range(USE_PEN_PALS, len(fnam)))
     self.VERSION = ver
     self.PALETTE = fnam[ver]
     return ver
@@ -95,10 +98,8 @@ class TmpFile(InputValidator):
       conf = yaml.safe_load(yf)
 
     self.VERSION = conf['palette']
-    if meta:
-      conf = self.readMeta(conf)
-    else:
-      conf = self.readCells(conf)
+    if meta: conf = self.readMeta(conf)
+    else:    conf = self.readCells(conf)
     return conf
 
   def readCells(self, conf):
@@ -126,8 +127,8 @@ class TmpFile(InputValidator):
     return safecells
 
   def readMeta(self, conf):
-    meta_vals = [conf[key] for key, val in conf.items() if key in self.meta_tags]
-    metadata  = dict(zip(self.meta_tags, meta_vals))
+    meta_val = [conf[key] for key, val in conf.items() if key in self.meta_tags]
+    metadata = dict(zip(self.meta_tags, meta_val))
     return metadata
 
   def setDigest(self, celldata=None):
@@ -138,6 +139,7 @@ class TmpFile(InputValidator):
     secret = b'recurrink'
     digest_maker = hmac.new(secret, key.encode('utf-8'), digestmod='MD5')
     self.digest = digest_maker.hexdigest()
+    return self.digest
 
   def digestString(self, celldata):
     ''' create a string that is uniq to rink and repeatable

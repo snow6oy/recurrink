@@ -19,7 +19,7 @@ class Init():
 
     mid = models.index(self.model)
     ver = pens.index(self.pen)
-    print(f'{mid=} {self.model=} {ver=} {self.pen=}')
+    #print(f'{mid=} {self.model=} {ver=} {self.pen=}')
 
     _, blocks = md2.blocks(mid)
     cells     = [cell[0] for pos, cell in blocks.items()]

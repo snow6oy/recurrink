@@ -59,7 +59,7 @@ class Transform(Db2):
         cell['color']['fill'],
         cell['color']['opacity']
       ]
-      if 'stroke' in cell and cell['stroke']['width'] > 0:
+      if 'stroke' in cell and cell['stroke']: #['width'] > 0:
         row += [
           cell['stroke']['fill'],
           cell['stroke']['opacity'],
@@ -86,6 +86,8 @@ class Transform(Db2):
 
   def transformOneCell(self, cell):
     ''' transform V1 to V2
+ 
+        but what is the use-case ?
     '''
     data                 = dict()
     data['shape']        = cell['geom']['name']

@@ -47,7 +47,8 @@ ORDER BY cell, layer;""",
         see t.geometry for details
     '''
     new_record_count = 0
-    celldata         = self.dataV1(celldata) # convert v1 to layered format
+    #celldata         = self.dataV1(celldata) # convert v1 to layered format
+    #celldata         = self.dataV2(celldata) # convert v1 to layered format
 
     for label, cell in celldata.items():
       for z, layer in enumerate(cell):
@@ -102,7 +103,7 @@ ORDER BY cell, layer;""",
     ''' write new entries in palette table
     '''
     new_record_count = 0
-    celldata         = self.dataV1(celldata) # convert v1 to layered format
+    #celldata         = self.dataV1(celldata) # convert v1 to layered format
 
     for label, cell in celldata.items():
       for z, layer in enumerate(cell):
@@ -145,7 +146,7 @@ WHERE rinkid = %s;""",
     ''' record stroke data, if any
     '''
     new_record_count = 0
-    celldata         = self.dataV1(celldata)
+    #celldata         = self.dataV1(celldata)
     for label, cell in celldata.items():
       for z, layer in enumerate(cell):
         if z and len(layer) == 9:

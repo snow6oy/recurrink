@@ -116,7 +116,7 @@ class Palette():
   def generateOne(self, colors):
     fill = random.choice(colors)
     bg   = random.choice(colors)
-    op   = random.choice(self.zeroten)
+    op   = random.choice(self.zeroten) / 10
     return dict(zip(['fill','bg','fill_opacity'], [fill[0], bg[0], op]))
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -132,7 +132,7 @@ class Strokes(Palette):
     color  = random.choice(colors)
     stroke = color[0]
     width  = random.choice(self.zeroten)
-    dash   = random.choice(self.zeroten) / 10
+    dash   = random.choice(self.zeroten)
     op     = random.choice(self.zeroten) / 10
     empty  = { 
                 'stroke': None,

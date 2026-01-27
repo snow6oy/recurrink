@@ -84,11 +84,12 @@ WHERE rinkid = %s;""", [rinkid]
   def rinksWrite(self, rinkid, mid, ver, dates, size, factor):
     new_record_count = 1
     pubdate, created = dates
+    clen             = f'{{{size}, {size}}}'
 
     self.cursor.execute("""
 INSERT INTO rinks (rinkid, mid, ver, clen, factor, created, pubdate)
 VALUES (%s, %s, %s, %s, %s, %s, %s);""",  
-        (rinkid, mid, ver, size, factor, created, pubdate)
+        (rinkid, mid, ver, clen, factor, created, pubdate)
     )
     rinkdata = tuple(
       [rinkid, mid, ver, size, factor, created, pubdate]

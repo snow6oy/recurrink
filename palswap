@@ -8,9 +8,9 @@ palswap build -m MODEL -z -o
 palswap clone -d RINKID -opal -p VER
 palswap build -m MODEL -z -opal
 # compare tmp/waltz_pal.svg and if new pal ok
-palswap commit -m MODEL -o
+palswap commit -m MODEL -x -o
 # and then copy to db2
-palswap commit -m MODEL -odb2
+palswap commit -m MODEL -x -odb2
 palswap clone -d RINKID -odb2
 palswap build -m MODEL -z -odb2
 # compare tmp/waltz_db2.svg to check for db migration errors
@@ -21,13 +21,16 @@ import argparse
 import pprint
 from model import ModelData, SvgModel
 from model.data2 import ModelData2
+from model.init  import Init
 from block import PaletteMaker, TmpFile, Views, BlockData, Make
 from block.data import Compass
 from block.data2 import BlockData2
 # from block.tmpfile2 import TmpFile2
 from cell import Palette, Strokes
-from cell.data2 import CellData2
+from cell.data2 import CellData2, Transform
 from config import *
+
+
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 pal     = Palette()
@@ -51,6 +54,7 @@ def main(args):
   parser_b   = subparsers.add_parser('build',  help='build svg from config')
   parser_k   = subparsers.add_parser('clone',  help='get copy of config')
   parser_c   = subparsers.add_parser('commit', help='write to db')
+  parser_i   = subparsers.add_parser('init', help='generate config')
 
   arg_p = {
     'help'    : 'new palette to try',
@@ -71,20 +75,36 @@ def main(args):
     'choices': ['db1','pal', 'db2'], 
     'const'  : 'db1'
   }
+  arg_x = {
+    'help'   :'exchange colours from db1 or conf to out',
+    'action' : argparse.BooleanOptionalAction
+  }
   arg_m = { 'help': 'name of model (yaml) to use as input', 'required': True }
-  arg_d = { 'help': 'rinkid to write as yaml', 'required': True }
+  arg_d = { 'help': 'rinkid to write as yam l', 'required': True }
 
-  parser_k.add_argument('-p', '--palette', **arg_p)
-  parser_k.add_argument('-d', '--digest',  **arg_d)
-  parser_k.add_argument('-o', '--output',  **arg_o)
-  parser_b.add_argument('-m', '--model',   **arg_m)
-  parser_b.add_argument('-z', '--layer',   **arg_z)
-  parser_b.add_argument('-o', '--output',  **arg_o)
-  parser_c.add_argument('-m', '--model',   **arg_m)
-  parser_c.add_argument('-o', '--output',  **arg_o)
+  parser_k.add_argument('-p', '--palette',  **arg_p)
+  parser_k.add_argument('-d', '--digest',   **arg_d)
+  parser_k.add_argument('-o', '--output',   **arg_o)
+  parser_b.add_argument('-m', '--model',    **arg_m)
+  parser_b.add_argument('-z', '--layer',    **arg_z)
+  parser_b.add_argument('-o', '--output',   **arg_o)
+  parser_c.add_argument('-m', '--model',    **arg_m)
+  parser_c.add_argument('-o', '--output',   **arg_o)
+  parser_c.add_argument('-x', '--exchange', **arg_x)
   return parser.parse_args()
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+def init(args):
+  #print(args.model, args.pen)
+  model, pen, ver = 'waltz', 'sharpie', 5
+  init      = Init(model=model, pen=pen)
+  src, data = init.generate()
+  tf.setVersion(ver)
+  tf.write(model, None, data)
+  print(src)
+  print(len(data.keys()))
+
+
 def clone(args):
   if args.digest:
     (model, 
@@ -159,11 +179,12 @@ def swapOldnew(ver, rinkid):
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def commit(args):
-  if args.output is None:      
+  if args.output is None:
     print('check input e.g. -o writes to db1 by default')
-  elif args.output == 'db1': commitDb1(args.model)
-  elif args.output == 'db2': commitDb2(args.model)
-  else                     : print(f'cannot commit to {args.output}')
+  elif args.exchange and args.output == 'db1': commitDb1(args.model)
+  elif args.exchange and args.output == 'db2': commitDb2(args.model)
+  elif args.output: commitNew(args)
+  else            : print(f'cannot commit {args.model}')
 
 def commitDb1(model):
   ''' read yaml and update db1 with new pal
@@ -178,7 +199,7 @@ def commitDb1(model):
 
   stk      = Strokes(ver)
   pal      = Palette(ver=ver) 
-  swp      = swapOldnew(ver, rinkid)   # same as tmp/MODEL_db1.svg after clone -opal
+  swp      = swapOldnew(ver, rinkid) # same as MODEL_db1.svg with clone -opal
   pids     = pal.updatePids(ver, swp, celldata)
   rownum   = pal.swapPalette(pids, ver, rinkid)
   sids     = stk.updateSids(swp, celldata) # {'a': 309, 'b': 310, ..
@@ -231,6 +252,40 @@ def commitDb2(model):
   print(f' stk {nrc} new records') if nrc else print(f'{len(stk)=} found')
   nrc, pal = cd2.palette(rinkid, rinkdata[2], celldata)
   print(f' pal {nrc} new records') if nrc else print(f'{len(pal)=} found')
+
+def commitNew(args):
+  if args.output == 'db1':
+    print('wont do')
+    return
+  metadata = tf.readConf(args.model, meta=True)
+  rinkid   = metadata['id']
+  palette  = metadata['palette']
+  if rinkid:
+    print(f"{rinkid} not expected here")
+    return
+
+  tx        = Transform()
+  celldata  = tf.readConf(args.model)
+  rinkid    = tf.setDigest(celldata)
+  _, mid    = md2.model(name=args.model)
+  pens      = md2.pens()
+  ver       = pens.index(palette)
+  s         = 18 # TODO args.size
+  f         = 1  # args.factor
+  d         = [None, None] # pubdate and created not relevant here
+  print(' '.join(list(celldata.keys())))
+  # print(rinkid, mid, ver, s, f)
+  nrc, rinkdata = bd2.rinks(rinkid, mid, ver, dates=d, size=s, factor=f)
+  print(f'rink {nrc} new records') if nrc else print(f'{len(rinkdata)=} found')
+  celldata  = tx.dataV2(celldata) # convert YAML to layered rows
+  nrc, geom = cd2.geometry(rinkid, celldata)
+  print(f'geom {nrc} new records') if nrc else print(f'{len(geom)=} found')
+  nrc, stk = cd2.strokes(rinkid, rinkdata[2], celldata)
+  print(f' stk {nrc} new records') if nrc else print(f'{len(stk)=} found')
+  nrc, pal = cd2.palette(rinkid, rinkdata[2], celldata)
+  print(f' pal {nrc} new records') if nrc else print(f'{len(pal)=} found')
+  '''
+  '''
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def build(args):
@@ -329,7 +384,8 @@ def __getOldColors(dig):
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == "__main__":
   args = main(sys.argv[1:])
-  if   args.keyword == 'clone':   clone(args)
+  if   args.keyword == 'init':    init(args)
+  elif args.keyword == 'clone':   clone(args)
   elif args.keyword == 'build':   build(args)
   elif args.keyword == 'commit':  commit(args)
   else:
