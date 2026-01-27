@@ -13,7 +13,7 @@ class Test(unittest.TestCase):
   def test_a(self, label='a', fg=True, bg=False, top=False, expected=0, i=1):
     #print(f'{fg=} {bg=} {top=} {self.id()}')
     expected = 2 if self.id() == 't.transform.Test.test_a' else expected
-    cell = self.tx.dataV2(self.cells['a'])
+    cell = self.tx.transformOneCell(self.cells['a'])
     cell['shape'] = 'circle'
     cell['top']   = top
     if not bg: cell['bg'] = None
@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
   def test_f(self):
     ''' transform one cell into a flat dictionary
     '''
-    cell = self.tx.dataV2(self.cells['b'])
+    cell = self.tx.transformOneCell(self.cells['b'])
     #self.pp.pprint(cell)
     #print(list(cell.keys()))
 
@@ -46,12 +46,18 @@ class Test(unittest.TestCase):
       self.assertTrue(k in cell)
 
   def test_g(self):
-    cell = self.tx.dataV2(self.cells['b'])
+    cell = self.tx.transformOneCell(self.cells['b'])
     data = self.tx.dataV1({'b': cell})
     #self.pp.pprint(data)
     self.assertEqual(5, len(data['b'][0]))
     self.assertEqual(9, len(data['b'][1]))
 
+  def test_h(self):
+    #self.pp.pprint(self.cells)
+    to_write = self.tx.dataV2(self.cells)
+    #self.pp.pprint(to_write)
+    self.assertEqual(2, len(to_write['a']))
+    self.assertEqual(3, len(to_write['c']))
 '''
 CELL    FG	BG	TOP	BG
 a       y   n	  n	  n

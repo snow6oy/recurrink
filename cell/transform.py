@@ -14,6 +14,7 @@ class Transform(Db2):
     '''
     data = dict()
     for label, cell in celldata.items():
+      #print(f'dataV1 {label=} {cell}')
       if label not in data: data[label] = list()
       bg  = cell['bg']
       row = [
@@ -43,9 +44,48 @@ class Transform(Db2):
 
     return data
 
-  def dataV2(self, cell):
+  def dataV2(self, celldata):
     ''' convert nested dict into V1 dict 
-        and then return layered object
+        use dataV1 to return layered object
+    '''
+    data = dict()
+    for label, cell in celldata.items():
+      if label not in data: data[label] = list()
+      bg = cell['color']['background']
+      row = [
+        cell['geom']['name'],
+        cell['geom']['size'],
+        cell['geom']['facing'],
+        cell['color']['fill'],
+        cell['color']['opacity']
+      ]
+      if 'stroke' in cell and cell['stroke']['width'] > 0:
+        row += [
+          cell['stroke']['fill'],
+          cell['stroke']['opacity'],
+          cell['stroke']['width'],
+          cell['stroke']['dasharray']
+         ]
+
+      if bg:
+        data[label].append(tuple(['square', 'medium', 'C', bg, 1])) # z 0
+      else:
+        data[label].append(tuple())
+      data[label].append(tuple(row)) # z 1
+
+      if bool(cell['geom']['top']): # z 2
+        data[label].append(tuple(row))
+
+    return data
+    '''
+      print(f'dataV1 {label=}')
+      for aspect, attr in cell.items():
+        print(f'{aspect} ', end='', flush=True)
+      print()
+    '''
+
+  def transformOneCell(self, cell):
+    ''' transform V1 to V2
     '''
     data                 = dict()
     data['shape']        = cell['geom']['name']
@@ -62,3 +102,7 @@ class Transform(Db2):
       data['stroke_width']     = cell['stroke']['width']
       data['stroke_dasharray'] = cell['stroke']['dasharray']
     return data
+'''
+the
+end
+'''
