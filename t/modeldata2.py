@@ -36,7 +36,7 @@ DELETE from blocks where cell = 'z';
     blocks = {(99, 0): ('z', None)}
 
     nrc, blocks = self.m.blocksWrite(self.mid, blocks)
-    self.pp.pprint(blocks)
+    #self.pp.pprint(blocks)
     self.assertTrue(nrc)
 
   def test_e(self):
@@ -61,3 +61,7 @@ DELETE FROM compass WHERE mid=2 AND cell='z';
     ver  = 1 # uniball
     name = self.m.pens(ver)
     self.assertEqual('uniball', name)
+'''
+the
+end
+'''

@@ -1,12 +1,13 @@
 import pprint
 import psycopg2
-from cell.transform import Transform
+from config import Db2
 
-class ModelData2(Transform):
+class ModelData2(Db2):
   ''' access to models, blocks, compass and pens table
   '''
-  def __init__(self):
-    self.pp     = pprint.PrettyPrinter(indent=2)
+  pp = pprint.PrettyPrinter(indent=2)
+
+  def __init__(self): 
     super().__init__()
 
   def model(self, name=None, mid=0):

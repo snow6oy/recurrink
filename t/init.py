@@ -15,9 +15,10 @@ class Test(unittest.TestCase):
     self.VERBOSE = False
 
   def test_a(self, model=None, pen=None, expect=None, knum=0):
-    expect    = expect if expect else ['compass', 'database']
-    init      = Init(model=model, pen=pen)
-    src, data = init.generate()
+    expect     = expect if expect else ['compass', 'database']
+    init       = Init()
+    model, pen = init.setInput(model, pen)
+    src, data  = init.generate(model=model, pen=pen)
     '''
     print(f'{model=} {pen=}')
     self.pp.pprint(data)

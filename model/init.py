@@ -3,29 +3,34 @@ import random
 from model.data2 import ModelData2
 from block.init  import Init as BlockInit
 
-class Init():
+class Init(ModelData2):
 
   def __init__(self, model=None, pen=None):
-    self.model = model
+    self.mnam  = model
     self.pen   = pen
+    super().__init__()
 
-  def generate(self):
-    md2       = ModelData2()
-    pens      = md2.pens()
-    _, models = md2.model()
+  def setInput(self, mnam=None, pen=None):
+    pens      = self.pens()
+    _, models = self.model()
 
-    if not self.model: self.model = random.choice(models[1:])
-    if not self.pen:   self.pen   = random.choice(pens[1:])
+    if not mnam: mnam = random.choice(models[1:])
+    if not pen:   pen = random.choice(pens[1:])
 
-    mid = models.index(self.model)
-    ver = pens.index(self.pen)
-    #print(f'{mid=} {self.model=} {ver=} {self.pen=}')
+    self.mid  = models.index(mnam)
+    self.ver  = pens.index(pen)
+    
+    return mnam, pen
 
-    _, blocks = md2.blocks(mid)
+  def generate(self, model, pen):
+
+    # print(f'{self.mid=} {model=} {self.ver=} {pen=}')
+
+    _, blocks = self.blocks(self.mid)
     cells     = [cell[0] for pos, cell in blocks.items()]
     top       = [cell[1] for pos, cell in blocks.items() if cell[1]]
-    init      = BlockInit(ver, cells, top)
-    _, csdata = md2.compass(mid)
+    init      = BlockInit(self.ver, cells, top)
+    _, csdata = self.compass(self.mid)
     compass   = Compass(csdata)
     src, data = init.generate(compass)
     return src, data
