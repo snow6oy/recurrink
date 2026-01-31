@@ -3,16 +3,16 @@
 ''' HOW TO swap pals and migrate
 
 palswap clone -d RINKID -o
-palswap build -m MODEL -z -o
+palswap build -m MODEL -o
 # check tmp/MODEL_db1.svg
-palswap clone -d RINKID -opal -p VER
-palswap build -m MODEL -z -opal
+palswap clone -d RINKID -opal -p PEN
+palswap build -m MODEL -opal
 # compare tmp/waltz_pal.svg and if new pal ok
 palswap commit -m MODEL -x -o
 # and then copy to db2
 palswap commit -m MODEL -x -odb2
 palswap clone -d RINKID -odb2
-palswap build -m MODEL -z -odb2
+palswap build -m MODEL -odb2
 # compare tmp/waltz_db2.svg to check for db migration errors
 '''
 
@@ -49,7 +49,7 @@ view  = Views()
     see block/README.md Palette conversion
 '''
 def main(args):
-  parser     =  argparse.ArgumentParser(prog='palswap')
+  parser     = argparse.ArgumentParser(prog='palswap')
   subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
   parser_b   = subparsers.add_parser('build',  help='build svg from config')
   parser_k   = subparsers.add_parser('clone',  help='get copy of config')
@@ -76,6 +76,7 @@ def main(args):
     'help'   :'exchange colours from db1 or conf to out',
     'action' : argparse.BooleanOptionalAction
   }
+  # to come back to later # to come back to later # to come back to later 
   arg_z = {
     'help'   : 'numof layers *3 or 2', 
     'metavar': '2-3', 
@@ -84,11 +85,11 @@ def main(args):
     'type'   : int
   }
 
-  parser_k.add_argument('-v', '--penver',   **arg_p)
+  parser_k.add_argument('-p', '--penam',    **arg_p)
   parser_k.add_argument('-d', '--digest',   **arg_d)
   parser_k.add_argument('-o', '--output',   **arg_o)
   parser_b.add_argument('-m', '--model',    **arg_m)
-  parser_b.add_argument('-z', '--layer',    **arg_z)
+  # parser_b.add_argument('-z', '--layer',    **arg_z)
   parser_b.add_argument('-o', '--output',   **arg_o)
   parser_c.add_argument('-m', '--model',    **arg_m)
   parser_c.add_argument('-o', '--output',   **arg_o)
@@ -99,30 +100,35 @@ def main(args):
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def init(args):
-  print(args.model, args.penam)
-  #model, pen, ver = 'waltz', 'sharpie', 5
+  #print(args.model, args.penam)
   init       = Init()
   model, pen = init.setInput(args.model, args.penam)
   src, data  = init.generate(model, pen)
-  tf.setVersion(init.ver)
+  newver     = init.ver + 7
+  tf.setVersion(newver)
   tf.write(model, None, data)
-  print(f'''generated {model}.yaml with {len(data.keys())} cells
+  print(f'''generated {model} with {len(data.keys())} cells
 using {pen} from source: {src} 
 ''')
-
 
 def clone(args):
   if args.digest:
     (model, 
     author, 
      scale, 
-       ver, 
-   pubdate,
-   created) = view.readMeta(digest=args.digest)
-  if   args.output == 'db2': cloneDb2(args.digest, model, ver)   # celldata from new db
-  elif args.output == 'db1': cloneDb1(args.digest, model, ver)   # db1
-  elif args.output == 'pal': clonePal(args.digest, args.palette) # swap colours
-  else:                      print('check input -o without a value = db1')
+       ver,
+   created, 
+   pubdate) = view.readMeta(digest=args.digest)
+  if args.output == 'db2': 
+    cloneDb2(args.digest, model, ver)  # from new db
+  elif args.output == 'db1': 
+    cloneDb1(args.digest, model, ver)  # db1
+    buildOut(model, args.output)
+  elif args.output == 'pal': 
+    clonePal(args.digest, args.penam)  # swap colours
+    buildOut(model, args.output)
+  else: 
+    print('check input -o without a value = db1')
 
 def cloneDb1(rinkid, model, ver):  # assume we want celldata from db1
   ''' pull from db1 to create tmp/MODEL.yaml
@@ -150,17 +156,22 @@ cloning {model} {rinkid} from db2
 with {len(celldata)} cells
 using {fnam[ver]} pens""")
 
-def clonePal(rinkid, ver):
+def clonePal(rinkid, pen):
   ''' write a conf using the new pal
   '''
-  model    = view.readMeta(rinkid)[0] # model auth scale ver
+  meta     = view.readMeta(rinkid) # model auth scale ver
+  model    = meta[0]
   bd       = BlockData(model)
-  print(f'{ver=} {rinkid=} {model}')
+  pens     = md2.pens()
+  ver      = pens.index(pen) + 7
+  print(f'''old ver {meta[3]} new {pen=} {ver=} 
+{rinkid=} {model}
+''')
   swp      = swapOldnew(ver, rinkid)
   celldata = view.read(digest=rinkid)
   position = bd.readPositions(model)
   celldata = pmk.updateCells(celldata, swp) # transform celldata
-  tf.write(model, rinkid, celldata)         # write new colors to conf/palswap.yaml
+  tf.write(model, rinkid, celldata)         # write new colors to palswap.yaml
 
 def swapOldnew(ver, rinkid):
   ''' do the swap right here
@@ -168,7 +179,7 @@ def swapOldnew(ver, rinkid):
   pal     = Palette(ver)
   palette = set(pal.read_view(rinkid))
   tf.exportPalfile(rinkid, palette) 
-  print(f"palettes/{rinkid}.txt was written")
+  print(f"palettes/{rinkid}.txt was written for penver: {ver}")
 
   tf.setVersion(ver=ver)
   pal.loadPalette()     # merge fg bg stroke into uniqfill 
@@ -179,8 +190,8 @@ def swapOldnew(ver, rinkid):
 ''')
   swp      = pmk.swapColors(oc, nc)
   uniqnew  = set(list(swp.values()))
-  print(f'{len(uniqnew)} new colours')
-  pp.pprint(swp)
+  print(f'found {len(uniqnew)} new colours')
+  #pp.pprint(swp)
   return swp
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -209,10 +220,11 @@ def commitDb1(model):
   pids     = pal.updatePids(ver, swp, celldata)
   rownum   = pal.swapPalette(pids, ver, rinkid)
   sids     = stk.updateSids(swp, celldata) # {'a': 309, 'b': 310, ..
+  # pp.pprint(sids)
   rownum  += stk.swapSid(sids, ver, rinkid)
-  print(f'{ver=} {rinkid} {model}')
-  pp.pprint(sids)
-  print(f'{rownum} updated db1')
+  print(f'''{ver=} {model}
+{rownum} rows updated db1
+''')
 
 def commitDb2(model):
   ''' after pal swap
@@ -223,6 +235,7 @@ def commitDb2(model):
   rinkmeta  = view.readMeta(rinkid)
   bd        = BlockData(rinkmeta[0])
   blocks    = bd.readPositions(rinkmeta[0]) 
+  tx        = Transform()
 
   # Model
   nrc, mid  = md2.model(name=rinkmeta[0])
@@ -230,8 +243,6 @@ def commitDb2(model):
   print(f'model {nrc} new records') if nrc else print(
     f'{rinkmeta[0]} {mid=} found'
   )
-  pens         = md2.pens()
-  print(f'old ver {rinkmeta[3]} num of pens {len(pens) - 1}')
   nrc, blocks  = md2.blocks(mid, blocks)
   print(f'blok {nrc} new records') if nrc else print(f'{len(blocks)=} found')
   compass      = Compass(rinkmeta[0])
@@ -245,11 +256,12 @@ def commitDb2(model):
   print(f'{ver=} is new converted from old ver {rinkmeta[3]}') 
   pal           = Palette(ver=ver) 
   pens          = pal.penNames(None, dict(), ver=rinkmeta[3])
-  nrc, colors   = bd2.colors(pens, ver=ver)
+  nrc, colors   = bd2.colors(ver, colors=pens)
   print(f'colors {nrc} new records') if nrc else print(f'{len(colors)=} found')
   nrc, rinkdata = bd2.rinks(rinkid, mid, ver, rinkmeta[4:])
   print(f'rink {nrc} new records') if nrc else print(f'{len(rinkdata)=} found')
   celldata      = view.read(digest=rinkid) 
+  celldata      = tx.dataV1(celldata)
   
   # Cell
   nrc, geom = cd2.geometry(rinkid, celldata)
@@ -297,33 +309,33 @@ def commitNew(args):
 def build(args):
   ''' generate an SVG from tmpfile or an HTML palette
   '''
-  if args.output is None or args.layer is None:      
+  if args.output is None:  # or args.layer is None:      
     print('check input e.g. -o gives defaul value = db1')
   else:                       
-    buildOut(args.model, args.output, args.layer)
+    buildOut(args.model, args.output) #, args.layer)
 
-def buildOut(model, output, layer, size=90, factor=1):
+def buildOut(model, output, size=90, factor=1):
+  layer     = 3
   svglin    = SvgModel(size, factor)
-  bd        = BlockData(args.model)
-  positions = bd.readPositions(args.model)
-    
+  bd        = BlockData(model)
+  positions = bd.readPositions(model)
+  
   celldata  = tf.readConf(model)
-  ver       = fnam.index(tf.VERSION)
-  print(f'{ver=}')
-  penam     = bd.penNames(ver)
+  oldver    = fnam.index(tf.VERSION)
+  #penam     = bd.penNames(ver)
   ''' validate depends on hex values from existing rinks
       a new pen always fails
       this can be fixed once db2 is live
   '''
   # view.validate(celldata, ver=ver)
-  block     = Make(size, linear=False, pen_names=penam)
+  block     = Make(size, linear=False) # , pen_names=penam)
   block.walk(positions, celldata, z=layer)
 
   svgfile   = f'{model}_{output}'
   block.hydrateGrid()
   svglin.build(block)
   svglin.render(svgfile, line=False)
-  print(f'tmp/{svgfile} was built with pal {fnam[ver]}')
+  print(f'tmp/{svgfile} was built with {oldver=}')
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def __build():
