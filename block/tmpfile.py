@@ -26,12 +26,14 @@ class TmpFile(InputValidator):
         using len(fnam) is risky because not enough entries
     '''
     USE_PEN_PALS = 7  # palettes with pens, not friends from abroad :-D
-    '''
     pal          = Palette()
     fnam         = pal.friendlyPenNames()
     '''
     md2  = ModelData2()
     fnam = md2.pens()
+    ver  = int(ver)
+    '''
+
     if ver is None: ver = random.choice(range(USE_PEN_PALS, len(fnam)))
     self.VERSION = ver
     self.PALETTE = fnam[ver]

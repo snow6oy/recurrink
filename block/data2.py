@@ -63,7 +63,7 @@ VALUES (%s, %s, %s);""", [new_ver, fill, name]
       raise ValueError(f'palette conversion needed for {ver}')
     return ver - 7
 
-  def rinks(self, rinkid, mid=0, ver=0, dates=list(), size=None, factor=None):
+  def rinks(self, rinkid, mid=0, ver=0, dates=list(), size=90, factor=1):
     rinkdata = self.rinksRead(rinkid)
     if rinkdata:   
       return 0, rinkdata

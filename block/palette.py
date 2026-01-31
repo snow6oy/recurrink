@@ -179,7 +179,7 @@ class PaletteMaker:
     ''' find the new colour that is closest to the old
         and replace
     '''
-    print(oc)
+    print('-' * 15)
     swp = dict()
     for old_color in oc:
       if old_color == 'None': continue # strokes do not have backgrounds
@@ -190,7 +190,10 @@ class PaletteMaker:
         raise ValueError(f'{old_color} has bad length')
       rgb       = self.hex_rgb(anylen)
       new_color = self.closestColor(rgb, nc)
-      swp[old_color] = self.rgbToHex(new_color)
+      nc_hex    = self.rgbToHex(new_color)
+      print(old_color, nc_hex)
+      swp[old_color] = nc_hex
+    print()
     return swp
 
   def closestColor(self, rgb, nc):
