@@ -122,6 +122,9 @@ class Palette():
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Strokes(Palette):
 
+  ''' stroke dasharray is a space separated pair LEN GAP
+      e.g. when width=5 dasharray:5 5 makes cubes
+  '''
   def __init__(self):
     self.zeroten = [n for n in range(1, 11)]
 
