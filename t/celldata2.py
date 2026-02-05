@@ -1,6 +1,7 @@
 import unittest
 import pprint
 from cell.data2 import CellData2
+from cell.minkscape_2 import minkscape_2
 
 # TODO merge with t.geometry
 class Test(unittest.TestCase):
@@ -9,6 +10,8 @@ class Test(unittest.TestCase):
 
 INSERT INTO rinks (rinkid, mid, ver)
 VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
+
+remove from layers after test
   '''
 
   def setUp(self):
@@ -36,9 +39,10 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     if bg: cell['bg'] = '#00cc00',
     if top and not fg: cell['top'] = False # demote to layer 1
 
-    celldata     = { label: cell }
-    nrc, written = self.cd2.geometryWrite(self.rinkid, celldata)
-    self.assertEqual(expected, nrc) # check rows were inserted
+    celldata  = { label: cell }
+    celldata  = self.cd2.dataV1(celldata)
+    self.cd2.layersWrite(self.rinkid, celldata)
+    self.assertEqual(expected, self.cd2.count) # check rows were inserted
 
   def test_b(self): self.test_a(label='b', fg=True, bg=True, expected=2)
   def test_c(self): 
@@ -48,12 +52,12 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
   def test_e(self): self.test_a(label='e', fg=True, top=True, expected=3)
 
   def test_f(self):
-    ''' read test cell from geometry table
+    ''' read test cell from layers table
     '''
     expected = {
       'a': 2, 'b': 2, 'c': 3, 'd': 2, 'e': 3
     } 
-    cells    = self.cd2.geometryRead(self.rinkid)
+    cells    = self.cd2.layersRead(self.rinkid)
     #self.pp.pprint(cells)
     for label in ['a', 'b', 'c', 'd', 'e']:
       self.assertEqual(expected[label], len(cells[label]))
@@ -67,92 +71,30 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
     self.assertFalse(len(cell['a'][0]))
     self.assertTrue(len(cell['a'][1]))
 
-  def test_h(self, label='h', bg=None):
-    ver          = 1
-    cell         = self.cell
-    cell['bg']   = bg if bg else None
-    celldata     = { label: cell }
-    nrc, written = self.cd2.paletteWrite(self.rinkid, ver, celldata)
-    #print(f'{nrc=}')
-    #self.pp.pprint(written)
-    self.assertEqual(2, nrc)
+  def test_h(self):
+    ''' transform Y3ML to DBV3
+    '''
+    v3 = self.cd2.dataV3(minkscape_2.cells)
+    #self.pp.pprint(v3)
+    self.assertTrue(len(v3['a']))
 
-  def test_i(self): self.test_h(label='i', bg='#000000')
+  def test_i(self):
+    ''' convert Y3ML to DBV2
+    '''
+    #self.pp.pprint(minkscape_2.cells)
+    v3 = self.cd2.dataV3(minkscape_2.cells)
+    self.assertEqual(2, len(v3['a']))
 
   def test_j(self):
-    pal = self.cd2.paletteRead(self.rinkid)
-    self.assertTrue(pal)
-
-  def test_k(self, label='k', width=1, top=False):
-    ''' write strokes
+    ''' transform DBV3 to YAML for backward compatibility
     '''
-    ver          = 1
-    cell         = self.cell
-    cell['stroke_width'] = width
-    cell['top']  = top
-    
-    celldata     = { label: cell }
-    nrc, written = self.cd2.strokeWrite(self.rinkid, ver, celldata)
-    self.assertTrue(nrc >= 2)
-    # print(f'{nrc=}')
-    # self.pp.pprint(written)
-
-  def test_l(self): self.test_k(label='l', width=0)
-  def test_m(self): self.test_k(label='m', top=True)
-
-  def test_n(self):
-    ''' read strokes
-    '''
-    expected = { 'k': 2, 'l': 2, 'm': 3 }
-    s        = self.cd2.strokeRead(self.rinkid)
-    [self.assertEqual(
-      expected[label], 
-      len(s[label])) for label in ['k','l','m']] 
-    #self.pp.pprint(s)
-
-  def test_z(self):
-    print( """
-Now remember to clean up after the test
-
-DELETE FROM geometry WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
-DELETE FROM palette  WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
-DELETE FROM strokes  WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
-""")
+    cells = self.cd2.layersRead(self.rinkid)
+    yaml  = self.cd2.txDbv3Yaml(cells)
+    #self.pp.pprint(yaml)
+    [self.assertTrue(k in list(yaml['a'].keys())) for k in ['geom', 'color', 'stroke']]
 
 
 '''
-CELL    FG	BG	TOP	BG
-a       y   n	  n	  n
-b	      y   y	  n	  n
-c       y   y	  y	  n
-d       n   n	  y	  y
-e	      y	  n	  y	  n
-
-TOP has two versions of truth
-it is definetly True when a cell position
-has both FG and TOP allocated
-
-cells that are marked as TOP but 
-are uniquely allocated to a position without a FG (e.g. cell d)
-are also TOP.
-These should be allocated a BG as if they were a FG
-And demoted to layer 1
-
-cell	z    BGs
---------------------
-a     0    n
-a     1    y
-b     0    y
-b	    1    y
-c	    0    y
-c	    1    y
-c	    2    y
-d	    0    y
-d	    1    y
-e     0    n
-e	    1    y
-e	    2    y
-
 the 
 end
 '''

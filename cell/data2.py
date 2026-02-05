@@ -2,50 +2,111 @@ import pprint
 from .transform import Transform
 
 class CellData2(Transform):
+  ''' use-cases
+
+CELL    FG  BG  TOP BG
+a       y   n   n   n
+b       y   y   n   n
+c       y   y   y   n
+d       n   n   y   y
+e       y   n   y   n
+
+TOP has two versions of truth
+it is definetly True when a cell position
+has both FG and TOP allocated
+
+cells that are marked as TOP but
+are uniquely allocated to a position without a FG (e.g. cell d)
+are also TOP.
+These will be allocated a BG as if they were a FG
+but they will NOT be allocated a Top layer
+
+Expected result
+
+cell  z    BGs
+--------------------
+a     0    n
+a     1    y
+b     0    y
+b     1    y
+c     0    y
+c     1    y
+c     2    y
+d     0    y
+d     1    y
+e     0    n
+e     1    y
+e     2    y
+  '''
+  pp = pprint.PrettyPrinter(indent=2)
 
   def __init__(self):
-    self.pp     = pprint.PrettyPrinter(indent=2)
+    self.count = 0
     super().__init__()
 
-  def geometry(self, rinkid, celldata=dict()):
-    ''' record geom data keyed by rinkid, cell and layer
+  def layers(self, rinkid, celldata=dict()):
+    ''' each layer has a db record keyed by rinkid, cell and layer
     '''
-    new_record_count = 0
-    geom             = self.geometryRead(rinkid)
-    if geom:         return new_record_count, geom
-    elif celldata:   return self.geometryWrite(rinkid, celldata)
-    else:            raise ValueError(f'cannot find geometries for {rinkid}')
+    data             = self.layersRead(rinkid)
+    if data:         return data
+    elif celldata:   return self.layersWrite(rinkid, celldata)
+    else:            raise ValueError(f'cannot find any layer for {rinkid}')
 
-  def geometryRead(self, rinkid):
-    ''' read geometry by rinkid
+  def layersRead(self, rinkid):
+    ''' read layers by rinkid
     '''
-    geom = dict()
+    data = dict()
     self.cursor.execute("""  
 SELECT *
-FROM geometry
+FROM layers
 WHERE rinkid = %s
 ORDER BY cell, layer;""", 
       [rinkid]   # implicit order by cell layer 
     )
     for row in self.cursor.fetchall():
       label, z = row[1:3]
-      if label not in geom: geom[label] = list()
+      if label not in data: data[label] = list()
       has_content = [True for x in row[3:] if x] # test for empty strings
       if has_content:
-        geom[label].insert(z, row[3:])
+        data[label].insert(z, row[3:])
       else:
-        geom[label].insert(z, tuple())
-    return geom
+        data[label].insert(z, tuple())
+    return data
 
-  def geometryWrite(self, rinkid, celldata):
-    ''' create cell layers as database rows
+  def layersWrite(self, rinkid, celldata=dict()):
+    self.count = 0 # reset new record counter
+
+    for label, cell in celldata.items():
+      for z, row in enumerate(cell): 
+        if len(row) < 5 and z ==0:
+          row = tuple([None] * 5)
+        if len(row) != 5:
+          print(f'cannot write {row} because not 5')
+          continue
+        self.cursor.execute("""
+INSERT INTO layers (rinkid, cell, layer, name, size, facing, stroke, dasharray)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""", (rinkid, label, z) + row
+        )
+        self.count += 1
+ 
+  ''' record geom data keyed by rinkid, cell and layer
+  '''
+  def _geometry(self, rinkid, celldata=dict()):
+    new_record_count = 0
+    geom             = self.geometryRead(rinkid)
+    if geom:         return new_record_count, geom
+    elif celldata:   return self.geometryWrite(rinkid, celldata)
+    else:            raise ValueError(f'cannot find geometries for {rinkid}')
+
+  ''' create cell layers as database rows
         BG and FG are mandatory. TOP is optional
 
         Empty backgrounds are saved with metadata and null values
         Because omitting the entry altogether makes layering indeterminate
 
         see t.geometry for details
-    '''
+  '''
+  def _geometryWrite(self, rinkid, celldata):
     new_record_count = 0
     #celldata         = self.dataV1(celldata) # convert v1 to layered format
     #celldata         = self.dataV2(celldata) # convert v1 to layered format
@@ -72,7 +133,29 @@ VALUES (%s, %s, %s, %s, %s, %s);""",
         new_record_count += 1
     return new_record_count, celldata
 
-  def palette(self, rinkid, ver, celldata=dict()):
+  ''' read geometry by rinkid
+  '''
+  def _geometryRead(self, rinkid):
+    geom = dict()
+    self.cursor.execute("""  
+SELECT *
+FROM geometry
+WHERE rinkid = %s
+ORDER BY cell, layer;""", 
+      [rinkid]   # implicit order by cell layer 
+    )
+    for row in self.cursor.fetchall():
+      label, z = row[1:3]
+      if label not in geom: geom[label] = list()
+      has_content = [True for x in row[3:] if x] # test for empty strings
+      if has_content:
+        geom[label].insert(z, row[3:])
+      else:
+        geom[label].insert(z, tuple())
+    return geom
+
+
+  def _palette(self, rinkid, ver, celldata=dict()):
     ''' read and write a block palette 
     '''
     palettes         = self.paletteRead(rinkid)
@@ -80,7 +163,7 @@ VALUES (%s, %s, %s, %s, %s, %s);""",
     elif celldata:   return self.paletteWrite(rinkid, ver, celldata)
     else:            raise ValueError('not found {rinkid=}')
 
-  def paletteRead(self, rinkid):
+  def _paletteRead(self, rinkid):
     ''' read palette by rinkid
  
         TODO prettify hash in TmpFile
@@ -99,7 +182,7 @@ ORDER BY cell, layer;""",
       pal[label].append(row[4:])
     return pal
 
-  def paletteWrite(self, rinkid, ver, celldata):
+  def _paletteWrite(self, rinkid, ver, celldata):
     ''' write new entries in palette table
     '''
     new_record_count = 0
@@ -122,13 +205,13 @@ VALUES (%s, %s, %s, %s, %s, %s);""",
         new_record_count += 1
     return new_record_count, celldata
 
-  def strokes(self, rinkid, ver, celldata=dict()):
+  def _strokes(self, rinkid, ver, celldata=dict()):
     strokes         = self.strokeRead(rinkid)
     if strokes:     return 0, strokes
     elif celldata:  return self.strokeWrite(rinkid, ver, celldata)
     else:           raise ValueError('not found {rinkid=}')
 
-  def strokeRead(self, rinkid):
+  def _strokeRead(self, rinkid):
     self.cursor.execute("""  
 SELECT *
 FROM strokes
@@ -142,7 +225,7 @@ WHERE rinkid = %s;""",
       sk[label].append(row[4:])
     return sk
 
-  def strokeWrite(self, rinkid, ver, celldata):
+  def _strokeWrite(self, rinkid, ver, celldata):
     ''' record stroke data, if any
     '''
     new_record_count = 0
