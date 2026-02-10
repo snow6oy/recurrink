@@ -1,79 +1,63 @@
 @startuml
 
-' add packages
-' ------+-----------------------------
-' cell  | geometry strokes palette
-' block | rinks pens
-' model | compass blocks inkpal models
-
-entity blocks {
-  mid: STR 
-  position: INT
-  cell: CHAR 
-  top: BOOL
+package "model" {
+  entity pens {
+   ver: INT
+   gplfile: STR
+   widthmm: DECIMAL
+  }
+  entity models {
+    mid: INT
+    model: STR
+  }
+  entity blocks {
+    mid: STR 
+    position: INT
+    cell: CHAR 
+    top: BOOL
+  }
+  entity compass {
+    mid: STR 
+    cell: CHAR
+    pair: CHAR
+    facing: STR
+  }
 }
-entity compass {
-  mid: STR 
-  cell: CHAR
-  pair: CHAR
-  facing: STR
+package "block" {
+  entity colors {
+    ver: INT
+    fill: HEX
+    penam: STR
+  }
+  entity rinks {
+    rinkid: CHAR
+    mid: STR
+    size: INT
+    factor: DECIMAL
+    created: DATE
+    ver: INT
+    pubdate: DATE
+  }
 }
-entity geometry {
-  rinkid: CHAR
-  cell: CHAR
-  layer: INT
-  name: STR
-  size: STR
-  facing: CHAR
-}
-entity pens {
- ver: INT
- gplfile: STR
-}
-entity palette {
-  rinkid: CHAR
-  cell: CHAR
-  layer: INT
-  ver: INT
-  fill: HEX
-  opacity: DECIMAL
-}
-entity models {
-  mid: INT
-  model: STR
-}
-entity colors {
-  ver: INT
-  fill: HEX
-  penam: STR
-}
-entity strokes {
-  rinkid: CHAR
-  cell: CHAR
-  layer: INT
-  fill: HEX
-  width: DECIMAL
-  dasharray: DECIMAL
-  opacity: DECIMAL
-}
-entity rinks {
-  rinkid: CHAR
-  mid: STR
-  size: INT
-  factor: DECIMAL
-  created: DATE
-  ver: INT
-  pubdate: DATE
+package "cell" {
+  entity layers {
+    rinkid: CHAR
+    cell: CHAR
+    layer: INT
+    name: STR
+    size: STR
+    facing: CHAR
+    stroke: HEX
+    dasharray: INT
+  } 
 }
 
 
-strokes *-- rinks
-geometry *-- rinks
-palette *-- rinks
-rinks *-- blocks
-palette *-- colors
-colors *-- pens
-blocks *-- models
+layers  *-- rinks
+rinks   *-- blocks
+rinks   *-- colors
+colors  *-- pens
+blocks  *-- models
 compass *-- models
 
 @enduml
