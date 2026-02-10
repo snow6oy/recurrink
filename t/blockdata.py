@@ -1,76 +1,59 @@
 import unittest
 import pprint
 from block import BlockData
-pp = pprint.PrettyPrinter(indent=2)
 
 class Test(unittest.TestCase):
+  ''' test_c and test_e create a fake entry
+      clean the entry before re-test
+  '''
+  pp = pprint.PrettyPrinter(indent=2)
 
   def setUp(self):
-    self.b = BlockData('soleares') 
+    self.bd     = BlockData()
+    self.ver    = 4 # stabilo68 new ver
+    self.rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' # fake rink
+    #self.b = BlockData('soleares') 
 
-  def test_4(self):
-    ''' key value pair with position as the key
-    '''
-    model = 'soleares'
-    #xy = self.b.read(model=model)[2]
-    positions = self.b.readPositions(model)
-    #pp.pprint(positions)
-    self.assertEqual(positions[(1, 1)][0], 'd')
+  def test_a(self):
+    # send empty list to avoid creating unwanted records
+    colors = self.bd.colors(self.ver, colors=list())
+    self.assertFalse(self.bd.count)
 
-  def test_5(self):
-    ''' can superimposed models list top cells as well?
-    '''
-    cells = self.b.readPositions('soleares', output=list())
-    self.assertEqual(len(cells), 4)
-    cells = self.b.readPositions('spiral', output=list())
-    self.assertEqual(len(cells), 24)
+  def test_b(self):
+    pen_count = self.bd.colorsRead(self.ver)
+    self.assertEqual(30, len(pen_count))
 
-  def test_6(self):
-    ''' key value pair with cells as the key and top as value
-    '''
-    positions = self.b.readPositions('soleares')
-    for p in positions:
-      cell, top = positions[p]
-      if cell == 'b':
-        self.assertFalse(top) # b has no top in soleares
+  def test_c(self):
+    ''' 99 is not a valid value 
+        but colorsWrite ignores it anyway and forces new ver
 
-  def test_7(self):
-    ''' virtual top 
-        cell: g model: marching band
-        example of Virtual Top. A special cell that exist only as a top cell
+DELETE FROM colors WHERE ver = 4 AND penam = 'zz';
     '''
-    uniqcells = self.b.readPositions('marchingband', output=list())
-    topcells = self.b.topcells('marchingband')
-    [self.assertTrue(tc in uniqcells) for tc in topcells]
+    colors = [[99, '#999999', 'zz']]
+    colors = self.bd.colorsWrite(colors, self.ver)
+    self.assertEqual(1, self.bd.count)
 
-  def test_8(self):
-    ''' superimpose cell d over cell a using top
-        pos 1,1 is normally d but with top becomes a
-    '''
-    positions = self.b.readPositions('soleares')
-    #pp.pprint(positions)
-    cells = tuple()
-    if type(positions[(2, 0)]) is tuple:
-      cells = positions[(2, 0)]
-    self.assertEqual(cells[1], 'c')
+  def test_d(self):
+    old_ver = 11
+    new_ver = self.bd.version(old_ver)
+    self.assertEqual(4, new_ver)
 
-  def test_9(self):
-    ''' top or not with four four
-    '''
-    model = 'fourfour'
-    uniqcells = self.b.readPositions(model, output=list())
-    topcells = self.b.topcells(model)
-    self.assertEqual(topcells[0], 'd')
+  def test_e(self):
+    ''' create fake rink
+        meta is based on data retrieved from db1
 
-  def test_10(self):
-    ''' top or not
+DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
     '''
-    model = 'soleares'
-    uniqcells = self.b.readPositions(model, output=list())
-    topcells = self.b.topcells(model)
-    self.assertEqual(topcells, ['a', 'c'])
+    mid  = 1
+    date = [None, None] # created published
+    rink = self.bd.rinksWrite(self.rinkid, mid, self.ver, date, 90, 1)
+    self.assertEqual(7, len(rink))
+
+  def test_f(self):
+    rink = self.bd.rinksRead(self.rinkid)
+    self.assertEqual(1, rink[1]) # fake rink has model id: 1
 
 '''
-the 
+the
 end
 '''

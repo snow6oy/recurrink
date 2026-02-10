@@ -52,7 +52,7 @@ RETURNING mid;""", [name])
         pos = {(11, 11): ('x', None)}
     '''
     blocks = self.blocksRead(mid)
-    if len(blocks):      return 0, blocks
+    if len(blocks):      return blocks
     elif len(blocks_v1): return self.blocksWrite(mid, blocks_v1)
     else:                raise TypeError(f'missing either {mid} or {blocks_v1}')
 
@@ -144,7 +144,8 @@ WHERE mid = %s;""", [mid])
     y = [p[0][1] for p in positions]
     return (max(x) + 1, max(y) + 1)
 
-  def positions(self, mid):
+  # TODO duplicate of block.prettyPrint
+  def _positions(self, mid):
     ''' load csv data as 2D array
       ./recurrink.py -m soleares -o CELL
       [['a', 'b', 'a'], ['c', 'd', 'c']]
