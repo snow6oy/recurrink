@@ -9,11 +9,13 @@ CREATE TABLE models (
 DROP TABLE pens CASCADE;
 CREATE TABLE pens (
   ver serial PRIMARY KEY,
+  widthmm DECIMAL,
   gplfile VARCHAR(50)
 );
 
 INSERT INTO pens (gplfile)
 VALUES
+  (null),
   ('uniball'),
   ('copicsketch'),
   ('copic'),
@@ -66,42 +68,18 @@ CREATE TABLE rinks (
   UNIQUE (rinkid)
 );
 
-DROP TABLE geometry CASCADE;
-CREATE TABLE geometry (
+
+DROP TABLE layers CASCADE;
+CREATE TABLE layers (
   rinkid CHAR(32),
   cell CHAR(1) NOT NULL,
   layer SMALLINT NOT NULL,
   name VARCHAR(7),
   size VARCHAR(7),
   facing VARCHAR(2),
+  stroke VARCHAR(7),
+  dasharray VARCHAR(15) DEFAULT NULL,
   FOREIGN KEY (rinkid) REFERENCES rinks (rinkid),
-  UNIQUE (rinkid, cell, layer)
-);
-
-DROP TABLE strokes CASCADE;
-CREATE TABLE strokes (
-  rinkid CHAR(32),
-  cell CHAR(1) NOT NULL,
-  layer SMALLINT NOT NULL,
-  ver INT NOT NULL,
-  fill VARCHAR(7),
-  opacity FLOAT DEFAULT 1.0,
-  width INT DEFAULT 0,
-  dasharray INT DEFAULT 0,
-  FOREIGN KEY (rinkid) REFERENCES rinks (rinkid),
-  UNIQUE (rinkid, cell, layer)
-);
-
-DROP TABLE palette;
-CREATE TABLE palette (
-  rinkid CHAR(32),
-  cell CHAR(1) NOT NULL,
-  layer SMALLINT NOT NULL,
-  ver INT NOT NULL,
-  fill VARCHAR(7),
-  opacity FLOAT DEFAULT 1.0,
-  FOREIGN KEY (rinkid) REFERENCES rinks (rinkid),
-  FOREIGN KEY (ver) REFERENCES pens (ver),
   UNIQUE (rinkid, cell, layer)
 );
 
