@@ -3,28 +3,24 @@
 import os
 import sys
 import argparse
+import datetime 
 import time
 import random
 import pprint
-from model import ModelData, SvgModel, SvgPalette, SvgWriter
-from block import PaletteMaker, TmpFile, Views, BlockData, Make
-from block.data2 import BlockData2
-from block.tmpfile2 import TmpFile2
-from cell import Palette
+from model import ModelData, SvgModel
+from model.init import Init
+from block import PaletteMaker, TmpFile, BlockData, Make
+from cell import CellData
 from config import *
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-modl    = ModelData()
-pal     = Palette()
 pmk     = PaletteMaker()
-svgpal  = SvgPalette()
 tf      = TmpFile()
-view    = Views()
-bd2     = BlockData2()
-tf2     = TmpFile2()
+md      = ModelData()
+bd      = BlockData()
 WORKDIR = config.directory['rinks']
 PUBDIR  = config.directory['pubq']
 PALDIR  = config.directory['palettes']
-fnam    = pal.friendlyPenNames()
+fnam    = md.pens()  # pal.friendlyPenNames()
 pp      = pprint.PrettyPrinter(indent=2)
 start_t = time.time()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -34,178 +30,99 @@ def main(args):
   parser = argparse.ArgumentParser(prog='recurrink')
   subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
   parser_b = subparsers.add_parser('build', help='build svg from config')
-  parser_k = subparsers.add_parser('clone', help='get copy of config')
-  parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
-  parser_m = subparsers.add_parser('compare', help='compare palettes')
-  parser_d = subparsers.add_parser('delete', help='remove rink from db')
   parser_e = subparsers.add_parser('explode', help='stamp blocks on the grid')
+  parser_k = subparsers.add_parser('clone', help='get copy of config')
   parser_i = subparsers.add_parser('init', help='generate config')
-  parser_l = subparsers.add_parser('ls', help='list models or palettes')
+  parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_p = subparsers.add_parser('publish', help='add release date to db')
+  parser_d = subparsers.add_parser('delete', help='remove rink from db')
+  parser_m = subparsers.add_parser('compare', help='compare palettes')
+  parser_l = subparsers.add_parser('ls', help='list models or palettes')
   parser_r = subparsers.add_parser('read', help='get rink metadata')
 
-  parser_b.add_argument(
-    '-p', '--palette', 
-    help='palette version to write as html',
-    type=int, choices=range(0, 99), metavar='[0-99]'
-  )
-  parser_b.add_argument(
-    '-d', '--digest', 
-    help='palette from rink to write as svg'
-  )
-  parser_b.add_argument(
-    '-m', '--model', 
-    help='name of model to build'
-  )
-  parser_b.add_argument(
-    "-s", "--size", 
-    help='cell lengths: 18-40', 
-    nargs='?', type=int, const=18
-  )
-  parser_b.add_argument(
-    "-f", "--factor", 
-    help='scale factor: 0.4-1.0', 
-    type=float, nargs='?', const=1.0
-  )
-  parser_b.add_argument(
-    '-z', '--layer',  
-    help='numof layers *3 or 2', 
-    metavar='2-3', nargs='?', const=3, type=int
-  )
-  parser_b.add_argument(
-    '-l', '--line',  
-    help='draw lines or omit to paint',
-    action=argparse.BooleanOptionalAction
-  )
-  parser_b.add_argument(
-    '-x', '--exchange',  
-    help='exchange colours to -p as new svg',
-    action=argparse.BooleanOptionalAction
-  )
-  parser_m.add_argument(
-    "-p", "--palette", 
-    help='read palette from version in db', 
-    type=int, choices=range(0, 99), metavar='[0-99]', required=True
-  )
-  parser_m.add_argument(
-    '-d', '--digest', 
-    help='read palette from rink in tmpfile', 
-    required=True
-  )
-  parser_c.add_argument( 
-    "-a", "--author", 
-    choices=['human', 'machine'], nargs='?', const='human'
-  )
-  parser_c.add_argument(
-    "-m", "--model", 
-    help="name of model to commit"
-  ) 
-  parser_c.add_argument(
-    "-s", "--size", 
-    help='cell lengths: 18-40', 
-    nargs='?', type=int
-  )
-  parser_c.add_argument(
-    '-x', '--exchange',  
-    help='exchange colours to -p in db',
-    action=argparse.BooleanOptionalAction
-  )
-  parser_c.add_argument(
-    "-p", "--palette", 
-    help='new palette to create', 
-    type=int, choices=range(0, 99), metavar='[0-99]'
-  )
-  parser_c.add_argument(
-    '-d', '--digest', 
-    help='swap rink to use palette'
-  )
-  parser_c.add_argument(
-    "-i", "--inkpal", 
-    help='Insert GPLFILE to pens table'
-  )
-  parser_k.add_argument(
-    '-d', '--digest', 
-    help='rink to clone', required=True
-  )
-  parser_k.add_argument(
-    '-o', '--output', 
-    help='clone celldata by default, else palette data',
-    nargs='?', choices=['cell','pal', 'db2'], const='cell',
-  )
-  parser_d.add_argument(
-    '-d', '--digest', 
-    help='rink to remove from db', 
-    required=True
-  )
-  parser_e.add_argument(
-    "-s", "--size", 
-    help='cell lengths: 18-40', 
-    type=int, required=True
-  )
-  parser_e.add_argument(
-    "-f", "--factor", 
-    help='scale factor: 0.4-1.0', 
-    nargs='?', const=1.0, type=float
-  )
-  parser_e.add_argument(
-    '-l', '--line',  
-    help='output for plotter', 
-    action=argparse.BooleanOptionalAction
-  )
-  parser_e.add_argument(
-    '-m', '--model', 
-    help='model to be exploded', 
-    nargs='?', const='minkscape', required=True
-  )
-  parser_e.add_argument(
-    '-z', '--layer',  
-    help='numof layers *3 or 2', 
-    nargs='?', const=3, type=int
-  )
-  parser_e.add_argument(
-    '-x', '--exchange',  
-    help='exchange colours to -p and write db',
-    action=argparse.BooleanOptionalAction
-  )
-  parser_i.add_argument(
-    '-m', '--model', 
-    help='randomly generate conf for model'
-  )
-  parser_i.add_argument(
-    "-p", "--palette", 
-    help='palette version to initialise',
-    type=int, choices=range(0, 99), metavar='[0-99]'
-  )
-  parser_i.add_argument(
-    "-i", "--inkpal", 
-    help='GPL source to generate palette'
-  )
-  parser_l.add_argument(
-    "-o", "--output", 
-    help='list pal or model by default',
-    choices=['model','pal'], const='model', nargs='?' 
-  )
-  parser_p.add_argument(
-    '-d', '--digest', 
-    help='rink to mark as released', 
-    required=True
-  )
-  
-  parser_r.add_argument(
-    '-m', '--model', 
-    help='name of base model'
-  )
-  parser_r.add_argument(
-    '-d', '--digest', 
-    help='hex name with 32 char'
-  )
+  arg_d = { 'help': 'rink identifier with 32 random characters' }
+  arg_f = {
+    'help':'scale factor: 0.4-1.0', 
+    'type':float, 'nargs':'?', 'const':1.0
+  }
+  arg_l = {
+    'help':'draw lines or omit to paint',
+    'action':argparse.BooleanOptionalAction
+  }
+  arg_m = { 'help':'name of base model' }
+  arg_o = {
+    'help':'clone celldata by default, else palette data',
+    'nargs':'?', 'choices':['cell','pal', 'db2'], 'const':'cell'
+  }
+  arg_p = { 'help':'pen name used in GPLFILE and pens table' }
+  arg_s = { 
+    'help':'cell lengths: 18-90', 
+    'nargs':'?', 'type':int, 'const':36
+  }
+  # 'required':True
+  arg_v = {
+    'help':'palette version',
+    'type':int, 'choices':range(0, 99), 'metavar':'[0-99]'
+  }
+  arg_x = {
+    'help':'exchange colours to -p as new svg',
+    'action':argparse.BooleanOptionalAction
+  }
+  arg_z = {
+    'help':'numof layers *3 or 2', 
+    'metavar':'2-3', 'nargs':'?', 'const':3, 'type':int
+  }
+
+  parser_b.add_argument('-v', '--palver',   **arg_v)    # write as html
+  parser_b.add_argument('-d', '--digest',   **arg_d)
+  parser_b.add_argument('-m', '--model',    **arg_m)
+  parser_b.add_argument('-s', '--size',     **arg_s)
+  parser_b.add_argument('-f', '--factor',   **arg_f)
+  parser_b.add_argument('-z', '--layer',    **arg_z)
+  parser_b.add_argument('-l', '--line',     **arg_l)
+  parser_b.add_argument('-x', '--exchange', **arg_x)
+
+  parser_m.add_argument('-v', '--palver',   **arg_v)
+  parser_m.add_argument('-d', '--digest',   **arg_d)
+  #  required=True
+  parser_c.add_argument('-m', '--model',    **arg_m) 
+  parser_c.add_argument('-s', '--size',     **arg_s)
+  parser_c.add_argument('-f', '--factor',   **arg_f)
+  parser_c.add_argument('-x', '--exchange', **arg_x)
+  parser_c.add_argument('-v', '--palver',   **arg_v)
+  parser_c.add_argument('-d', '--digest',   **arg_d)
+  parser_c.add_argument('-p', '--penam',    **arg_p)
+
+  # klone :-)
+  parser_k.add_argument('-d', '--digest',   **arg_d)
+  parser_k.add_argument('-o', '--output',   **arg_o)
+  parser_k.add_argument('-p', '--penam',    **arg_p)
+  parser_k.add_argument('-v', '--palver',   **arg_v)
+
+  parser_d.add_argument('-d', '--digest',   **arg_d)
+
+  parser_e.add_argument('-s', '--size',     **arg_s)
+  parser_e.add_argument('-f', '--factor',   **arg_f)
+  parser_e.add_argument('-l', '--line',     **arg_l)
+  parser_e.add_argument('-m', '--model',    **arg_m)
+  parser_e.add_argument('-z', '--layer',    **arg_z)
+  parser_e.add_argument('-x', '--exchange', **arg_x)
+
+  parser_i.add_argument('-m', '--model',    **arg_m)
+  parser_i.add_argument('-p', '--penam',    **arg_p)
+
+  parser_l.add_argument('-o', '--output',   **arg_o)
+  parser_p.add_argument('-d', '--digest',   **arg_d)
+  parser_r.add_argument('-m', '--model',    **arg_m)
+  parser_r.add_argument('-d', '--digest',   **arg_d)
+
   return parser.parse_args()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def compare(args):
   ''' compare palettes given ver and digest
       expect tmp/PALETTE.txt tmp/DIGEST.txt to exist already
   '''
-  print(pmk.cmpPalettes(fnam[args.palette], args.digest))
+  print(pmk.cmpPalettes(fnam[args.palver], args.digest))
 
 def commit(args):
   ''' read config, write to database and return digest
@@ -222,51 +139,65 @@ def commit(args):
       use the index of config.friendly_name[] as arg
   '''
   pal = Palette()    # throws error but pal was assigned already???
-  if args.palette and args.digest and args.exchange:
+  cd = CellData()
+  if args.palver and args.digest and args.exchange: # only pens
     dig       = args.digest  # '180f1989f54ff03291ec31e164f2a79f'
-    celldata  = view.read(digest=dig) 
-    ver       = args.palette # use onlyi pen pals 8..12 please
-    oc        = tf.getOldColors(dig)
-    pal.loadPalette(ver=ver)     # merge fg bg stroke into uniqfill 
-    nc        = pmk.setLookUp(pal.uniqfill) # for search the new colour
+    celldata  = cd.layers(args.digest)  #view.read(digest=dig) 
+    ver       = bd.version(args.palver) 
+    oc        = tf.getOldColors(args.digest)
+    #pp.pprint(oc)
+    colors    = bd.colors(args.palver)
+    #pp.pprint(colors)
+    uniqfill  = set([c[0] for c in colors])  # strip out penam
+    #pp.pprint(uniqfill)
+    nc        = pmk.setLookUp(uniqfill) # for search the new colour
     swp       = pmk.swapColors(oc, nc)
-    pids      = pal.updatePids(ver, swp, celldata)
-    rownum    = pal.swapPalette(pids, ver, dig)
-    rownum   += view.updateSids(ver, dig, swp, celldata) # {'a': 309, 'b': 310
-    print(f'{ver} {dig} {rownum} updates')
-  elif args.palette and args.digest:
-    model      = view.readMeta(args.digest)[0]
-    celldata   = tf.read(model, output=list())
-    numupdated = pal.swap_palette(celldata, ver, digest)
-    print(f"""
-update {numupdated} view 
-swapping {args.digest} to palette {fnam[args.palette]}""")
-  elif args.palette:
-    txtpal          = tf.importPalfile(fnam[args.palette])
-    missing_colours = pal.colour_check(txtpal)
-    if len(missing_colours): # add any new colours 
-      pal.create_colours(missing_colours)
-      print(f"{len(missing_colours)} new colours ")
-    dbpal   = pal.read_palette(args.palette)
-    new_pal = pmk.makeUnique(args.palette, dbpal, txtpal)
-    [pal.createPaletteEntry(n) for n in new_pal]
-    print(f"{len(new_pal)} new entries")
-  elif args.inkpal:
-    gpldata = pmk.readInkscapePal(PALDIR, f'{args.inkpal}.gpl')
-    pal.penNames(args.inkpal, gpldata)
-  elif args.author and args.model and args.size:
+    for label, cell in celldata.items():
+      layers = list()
+      for z in cell:
+        old_stroke   = z[3]
+        new_layer    = list(z)
+        new_layer[3] = swp[old_stroke]
+        layers.append(tuple(new_layer))
+      celldata[label] = layers  # update db colors 
+    #pp.pprint(celldata)
+    rinkdata    = list(bd.rinks(args.digest))
+    rinkdata[2] = ver
+    bd.rinks(args.digest, rinkdata)
+    print(f'new ver {rinkdata[3]} updated {bd.count=}')
+    cd.layers(args.digest, celldata)
+    print(f'cell updates {cd.count=}')
+  elif args.penam and args.palver:
+    ''' create new color entries as bd.colours(ver, colors=list())
+        entry in pens table should be made manually before
+    '''
+    gpldata = pmk.readInkscapePal(PALDIR, f'{args.penam}.gpl')
+    bd.colors(args.palver, colors=gpldata)
+    print(f'{bd.count=}')
+    #pal.penNames(args.penam, gpldata)
+  elif args.model and args.size and args.factor:
+    mid      = md.model(name=args.model)
+    pens     = md.pens()
     celldata = tf.readConf(args.model)
     metadata = tf.readConf(args.model, meta=True)
-    pal      = metadata['palette']
-    ver      = fnam.index(pal)
-    lc       = -1  # TODO colournum should have a real value
+    if metadata['palette'] in pens:
+      ver = pens.index(metadata['palette'])
+    else:
+      ver = 0
     tf.setDigest(celldata=celldata)
-    #print(f''' {tf.digest} {len(celldata.keys())} {args.model=} {args.author=} {ver=}, {size=} colournum {lc}''')
+    print(f''' 
+{tf.digest} 
+{args.model=} {mid=}
+{metadata['palette']} {ver=}, 
+{args.size=} 
+{args.factor=}''')
     if os.path.isdir(f"{WORKDIR}/{args.model}"):
-      if view.create(
-        tf.digest, celldata, model=args.model, author=args.author, 
-        ver=ver, scale=args.factor, colournum=lc
-      ):
+      bd.rinks(tf.digest, [mid, ver, args.size, args.factor])
+      if bd.count:
+        response = f'{tf.digest=} ok'
+        celldata = cd.dataV2(celldata)
+        cd.layers(tf.digest, celldata=celldata)
+        '''
         if os.path.isfile(f"tmp/{args.model}.svg"):
           svgname = f"{WORKDIR}/{args.model}/{tf.digest}.svg"
           os.rename(f"tmp/{args.model}.svg", svgname)
@@ -274,64 +205,82 @@ swapping {args.digest} to palette {fnam[args.palette]}""")
           response = svgname
         else:
           raise FileNotFoundError(f"{args.model}.svg not found in tmp")
+        '''
       else:
-        response = 'unknown error'
+        response = 'error adding rink'
     else:
       raise FileNotFoundError(f"{args.model} not found in {WORKDIR}")
     print(response)
   else: 
     print(f'''cannot commit missing args:
 {args.model=}
-{args.author=}
-{args.palette=} 
-{args.inkpal=} 
+{args.factor=}
+{args.palver=} 
+{args.penam=} 
 {args.digest=} 
 {args.exchange=}''')
 
 def clone(args):
   ''' pull from db to create tmp/MODEL.txt from digest
   '''
-  (model, 
-   author, 
-   scale, 
-   ver, 
-   pubdate,
-   created) = view.readMeta(digest=args.digest)
-  if args.output == 'pal': # export view as palette
-    palette = set(pal.read_view(args.digest))
-    tf.exportPalfile(args.digest, palette) 
+  cd = CellData()
+  rinkid, mid, ver, clen, factor, *dates = bd.rinks(args.digest)
+  if args.output == 'pal' and args.digest: # export rink as palette
+    uniq    = set()
+    layers  = cd.layers(args.digest)
+    pp.pprint(layers)
+    for label, cell in layers.items():
+      for z, row in enumerate(cell):
+        #print(f'{label} {z} {row[3]}')
+        uniq.add(row[3])
+    tf.exportPalfile(args.digest, uniq) 
     print(f"palettes/{args.digest}.txt was written")
-  elif args.output == 'db2':  # celldata from new db
-    _, rinkdata     = bd2.rinks(args.digest)
-    model, metadata = tf2.rinkMeta(rinkdata)
-    celldata        = tf2.cellData(rinkdata)
-    tf.writeConf(model, metadata, celldata)
-    print(f"{args.digest} was cloned from db2")
+  elif args.output == 'pal' and args.penam: # e.g. uniball.gpl
+    palette = pmk.readInkscapePal(PALDIR, f"{args.penam}.gpl")
+    #pp.pprint(palette)
+    tf.exportPalfile(args.penam, palette) 
+    print(f"palettes/{args.penam}.txt was written from gplfile")
+  elif args.output == 'pal' and args.palver: # export colors from db
+    fn    = fnam[args.palver]
+    palette = bd.colors(ver=args.palver)
+    print(f"palettes/{fn}.txt was written from db")
   else:   # assume we want celldata
-    celldata  = view.read(digest=args.digest) #, output=list())
-    tf.setVersion(ver)
-    tf.write(model, args.digest, celldata)
+    rinkdata        = bd.rinks(args.digest)
+    model, metadata = tf.rinkMeta(rinkdata)
+    pens  = md.pens()
+
+    if 1 <= ver < len(pens):
+      penam = pens[ver]
+    else:
+      penam = None
+    #print(f'{ver=} {penam=}')
+    #pp.pprint(pens)
+    # TODO remove this tf.cellData(rinkdata)
+    celldata    = cd.layers(args.digest)  #view.read(digest=dig) 
+    celldata    = cd.txDbv3Yaml(celldata)
+    tf.writePretty(model, metadata, celldata)
     print(f"""
 cloning {model}
 with {len(celldata)} cells
-palette {fnam[ver]}""")
+palette {penam}""")
 
 def delete(args):
-  # as delete has no help text it is not listed by argparse
+  ''' if delete had no help text it would not be listed by argparse
   print(f'{args.digest=}')
-  ''' both svg and view must exist for the delete to succeed
-      4e3e83e969f2b41bf47fda2ec430a8f8 
   '''
-  viewdata = view.readMeta(args.digest)
-  if len(viewdata):
-    view.delete(args.digest) 
-    model = viewdata[0]
+  bd       = BlockData()
+  rinkdata = bd.rinks(args.digest) 
+  if len(rinkdata):
+    bd.rinksDelete(args.digest) 
+    ''' review this and commit
+    model = md.model(mid=rinkdata[1])
     if os.path.isfile(f'{PUBDIR}/{args.digest}.svg'):
       os.unlink(f'{PUBDIR}/{args.digest}.svg')
     if os.path.isfile(f'{WORKDIR}/{model}/{args.digest}.svg'):
       os.unlink(f'{WORKDIR}/{model}/{args.digest}.svg')
       print(f'{args.digest} deleted ok') # success
     else: raise FileNotFoundError(f'SVG not deleted {model}/{args.digest}')
+    '''
   else: raise ValueError(f'nothing named {args.digest} in database')
 
 def explode(args):
@@ -349,9 +298,15 @@ def explode(args):
     penam     = config.penam[2]  # pen names for htmstart pal
     block     = Make(args.size, linear=bool(args.line), pen_names=penam)
   else:                         # TODO source positions from model
-    bd        = BlockData(args.model)
-    positions = bd.readPositions(args.model)
-    penam     = bd.penNames(ver)
+    mid       = md.model(name=args.model)
+    positions = md.blocks(mid)
+    colors    = bd.colors(ver)
+    ''' are these two lines business logic?
+    if yes then put in build.py
+    else put in data.py
+    '''
+    penam     = dict()
+    for k, v in colors: penam[k] = v
     block     = Make(args.size, linear=bool(args.line), pen_names=penam)
 
   block.walk(positions, celldata, z=args.layer)
@@ -364,95 +319,74 @@ def init(args):
   ''' pull a palette from db and write to tmpfile
       generate an editable config file 
   '''
-  if args.inkpal: # e.g. uniball.gpl
-    palette = pmk.inkscapePal(PALDIR, f"{args.inkpal}.gpl")
-    tf.exportPalfile(args.inkpal, palette) 
-    print(f"palettes/{args.inkpal}.txt was written")
-  elif args.palette in range(99) and args.model:
-    _model, src, celldata = view.generate(model=args.model, ver=args.palette)
-    tf.conf(args.model, fnam[args.palette]) # conf state is a symlink
-    celldata = tf.convertToList(celldata) # become a list before writing
-    tf.write(args.model, celldata)
-    print(f"""
-initialising {args.model} with {len(celldata)} cells from {src}
-palette {fnam[args.palette]}""")
-  elif args.palette in range(99): # export from palette table
-    fn    = fnam[args.palette]
-    pal.loadPalette(ver=args.palette)
-    #pp.pprint(pal.palette)
-    palette = pal.palette # keep order so relations are grouped
-    tf.exportPalfile(fn, palette) 
-    print(f"{fn}.txt was written")
-  else:
-    ''' randomly generate conf/MODEL.yaml and palette
-    '''
-    ver                  = tf.setVersion(ver=args.palette)
-    model, src, celldata = view.generate(model=args.model, ver=ver)
-    tf.write(model, celldata)
-    print(f"""
-initialising {model} with {len(celldata)} cells from {src}
-palette {fnam[ver]}""")
+  cd = CellData()
+  init       = Init()
+  model, pen = init.setInput(args.model, args.penam)
+  src, data  = init.generate(model, pen)
+  newver     = init.ver + 7
+  tf.setVersion(newver)
+  tf.writePretty(model, data)
+  print(f'''generated {model} with {len(data.keys())} cells
+using {pen} from source: {src} 
+''')
+
 
 def ls(args):
   ''' list from db or config
   '''
   if args.output == 'pal': 
     [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
-  else: print(modl.stats())
+  else:
+    print('working on it') 
+    # print(md.stats())
 
+# TODO rinksUpdate has to accept pubdate as well as ver
 def publish(args):
   ''' used by reith to update pubdate
+
+      2024-01-27 22:26:12
   '''
-  view.update(d)
-  print(f"updated ok")
+  rinkdata = list(bd.rinks(args.digest))
+  if len(rinkdata) == 7:
+    rinkdata[6] = '{d:%Y-%m-%d %H:%M:%S}'.format(d=datetime.datetime.now())
+    bd.rinks(args.digest, rinkdata)
+    print(f'{rinkdata[6]} updated {bd.count=}')
 
 def read(args):
+  #bd = BlockData()
   if args.model:
-    bd        = BlockData(args.model)
-    blocksize = modl.read(model=args.model)[2]
+    mid       = md.model(name=args.model)
+    blocksize = md.setBlocksize(mid)
     print(bd.prettyPrint(args.model, blocksize[0], blocksize[1]))
-  else:  # reith is consumer
-    v = view.readMeta(digest=args.digest)
-    print(' '.join(v[:2]))
+  elif(args.digest):  # reith is consumer
+    rinkdata = bd.rinks(args.digest)
+    print("""
+-------+----------
+ model | {r[1]}
+palver | {r[2]}
+  size | {r[3][0]} x {r[3][1]}
+factor | {r[4]}
+create | {r[5]:%Y-%m-%d}
+   pub | {r[6]:%Y-%m-%d}""".format(r=rinkdata))
+  else:
+    print('que?')
 
 def build(args):
   ''' generate an SVG from tmpfile or an HTML palette
   '''
-  if args.palette and args.digest and args.exchange:
-    dig       = args.digest  # '180f1989f54ff03291ec31e164f2a79f'
-    celldata  = view.read(digest=dig) 
-    model     = view.readMeta(dig)[0] # model auth scale ver
-    bd        = BlockData(model)
-    positions = bd.readPositions(model)
-    ver       = args.palette # use onlyi pen pals 8..12 please
-    tf.setVersion(ver)
-    oc        = tf.getOldColors(dig)
-    pal.loadPalette(ver=ver)     # merge fg bg stroke into uniqfill 
-    nc        = pmk.setLookUp(pal.uniqfill) # for search the new colour
-    swp       = pmk.swapColors(oc, nc)
-    print(f'''{len(oc)} to swap
-{len(nc)} to search
-''')
-    pp.pprint(swp)
-    celldata  = pmk.updateCells(celldata, swp)
-    tf.write(model, args.digest, celldata)   # new colors to conf/palswap.yaml
-    celldata  = tf.readConf(model) # dubble write to reformat celldata :sob:
-    view.validate(celldata, ver=ver)
-    svgfile   = model + '_exchange'
-    svg       = SvgModel(18) # size of preview palswap.svg
-    block     = Make(18, linear=False)
-    # start to build
-    block.walk(positions, celldata)
-    block.hydrateGrid()
-    svg.build(block)
-    svg.render(svgfile, line=False)
-    print(f'tmp/{svgfile}.svg was built')
-  elif args.palette:
-    fn      = fnam[args.palette]
+  bd = BlockData()
+  if args.palver:
+    ''' run init -p PENAM first
+    '''
+    fn      = md.pens(ver=args.palver)
     palette = tf.importPalfile(fn)
     svgpal.render(fn, palette)
     print(f"palettes/{fn}.html was written")
   elif args.digest:
+    ''' run clone -d DIGEST first
+        but why build a color chart for a rink
+        color charts should be for pens
+    '''
     fn      = args.digest
     palette = tf.importPalfile(fn)
     svgpal.render(fn, palette)
@@ -463,14 +397,32 @@ def build(args):
     if args.model == 'minkscape': # default model
       positions = config.positions
     else: # TODO get positions from tf.positions() after readConf
-      bd        = BlockData(args.model)
-      positions = bd.readPositions(args.model)
-    
+      mid       = md.model(name=args.model)
+      positions = md.blocks(mid)
+
+    metadata  = tf.readConf(args.model, meta=True)    
     celldata  = tf.readConf(args.model)
-    ver       = fnam.index(tf.VERSION)
-    print(f'{ver=}')
-    penam     = bd.penNames(ver)
-    view.validate(celldata, ver=ver)
+    #pp.pprint(celldata.keys())
+    penam     = metadata['palette']  # fnam.index(tf.VERSION)
+    pens      = md.pens()
+    ver       = pens.index(penam)
+    colors    = bd.colors(ver)
+    print(f'{penam=} {ver=}')
+    ''' are these two lines business logic?
+    if yes then put in build.py
+    else put in data.py
+    '''
+    penam     = dict()
+    for k, v in colors: penam[k] = v
+
+    uniq      = list(penam.keys())
+    # TODO add color validation to Pydantic
+    #old_ver = ver + 7
+    #cd = CellData(ver=old_ver)
+    pal     = Palette(ver=ver)
+    pal.uniqfill = uniq
+    [pal.validate(label, cell) for label, cell in celldata.items()]
+
     block     = Make(args.size, linear=bool(args.line), pen_names=penam)
     block.walk(positions, celldata, z=args.layer)
 
@@ -482,7 +434,7 @@ def build(args):
     print(f'tmp/{svgfile}.svg was built with pal {fnam[ver]}')
   else:
     raise Warning(f'''missing argument
-{args.palette=} 
+{args.palver=} 
 {args.digest=}
 {args.model=} 
 {args.size=}
