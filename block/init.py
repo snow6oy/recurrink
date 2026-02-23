@@ -1,6 +1,6 @@
 import pprint
 from cell.init import Init as CellInit
-from block.data2 import BlockData2
+from block.data import BlockData
 
 class Init():
 
@@ -12,8 +12,8 @@ class Init():
     self.top   = top
 
   def generate(self, compass):
-    bd2       = BlockData2()
-    _, colors = bd2.colors(self.ver)
+    bd       = BlockData()
+    colors = bd.colors(self.ver)
     data      = None
     celldata  = dict()
     both      = self.cells + self.top
@@ -38,7 +38,7 @@ class Init():
             other = pair[i] 
             if other in celldata: # already seen
               data = init.generate(
-                top_yn, axis=axis, facing=celldata[other]['facing']
+                top_yn, axis=axis, facing=celldata[other]['geom']['facing']
               )
             else:
               data = init.generate(top_yn, axis=axis)

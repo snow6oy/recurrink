@@ -44,14 +44,31 @@ DELETE FROM colors WHERE ver = 4 AND penam = 'zz';
 
 DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
     '''
-    mid  = 1
-    date = [None, None] # created published
-    rink = self.bd.rinksWrite(self.rinkid, mid, self.ver, date, 90, 1)
-    self.assertEqual(7, len(rink))
+    mid      = 1
+    created  = None
+    pubdate  = None 
+    rinkdata = [mid, self.ver, 90, 0.4, created, pubdate]
+    self.bd.rinksWrite(self.rinkid, rinkdata)
+    self.assertTrue(self.bd.count)
 
   def test_f(self):
+    ''' read rink created by test_e
     rink = self.bd.rinksRead(self.rinkid)
-    self.assertEqual(1, rink[1]) # fake rink has model id: 1
+    '''
+    rink = self.bd.rinks(self.rinkid)
+    self.assertEqual(1, rink[0]) # zzz rink has model id: 1
+
+  def test_g(self):
+    ''' update rink to use new pen
+    '''
+    mid      = 1
+    new_ver  = 6
+    created  = None
+    pubdate  = None 
+    rinkdata = [mid, new_ver, 90, 0.4, created, pubdate]
+    # None, None created published
+    self.bd.rinks(self.rinkid, rinkdata)
+    self.assertTrue(self.bd.count)
 
 '''
 the

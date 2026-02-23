@@ -23,13 +23,15 @@ class Make:
     '''
     self.setBlocksize(positions)
     if z is None or z == 3: self.walkThree(positions, cells)
-    elif z == 2: self.walkTwo(positions, cells)
-    else: raise ValueError(f'{z} can only be 2 or 3')
+    elif z == 2           : self.walkTwo(positions, cells)
+    else                  : raise ValueError(f'{z} can only be 2 or 3')
     
   def walkThree(self, positions, cells, z=3):
     for pos in positions:
       label   = positions[pos][0]  
       cell    = Layer(clen=self.CLEN, pos=pos, linear=self.linear)
+      if label not in cells:
+        raise KeyError(f'block.make.walkThree {label} not in {list(cells.keys())}')
       cell.background(cells[label])
       ''' ['geom']) if cells[label]['color']['background']: 
       print(f"{label} {cells[label]['color']['background']}")
@@ -37,6 +39,7 @@ class Make:
       self.style.addBackground(pos, color=cells[label]['color'])
       for label in positions[pos]:
         if not label: continue
+        if label not in cells: continue
         strokedata = self.setStroke(cells[label])
         if bool(cells[label]['geom']['top']):
           cell.foreground(cells[label]['geom'])

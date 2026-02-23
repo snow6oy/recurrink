@@ -4,13 +4,12 @@ import yaml
 import random
 import hmac
 import pprint
-from block import Views, BlockData, InputValidator
-from config import *
-from cell import Palette
+from model import ModelData
+from block import BlockData, InputValidator
+from cell import CellData
+# from config import *
 # db2 will change once data2 merges
-from model.data2 import ModelData2
-from block.data2 import BlockData2
-from cell.data2 import CellData2
+# from cell.data import CellData
 
 class TmpFile(InputValidator):
 
@@ -39,12 +38,51 @@ class TmpFile(InputValidator):
     self.PALETTE = fnam[ver]
     return ver
 
+  def writePretty(self, model, celldata, rinkid=None):
+    ''' make the fills pretty be removing # 
+    '''
+    for label in celldata: # remove the hash in #rrggbb
+      for cs in celldata[label]:
+        if cs in ['color', 'stroke']:
+          for fb in celldata[label][cs]:
+            if fb in ['fill', 'background']: # skip opacity
+              celldata[label][cs][fb] = self.prettyHash(
+                celldata[label][cs][fb], remove=True
+              )
+              #print(f'{label=} {cs=} {fb=}')
+    metadata = self.metadata(model, rinkid)
+    self.writeConf(model, metadata, celldata)
+    
+  def writeConf(self, model, metadata, celldata):
+    ''' PyYAML flow style None is different from False
+        we write twice to get both :/
+    '''
+    out  = yaml.dump(metadata, default_flow_style=None)
+    out += yaml.dump(celldata, default_flow_style=False)
+    with open(f'conf/{model}.yaml', 'w') as outfile:
+      print(out, file=outfile)
+
+  def metadata(self, model, rinkid=None):
+    ''' compile metadata for conf
+    '''
+    md       = ModelData()
+    mid      = md.model(name=model)
+    pos      = md.positionString(mid)
+    metadata = {
+      'id': rinkid,
+      'model': model,
+      'palette': self.PALETTE,
+      'positions': pos
+    }
+    return metadata
+
   # superceded by dbmigrator
-  def write(self, model, rinkid, cells):
+  def _write(self, model, rinkid, cells):
     ''' wrap the data and make ready to write
     '''
-    bd    = BlockData(model)
+    bd    = BlockData()
     pos   = bd.readPositions(model)
+    #print(f'{model} {pos}')
     fgpos = self.positionBlock(pos)
     topos = self.positionBlock(pos, top=True)
     
@@ -54,7 +92,7 @@ class TmpFile(InputValidator):
       cell = self.refactorCell(label, cell)
       celldata[label] = cell
 
-    print() # flush refactorCell
+    #print() # flush refactorCell
     metadata = {
       'id': rinkid,
       'model': model,
@@ -68,29 +106,6 @@ class TmpFile(InputValidator):
       self.writeConf(model, metadata, celldata)
     else:
       raise TypeError(safecells)  # error string
-
-  def writePretty(self, model, metadata, celldata):
-    ''' make the fills pretty be removing # 
-    '''
-    for label in celldata: # remove the hash in #rrggbb
-      for cs in celldata[label]:
-        if cs in ['color', 'stroke']:
-          for fb in celldata[label][cs]:
-            if fb in ['fill', 'background']: # skip opacity
-              celldata[label][cs][fb] = self.prettyHash(
-                celldata[label][cs][fb], remove=True
-              )
-              #print(f'{label=} {cs=} {fb=}')
-    self.writeConf(model, metadata, celldata)
-
-  def writeConf(self, model, metadata, celldata):
-    ''' PyYAML flow style None is different from False
-        we write twice to get both :/
-    '''
-    out  = yaml.dump(metadata, default_flow_style=None)
-    out += yaml.dump(celldata, default_flow_style=False)
-    with open(f'conf/{model}.yaml', 'w') as outfile:
-      print(out, file=outfile)
 
   def readConf(self, model, meta=False):
     ''' read YAML
@@ -199,8 +214,8 @@ class TmpFile(InputValidator):
     return fix 
  
   def refactorCell(self, label, cell):
-    print(f'{label} ', end='', flush=True)
     """
+    print(f'{label} ', end='', flush=True)
     facing = {
         'all': 'C', 'north': 'N', 'east': 'E', 'south': 'S', 'west': 'W'
     }
@@ -235,10 +250,9 @@ class TmpFile(InputValidator):
     if len(palette) == 0:
       raise ValueError(f"{palname} is empty")
     with open(f"palettes/{palname}.txt", 'w') as f:
-      print("\t".join(['fill', 'opacity', 'background']), file=f)
-      for pal in palette:
-        line = [str(p) for p in pal] # convert everything to string
-        print("\t".join(line), file=f)  # flush=True)
+      print("\t".join(['fill', 'penam']), file=f)
+      for fill, penam in palette.items():
+        print(f'{str(fill)}\t{str(penam)}', file=f)  # flush=True)
 
   def importPalfile(self, palname):
     with open(f"palettes/{palname}.txt") as f:
@@ -262,12 +276,12 @@ class TmpFile(InputValidator):
   def rinkMeta(self, rinkdata):
     ''' gather metadata from db to write conf/MODEL.yaml
     '''
-    md2      = ModelData2()
-    _, model = md2.model(mid=rinkdata[1])
+    md    = ModelData()
+    model = md.model(mid=rinkdata[1])
     if self.VERBOSE: print(f'got {model=}')
-    _, pos   = md2.blocks(mid=rinkdata[1])
+    pos   = md.blocks(mid=rinkdata[1])
     if self.VERBOSE: print(f'got {len(pos)=} blocks')
-    pens     = md2.pens(ver=rinkdata[2])
+    pens     = md.pens(ver=rinkdata[2])
     if self.VERBOSE: print(f'got {pens=}')
 
     metadata = {
@@ -283,10 +297,10 @@ class TmpFile(InputValidator):
     return model, metadata
 
   # move to tmpfile # move to tmpfile # move to tmpfile # move to tmpfile 
-  def cellData(self, rinkdata):
+  def _cellData(self, rinkdata):
     ''' gather celldata from db to write conf/MODEL.yaml
     '''
-    cd2     = CellData2()
+    cd2     = CellData()
     bd2     = BlockData2()
     rinkid  = rinkdata[0]
     _, geom = cd2.geometry(rinkid)

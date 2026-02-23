@@ -77,8 +77,8 @@ class PaletteMaker:
           # print(x)
           same += 1
     out = (f"""
-{len(new_pal):3d} {digest}
-{len(candidate):3d} {fn}
+{len(p1):3d} {digest}
+{len(p2):3d} {fn}
 {same:3d} matching palette entries""")
     return out
 
@@ -99,6 +99,8 @@ class PaletteMaker:
     return new_pal
 
   ''' INKSCAPE
+      inkscapePal no longer called from recurrink
+      but could be useful in future for init
   '''
   def randomTwo(self, data):
     '''
