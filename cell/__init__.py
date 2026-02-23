@@ -1,2 +1,2 @@
-from .data import CellData, Palette, Strokes
+from .data import CellData
 from .layer import Layer

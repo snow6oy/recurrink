@@ -25,8 +25,16 @@ class Init:
     p = palette.generateOne(self.colors)
     s = strokes.generateOne(self.colors)
 
+    '''
     data = g | p | s
-    #self.pp.pprint(data)
+    self.pp.pprint(data)
+    '''
+    data           = dict()
+    data['geom']   = g
+    data['color']  = p
+    if s: data['stroke'] = s
+    #else: data['stroke'] = None
+
     return data 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Geometry():
@@ -68,20 +76,20 @@ class Geometry():
       'SW': { 'S': 'W', 'W': 'S' }
     }
     self.defaults = { 
-      'shape':'square', 'size':'medium', 'facing':None, 'top':False 
+      'name':'square', 'size':'medium', 'facing':None, 'top':False 
     }
 
   def generateFacingAny(self, top=False):
     s    = random.choice(self.shape)
     z    = random.choice(self.attributes[s]['size'])
     f    = random.choice(self.attributes[s]['facing'])
-    data = dict(zip(['shape','size','facing','top'], [s, z, f, top]))
+    data = dict(zip(['name','size','facing','top'], [s, z, f, top]))
     return data
 
   def generateFacingCentre(self, top=False):
     geom = random.choice(self.candidates(['C']))
     geom.append(top)
-    data = dict(zip(['shape','size','facing','top'], geom))
+    data = dict(zip(['name','size','facing','top'], geom))
     return data
 
   def generateOne(self, axis, top, facing=None):
@@ -91,7 +99,7 @@ class Geometry():
     geom    = random.choice(self.candidates(list(flip.keys())))
     geom[2] = flip[facing] if facing else geom[2] 
     geom.append(top)
-    data    = dict(zip(['shape','size','facing','top'], geom))
+    data    = dict(zip(['name','size','facing','top'], geom))
     return data
 
   def candidates(self, facing):
@@ -117,7 +125,7 @@ class Palette():
     fill = random.choice(colors)
     bg   = random.choice(colors)
     op   = random.choice(self.zeroten) / 10
-    return dict(zip(['fill','bg','fill_opacity'], [fill[0], bg[0], op]))
+    return dict(zip(['fill','background','opacity'], [fill[0], bg[0], op]))
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Strokes(Palette):
@@ -135,18 +143,20 @@ class Strokes(Palette):
     color  = random.choice(colors)
     stroke = color[0]
     width  = random.choice(self.zeroten)
-    dash   = random.choice(self.zeroten)
+    dash   = 1 if YN else 0
     op     = random.choice(self.zeroten) / 10
+    '''
     empty  = { 
-                'stroke': None,
-          'stroke_width': None, 
-      'stroke_dasharray': None,
-        'stroke_opacity': None 
+           'fill': None,
+          'width': None, 
+      'dasharray': None,
+        'opacity': None 
     }
+    '''
     return dict(
-      zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], 
+      zip(['fill','width','dasharray','opacity'], 
       [stroke, width, dash, op])
-    ) if YN else empty
+    ) if YN else None
 
 '''
 the

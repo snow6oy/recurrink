@@ -19,16 +19,19 @@ class Transform(Db2):
       Transformations
 
       import export  use-case
-      -----------------------
-      DBV1   DBV2    deprecated
-      YAML   DBV2    deprecated
-      DBV1   YAML    ?
-      ---to do---------------
-      DBV1   DBV3    migration to be deprecated once dbv1 is sunset
-      DBV3   YAML    backwards compatibiliy until DBV3 is rolled out
-      Y3ML   DBV3    write new rinks
-      DBV3   Y3ML    future
-      DBV3   SVG     future
+      ----------------------- deprecated
+               DBV1   DBV2    
+      dataV2   YAML   DBV2    
+    txDbv2Dbv3 DBV2   DBV3
+               DBV1   YAML    ?
+      ----------------------- done
+      dataV1   DBV1   DBV3    migration to be deprecated once dbv1 is sunset
+      dataV3   YAML   DBV3    compatibility
+    txDbv3Yaml DBV3   YAML    backwards compatibiliy until DBV3 is rolled out
+      ----------------------- future
+               Y3ML   DBV3    write new rinks
+               DBV3   Y3ML    
+               DBV3   SVG    
 
       TODO align with Block Cell model block/transform > cell/transform
   '''
@@ -41,24 +44,20 @@ class Transform(Db2):
     for label, cell in celldata.items():
       #print(f'dataV1 {label=} {cell}')
       if label not in data: data[label] = list()
+      if 'stroke_width' in cell and cell['stroke_width'] > 0:
+        dasharray = cell['stroke_dasharray']
+      else:
+        dasharray = 0
+
       bg  = cell['bg']
       row = [
         cell['shape'],
         cell['size'],
         cell['facing'],
         cell['fill'],
-        cell['stroke_dasharray']
-        #cell['fill_opacity']
+        dasharray
       ]
-      '''
-      if 'stroke_width' in cell and cell['stroke_width'] > 0:
-        row += [
-          cell['stroke'],
-          cell['stroke_opacity'],
-          cell['stroke_width'],
-          cell['stroke_dasharray']
-         ]
-      '''
+
       if bg:
         data[label].append(tuple(['square', 'medium', 'C', bg, 1])) # z 0
       else:
@@ -77,22 +76,26 @@ class Transform(Db2):
     data = dict()
     for label, cell in celldata.items():
       if label not in data: data[label] = list()
+      if 'stroke' in cell and cell['stroke']:
+        dasharray = cell['stroke']['dasharray']
+      else:
+        dasharray = 0
       bg = cell['color']['background']
+
       row = [
         cell['geom']['name'],
         cell['geom']['size'],
         cell['geom']['facing'],
         cell['color']['fill'],
-        cell['color']['opacity']
+        dasharray
       ]
-      if 'stroke' in cell and cell['stroke']: #['width'] > 0:
+      '''
         row += [
           cell['stroke']['fill'],
           cell['stroke']['opacity'],
           cell['stroke']['width'],
-          cell['stroke']['dasharray']
          ]
-
+      '''
       if bg:
         data[label].append(tuple(['square', 'medium', 'C', bg, 1])) # z 0
       else:
@@ -103,12 +106,6 @@ class Transform(Db2):
         data[label].append(tuple(row))
 
     return data
-    '''
-      print(f'dataV1 {label=}')
-      for aspect, attr in cell.items():
-        print(f'{aspect} ', end='', flush=True)
-      print()
-    '''
 
   def dataV3(self, celldata):
     ''' convert nested dict into cellrows for db ops
@@ -119,7 +116,7 @@ class Transform(Db2):
 
       fill_bg, fill_fg  = cell['color']
       if 'dasharray' in cell: dash_bg, dash_fg  = cell['dasharray']
-      else:                   dash_bg = dash_fg = None
+      else:                   dash_bg = dash_fg = 0
       '''
       print(f'{label=} {fill_bg=} {fill_fg=}')
       '''
@@ -157,6 +154,7 @@ class Transform(Db2):
     if len(cell[0]): bg = cell[0][3] 
     else           : bg = None
     name, size, facing, fill, dasharray = cell[1]
+    dasharray = dasharray if dasharray else 0 # Pydantic wants int
     top = True if len(cell) == 3 else False
 
     data                        = dict()
@@ -170,9 +168,9 @@ class Transform(Db2):
     data['color']['background'] = bg
     data['color']['fill']       = fill  # wires crossed in hydrateBlock
     data['color']['opacity']    = 1
-    data['stroke']['fill']      = None
+    data['stroke']['fill']      = '#000000' # unused except Pydantic
     data['stroke']['opacity']   = 1
-    data['stroke']['width']     = penwidth_mm
+    data['stroke']['width']     = f'{penwidth_mm:.2f}'
     data['stroke']['dasharray'] = dasharray
     return data
 

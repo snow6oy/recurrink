@@ -1,215 +1,305 @@
-import random
 import pprint
-import psycopg2
-from config import *
-from .shape import *
-from .geometry import Geometry
-from .palette import Palette
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Strokes(Palette):
+from .transform import Transform
 
-  def __init__(self, ver):
-    super().__init__(ver)
+class CellData(Transform):
+  ''' use-cases
 
-  def create(self, item):
-    ''' each geometry in a cell has an optional stroke
+CELL    FG  BG  TOP BG
+a       y   n   n   n
+b       y   y   n   n
+c       y   y   y   n
+d       n   n   y   y
+e       y   n   y   n
+
+TOP has two versions of truth
+it is definetly True when a cell position
+has both FG and TOP allocated
+
+cells that are marked as TOP but
+are uniquely allocated to a position without a FG (e.g. cell d)
+are also TOP.
+These will be allocated a BG as if they were a FG
+but they will NOT be allocated a Top layer
+
+Expected result
+
+cell  z    BGs
+--------------------
+a     0    n
+a     1    y
+b     0    y
+b     1    y
+c     0    y
+c     1    y
+c     2    y
+d     0    y
+d     1    y
+e     0    n
+e     1    y
+e     2    y
+  '''
+  pp = pprint.PrettyPrinter(indent=2)
+
+  def __init__(self):
+    self.count = 0
+    super().__init__()
+
+  def layers(self, rinkid, celldata=dict()):
+    ''' each layer has a db record keyed by rinkid, cell and layer
     '''
-    if len(item) == 4:
-      sid = self.readSid(item)
-      if sid is None:
-        print(f'adding {item}')
-        self.cursor.execute("""
-INSERT INTO strokes (sid, fill, width, dasharray, opacity)
-VALUES (DEFAULT, %s, %s, %s, %s)
-RETURNING sid;""", item)
-        sid = self.cursor.fetchone()[0]
+    data = self.layersRead(rinkid)
+    if data and celldata: 
+      self.layersUpdate(rinkid, celldata)
+    elif celldata:   
+      self.layersWrite(rinkid, celldata)
+    elif data:
+      return data
     else:
-      raise ValueError('need 4 vals in an item to create a stroke')
-    return sid
+      raise ValueError(f'cannot find any layer for {rinkid}')
 
-  def read(self, sid):
-    if sid:
-      strokes = list()
-      self.cursor.execute("""
-SELECT fill, width, dasharray, opacity
-FROM strokes
-WHERE sid = %s;""", [sid])
-      strokes = self.cursor.fetchone()
-      return strokes
-    else:
-      raise ValueError("need a sid to find a stroke")
-
-  def readSid(self, stroke):
-    ''' palswap and recurrink send dicts and lists :/
+  def _layers(self, rinkid, celldata=dict()):
+    ''' each layer has a db record keyed by rinkid, cell and layer
     '''
-    if isinstance(stroke, dict): # order is important
-      item = [
-        stroke['fill'], stroke['width'],stroke['dasharray'], stroke['opacity'] 
-      ]
-    else:
-      item = stroke
-    self.cursor.execute("""
-SELECT sid
-FROM strokes
-WHERE fill = %s
-AND width = %s
-AND dasharray = %s
-AND opacity = %s;""", item)
-    sid = self.cursor.fetchone()
-    return sid[0] if sid else None
+    data             = self.layersRead(rinkid)
+    if data:         return data
+    elif celldata:   return self.layersWrite(rinkid, celldata)
+    else:            raise ValueError(f'cannot find any layer for {rinkid}')
 
-  def swapSid(self, sids, ver, rink):
-    ''' WARN: we break the golden "Rinks Are Immutable" rule
+  def layersRead(self, rinkid):
+    ''' read layers by rinkid
     '''
-    for label in sids: # send uniq pids for update
-      new = sids[label]
-      ''' print(f"{rink=} {new=} {label=}")
-      '''
-      self.cursor.execute("""
-UPDATE cells 
-SET sid = %s 
-WHERE view = %s 
-AND cell = %s;""", 
-        [new, rink, label]
-      )
-    return self.cursor.rowcount
-
-  def updateSids(self, swp, celldata):
-    ''' insert new SID unless exists already
-    '''
-    sids = dict()
-    for label in celldata:
-      if 'stroke' not in celldata[label]: continue
-      old_stroke = celldata[label]['stroke']
-      item = [
-        swp[old_stroke].lower(),
-        celldata[label]['stroke_width'],
-        celldata[label]['stroke_dasharray'],
-        celldata[label]['stroke_opacity']
-      ]
-      sid = self.readSid(item)
-      if sid: sids[label] = sid
-      else:
-        sid = self.create(item)
-        sids[label] = sid
-    return sids
-  
-
-  def read_any(self, ver, opacity):
-    ''' a side effect of adding new Inkscape palettes is that SELECT returned None
-        the opacity limit has been relaxed so that init can work randomly
-    AND s.opacity = %s
-    ORDER BY random() LIMIT 1;""", [ver, opacity])
-    '''
-    if ver not in range(99): raise ValueError()
-    self.cursor.execute("""
-SELECT s.fill, width, dasharray, s.opacity
-FROM palette as p
-LEFT OUTER JOIN strokes as s ON p.fill = s.fill OR p.bg = s.fill
-WHERE ver = %s
-GROUP BY sid
-ORDER BY random() LIMIT 1;""", [ver])
-    return list(self.cursor.fetchone())
-
-  def generate_one(self, stroke=None):
-    ''' given a pair of cells, treat the second with a complimentary stroke
-    '''
-    #print(f"one v {self.ver} so {self.opacity}")
     data = dict()
-    if stroke:
-      data = stroke
-      fill = stroke['stroke']
-      data['stroke'] = self.complimentary[fill]
-    else:
-      data = dict(
-        zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], 
-        self.read_any(self.ver, random.choice(self.opacity)))
-      )
+    self.cursor.execute("""  
+SELECT *
+FROM layers
+WHERE rinkid = %s
+ORDER BY cell, layer;""", 
+      [rinkid]   # order by cell layer 
+    )
+    for row in self.cursor.fetchall():
+      label, z = row[1:3]
+      if label not in data: data[label] = list()
+      has_content = [True for x in row[3:] if x] # test for empty strings
+      if has_content:
+        data[label].insert(z, row[3:])
+      else:
+        data[label].insert(z, tuple())
     return data
 
-  def generate_any(self, ver=None):
-    ver = ver if ver else self.ver # override for tester
-    #print(f"any v {ver} so {self.opacity}")
-    empty = { 'stroke': None, 'stroke_width': None, 'stroke_dasharray': None, 'stroke_opacity': None }
-    # TODO stroke or not should be consistent across all cells in view ?
-    YN = random.choice([True, False]) # fifty fifty chance to get a stroke
-    return dict(
-      zip(['stroke','stroke_width','stroke_dasharray','stroke_opacity'], 
-      self.read_any(ver, random.choice(self.opacity)))
-    ) if YN else empty
-
-  # TODO if width is 0 then all stroke attributes should be null
-  def generate_new(self):
-    ''' totally rnd no control whatsoever! Only called by celldata.py
+  def layersWrite(self, rinkid, celldata=dict()):
+    ''' move this to block.data ?
     '''
-    width = random.choice(self.zeroten)
-    return {
-      'fill': random.choice(self.palette)[2], # background from ver
-      'width': width,
-      'dasharray': random.choice(self.zeroten),
-      'opacity': random.choice(self.palette)[1]
-    }
+    self.count = 0 # reset new record counter
+    for label, cell in celldata.items():
+      self.cellWrite(rinkid, label, cell)
 
-  def validate(self, cell, data):
-    ''' apply rules for defined palette and then these for stroke
+  def cellWrite(self, rinkid, label, cell):
+    ''' write cell to layers table
     '''
-    Palette.validate(self, cell, data)
-    if 'stroke_width' in data: 
-      sw = int(data['stroke_width'])
-      if sw < min(self.zeroten) or sw > max(self.zeroten):
-        raise ValueError(f"validation error: stroke width >{cell}<")
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class CellData(Strokes):
-  VERBOSE = False
-  pp      = pprint.PrettyPrinter(indent=2)
-  ''' a cell is a member of a block and contains geometries, shapes and strokes
-  '''
-  def __init__(self, ver=None):
-    super().__init__(ver)
-
-  def create(self, digest, label, data):
-    ''' create a cell by joining a view with geometry and style entries
-    '''
-    ok = True # used only by unit test
-    gid = Geometry.read_gid(self, data['geom']) 
-    pid = Palette.readPid(self, self.ver, data['color'])
-    if pid is None: return None # ignore empty background cell
-    if 'stroke' in data: 
-      sid = Strokes.readSid(self, data['stroke'])
-    else:                
-      sid = None
-    try:
+    for z, row in enumerate(cell): 
+      if len(row) < 5 and z ==0:
+        row = tuple([None] * 5)
+      if len(row) != 5:
+        print(f'cannot write {row} because not 5')
+        continue
+      ''' print(f'{label=} {z} {row}')
+      '''
       self.cursor.execute("""
-INSERT INTO cells (view, cell, gid, pid, sid)
-VALUES (%s, %s, %s, %s, %s);""", [digest, label, gid, pid, sid])
-    except psycopg2.errors.UniqueViolation:  # 23505 
-      if self.VERBOSE: print(f'{digest} {label} {gid=} {pid=} {sid=}')
-      return False
-    return ok
-
-  def generate(self, top, 
-    axis=None, facing_all=False, facing=None, primary=None, stroke=None
-  ):
-    #print(f"a {axis} t {top} p {facing} p {primary} s {stroke}")
-    if axis:
-      g = Geometry.generate_one(self, axis, top, facing)
-      p = Palette.generate_one(self, primary=primary)
-      s = Strokes.generate_one(self, stroke=stroke)
-    else:
-      if facing_all: g = Geometry.generate_all(self, top)
-      else:          g = Geometry.generate_any(self, top)
-      p = Palette.generate_any(self)
-      s = Strokes.generate_any(self)
-    # hack to overcome uneven opacity values in universal palette
-    if self.ver == 1 and s['stroke_width']: 
-      s['stroke_opacity'] = random.choice(
-        Palette.read_opacity(self, fill=p['fill'], bg=p['bg'])
+INSERT INTO layers (rinkid, cell, layer, name, size, facing, stroke, dasharray)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""", (rinkid, label, z) + row
       )
-    self.data = g | p | s
+      self.count += 1
 
-  def validate(self, celldata):
-    self.loadPalette()
-    [Strokes.validate(self, c, celldata[c]) for c in celldata]
+  def _layersWrite(self, rinkid, celldata=dict()):
+    self.count = 0 # reset new record counter
+
+    for label, cell in celldata.items():
+      for z, row in enumerate(cell): 
+        if len(row) < 5 and z ==0:
+          row = tuple([None] * 5)
+        if len(row) != 5:
+          print(f'cannot write {row} because not 5')
+          continue
+        self.cursor.execute("""
+INSERT INTO layers (rinkid, cell, layer, name, size, facing, stroke, dasharray)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""", (rinkid, label, z) + row
+        )
+        self.count += 1
+
+  def layersUpdate(self, rinkid, celldata):
+    ''' layers are immutable except for color swaps
+    '''
+    self.count = 0
+    for label, cell in celldata.items():
+      for z, row in enumerate(cell):
+        if len(row):
+          self.cursor.execute("""
+UPDATE layers
+SET stroke   = %s
+WHERE rinkid = %s
+AND cell     = %s
+AND layer    = %s;""", (row[3], rinkid, label, z)
+          )
+          self.count += 1
+    #print(f'{self.count=}')
+
+  ''' record geom data keyed by rinkid, cell and layer
+  '''
+  def _geometry(self, rinkid, celldata=dict()):
+    new_record_count = 0
+    geom             = self.geometryRead(rinkid)
+    if geom:         return new_record_count, geom
+    elif celldata:   return self.geometryWrite(rinkid, celldata)
+    else:            raise ValueError(f'cannot find geometries for {rinkid}')
+
+  ''' create cell layers as database rows
+        BG and FG are mandatory. TOP is optional
+
+        Empty backgrounds are saved with metadata and null values
+        Because omitting the entry altogether makes layering indeterminate
+
+        see t.geometry for details
+  '''
+  def _geometryWrite(self, rinkid, celldata):
+    new_record_count = 0
+    #celldata         = self.dataV1(celldata) # convert v1 to layered format
+    #celldata         = self.dataV2(celldata) # convert v1 to layered format
+
+    for label, cell in celldata.items():
+      for z, layer in enumerate(cell):
+        if len(layer):
+          name, size, facing = layer[:3]
+          self.cursor.execute("""
+INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
+VALUES (%s, %s, %s, %s, %s, %s);""",
+            (rinkid, label, z, name, size, facing)
+          )
+          #print(rinkid, label, z, name, size, facing)
+        elif z == 0:
+          self.cursor.execute("""
+INSERT INTO geometry (rinkid, cell, layer, name, size, facing)
+VALUES (%s, %s, %s, %s, %s, %s);""",
+            (rinkid, label, z, None, None, None)
+          )
+          #print(rinkid, label, z, name, size, facing)
+        else:
+          raise ValueError('can only make assumptions in background layer')
+        new_record_count += 1
+    return new_record_count, celldata
+
+  ''' read geometry by rinkid
+  '''
+  def _geometryRead(self, rinkid):
+    geom = dict()
+    self.cursor.execute("""  
+SELECT *
+FROM geometry
+WHERE rinkid = %s
+ORDER BY cell, layer;""", 
+      [rinkid]   # implicit order by cell layer 
+    )
+    for row in self.cursor.fetchall():
+      label, z = row[1:3]
+      if label not in geom: geom[label] = list()
+      has_content = [True for x in row[3:] if x] # test for empty strings
+      if has_content:
+        geom[label].insert(z, row[3:])
+      else:
+        geom[label].insert(z, tuple())
+    return geom
+
+
+  def _palette(self, rinkid, ver, celldata=dict()):
+    ''' read and write a block palette 
+    '''
+    palettes         = self.paletteRead(rinkid)
+    if palettes:     return 0, palettes
+    elif celldata:   return self.paletteWrite(rinkid, ver, celldata)
+    else:            raise ValueError('not found {rinkid=}')
+
+  def _paletteRead(self, rinkid):
+    ''' read palette by rinkid
+ 
+        TODO prettify hash in TmpFile
+    '''
+    self.cursor.execute("""  
+SELECT *
+FROM palette
+WHERE rinkid = %s
+ORDER BY cell, layer;""", 
+      [rinkid] 
+    )
+    pal = dict()
+    for row in self.cursor.fetchall():
+      label, z = row[1:3]
+      if label not in pal: pal[label] = list()
+      pal[label].append(row[4:])
+    return pal
+
+  def _paletteWrite(self, rinkid, ver, celldata):
+    ''' write new entries in palette table
+    '''
+    new_record_count = 0
+    #celldata         = self.dataV1(celldata) # convert v1 to layered format
+
+    for label, cell in celldata.items():
+      for z, layer in enumerate(cell):
+        if len(layer):
+          fill, opacity = layer[3:5]
+        elif z == 0: # no bg
+          fill, opacity = None, None
+        else:
+          raise ValueError(f'palette got an empty layer {label}')
+
+        self.cursor.execute("""
+INSERT INTO palette (rinkid, cell, layer, ver, fill, opacity)
+VALUES (%s, %s, %s, %s, %s, %s);""",
+          (rinkid, label, z, ver, fill, opacity)
+        )
+        new_record_count += 1
+    return new_record_count, celldata
+
+  def _strokes(self, rinkid, ver, celldata=dict()):
+    strokes         = self.strokeRead(rinkid)
+    if strokes:     return 0, strokes
+    elif celldata:  return self.strokeWrite(rinkid, ver, celldata)
+    else:           raise ValueError('not found {rinkid=}')
+
+  def _strokeRead(self, rinkid):
+    self.cursor.execute("""  
+SELECT *
+FROM strokes
+WHERE rinkid = %s;""", 
+      [rinkid] 
+    )
+    sk = dict()
+    for row in self.cursor.fetchall():
+      label, z = row[1:3]
+      if label not in sk: sk[label] = list()
+      sk[label].append(row[4:])
+    return sk
+
+  def _strokeWrite(self, rinkid, ver, celldata):
+    ''' record stroke data, if any
+    '''
+    new_record_count = 0
+    #celldata         = self.dataV1(celldata)
+    for label, cell in celldata.items():
+      for z, layer in enumerate(cell):
+        if z and len(layer) == 9:
+          fill, opacity, width, dasharray = layer[5:]
+        else: # either is background or stroke width is zero
+          fill, opacity, width, dasharray = None, None, None, None
+
+        self.cursor.execute("""
+INSERT INTO strokes (rinkid, cell, layer, ver, fill, opacity, width, dasharray)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""",
+          (rinkid, label, z, ver, fill, opacity, width, dasharray)
+        )
+        # print(fill, opacity, width, dasharray)
+        new_record_count += 1
+    return new_record_count, celldata
+
 '''
 the
 end
