@@ -101,21 +101,6 @@ https://stackoverflow.com/questions/51187477/how-to-filter-a-html-table-using-si
 
 if __name__ == '__main__':
   '''
-  pal  = Palette(ver=opt)
-  pal.loadPalette()
+  ./recurrink init -p uniball
+  ./recurrink build -v1
   '''
-  from block import TmpFile  # avoid circular import
-
-  opt     = 3 # see config.py
-  fnam    = config.friendly_name
-  pp      = pprint.PrettyPrinter(indent=2)
-  tf      = TmpFile()
-  svgpal  = SvgPalette()
-
-  #fn      = fnam[args.palette] if args.palette else args.digest
-  fn   = fnam[opt]
-  palette = tf.importPalfile(fn)
-  #pp.pprint(pal.palette)
-  svgpal.render(fn, palette)
-  print(f'palettes/{fn}.html')
-

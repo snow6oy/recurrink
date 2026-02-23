@@ -113,6 +113,11 @@ DELETE FROM compass WHERE mid=2 AND cell='z';
       cells = pos[(2, 0)]
     self.assertEqual(cells[1], 'c')
 
+  def test_n(self):
+    pretty = self.md.positionString(self.mid)
+    print(pretty)
+
+
 '''
 the
 end

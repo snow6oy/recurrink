@@ -126,7 +126,8 @@ WHERE mid = %s;""", [mid])
     '''
     self.cursor.execute("""
 SELECT ver, gplfile
-FROM pens;""")
+FROM pens
+ORDER BY ver;""")
     pen = [row[1] for row in self.cursor.fetchall()]
     #pen.insert(0, None)  # avoid zero-based list
     #self.pp.pprint(pen)
@@ -144,24 +145,19 @@ WHERE mid = %s;""", [mid])
     y = [p[0][1] for p in positions]
     return (max(x) + 1, max(y) + 1)
 
-  # TODO duplicate of block.prettyPrint
-  def _positions(self, mid):
-    ''' load csv data as 2D array
-      ./recurrink.py -m soleares -o CELL
-      [['a', 'b', 'a'], ['c', 'd', 'c']]
-    '''
-    (bsX, bsY) = self.setBlocksize(mid)
-    data = [[0 for x in range(bsX)] for y in range(bsY)]
-    self.cursor.execute("""
-SELECT position, cell 
-FROM blocks 
-WHERE mid = %s;""", [mid])
-    records = self.cursor.fetchall()
-    for r in records:
-      x = r[0][1] # x is the inner array
-      y = r[0][0]
-      data[x][y] = r[1]
-    return data
+  def positionString(self, mid):
+    outer     = list()
+    bsx, bsy  = self.setBlocksize(mid)
+    positions = self.blocksRead(mid)
+    for y in range(bsy):
+      inner = list()
+      for x in range(bsx):
+        p    = tuple([x, y])
+        cell = positions[p][0]
+        top  = positions[p][1] if positions[p][1] else '-'
+        inner.append(f'{cell}{top}')
+      outer.append(inner)
+    return outer
 
   # list_model_with_stats
   def stats(self):
@@ -202,4 +198,3 @@ GROUP BY model;""",)
 the
 end
 '''
-

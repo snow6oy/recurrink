@@ -1,9 +1,9 @@
 import pprint
 import random
-from model.data2 import ModelData2
+from model import ModelData
 from block.init  import Init as BlockInit
 
-class Init(ModelData2):
+class Init(ModelData):
 
   def __init__(self, model=None, pen=None):
     self.mnam  = model
@@ -11,8 +11,8 @@ class Init(ModelData2):
     super().__init__()
 
   def setInput(self, mnam=None, pen=None):
-    pens      = self.pens()
-    _, models = self.model()
+    pens   = self.pens()
+    models = self.model()
 
     if not mnam: mnam = random.choice(models[1:])
     if not pen:   pen = random.choice(pens[1:])
@@ -26,7 +26,7 @@ class Init(ModelData2):
 
     # print(f'{self.mid=} {model=} {self.ver=} {pen=}')
 
-    _, blocks = self.blocks(self.mid)
+    blocks    = self.blocks(self.mid)
     cells     = [cell[0] for pos, cell in blocks.items()]
     top       = [cell[1] for pos, cell in blocks.items() if cell[1]]
     init      = BlockInit(self.ver, cells, top)

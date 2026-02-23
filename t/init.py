@@ -1,6 +1,6 @@
 import unittest
 import pprint
-from model.data2 import ModelData2
+from model.data import ModelData
 from model.init  import Init
 
 ''' generate a YAML from random selection
