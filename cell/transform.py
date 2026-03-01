@@ -35,41 +35,6 @@ class Transform(Db2):
 
       TODO align with Block Cell model block/transform > cell/transform
   '''
-  def dataV1(self, celldata):
-    ''' create layered data structure
-        BG and FG are mandatory TOP is optional
-        see t.geometry for use cases
-    '''
-    data = dict()
-    for label, cell in celldata.items():
-      #print(f'dataV1 {label=} {cell}')
-      if label not in data: data[label] = list()
-      if 'stroke_width' in cell and cell['stroke_width'] > 0:
-        dasharray = cell['stroke_dasharray']
-      else:
-        dasharray = 0
-
-      bg  = cell['bg']
-      row = [
-        cell['shape'],
-        cell['size'],
-        cell['facing'],
-        cell['fill'],
-        dasharray
-      ]
-
-      if bg:
-        data[label].append(tuple(['square', 'medium', 'C', bg, 1])) # z 0
-      else:
-        data[label].append(tuple())
-
-      data[label].append(tuple(row)) # z 1
-
-      if bool(cell['top']): # z 2
-        data[label].append(tuple(row))
-
-    return data
-
   def dataV2(self, celldata):
     ''' convert nested dict into cellrows for db ops
     '''
@@ -109,6 +74,8 @@ class Transform(Db2):
 
   def dataV3(self, celldata):
     ''' convert nested dict into cellrows for db ops
+
+        see doc/minkscape_2.py depends on Y3ML
     '''
     data = dict()
     for label, cell in celldata.items():
@@ -173,28 +140,6 @@ class Transform(Db2):
     data['stroke']['width']     = f'{penwidth_mm:.2f}'
     data['stroke']['dasharray'] = dasharray
     return data
-
-  def txDbv2Dbv3(self, geom, stk, pal):
-    ''' TODO throw this away once db2 is zz
-    '''
-    dbv3 = dict()
-    for label, row in geom.items():
-      row2 = list()
-      for i, layer in enumerate(row):
-        #print(label, i)
-        if len(row) == len(pal[label]):
-          row2.append(self.txDbv2Dbv3OneCell(layer, pal[label][i], stk[label][i]))
-      dbv3[label] = tuple(row2)
-    #self.pp.pprint(dbv3)
-    return dbv3 
-
-  def txDbv2Dbv3OneCell(self, geom, pal, stk):
-    row  = list(geom)
-    dash = stk[3]
-    dash = None if dash == 0 else dash
-    row.append(pal[0])
-    row.append(dash)
-    return tuple(row)
 
 '''
 the

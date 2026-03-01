@@ -128,7 +128,7 @@ class Palette:
     return dict(zip(['fill','background','opacity'], [fill[0], bg[0], op]))
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Strokes(Palette):
+class Strokes:
 
   ''' stroke dasharray is a space separated pair LEN GAP
       e.g. when width=5 dasharray:5 5 makes cubes

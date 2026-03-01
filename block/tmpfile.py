@@ -25,9 +25,11 @@ class TmpFile(InputValidator):
         using len(fnam) is risky because not enough entries
     '''
     USE_PEN_PALS = 7  # palettes with pens, not friends from abroad :-D
+    md           = ModelData()
+    fnam         = md.pens()
+    '''
     pal          = Palette()
     fnam         = pal.friendlyPenNames()
-    '''
     md2  = ModelData2()
     fnam = md2.pens()
     ver  = int(ver)
@@ -42,6 +44,7 @@ class TmpFile(InputValidator):
     ''' make the fills pretty be removing # 
     '''
     for label in celldata: # remove the hash in #rrggbb
+      print(f'{label} ', end='', flush=True)
       for cs in celldata[label]:
         if cs in ['color', 'stroke']:
           for fb in celldata[label][cs]:
@@ -50,6 +53,7 @@ class TmpFile(InputValidator):
                 celldata[label][cs][fb], remove=True
               )
               #print(f'{label=} {cs=} {fb=}')
+    print()
     metadata = self.metadata(model, rinkid)
     self.writeConf(model, metadata, celldata)
     
@@ -277,6 +281,9 @@ class TmpFile(InputValidator):
     ''' gather metadata from db to write conf/MODEL.yaml
     '''
     md    = ModelData()
+    rinkid, mid, ver = rinkdata[:3]
+    print(f'{rinkid=} {mid=} {ver=}')
+
     model = md.model(mid=rinkdata[1])
     if self.VERBOSE: print(f'got {model=}')
     pos   = md.blocks(mid=rinkdata[1])

@@ -10,7 +10,7 @@ import pprint
 from model import ModelData, SvgModel
 from model.init import Init
 from block import PaletteMaker, TmpFile, BlockData, Make
-from cell import CellData, Palette
+from cell import CellData, InputValidator
 from config import *
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 pmk     = PaletteMaker()
@@ -195,7 +195,7 @@ def commit(args):
       bd.rinks(tf.digest, [mid, ver, args.size, args.factor])
       if bd.count:
         response = f'{tf.digest=} ok'
-        celldata = cd.dataV2(celldata)
+        celldata = cd.dataV2(celldata)  # TODO should use dataV3 ?
         cd.layers(tf.digest, celldata=celldata)
         '''
         if os.path.isfile(f"tmp/{args.model}.svg"):
@@ -224,7 +224,7 @@ def clone(args):
   ''' pull from db to create tmp/MODEL.txt from digest
   '''
   cd = CellData()
-  rinkid, mid, ver, clen, factor, *dates = bd.rinks(args.digest)
+  mid, ver, clen, factor, *dates = bd.rinks(args.digest)
   if args.output == 'pal' and args.digest: # export rink as palette
     uniq    = set()
     layers  = cd.layers(args.digest)
@@ -245,20 +245,17 @@ def clone(args):
     palette = bd.colors(ver=args.palver)
     print(f"palettes/{fn}.txt was written from db")
   else:   # assume we want celldata
-    rinkdata        = bd.rinks(args.digest)
+    rinkdata = bd.rinks(args.digest)
+    rinkdata = list(rinkdata)
+    rinkdata.insert(0, args.digest)
     model, metadata = tf.rinkMeta(rinkdata)
     pens  = md.pens()
-
-    if 1 <= ver < len(pens):
-      penam = pens[ver]
-    else:
-      penam = None
+    penam = pens[ver] if 1 <= ver < len(pens) else None
     #print(f'{ver=} {penam=}')
-    #pp.pprint(pens)
-    # TODO remove this tf.cellData(rinkdata)
     celldata    = cd.layers(args.digest)  #view.read(digest=dig) 
     celldata    = cd.txDbv3Yaml(celldata)
-    tf.writePretty(model, metadata, celldata)
+    tf.setVersion(ver)
+    tf.writePretty(model, celldata, rinkid=args.digest)
     print(f"""
 cloning {model}
 with {len(celldata)} cells
@@ -319,7 +316,7 @@ def init(args):
   ''' pull a palette from db and write to tmpfile
       generate an editable config file 
   '''
-  cd = CellData()
+  # cd = CellData()
   init       = Init()
   model, pen = init.setInput(args.model, args.penam)
   src, data  = init.generate(model, pen)
@@ -419,9 +416,9 @@ def build(args):
     # TODO add color validation to Pydantic
     #old_ver = ver + 7
     #cd = CellData(ver=old_ver)
-    pal     = Palette(ver=ver)
-    pal.uniqfill = uniq
-    [pal.validate(label, cell) for label, cell in celldata.items()]
+    iv          = InputValidator(ver=ver)
+    iv.uniqfill = uniq
+    [iv.validate(label, cell) for label, cell in celldata.items()]
 
     block     = Make(args.size, linear=bool(args.line), pen_names=penam)
     block.walk(positions, celldata, z=args.layer)

@@ -113,23 +113,6 @@ class Rectangle(Line):
     if self.VERBOSE: print(f'{self.name=} {size=} {facing=} {x} {y} {w} {h}')
     #return rectgl
     return coords
-
-
-  # TODO remove once Block.meander refactored
-  def __guide(self, direction):
-    ''' expand facing to a pair of guidelines for meander
-    '''
-    control = {
-      'C': ('spiral', None), 
-      'N': ('guided', 'EB', 'ET'),
-      'S': ('guided', 'EB', 'ET'),
-      'E': ('guided', 'SL', 'SR'),
-      'W': ('guided', 'NL', 'NR')
-    }
-    if direction in control: return control[direction]
-    else: # abandon if there are no guidelines defined
-      raise KeyError(f'all at sea > {direction=} {self.name=} not found')
-
 '''
 the
 end

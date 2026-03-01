@@ -38,25 +38,7 @@ class Spiral:
     db   = self.matrix(clen)
     # self.prettyPrint(clen, db)
     line = self.offset(clen, pos, list(db.values()))
-    ''' this is returning positions with an extra clen
-        without holes there will be overlaps /-:
-    if len(self.shape.interiors) == 1: 
-      if self.shape.interiors[0].geom_type != 'LinearRing':
-        raise ValueError()
-      else:
-        hole = self.shape.interiors[0]
-        line = self.splitLine(line, hole) #Polygon(hole))
-    '''
     return line
-
-    '''
-    print(f"{clen} {pos} {len(self.shape.interiors)=}")
-    return line 
-        return mls 
-    else:
-      raise IndexError(f"{len(self.shape.interiors)=} is not one")
-    return MultiLineString([LineString(line)]) 
-    '''
 
   def offset(self, clen, pos, points):
     ''' CellMaker increases pos by the factor of cell length
@@ -77,32 +59,6 @@ class Spiral:
       # print(f"{hole.contains(pt)=} {len(new_line)=} {xy}")
       if hole.contains(pt): break
     return new_line
-
-  def __splitLines(self, line, hole):
-    ''' test line using touches and contains 
-        split when spiral passes inside hole
-    '''
-    inside   = False
-    mls      = []
-    new_line = []
-    for xy in line:
-      pt = Point(xy)
-      print(f"{hole.touches(pt)=} {inside=} {xy}")
-      if hole.touches(pt) and inside: pass
-      elif hole.touches(pt):
-        new_line.append(xy)
-        if hole.contains(LineString(new_line)): 
-          inside  = True
-        else:
-          mls.append(LineString(new_line))
-          inside  = True
-      elif inside:
-        new_line = []
-        new_line.append(xy)
-        inside   = False
-      else:
-        new_line.append(xy)
-    return MultiLineString(mls)
 
   def prettyPrint(self, clen, db):
     ''' its borken
