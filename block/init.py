@@ -2,7 +2,7 @@ import pprint
 from cell.init import Init as CellInit
 from block.data import BlockData
 
-class Init():
+class Init:
 
   pp = pprint.PrettyPrinter(indent=2)
 
@@ -50,3 +50,7 @@ class Init():
       celldata[cell] = data
     return source, celldata
 
+'''
+the
+end
+'''

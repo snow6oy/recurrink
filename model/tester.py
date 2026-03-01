@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import shapely.plotting
 from shapely.geometry import Polygon
 
-class SvgWriter():
+class SvgWriter:
   ''' for testers 
   '''
 

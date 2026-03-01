@@ -36,7 +36,7 @@ class Init(ModelData):
     return src, data
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Compass():
+class Compass:
   ''' compass gives direction to models 
   '''
   def __init__(self, compass):

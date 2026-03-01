@@ -37,7 +37,7 @@ class Init:
 
     return data 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Geometry():
+class Geometry:
   ''' Generate a geometry by random selecting class properties
       to validate input geometries see block.validate
   '''
@@ -116,7 +116,7 @@ class Geometry():
     return candidates
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-class Palette():
+class Palette:
 
   def __init__(self):
     self.zeroten = [n for n in range(1, 11)]

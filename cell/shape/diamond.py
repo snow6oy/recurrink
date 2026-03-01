@@ -78,7 +78,8 @@ class Diamond(Line):
     else: 
       raise IndexError(f'{facing=} is unknown')
 
-  def __guide(self, facing): return ('border', None)
+  def __guide(self, facing):
+    return ('border', None)
 '''
 the
 end

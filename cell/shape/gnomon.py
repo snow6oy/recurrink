@@ -13,7 +13,7 @@ class Gnomon(Line):
   def __init__(self):
     self.name = 'gnomon'
 
-  def validate(self, geom): 
+  def validate(self, geom):
     if geom['size'] in ['large', 'small']: 
       return 'strictly medium'
 

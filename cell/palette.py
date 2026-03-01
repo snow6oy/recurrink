@@ -196,7 +196,7 @@ AND view = %s;""", [view])
     palette = self.cursor.fetchall()
     return palette
 
-  def readPid(self, ver, color): 
+  def readPid(self, ver, color):
     palette = [color[k] for k in ['fill', 'background', 'opacity']]
     palette.append(ver)
     self.cursor.execute("""

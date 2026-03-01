@@ -8,14 +8,14 @@ class Layer:
   VERBOSE = False
 
   # TODO expose padding so Block.walk() can init
-  def __init__(self, pos=tuple([0,0]), clen=9, linear=False): 
+  def __init__(self, pos=tuple([0,0]), clen=9, linear=False):
     self.bft       = list()
     #self.direction = list()   # make guide for meander
     self.clen      = clen     # length of cell
     self.pos       = pos      # logical position in block
     self.linear    = linear   # use draw instead of paint
 
-  def background(self, cell): 
+  def background(self, cell):
     if self.linear:
       x, y = self.pos
       dim  = self.dimension(x, y, self.clen)

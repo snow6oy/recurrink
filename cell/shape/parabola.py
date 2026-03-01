@@ -14,7 +14,8 @@ class Parabola(Line):
     self.name = 'parabola'
     super().__init__()
 
-  def validate(self, geom): pass
+  def validate(self, geom):
+    pass
 
   def paint(self, dim, geom):
     facing = geom['facing']

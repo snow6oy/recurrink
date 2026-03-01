@@ -10,7 +10,7 @@ import pprint
 from model import ModelData, SvgModel
 from model.init import Init
 from block import PaletteMaker, TmpFile, BlockData, Make
-from cell import CellData
+from cell import CellData, Palette
 from config import *
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 pmk     = PaletteMaker()
@@ -138,7 +138,7 @@ def commit(args):
       add NEW_PAL to friendly_name
       use the index of config.friendly_name[] as arg
   '''
-  pal = Palette()    # throws error but pal was assigned already???
+  # pal = Palette()    # throws error but pal was assigned already???
   cd = CellData()
   if args.palver and args.digest and args.exchange: # only pens
     dig       = args.digest  # '180f1989f54ff03291ec31e164f2a79f'

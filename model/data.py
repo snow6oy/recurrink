@@ -8,7 +8,7 @@ class ModelData(Db2):
   '''
   pp = pprint.PrettyPrinter(indent=2)
 
-  def __init__(self): 
+  def __init__(self):
     self.count = 0
     super().__init__()
 

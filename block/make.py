@@ -10,7 +10,7 @@ class Make:
   CLEN    = 9
   pp      = pprint.PrettyPrinter(indent=2)
 
-  def __init__(self, clen=9, linear=False, pen_names=dict()): 
+  def __init__(self, clen=9, linear=False, pen_names=dict()):
     self.cells  = dict()
     self.style  = Styles(pen_names)
     self.linear = linear
@@ -92,7 +92,7 @@ class Make:
     y = [p[1] for p in list(positions.keys())]
     self.BLOCKSZ = (max(x) + 1, max(y) + 1)
 
-  def polygon(self, c, pos, z): 
+  def polygon(self, c, pos, z):
     ''' lookup cell in layer
     '''
     if z == 2 and len(c.geoms) > 2: polygn = c.geoms[2]
