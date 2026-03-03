@@ -21,17 +21,6 @@ class PaletteMaker:
   }
   pp      = pprint.PrettyPrinter(indent = 2)
 
-  def rgb_int(self, r, g, b):
-    ''' the compliment of #dc143c is #14dcb4
-      https://www.w3schools.com/colors/colors_hexadecimal.asp
-      https://www.educative.io/answers/how-to-convert-hex-to-rgb-and-rgb-to-hex-in-python
-      https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
-      returns RGB components of complementary color as int
-    '''
-    hsv = rgb_to_hsv(r, g, b)
-    rgb_float = hsv_to_rgb((hsv[0] + 0.5) % 1, hsv[1], hsv[2])
-    return [int(f) for f in rgb_float]
-
   def hex_rgb(self, hexstr):
     ''' slice into a list e.g. ['dc', '14', '3c']
     '''
@@ -39,7 +28,13 @@ class PaletteMaker:
     # convert to base 16
     return [int(h,16) for h in hexitems]
 
+  
   def relation(self, fill, bg):
+    ''' relation > sedondary > rgb_int
+        combine to calc opposite color
+ 
+        not used, but maybe be useful in Compass v2
+    '''
     if len(fill) ==4:
       fill = f"#{fill[1]*2}{fill[2]*2}{fill[3]*2}".lower()
     if len(bg) ==4:
@@ -62,6 +57,17 @@ class PaletteMaker:
     else:
       raise ValueError('fill is required')
 
+  def rgb_int(self, r, g, b):
+    ''' the compliment of #dc143c is #14dcb4
+      https://www.w3schools.com/colors/colors_hexadecimal.asp
+      https://www.educative.io/answers/how-to-convert-hex-to-rgb-and-rgb-to-hex-in-python
+      https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
+      returns RGB components of complementary color as int
+    '''
+    hsv = rgb_to_hsv(r, g, b)
+    rgb_float = hsv_to_rgb((hsv[0] + 0.5) % 1, hsv[1], hsv[2])
+    return [int(f) for f in rgb_float]
+
   def cmpPalettes(self, digest, fn):
     ''' count matching entries of two palettes
     '''
@@ -81,22 +87,6 @@ class PaletteMaker:
 {len(p2):3d} {fn}
 {same:3d} matching palette entries""")
     return out
-
-  def makeUnique(self, ver, dbpal, txtpal):
-    ''' compare db and txt palettes and return difference
-    '''
-    new_pal     = list()
-
-    for p in txtpal: # avoid duplicating existing entry
-      p[1]       = float(p[1])
-      test_entry = tuple(p[:3]) 
-      if (test_entry not in dbpal): # its empty the very first time
-        new_pal.append(list(test_entry))
-    for n in new_pal: # decorate palette with ver relations before returning
-      rn = self.relation(n[0], n[2])
-      n.append(rn)
-      n.insert(0, ver)
-    return new_pal
 
   ''' INKSCAPE
       inkscapePal no longer called from recurrink
@@ -129,41 +119,6 @@ class PaletteMaker:
     '''
     as_list = [d.split() for d in done]
     return as_list
-
-  def readInkscapePal(self, paldir, fn):
-    ''' paldir is set in config.py
-        fn: 'uniball.gpl'
-    '''
-    found = dict()
-    with open(f"{paldir}/{fn}") as pal:
-      for line in pal.read().splitlines():
-        bits   = line.split()
-        if bits[0] == 'GIMP' or bits[0] == 'Name:' or bits[0] == '#':
-          continue
-        r, g, b, *comments   = bits
-        R, G, B = [int(r), int(g), int(b)]
-        hexstr  = f'#{R:02x}{G:02x}{B:02x}'
-        penam   = ' '.join(comments[1:])
-        #print(r, g, b, hexstr, penam)
-        found[hexstr] = penam
-    return found
-
-  def updateCells(self, celldata, swp):
-    ''' apply new color set to celldata
-    '''
-    for label in celldata:
-      for k in ['bg', 'fill', 'stroke']:
-        if k in celldata[label]:
-          oc = celldata[label][k]
-          if k == 'bg' and oc in ['#FFF', '#fff', '#ffffff']:
-            #print('make null background')
-            celldata[label][k] = None
-          #elif k == 'stroke' and oc not in swp:
-          elif oc in swp:
-            celldata[label][k] = swp[oc]
-          else:
-            raise KeyError(f'{label=} {k=} {oc=} not found')
-    return celldata
 
   def setLookUp(self, uniqfill):
     ''' prepare table of new colours for lookup
@@ -219,6 +174,61 @@ class PaletteMaker:
     ## Convert to hexadecimal and remove '0x' prefix
     hex_color = '#{:02x}{:02x}{:02x}'.format(r, g, b)
     return hex_color
+
+  # TODO move to data layer ?
+  def readInkscapePal(self, paldir, fn):
+    ''' paldir is set in config.py
+        fn: 'uniball.gpl'
+    '''
+    found = dict()
+    with open(f"{paldir}/{fn}") as pal:
+      for line in pal.read().splitlines():
+        bits   = line.split()
+        if bits[0] == 'GIMP' or bits[0] == 'Name:' or bits[0] == '#':
+          continue
+        r, g, b, *comments   = bits
+        R, G, B = [int(r), int(g), int(b)]
+        hexstr  = f'#{R:02x}{G:02x}{B:02x}'
+        penam   = ' '.join(comments[1:])
+        #print(r, g, b, hexstr, penam)
+        found[hexstr] = penam
+    return found
+
+  # TODO not called but could be an oversight ?
+  def updateCells(self, celldata, swp):
+    ''' apply new color set to celldata
+    '''
+    for label in celldata:
+      for k in ['bg', 'fill', 'stroke']:
+        if k in celldata[label]:
+          oc = celldata[label][k]
+          if k == 'bg' and oc in ['#FFF', '#fff', '#ffffff']:
+            #print('make null background')
+            celldata[label][k] = None
+          #elif k == 'stroke' and oc not in swp:
+          elif oc in swp:
+            celldata[label][k] = swp[oc]
+          else:
+            raise KeyError(f'{label=} {k=} {oc=} not found')
+    return celldata
+
+  # TODO dead code - remove
+  def makeUnique(self, ver, dbpal, txtpal):
+    ''' compare db and txt palettes and return difference
+    '''
+    new_pal     = list()
+
+    for p in txtpal: # avoid duplicating existing entry
+      p[1]       = float(p[1])
+      test_entry = tuple(p[:3]) 
+      if (test_entry not in dbpal): # its empty the very first time
+        new_pal.append(list(test_entry))
+    for n in new_pal: # decorate palette with ver relations before returning
+      rn = self.relation(n[0], n[2])
+      n.append(rn)
+      n.insert(0, ver)
+    return new_pal
+
 '''
 the
 end

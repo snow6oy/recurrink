@@ -80,20 +80,6 @@ class Styles:
     if pos not in self.fill_penam:       self.fill_penam[pos]       = []
     if pos not in self.stroke_penam:     self.stroke_penam[pos]     = []
 
-  def __addPenam(self):
-    ''' fake minkscape
-    '''
-    self.stroke_penam = {
-      tuple([0,0]): ['green', 'blue'],
-      tuple([1,0]): ['blue'],
-      tuple([2,0]): ['blue']
-    }
-    self.fill_penam   = {
-      tuple([0,0]): ['red', 'green', 'blue'],
-      tuple([1,0]): ['red', 'blue', 'green'],
-      tuple([2,0]): ['red', 'blue']
-    }
-
 '''
 the
 end

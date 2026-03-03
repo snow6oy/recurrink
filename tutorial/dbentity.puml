@@ -1,88 +1,63 @@
 @startuml
 
-entity blocks {
- model: STR 
- position: INT
- cell: CHAR 
- top: BOOL
+package "model" {
+  entity pens {
+   ver: INT
+   gplfile: STR
+   widthmm: DECIMAL
+  }
+  entity models {
+    mid: INT
+    model: STR
+  }
+  entity blocks {
+    mid: STR 
+    position: INT
+    cell: CHAR 
+    top: BOOL
+  }
+  entity compass {
+    mid: STR 
+    cell: CHAR
+    pair: CHAR
+    facing: STR
+  }
 }
-
-entity colours {
- fill : HEX
+package "block" {
+  entity colors {
+    ver: INT
+    fill: HEX
+    penam: STR
+  }
+  entity rinks {
+    rinkid: CHAR
+    mid: STR
+    size: INT
+    factor: DECIMAL
+    created: DATE
+    ver: INT
+    pubdate: DATE
+  }
 }
-entity compass {
-  model: STR 
- cell: CHAR
- pair: CHAR
- facing: STR
-}
-entity geometry {
- gid: INT
- shape: STR
- size: STR
- facing: CHAR
- top: BOOL
-}
-entity inkpal {
- ver: INT
- gplfile: STR
-}
-entity palette {
- pid: INT
- ver: INT
- fill: HEX
- bg: HEX:
- opacity: FLOAT
- relation: INT
-}
-entity cells {
-  view: CHAR
-  cell: CHAR
-  gid: INT
-  pid: INT
-  sid: INT
-}
-entity models {
-  model: STR
-  uniqcells: INT
-  blocksizexy: INT
-  scale: DECIMAL
-}
-
-entity pens {
- ver: INT
- fill: HEX
- penam: STR
-}
-entity strokes {
- sid: INT
- fill: HEX
- width: FLOAT
- dasharray: FLOAT
- opacity: FLOAT
-}
-entity views {
-  view: CHAR
-  model: STR
-  author: STR
-  scale: DECIMAL
-  created: DATE
-  colournum: INT
-  ver: INT
-  pubdate: DATE
+package "cell" {
+  entity layers {
+    rinkid: CHAR
+    cell: CHAR
+    layer: INT
+    name: STR
+    size: STR
+    facing: CHAR
+    stroke: HEX
+    dasharray: INT
+  } 
 }
 
 
-cells *-- palette
-cells *-- strokes
-cells *-- geometry
-cells *-- views
-cells *-- blocks
-palette *-- pens
-palette *-- inkpal
-palette *-- colours
-blocks *-- models
+layers  *-- rinks
+rinks   *-- blocks
+rinks   *-- colors
+colors  *-- pens
+blocks  *-- models
 compass *-- models
-views *-- models
 
 @enduml

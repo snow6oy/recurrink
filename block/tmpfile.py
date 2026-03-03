@@ -80,37 +80,6 @@ class TmpFile(InputValidator):
     }
     return metadata
 
-  # superceded by dbmigrator
-  def _write(self, model, rinkid, cells):
-    ''' wrap the data and make ready to write
-    '''
-    bd    = BlockData()
-    pos   = bd.readPositions(model)
-    #print(f'{model} {pos}')
-    fgpos = self.positionBlock(pos)
-    topos = self.positionBlock(pos, top=True)
-    
-    celldata = dict()
-    for label in cells:
-      cell = cells[label]
-      cell = self.refactorCell(label, cell)
-      celldata[label] = cell
-
-    #print() # flush refactorCell
-    metadata = {
-      'id': rinkid,
-      'model': model,
-      'palette': self.PALETTE
-    }
-    metadata['positions'] = { 'foreground': fgpos }
-    if topos: metadata['positions']['top'] = topos
-
-    safecells  = self.validate(celldata)
-    if isinstance(safecells, dict):
-      self.writeConf(model, metadata, celldata)
-    else:
-      raise TypeError(safecells)  # error string
-
   def readConf(self, model, meta=False):
     ''' read YAML
     '''
@@ -175,36 +144,6 @@ class TmpFile(InputValidator):
           seed += str(celldata[label][k][item])
     return seed
 
-  def setBlocksize(self, positions):
-    x = [p[0] for p in list(positions.keys())]
-    y = [p[1] for p in list(positions.keys())]
-    self.BLOCKSZ = (max(x) + 1, max(y) + 1)
-
-  def emptyBlock(self):
-    block = list(range(self.BLOCKSZ[1]))
-    for x in block:
-      row      = list(range(self.BLOCKSZ[0]))
-      block[x] = row
-    return block
-
-  # Superceded by block.dbmigrator
-  def positionBlock(self, positions, top=False):
-    ''' make positions pretty for yaml
-    '''
-    self.setBlocksize(positions)
-    i     = 1 if top else 0
-    block = self.emptyBlock()
-    for p in positions:
-      x, y = p
-      block[y][x] = positions[p][i]
-
-    if top: # does this model have any cells with top?
-      truth = list()
-      for row in block:
-        truth.append(all(t is None for t in row))
-      if truth.count(True) == len(block): block = None
-    return block
-
   def prettyHash(self, val, remove=False):
     ''' YAML looks nicer with FF00CC but database wants #FF00CC
     '''
@@ -217,35 +156,6 @@ class TmpFile(InputValidator):
     else:               fix = '#' + str(rgb)
     return fix 
  
-  def refactorCell(self, label, cell):
-    """
-    print(f'{label} ', end='', flush=True)
-    facing = {
-        'all': 'C', 'north': 'N', 'east': 'E', 'south': 'S', 'west': 'W'
-    }
-    """
-    newc = dict()
-    newc['geom'] = {
-      'facing': cell['facing'],
-        'size': cell['size'],
-        'name': cell['shape'],
-         'top': cell['top']
-    }
-    newc['color'] = {
-      'fill': self.prettyHash(cell['fill'], remove=True),
-   'opacity': cell['fill_opacity'],
-'background': self.prettyHash(cell['bg'], remove=True)
-    }
-    # block.Views.readCelldata treats stroke as optional
-    if 'stroke' in cell and cell['stroke'] is not None:
-      newc['stroke'] = {
-        'fill': cell['stroke'][1:],
-        'dasharray': cell['stroke_dasharray'],
-        'opacity': cell['stroke_opacity'],
-        'width': cell['stroke_width']
-      }
-    return newc
-
   def exportPalfile(self, palname, palette):
     ''' write paldata to a tab separated text file
 
@@ -302,50 +212,6 @@ class TmpFile(InputValidator):
     if topos: metadata['positions']['top'] = topos
  
     return model, metadata
-
-  # move to tmpfile # move to tmpfile # move to tmpfile # move to tmpfile 
-  def _cellData(self, rinkdata):
-    ''' gather celldata from db to write conf/MODEL.yaml
-    '''
-    cd2     = CellData()
-    bd2     = BlockData2()
-    rinkid  = rinkdata[0]
-    _, geom = cd2.geometry(rinkid)
-    if self.VERBOSE: print(f'got {len(geom)=}')
-    _, stk  = cd2.strokes(rinkid, rinkdata[2])
-    if self.VERBOSE: print(f'got {len(stk)=}')
-    _, pal  = cd2.palette(rinkid, rinkdata[2])
-    if self.VERBOSE: print(f'got {len(pal)=}')
-
-    celldata      = dict()
-    ######################
-    for label in geom:
-      #print(f'{label=} {len(geom[label])}')
-      g = dict(zip(['name', 'size', 'facing'], geom[label][-1]))
-      z = len(geom[label]) 
-      g['top'] = True if z == 3 else False
-      p  = dict(zip(['fill', 'opacity'], pal[label][-1]))
-      p['background'] = pal[label][0][0] if z > 1 else None
-
-      if label in stk and stk[label][1][0]: 
-        s = dict(zip(['fill', 'opacity', 'width', 'dasharray'], stk[label][1]))
-        celldata[label] = {
-          'geom': g,
-        'stroke': s,
-         'color': p
-        }
-      else: 
-        celldata[label] = { 'geom': g, 'color': p }
-    _, rinkdata = bd2.rinks(rinkid)
-    if self.VERBOSE: print(f'got {len(rinkdata)=}')
-    '''
-    self.pp.pprint(pal)
-    self.pp.pprint(pos)
-    self.pp.pprint(rinkdata)
-    self.pp.pprint(celldata)
-    '''
-    return celldata
-
 '''
 the
 end
