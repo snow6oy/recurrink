@@ -41,6 +41,9 @@ WHERE ver = %s;""", [ver])
 
   def colorsWrite(self, colors, new_ver):
     ''' copy from gplfile to db
+
+          fill       penam
+        { '#000000': '46', '#0000aa': '32' }
     '''
     self.count = 0
     for fill, name in colors.items(): 

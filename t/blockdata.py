@@ -20,17 +20,20 @@ class Test(unittest.TestCase):
     self.assertFalse(self.bd.count)
 
   def test_b(self):
+    ''' does not include record created by test_c
+DELETE FROM colors WHERE ver = 4 AND penam = 'zz';
+    '''
     pen_count = self.bd.colorsRead(self.ver)
     self.assertEqual(30, len(pen_count))
 
   def test_c(self):
-    ''' 99 is not a valid value 
+    ''' add one row to the colors table
+        99 is not a valid version
         but colorsWrite ignores it anyway and forces new ver
-
-DELETE FROM colors WHERE ver = 4 AND penam = 'zz';
     '''
-    colors = [[99, '#999999', 'zz']]
-    colors = self.bd.colorsWrite(colors, self.ver)
+    data = dict()
+    data['#999999'] = 'zz'
+    colors = self.bd.colorsWrite(data, self.ver)
     self.assertEqual(1, self.bd.count)
 
   def test_d(self):
@@ -47,8 +50,7 @@ DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
     mid      = 1
     created  = None
     pubdate  = None 
-    rinkdata = [mid, self.ver, 90, 0.4, created, pubdate]
-    self.bd.rinksWrite(self.rinkid, rinkdata)
+    self.bd.rinksWrite(self.rinkid, mid, self.ver, 90, 0.4)
     self.assertTrue(self.bd.count)
 
   def test_f(self):
