@@ -23,22 +23,23 @@ class Test(unittest.TestCase):
     '''
     bm      = Make()
     bm.walk(minkscape.positions, minkscape.cells)
-    self.assertEqual(9.0, bm.cells[(0,0)].geoms[0].bounds[-1])
+    #self.pp.pprint(bm.cells[(0,0)])
+    self.assertEqual(9.0, bm.cells[(0,0)][0].bounds[-1])
 
   def test_c(self):
     ''' cells made with Shapely have direction
     '''
     bm = Make(linear=True)
     bm.walk(minkscape.positions, minkscape.cells)
-    self.assertEqual('MultiLineString', bm.cells[(0,0)].geom_type)
+    self.assertEqual('LineString', bm.cells[(0,0)][0].geom_type)
 
   def test_d(self):
     ''' test type
     '''
-    bm      = Make()
+    bm    = Make()
     bm.walk(minkscape.positions, minkscape.cells)
-    cell    = bm.cells[0,0]
-    self.assertEqual('MultiPolygon', cell.geom_type)
+    cell0 = bm.cells[0,0][0]
+    self.assertEqual('Polygon', cell0.geom_type)
 
   def test_e(self):
     ''' svg coords for each minkscape cell
@@ -51,16 +52,19 @@ class Test(unittest.TestCase):
     to_test = list()
     for z in range(3):
       for pos in bm.cells:
-        polygn = bm.polygon(pos, z)
-        if polygn:
-          x, y, *zz = polygn.bounds
+        #print(f'{z=} {len(bm.cells[pos])=}')
+        if z < len(bm.cells[pos]):
+          cell   = bm.cells[pos][z]
+          x, y, *zz = cell.bounds
           to_test.append(tuple([int(x), int(y)]))
-    if self.VERBOSE: pp.pprint(to_test)
+    if self.VERBOSE: self.pp.pprint(to_test)
     self.assertEqual(len(expected), len(to_test))
     [self.assertEqual(e, to_test[i]) for i, e in enumerate(expected)]
 
   def test_f(self):
     ''' 2 layer
+
+        visual test use gthumb
     '''
     bm = Make(90)
     svg = SvgModel(90)
@@ -73,7 +77,9 @@ class Test(unittest.TestCase):
     ''' pens that appear in multiple styles
         must still have unique names
     '''
-    expected    = ['#F00_00', '#F00_11', '#F00_12', '#F00_13', '#F00_24', '#F00_25']
+    expected    = [
+      '#F00_00', '#F00_11', '#F00_12', '#F00_13', '#F00_24', '#F00_25'
+    ]
     same_colour = minkscape.cells      # should be deep copy?
     opacities   = [0.1, 0.2, 0.3, 0.4] # different styles to make test case
     penams      = list()
