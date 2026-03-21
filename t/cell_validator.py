@@ -33,6 +33,24 @@ class Test(unittest.TestCase):
     data['color']['opacity'] = 2
     #[self.assertTrue((o >= 0.1 and o <= 1.0)) for o in self.p.opacity]
     self.assertRaises(ValueError, self.iv.validate, 'a', data)
+
+  # TODO merge with pydantic
+  def test_c(self):
+    ''' only circles, lines and square may be large
+    '''
+    data = {
+      'geom': {'shape':'triangl', 'size':'large', 'facing':'W'}
+    }
+    self.assertRaises(ValueError, self.iv.validate, 'a', data)
+
+  def test_d(self):
+    ''' triangl cannot face all
+    '''
+    data = { 
+      'geom': { 'shape':'triangl', 'size':'medium', 'facing':'C' }
+    }
+    self.assertRaises(ValueError, self.iv.validate, 'a', data)
+
 '''
 the
 end
