@@ -1,0 +1,260 @@
+@startuml
+class block.BlockData.colors {
+   ver
+   colors: NONE
+}
+class block.BlockData.colorsRead {
+   ver
+}
+class block.BlockData.colorsWrite {
+   colors
+   new_ver
+}
+class block.BlockData.version {
+   ver
+}
+class block.BlockData.rinks {
+   rinkid
+   *rinkvals
+}
+class block.BlockData.rinksRead {
+   rinkid
+}
+class block.BlockData.rinksWrite {
+   rinkid
+   mid
+   ver
+   clen
+   factor
+   created
+   pubdate
+}
+class block.BlockData.rinksWrite {
+   rinkid
+   mid
+   ver
+   size
+   factor
+}
+class block.BlockData.rinksUpdate {
+   rinkid
+   ver
+   pubdate
+}
+class block.BlockData.rinksDelete {
+   rinkid
+}
+class block.Init.generate {
+   compass
+}
+class block.Make.walk {
+   positions
+   cells
+   z: 3
+}
+class block.Make.walkThree {
+   positions
+   cells
+   z: 3
+}
+class block.Make.walkTwo {
+   positions
+   cells
+}
+class block.Make.setStroke {
+   cell
+}
+class block.Make.setBlocksize {
+   positions
+}
+class block.Make.polygon {
+   c
+   pos
+   z
+}
+class block.Make.hydrateGrid {}
+class block.PaletteMaker.rgb_int {
+   r
+   g
+   b
+}
+class block.PaletteMaker.hex_rgb {
+   hexstr
+}
+class block.PaletteMaker.relation {
+   fill
+   bg
+}
+class block.PaletteMaker.secondary {
+   fill: NONE
+}
+class block.PaletteMaker.cmpPalettes {
+   digest
+   fn
+}
+class block.PaletteMaker.makeUnique {
+   ver
+   dbpal
+   txtpal
+}
+class block.PaletteMaker.randomTwo {
+   data
+}
+class block.PaletteMaker.inkscapePal {
+   paldir
+   fn
+}
+class block.PaletteMaker.readInkscapePal {
+   paldir
+   fn
+}
+class block.PaletteMaker.updateCells {
+   celldata
+   swp
+}
+class block.PaletteMaker.setLookUp {
+   uniqfill
+}
+class block.PaletteMaker.swapColors {
+   oc
+   nc
+}
+class block.PaletteMaker.closestColor {
+   rgb
+   nc
+}
+class block.PaletteMaker.rgbToHex {
+   rgb
+}
+class block.Styles.add {
+   pos
+   color
+   stroke: NONE
+}
+class block.Styles.addBackground {
+   pos
+   color
+}
+class block.Styles.hydratePos {
+   pos
+}
+class block.TmpFile.setVersion {
+   ver: NONE
+}
+class block.TmpFile.writePretty {
+   model
+   celldata
+   rinkid: NONE
+}
+class block.TmpFile.writeConf {
+   model
+   metadata
+   celldata
+}
+class block.TmpFile.metadata {
+   model
+   rinkid: NONE
+}
+class block.TmpFile.readConf {
+   model
+   meta: FALSE
+}
+class block.TmpFile.readCells {
+   conf
+}
+class block.TmpFile.readMeta {
+   conf
+}
+class block.TmpFile.setDigest {
+   celldata: NONE
+}
+class block.TmpFile.digestString {
+   celldata
+}
+class block.TmpFile.prettyHash {
+   val
+   remove: FALSE
+}
+class block.TmpFile.exportPalfile {
+   palname
+   palette
+}
+class block.TmpFile.importPalfile {
+   palname
+}
+class block.TmpFile.getOldColors {
+   dig
+}
+class block.TmpFile.rinkMeta {
+   rinkdata
+}
+class block.TmpFile._cellData {
+   rinkdata
+}
+class block.StrokeModel.serializerFill {
+   fill: Color
+}
+class block.StrokeModel.serializerOpacity {
+   opacity: Decimal
+}
+class block.ColorModel.serializerFill {
+   fill: Color
+}
+class block.ColorModel.serializerBackground {
+   background: Color
+}
+class block.ColorModel.serializerOpacity {
+   opacity: Decimal
+}
+class block.CellsModel.__iter__ {}
+class block.CellsModel.__getitem__ {
+   item
+}
+class block.InputValidator.validate {
+   incoming
+}
+block.BaseModel <|-- block.CellModel
+block.RootModel <|-- block.CellsModel
+block.BaseModel <|-- block.ColorModel
+block.BaseModel <|-- block.StrokeModel
+block.Transform <|-- block.BlockData
+block.InputValidator <|-- block.TmpFile
+
+' todo add funcname
+block.BlockData.colors -- recurrink.commit
+block.BlockData.version -- recurrink.commit
+block.BlockData.rinks -- recurrink.commit
+block.TmpFile.setDigest -- recurrink.commit
+block.TmpFile.readConf -- recurrink.commit
+block.TmpFile.getOldColors -- recurrink.commit
+block.PaletteMaker.setLookUp -- recurrink.commit
+block.PaletteMaker.swapColors -- recurrink.commit
+
+block.TmpFile.exportPalfile -- recurrink.clone
+block.TmpFile.rinkMeta -- recurrink.clone
+block.TmpFile.writePretty -- recurrink.clone
+block.BlockData.rinks -- recurrink.clone
+block.PaletteMaker.readInkscapePal -- recurrink.clone
+block.BlockData.colors -- recurrink.clone
+
+block.BlockData.rinks -- recurrink.delete
+block.BlockData.rinksDelete -- recurrink.delete
+
+block.TmpFile.readConf -- recurrink.explode
+block.BlockData.colors -- recurrink.explode
+
+block.Make.walk -- recurrink.explode
+block.Make.hydrateGrid -- recurrink.explode
+
+block.TmpFile.setVersion -- recurrink.init
+block.TmpFile.writePretty -- recurrink.init
+
+block.BlockData.rinks -- recurrink.publish
+
+block.BlockData.prettyPrint -- recurrink.read
+block.BlockData.rinks -- recurrink.read
+
+block.Styles.add -- block.Make.walk
+block.Make.setBlocksize -- block.Make.walk
+
+@enduml
