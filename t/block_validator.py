@@ -10,7 +10,7 @@ class Test(unittest.TestCase):
   def test_a(self, expect=None, label=None, kind=None, attr=None):
     ''' enum 
     '''
-    if self.id() == 't.validator.Test.test_a': # am i myself (:
+    if self.id() == 't.block_validator.Test.test_a': # am i myself (:
       expect = 'square'
       label  = 'a'   
       kind   = 'geom'
