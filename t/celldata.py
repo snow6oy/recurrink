@@ -13,12 +13,31 @@ VALUES ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',1,1);
 
 remove from layers after test
   '''
+  pp = pprint.PrettyPrinter(indent=2)
 
   def setUp(self):
-    self.pp     = pprint.PrettyPrinter(indent=2)
     self.cd     = CellData()
     self.rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'
-    self.cell = {
+    self.cellV2 = {
+      'color': {
+        'background': None,
+              'fill': '#ccff00',
+           'opacity': 1.0
+      },
+      'geom': {
+              'name': 'circle',
+              'size': 'medium',
+            'facing': 'C',
+               'top': False
+      },
+      'stroke': {
+              'fill': '#ff00cc',
+           'opacity': 0.5,
+             'width': 1,
+         'dasharray': 2
+      }
+    }
+    self.cellV1 = {
                 'bg': None,
              'shape': 'circle',
               'size': 'medium',
@@ -32,15 +51,16 @@ remove from layers after test
   'stroke_dasharray': 2
     }
 
+
   def test_a(self, label='a', fg=True, bg=False, top=False, expected=2):
     #print(f'{fg=} {bg=} {top=} {self.id()}')
-    cell = self.cell
-    cell['top'] = top
-    if bg: cell['bg'] = '#00cc00',
-    if top and not fg: cell['top'] = False # demote to layer 1
+    cell                                   = self.cellV2
+    cell['geom']['top']                    = top
+    if bg: cell['color']['background']     = '#00cc00',
+    if top and not fg: cell['geom']['top'] = False # demote to layer 1
 
     celldata  = { label: cell }
-    celldata  = self.cd.dataV1(celldata)
+    celldata  = self.cd.dataV2(celldata)
     self.cd.layersWrite(self.rinkid, celldata)
     self.assertEqual(expected, self.cd.count) # check rows were inserted
 
@@ -65,9 +85,9 @@ remove from layers after test
   def test_g(self):
     ''' test the transformer
     '''
-    cell = self.cell
+    cell = self.cellV2
     #self.pp.pprint(cell)
-    cell = self.cd.dataV1({'a': cell})
+    cell = self.cd.dataV2({'a': cell})
     self.assertFalse(len(cell['a'][0]))
     self.assertTrue(len(cell['a'][1]))
 
