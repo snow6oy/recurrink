@@ -1,6 +1,6 @@
 import unittest
 import pprint
-from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry import MultiPolygon, Polygon, LinearRing
 from block import Make
 from cell.minkscape import *
 from model import SvgModel
@@ -93,6 +93,26 @@ class Test(unittest.TestCase):
       for style in layer:
         penams.append(layer[style]['penam'] )
     self.assertEqual(penams, expected)
+
+  def test_h(self):
+    ''' test exploder walks the grid
+    '''
+    a0      = LinearRing(((0,0), (0,9), (9,9), (9,0)))
+    a1      = LinearRing(((4,4), (4,6), (6,6), (6,4)))
+    a       = Polygon(a0, holes=[a1])
+    b       = Polygon(((9,0), (9,9), (18,5)))
+    c       = Polygon(((0,15), (9,18), (9,9)))
+    d       = Polygon(((9,9), (9,18), (18,18), (18,9)))
+    block   = [a, b, c, d]
+    CLEN    = 9
+    b0, b1  = (2, 2)  # blocksize
+    gsize   = 3
+    edge    = gsize * CLEN
+
+    svglin  = SvgModel(CLEN)
+    model   = svglin.walk(block, gsize, b0, b1, CLEN, edge)
+    mp      = MultiPolygon(model)
+    if self.VERBOSE: self.writer.plot(mp, self.id())
 
   
 '''
