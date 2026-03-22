@@ -98,6 +98,38 @@ class Test(unittest.TestCase):
     self.v.generate(ver, model='fourfour') # 'htmstarter') # 'arpeggio'
     self.assertEqual('C', self.v.view['a']['facing'])
 
+  # from c_palette
+  def test_d(self):
+    ''' Generate One randomly generate first cell of pair 
+        and then allocate complimentary to the second cell 
+    '''
+    self.p.loadPalette(ver=1)
+    pairs = ('b', 'd')       # compass.one(axis) for context
+    cell_b = self.p.generate_one(ver=1)
+    cell_d = self.p.generate_one(ver=1, primary=cell_b)
+    #self.pp.pprint(cell_d)
+    test = cell_b['fill']
+    self.assertEqual(self.p.complimentary[test], cell_d['fill'])
+
+  def test_g(self):
+    ''' selfet randomly to generate new palette
+    '''
+    self.p = Palette(ver=1) # universal
+    self.p.loadPalette()
+    cell = self.p.generate_any()
+    #self.pp.pprint(f"c {cell}")
+    self.assertEqual(len(cell.keys()), 3)
+    self.assertTrue(
+      tuple(
+        [cell['fill'],
+        float(cell['fill_opacity']),
+        cell['bg']]
+      )
+      in self.p.palette
+    )
+
+
+
 ''' 
 the 
 end

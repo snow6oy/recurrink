@@ -72,6 +72,13 @@ DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
     self.bd.rinks(self.rinkid, rinkdata)
     self.assertTrue(self.bd.count)
 
+  def test_h(self):
+    ''' get factor for rink
+    '''
+    rink  = self.bd.rinks('6c9eab748082c458621722ab3cb684ec')
+    self.assertTrue(0.5, rink[3])
+
+
 '''
 the
 end
