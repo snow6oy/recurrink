@@ -25,16 +25,15 @@ class SvgPalette:
   def tableRows(self, palette):
     data = str()
     for entry in palette:
-      fg, op, bg = entry
+      fg, penam  = entry
       r,   g,  b = self.hexRgb(fg)
+      # <td style="background-color:{bg};width:10%">
+      #   <div style="color: rgba({r}, {g}, {b}, {op})">&#9673;</div>
+      # </td>
       data += f'''  <tr>
-        <td style="width:30%">{fg}</td>
-        <td style="background-color:{fg};width:10%" />
-        <td style="width:20%">{op}</td>
-        <td style="width:30%">{bg}</td>
-        <td style="background-color:{bg};width:10%">
-          <div style="color: rgba({r}, {g}, {b}, {op})">&#9673;</div>
-        </td>
+        <td style="width:20%">{fg}</td>
+        <td style="background-color:{fg};width:20%" />
+        <td style="width:60%">{penam}</td>
       </tr>'''
     return data
 
@@ -84,11 +83,12 @@ class SvgPalette:
 
 <table border id="myTable">
   <tr class="header">
-    <th colspan="2">Foreground</th>
-    <th>Opacity</th>
-    <th colspan="2">Background</th>
+    <th colspan="1">Hex</th>
+    <th colspan="1">Fill</th>
+    <th colspan="1">Penam</th>
   </tr>
 """
+    # <th>Opacity</th>
     return head
 
   def htmlFooter(self):
