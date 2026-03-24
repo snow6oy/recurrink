@@ -1,26 +1,25 @@
 import unittest
 import pprint
 from model.data import ModelData
-from model.init  import Init
-
-''' generate a YAML from random selection
-    apply some controls e.g. pairing based on symmetry
-'''
+from model.init  import Init, Compass
 
 class Test(unittest.TestCase):
 
   pp = pprint.PrettyPrinter(indent=2)
-
   def setUp(self):
     self.VERBOSE = False
+    self.md      = ModelData()
+    self.mid     = 17 # timpani
 
   def test_a(self, model=None, pen=None, expect=None, knum=0):
+    ''' random model selection by default
+        tests b+ define other use cases
+    '''
     expect     = expect if expect else ['compass', 'database']
     init       = Init()
     model, pen = init.setInput(model, pen)
     src, data  = init.generate(model=model, pen=pen)
-    '''
-    print(f'{model=} {pen=}')
+    ''' print(f'{model=} {pen=}')
     self.pp.pprint(data)
     print(f'{src=} {len(data.keys())=}')
     '''
@@ -39,97 +38,28 @@ class Test(unittest.TestCase):
   def test_d(self): self.test_a(
     model='waltz', pen='sharpie', expect=['compass'], knum=4
   )
-  
-
-#!/usr/bin/env python3
-
-from model.init import Compass
-import unittest
-import pprint
-pp = pprint.PrettyPrinter(indent=2)
-
-class Test(unittest.TestCase):
-
-  def setUp(self):
-    self.compass = Compass('timpani')
-    data = dict()
-    data['c'] = {
-      "cell": "c",
-      "model": "koto",
-      "shape": "diamond",
-      "shape_size": "medium",
-      "shape_facing": "south",
-      "fill": "#FFA500",
-      "bg": "#DC143C",
-      "fill_opacity": "0.5",
-      "stroke": "#DC143C",
-      "stroke_width": 0,
-      "stroke_dasharray": 0,
-      "stroke_opacity": "1",
-      "top": False
-    }
-
-
-  def test_a(self):
-    ''' lookup recipe for mirroring from model or None
-    '''
-    pairs, axis = self.compass.one('j')  # j is on the northeast axis
-    print(pairs, axis)
-    self.assertEqual(pairs[1], 'j')
-    self.assertEqual(axis, 'NE')
-
-  def test_b(self):
-    ''' lookup recipe for mirroring from model or None
-    '''
-    self.assertTrue(self.compass.all('k'))
-
   def test_e(self):
     ''' generate a model without compass
     '''
-    self.v.generate(1, model='afroclave')  
-    if self.VERBOSE: self.pp.pprint(self.v.view)
-    self.assertEqual(len(self.v.view.keys()), 14)
-
+    self.test_a(model='afroclave', expect=['database'], knum=14)
+  
   def test_f(self):
-    ''' fourfour model has compass defined
-        generate_one and generate_all should be called
+    ''' lookup recipe for mirroring from model or None
     '''
-    ver = 2
-    self.v.generate(ver, model='fourfour') # 'htmstarter') # 'arpeggio'
-    self.assertEqual('C', self.v.view['a']['facing'])
-
-  # from c_palette
-  def test_d(self):
-    ''' Generate One randomly generate first cell of pair 
-        and then allocate complimentary to the second cell 
-    '''
-    self.p.loadPalette(ver=1)
-    pairs = ('b', 'd')       # compass.one(axis) for context
-    cell_b = self.p.generate_one(ver=1)
-    cell_d = self.p.generate_one(ver=1, primary=cell_b)
-    #self.pp.pprint(cell_d)
-    test = cell_b['fill']
-    self.assertEqual(self.p.complimentary[test], cell_d['fill'])
+    conf        = self.md.compass(self.mid)
+    cs          = Compass(conf)
+    self.assertTrue(cs.all('e'))
 
   def test_g(self):
-    ''' selfet randomly to generate new palette
+    ''' lookup recipe for mirroring from model or None
     '''
-    self.p = Palette(ver=1) # universal
-    self.p.loadPalette()
-    cell = self.p.generate_any()
-    #self.pp.pprint(f"c {cell}")
-    self.assertEqual(len(cell.keys()), 3)
-    self.assertTrue(
-      tuple(
-        [cell['fill'],
-        float(cell['fill_opacity']),
-        cell['bg']]
-      )
-      in self.p.palette
-    )
-
-
-
+    conf        = self.md.compass(self.mid)
+    #self.pp.pprint(conf)
+    cs          = Compass(conf)
+    pairs, axis = cs.one('a')  # j is on the northeast axis
+    #print(pairs, axis)
+    self.assertEqual(pairs[1], 'b')
+    self.assertEqual(axis, 'NE')
 ''' 
 the 
 end

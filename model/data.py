@@ -89,9 +89,9 @@ VALUES (%s, %s, %s, %s);""", (mid, pos_int, cell, top)
     ''' retrieve compass entries by mid, optionally add new
     '''
     entries = self.compassRead(mid)
-    if len(entries):          return 0, entries
+    if len(entries):          return entries
     elif conf and len(conf):  return self.compassWrite(mid, conf)
-    else:                     return 0, None
+    else:                     return None
 
   def compassWrite(self, mid, conf):
     self.count = 0

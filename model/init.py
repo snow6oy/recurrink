@@ -4,7 +4,9 @@ from model import ModelData
 from block.init  import Init as BlockInit
 
 class Init(ModelData):
-
+  ''' generate a YAML from random selection
+      apply some controls e.g. pairing based on symmetry
+  '''
   def __init__(self, model=None, pen=None):
     self.mnam  = model
     self.pen   = pen
@@ -30,8 +32,8 @@ class Init(ModelData):
     cells     = [cell[0] for pos, cell in blocks.items()]
     top       = [cell[1] for pos, cell in blocks.items() if cell[1]]
     init      = BlockInit(self.ver, cells, top)
-    _, csdata = self.compass(self.mid)
-    compass   = Compass(csdata)
+    csconf    = self.compass(self.mid)
+    compass   = Compass(csconf)
     src, data = init.generate(compass)
     return src, data
 
