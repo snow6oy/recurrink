@@ -41,10 +41,10 @@ class Parabola(Line):
     X, Y, W, H, a, b, c, d, *A = dim
     facing  = geom['facing']
     control = {
-      'S': ['NE', 'W', X, Y, a, d],  # test g
-      'N': ['SW', 'E', c, b, W, H],  # test h
-      'E': ['SE', 'N', X, d, c, H],  # test i
-      'W': ['NW', 'S', a, Y, W, b]   # test f
+      'N': ['NE', 'W', X, b, a, H],  # test g
+      'S': ['SW', 'E', c, Y, W, d],  # test h
+      'E': ['SE', 'N', X, Y, c, b],  # test i
+      'W': ['NW', 'S', a, d, W, H]   # test f
     }
     # facing for the composites
     if facing in control: gface, eface = control[facing][:2]

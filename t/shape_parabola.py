@@ -75,6 +75,15 @@ class Test(unittest.TestCase):
     polyln = self.p.joinStrings(gnomon, edge)
     if self.VERBOSE: self.writer.plotLine(polyln, self.id())
 
+  def test_k(self):
+    ''' western edge only 
+    '''
+    bounds = [0, 0, 4, 8] # for W facing edge
+    guideln= self.p.guidelines('N', self.clen, bounds)
+    points = self.p.collectPoints(guideln)
+    edge   = self.p.makeStripes(points)
+    if self.VERBOSE: self.writer.plotLine(edge, self.id())
+
 '''
 the
 end
