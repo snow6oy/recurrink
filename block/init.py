@@ -12,8 +12,8 @@ class Init:
     self.top   = top
 
   def generate(self, compass):
-    bd       = BlockData()
-    colors = bd.colors(self.ver)
+    bd        = BlockData()
+    colors    = bd.colors(self.ver)
     data      = None
     celldata  = dict()
     both      = self.cells + self.top

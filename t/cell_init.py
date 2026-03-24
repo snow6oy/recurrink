@@ -1,25 +1,23 @@
-#!/usr/bin/env python3
-import os.path
 import unittest
 import pprint
-from cell.init import Geometry
+import os.path
+from block import BlockData
+from cell.init import Geometry, Palette
 
 class Test(unittest.TestCase):
-  ''' geometries are shared and have a 1:* relation with views and cells
-      geometries are never updated, only inserted 
-      when shape/size/facing/top combination is new
-      immutable avoids side-effect of incrementing SERIAL 
-      by anticipating UniqueViolation 
+  ''' use cases
 
       geometry.generateOne(axis, top, facing)
       geometry.generateFacingCentre(top)
       geometry.generateFacingAny(top)
-
+      palette.generateOne(colors)
   '''
   pp = pprint.PrettyPrinter(indent=2)
 
   def setUp(self):
-    self.g = Geometry()
+    self.g       = Geometry()
+    self.p       = Palette()
+    self.VERBOSE = True
 
   def test_a(self):
     ''' Generate Any direction
@@ -46,7 +44,18 @@ class Test(unittest.TestCase):
     d_facing = cell_d['facing'] 
     self.assertTrue(b_facing != d_facing)
 
+  def test_d(self):
+    ''' Generate One randomly generate cell colours
+    '''
+    ver    = 1
+    bd     = BlockData()
+    colors = bd.colors(ver)
+    #self.pp.pprint(colors)
+    cell_z = self.p.generateOne(colors)
+    #self.pp.pprint(cell_z)
+    found = [c for c in colors if c[0] == cell_z['fill']]
+    self.assertTrue(len(found))
 '''
 the
 end
-'''
+''' 
