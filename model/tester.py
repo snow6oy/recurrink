@@ -4,6 +4,8 @@ from shapely.geometry import Polygon
 
 class SvgWriter:
   ''' for testers 
+
+      invert_yaxis() was needed but not any longer. why ?
   '''
 
   def plotLine(self, line, fn, visible=True, title=True, width=.5):
@@ -12,7 +14,7 @@ class SvgWriter:
     if line.geom_type not in ['LineString', 'LinearRing','MultiLineString']:
       raise ValueError(f'wrong geometry {line.geom_type}')
     fig, ax = plt.subplots()
-    ax.invert_yaxis()
+    #ax.invert_yaxis()
     ax.axes.get_xaxis().set_visible(visible)
     ax.axes.get_yaxis().set_visible(visible)
     t_class, t_name = self.fileName(fn)
@@ -22,7 +24,7 @@ class SvgWriter:
 
   def plot(self, box, fn, title=True):
     fig, ax = plt.subplots()
-    ax.invert_yaxis()
+    #ax.invert_yaxis()
     t_class, t_name = self.fileName(fn)
     if title: plt.title(f"{t_class} {t_name}")
     shapely.plotting.plot_polygon(

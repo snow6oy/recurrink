@@ -41,7 +41,7 @@ class Test(unittest.TestCase):
     dim  = self.layer.dimension(0, 0, self.clen)
     r    = Rectangle(name)
 
-    if False:
+    if True:
       self.pp.pprint(dim)
       self.pp.pprint(geom)
 
