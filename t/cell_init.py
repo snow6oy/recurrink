@@ -2,7 +2,7 @@ import unittest
 import pprint
 import os.path
 from block import BlockData
-from cell.init import Geometry, Palette
+from cell.init import Geometry, Palette, Strokes
 
 class Test(unittest.TestCase):
   ''' use cases
@@ -17,7 +17,8 @@ class Test(unittest.TestCase):
   def setUp(self):
     self.g       = Geometry()
     self.p       = Palette()
-    self.VERBOSE = True
+    self.s       = Strokes()
+    self.VERBOSE = False
 
   def test_a(self):
     ''' Generate Any direction
@@ -55,6 +56,33 @@ class Test(unittest.TestCase):
     #self.pp.pprint(cell_z)
     found = [c for c in colors if c[0] == cell_z['fill']]
     self.assertTrue(len(found))
+
+  def test_e(self):
+    ''' generateOne stroke 
+
+        50/50 chance to get a stroke
+    '''
+    colors = [
+      ('#DC143C', None),
+      ('#4B0082', None),
+      ('#FFA500', None),
+      ('#32CD32', None),
+      ('#C71585', None),
+      ('#9ACD32', None),
+      ('#FFF',    None),
+      ('#000',    None),
+      ('#CD5C5C', None)
+    ]
+    # multiple tests to avoid random good luck
+    for cell in ['a', 'b', 'c', 'd', 'e']:
+      if self.VERBOSE: print(f'{cell} ', end='', flush=True)
+      stroke = self.s.generateOne(colors)
+      if stroke: # can be None
+        found = [c[0] for c in colors if c[0] == stroke['fill']]
+        self.assertTrue(found)
+        break
+   if self.VERBOSE: print()
+
 '''
 the
 end
