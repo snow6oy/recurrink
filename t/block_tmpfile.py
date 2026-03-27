@@ -58,29 +58,13 @@ class Test(unittest.TestCase):
     self.assertEqual(4, len(metadata.keys()))
 
   def test_e(self):
-    self.tf.exportPalfile(self.id(), self.paldata)
-    self.assertTrue(os.path.isfile(f'palettes/{self.id()}.txt'))
-
-  def test_f(self):
-    ''' run test_e first
-    '''
-    pal = self.tf.importPalfile('t.tmpfile.Test.test_e')
-    self.assertEqual(5, len(pal))
-
-  def test_g(self):
     ''' help test_c and test_d 
     '''
-    pos = self.tf.positionBlock(minkscape.positions)
-    self.metadata['positions']['foreground'] = pos
-    #self.pp.pprint(self.metadata)
     self.tf.writeConf('minkscape', self.metadata, minkscape.cells)
  
-  def test_h(self):
+  def test_f(self):
     ''' prototype dbv2 write conf in new schema
     '''
-    #self.pp.pprint(minkscape_2.cells)
-    pos = self.tf.positionBlock(minkscape_2.positions)
-    self.metadata['positions']['foreground'] = pos
     self.tf.writeConf('minkscape_2', self.metadata, minkscape_2.cells)
 
 '''

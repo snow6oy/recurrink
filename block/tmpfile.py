@@ -156,11 +156,13 @@ class TmpFile(InputValidator):
     else:               fix = '#' + str(rgb)
     return fix 
  
+  ''' write paldata to a tab separated text file
+  
+  as palettes are no longer editable these functions are not required
+
   def exportPalfile(self, palname, palette):
-    ''' write paldata to a tab separated text file
 
     self.pp.pprint(palette)
-    '''
     if len(palette) == 0:
       raise ValueError(f"{palname} is empty")
     with open(f"palettes/{palname}.txt", 'w') as f:
@@ -173,6 +175,7 @@ class TmpFile(InputValidator):
       data = [line.rstrip() for line in f] # read and strip newlines
     data = [d.split() for d in data[1:]] # ignore header and split on space
     return data
+  '''
 
   def getOldColors(self, dig):
     ''' read old colours from palettes/DIGEST.txt

@@ -2,6 +2,7 @@ import unittest
 import pprint
 from cell.transform import Transform
 from cell.minkscape import *
+from cell.minkscape_2 import *
 
 class Test(unittest.TestCase):
 
@@ -9,20 +10,21 @@ class Test(unittest.TestCase):
     self.pp    = pprint.PrettyPrinter(indent=2)
     self.tx    = Transform()
     self.cells = minkscape.cells
+    self.c3lls = minkscape_2.cells
 
   def test_a(self, label='a', fg=True, bg=False, top=False, expected=0, i=1):
-    #print(f'{fg=} {bg=} {top=} {self.id()}')
-    expected = 2 if self.id() == 't.transform.Test.test_a' else expected
-    cell = self.tx.transformOneCell(self.cells['a'])
-    cell['shape'] = 'circle'
-    cell['top']   = top
-    if not bg: cell['bg'] = None
-    if top and not fg: cell['top'] = False
+    #print(f'{label=} {fg=} {bg=} {top=} {self.id()}')
+    expected = 2 if self.id() == 't.cell_transform.Test.test_a' else expected
+    #cell = self.tx.transformOneCell(self.cells['a'])
+    cells                        = self.cells
+    cells[label]['geom']['name'] = 'circle'
+    cells[label]['geom']['top']  = top
+    if not bg: cells[label]['color']['background'] = None
+    if top and not fg: cells[label]['geom']['top'] = False
+    #self.pp.pprint(cells[label])
 
-    celldata = { label: cell }
-    written  = self.tx.dataV1(celldata)
-    #self.pp.pprint(written)
-
+    written  = self.tx.dataV2(cells)
+    #self.pp.pprint(written[label])
     self.assertEqual(len(written[label]), expected) # num of layers
     self.assertEqual('circle', written[label][i][0]) # position of FG or TOP
 
@@ -31,26 +33,28 @@ class Test(unittest.TestCase):
     self.test_a(label='c', fg=True, bg=True, top=True, expected=3, i=1)
   def test_d(self):
     self.test_a(label='d', fg=False, bg=True, top=True, expected=2, i=1)
-  def test_e(self): self.test_a(label='e', fg=True, top=True, expected=3, i=2)
+  def test_e(self): self.test_a(label='c', fg=True, top=True, expected=3, i=2)
 
   def test_f(self):
     ''' transform one cell into a flat dictionary
     '''
-    cell = self.tx.transformOneCell(self.cells['b'])
-    #self.pp.pprint(cell)
-    #print(list(cell.keys()))
+    dataV3  = self.tx.dataV3(self.c3lls)
+    #self.pp.pprint(dataV3)
+    cell    = self.tx.txDbv3YamlOneCell(dataV3['b'])
+    #print(list(cell['stroke'].keys()))
 
-    for k in ['shape', 'size', 'facing', 'top', 'bg', 
-              'fill', 'fill_opacity', 'stroke', 'stroke_opacity', 
-              'stroke_width', 'stroke_dasharray']:
-      self.assertTrue(k in cell)
+    for k in ['name', 'size', 'facing', 'top']:
+      self.assertTrue(k in cell['geom'])
+    for k in ['background', 'fill', 'opacity']:
+      self.assertTrue(k in cell['color'])
+    for k in ['fill', 'opacity', 'width', 'dasharray']:
+      self.assertTrue(k in cell['stroke'])
 
   def test_g(self):
-    cell = self.tx.transformOneCell(self.cells['b'])
-    data = self.tx.dataV1({'b': cell})
+    data = self.tx.dataV3(self.c3lls)
     #self.pp.pprint(data)
     self.assertEqual(5, len(data['b'][0]))
-    self.assertEqual(9, len(data['b'][1]))
+    self.assertEqual(0, len(data['d'][0]))
 
   def test_h(self):
     #self.pp.pprint(self.cells)

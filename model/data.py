@@ -146,6 +146,8 @@ WHERE mid = %s;""", [mid])
     return (max(x) + 1, max(y) + 1)
 
   def positionString(self, mid):
+    ''' make a readable view of block position for YAML
+    '''
     outer     = list()
     bsx, bsy  = self.setBlocksize(mid)
     positions = self.blocksRead(mid)

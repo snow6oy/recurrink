@@ -115,7 +115,7 @@ class Transform(Db2):
     #self.pp.pprint(yaml)
     return yaml 
 
-  def txDbv3YamlOneCell(self, cell, penwidth_mm):
+  def txDbv3YamlOneCell(self, cell, penwidth_mm=Decimal(1)):
     ''' transform V3 to YAML
     '''
     if len(cell[0]): bg = cell[0][3] 
