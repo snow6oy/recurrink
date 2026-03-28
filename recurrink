@@ -13,14 +13,6 @@ from block import PaletteMaker, TmpFile, BlockData, Make
 from cell import CellData, InputValidator
 from config import *
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-pmk     = PaletteMaker()
-tf      = TmpFile()
-md      = ModelData()
-bd      = BlockData()
-WORKDIR = config.directory['rinks']
-PUBDIR  = config.directory['pubq']
-PALDIR  = config.directory['palettes']
-fnam    = md.pens()  # pal.friendlyPenNames()
 pp      = pprint.PrettyPrinter(indent=2)
 start_t = time.time()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -29,16 +21,16 @@ start_t = time.time()
 def main(args):
   parser = argparse.ArgumentParser(prog='recurrink')
   subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
+  parser_i = subparsers.add_parser('init', help='generate config')
   parser_b = subparsers.add_parser('build', help='build svg from config')
   parser_e = subparsers.add_parser('explode', help='stamp blocks on the grid')
-  parser_k = subparsers.add_parser('clone', help='get copy of config')
-  parser_i = subparsers.add_parser('init', help='generate config')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
-  parser_p = subparsers.add_parser('publish', help='add release date to db')
-  parser_d = subparsers.add_parser('delete', help='remove rink from db')
-  parser_m = subparsers.add_parser('compare', help='compare palettes')
-  parser_l = subparsers.add_parser('ls', help='list models or palettes')
-  parser_r = subparsers.add_parser('read', help='get rink metadata')
+  parser_k = subparsers.add_parser('clone', help='get copy of config')
+  parser_n = subparsers.add_parser('info', help='read metadata from db')
+  #parser_p = subparsers.add_parser('publish', help='add release date to db')
+  #parser_d = subparsers.add_parser('delete', help='remove rink from db')
+  #parser_l = subparsers.add_parser('ls', help='list models or palettes')
+  #parser_r = subparsers.add_parser('read', help='get rink metadata')
 
   arg_d = { 'help': 'rink identifier with 32 random characters' }
   arg_f = {
@@ -55,6 +47,10 @@ def main(args):
     'nargs':'?', 'choices':['cell','pal', 'db2'], 'const':'cell'
   }
   arg_p = { 'help':'pen name used in GPLFILE and pens table' }
+  arg_e = {
+    'help':'list of pen sets',
+    'action':argparse.BooleanOptionalAction
+  }
   arg_s = { 
     'help':'cell lengths: 18-90', 
     'nargs':'?', 'type':int, 'const':36
@@ -82,8 +78,6 @@ def main(args):
   parser_b.add_argument('-l', '--line',     **arg_l)
   parser_b.add_argument('-x', '--exchange', **arg_x)
 
-  parser_m.add_argument('-v', '--palver',   **arg_v)
-  parser_m.add_argument('-d', '--digest',   **arg_d)
   #  required=True
   parser_c.add_argument('-m', '--model',    **arg_m) 
   parser_c.add_argument('-s', '--size',     **arg_s)
@@ -92,14 +86,14 @@ def main(args):
   parser_c.add_argument('-v', '--palver',   **arg_v)
   parser_c.add_argument('-d', '--digest',   **arg_d)
   parser_c.add_argument('-p', '--penam',    **arg_p)
+  parser_c.add_argument('-r', '--remove',   **arg_d)
+  parser_c.add_argument('-g', '--golive',   **arg_d)
 
   # klone :-)
   parser_k.add_argument('-d', '--digest',   **arg_d)
   parser_k.add_argument('-o', '--output',   **arg_o)
   parser_k.add_argument('-p', '--penam',    **arg_p)
   parser_k.add_argument('-v', '--palver',   **arg_v)
-
-  parser_d.add_argument('-d', '--digest',   **arg_d)
 
   parser_e.add_argument('-s', '--size',     **arg_s)
   parser_e.add_argument('-f', '--factor',   **arg_f)
@@ -111,18 +105,54 @@ def main(args):
   parser_i.add_argument('-m', '--model',    **arg_m)
   parser_i.add_argument('-p', '--penam',    **arg_p)
 
-  parser_l.add_argument('-o', '--output',   **arg_o)
-  parser_p.add_argument('-d', '--digest',   **arg_d)
-  parser_r.add_argument('-m', '--model',    **arg_m)
-  parser_r.add_argument('-d', '--digest',   **arg_d)
+  parser_n.add_argument('-p', '--pens',     **arg_e)
+  parser_n.add_argument('-m', '--model',    **arg_m)
+  parser_n.add_argument('-d', '--digest',   **arg_d)
+  #parser_d.add_argument('-d', '--digest',   **arg_d)
+  #parser_l.add_argument('-o', '--output',   **arg_o)
+  #parser_n.add_argument('-d', '--digest',   **arg_d)
+  #parser_n.add_argument('-v', '--palver',   **arg_v)
 
   return parser.parse_args()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-def compare(args):
-  ''' compare palettes given ver and digest
-      expect tmp/PALETTE.txt tmp/DIGEST.txt to exist already
+def info(args):
+  md   = ModelData()
+  bd   = BlockData()
+  fnam = md.pens()  # pal.friendlyPenNames()
+  ''' list models or display rink metadata
+
+  TODO cleanup print(pmk.cmpPalettes(fnam[args.palver], args.digest))
   '''
-  print(pmk.cmpPalettes(fnam[args.palver], args.digest))
+  if args.pens:  # TODO why give penam as arg and ignore it ? 
+    [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
+  elif args.model:
+    mid       = md.model(name=args.model)
+    pp.pprint(md.positionString(mid)) 
+  elif(args.digest):  # reith is consumer
+    '''
+   mid 12, 
+palver 0, 
+  size [90, 90]
+factor Decimal('1.00'), 
+create datetime.datetime(2024, 3, 3, 23, 37, 23, 529264), 
+   pub datetime.datetime(2024, 3, 5, 0, 0))
+    '''
+    mid, ver, size, factor, create, pub = bd.rinks(args.digest)
+    # pre-format in cases where rinkdata as empty
+    if size: size     = f'{size[0]} x {size[1]}'
+    if factor: factor = f'{factor:0.2f}'
+    if pub: pub       = f'{pub:%Y-%m-%d}'
+    print(f"""
+-------+----------
+ model | {mid}
+palver | {ver}
+  size | {size}
+factor | {factor}
+create | {create:%Y-%m-%d}
+   pub | {pub}""")
+  else:
+    print('working on it') 
+    # print(md.stats())
 
 def commit(args):
   ''' read config, write to database and return digest
@@ -139,7 +169,18 @@ def commit(args):
       use the index of config.friendly_name[] as arg
   '''
   # pal = Palette()    # throws error but pal was assigned already???
-  cd = CellData()
+  pmk     = PaletteMaker()
+  tf      = TmpFile()
+  md      = ModelData()
+  bd      = BlockData()
+  cd      = CellData()
+  WORKDIR = config.directory['rinks']
+  PUBDIR  = config.directory['pubq']
+  PALDIR  = config.directory['palettes']
+  fnam    = md.pens()  # pal.friendlyPenNames()
+  ''' another way would be for clone to transform the rink to new pal
+      then commit would read rinkid from YAML and update
+  '''
   if args.palver and args.digest and args.exchange: # only pens
     dig       = args.digest  # '180f1989f54ff03291ec31e164f2a79f'
     celldata  = cd.layers(args.digest)  #view.read(digest=dig) 
@@ -211,6 +252,40 @@ def commit(args):
     else:
       raise FileNotFoundError(f"{args.model} not found in {WORKDIR}")
     print(response)
+  elif args.golive: 
+    # TODO rinksUpdate has to accept pubdate as well as ver
+    ''' was used by reith to update pubdate
+
+        2024-01-27 22:26:12
+    '''
+    rinkdata = list(bd.rinks(args.golive))
+    if len(rinkdata) == 6:
+      rinkdata[5] = '{d:%Y-%m-%d %H:%M:%S}'.format(d=datetime.datetime.now())
+      bd.rinks(args.golive, rinkdata)
+      print(f'''
+{rinkdata[5]} updated
+rows impacted {bd.count=}''')
+    else:
+      print(f'{args.golive} not returned by db')
+
+  elif args.remove: 
+    ''' if delete had no help text it would not be listed by argparse
+    print(f'{args.digest=}')
+    '''
+    print(args.remove)
+    rinkdata = bd.rinks(args.remove) 
+    if len(rinkdata):
+      print(bd.rinksDelete(args.remove))
+      ''' review this and commit
+    model = md.model(mid=rinkdata[1])
+    if os.path.isfile(f'{PUBDIR}/{args.digest}.svg'):
+      os.unlink(f'{PUBDIR}/{args.digest}.svg')
+    if os.path.isfile(f'{WORKDIR}/{model}/{args.digest}.svg'):
+      os.unlink(f'{WORKDIR}/{model}/{args.digest}.svg')
+      print(f'{args.digest} deleted ok') # success
+    else: raise FileNotFoundError(f'SVG not deleted {model}/{args.digest}')
+      '''
+    else: raise ValueError(f'nothing named {args.remove} in database')
   else: 
     print(f'''cannot commit missing args:
 {args.model=}
@@ -223,7 +298,12 @@ def commit(args):
 def clone(args):
   ''' pull from db to create tmp/MODEL.txt from digest
   '''
-  cd = CellData()
+  pmk     = PaletteMaker()
+  tf      = TmpFile()
+  md      = ModelData()
+  bd      = BlockData()
+  cd      = CellData()
+  fnam    = md.pens()  # pal.friendlyPenNames()
   mid, ver, clen, factor, *dates = bd.rinks(args.digest)
   if args.output == 'pal' and args.digest: # export rink as palette
     uniq    = set()
@@ -261,31 +341,16 @@ cloning {model}
 with {len(celldata)} cells
 palette {penam}""")
 
-def delete(args):
-  ''' if delete had no help text it would not be listed by argparse
-  print(f'{args.digest=}')
-  '''
-  bd       = BlockData()
-  rinkdata = bd.rinks(args.digest) 
-  if len(rinkdata):
-    bd.rinksDelete(args.digest) 
-    ''' review this and commit
-    model = md.model(mid=rinkdata[1])
-    if os.path.isfile(f'{PUBDIR}/{args.digest}.svg'):
-      os.unlink(f'{PUBDIR}/{args.digest}.svg')
-    if os.path.isfile(f'{WORKDIR}/{model}/{args.digest}.svg'):
-      os.unlink(f'{WORKDIR}/{model}/{args.digest}.svg')
-      print(f'{args.digest} deleted ok') # success
-    else: raise FileNotFoundError(f'SVG not deleted {model}/{args.digest}')
-    '''
-  else: raise ValueError(f'nothing named {args.digest} in database')
-
 def explode(args):
   ''' assumptions: gridsize is A3 (297 x 420 mm) 
       image is square: with margins grid approximate 270 x 270
       numbers of cells defined by cell length which prefers to be divisible by 3
       to ensure whole numbers: clen should be: 9 18 27 36 45 54 90 ..
   '''
+  tf      = TmpFile()
+  md      = ModelData()
+  bd      = BlockData()
+  fnam    = md.pens()  # pal.friendlyPenNames()
   if args.factor: svglin = SvgModel(args.size, args.factor)
   else:           svglin = SvgModel(args.size)
   celldata   = tf.readConf(args.model)
@@ -316,7 +381,7 @@ def init(args):
   ''' pull a palette from db and write to tmpfile
       generate an editable config file 
   '''
-  # cd = CellData()
+  tf         = TmpFile()
   init       = Init()
   model, pen = init.setInput(args.model, args.penam)
   src, data  = init.generate(model, pen)
@@ -327,51 +392,14 @@ def init(args):
 using {pen} from source: {src} 
 ''')
 
-
-def ls(args):
-  ''' list from db or config
-  '''
-  if args.output == 'pal': 
-    [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
-  else:
-    print('working on it') 
-    # print(md.stats())
-
-# TODO rinksUpdate has to accept pubdate as well as ver
-def publish(args):
-  ''' used by reith to update pubdate
-
-      2024-01-27 22:26:12
-  '''
-  rinkdata = list(bd.rinks(args.digest))
-  if len(rinkdata) == 7:
-    rinkdata[6] = '{d:%Y-%m-%d %H:%M:%S}'.format(d=datetime.datetime.now())
-    bd.rinks(args.digest, rinkdata)
-    print(f'{rinkdata[6]} updated {bd.count=}')
-
-def read(args):
-  #bd = BlockData()
-  if args.model:
-    mid       = md.model(name=args.model)
-    blocksize = md.setBlocksize(mid)
-    print(bd.prettyPrint(args.model, blocksize[0], blocksize[1]))
-  elif(args.digest):  # reith is consumer
-    rinkdata = bd.rinks(args.digest)
-    print("""
--------+----------
- model | {r[1]}
-palver | {r[2]}
-  size | {r[3][0]} x {r[3][1]}
-factor | {r[4]}
-create | {r[5]:%Y-%m-%d}
-   pub | {r[6]:%Y-%m-%d}""".format(r=rinkdata))
-  else:
-    print('que?')
-
 def build(args):
   ''' generate an SVG from tmpfile or an HTML palette
   '''
-  bd = BlockData()
+  tf      = TmpFile()
+  md      = ModelData()
+  bd      = BlockData()
+  fnam    = md.pens()  # pal.friendlyPenNames()
+
   if args.palver:
     ''' run init -p PENAM first
     '''
@@ -384,10 +412,9 @@ def build(args):
         but why build a color chart for a rink
         color charts should be for pens
     '''
-    fn      = args.digest
-    palette = tf.importPalfile(fn)
-    svgpal.render(fn, palette)
-    print(f"palettes/{fn}.html was written")
+    palette = tf.importPalfile(args.digest)
+    svgpal.render(args.digest, palette)
+    print(f"palettes/{args.digest}.html was written")
   elif args.model and args.size and args.factor:
     svglin    = SvgModel(args.size, args.factor)
 
@@ -440,16 +467,16 @@ def build(args):
 
 if __name__ == "__main__":
   args = main(sys.argv[1:])
-  if   args.keyword == 'compare': compare(args)
+  if   args.keyword == 'init':    init(args)
+  elif args.keyword == 'build':   build(args)
+  elif args.keyword == 'explode': explode(args)
   elif args.keyword == 'commit':  commit(args)
   elif args.keyword == 'clone':   clone(args)
-  elif args.keyword == 'delete':  delete(args)
-  elif args.keyword == 'explode': explode(args)
-  elif args.keyword == 'init':    init(args)
-  elif args.keyword == 'ls':      ls(args)
-  elif args.keyword == 'publish': publish(args)
-  elif args.keyword == 'read':    read(args)
-  elif args.keyword == 'build':   build(args)
+  elif args.keyword == 'info':    info(args)
+  #elif args.keyword == 'delete':  delete(args)
+  #elif args.keyword == 'ls':      ls(args)
+  #elif args.keyword == 'publish': publish(args)
+  #elif args.keyword == 'read':    read(args)
   else:
     print(f'usage: {sys.argv[0]} --help')
     sys.exit(1)

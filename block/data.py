@@ -118,7 +118,7 @@ WHERE rinkid = %s;""", (ver, pubdate, rinkid)
         remove rinks records
         increment count
     '''
-    print('not implemented')
+    return 'not implemented'
 
 '''
 the

@@ -15,7 +15,7 @@ class TmpFile(InputValidator):
 
   BLOCKSZ   = tuple()
   VERSION   = 1
-  VERBOSE   = True
+  VERBOSE   = False
   pp        = pprint.PrettyPrinter(indent=2)
   meta_tags = ['id', 'model', 'palette', 'positions'] # defaults will be popped
 
@@ -158,8 +158,9 @@ class TmpFile(InputValidator):
  
   ''' write paldata to a tab separated text file
   
-  as palettes are no longer editable these functions are not required
-
+  as palettes are no longer editable these functions are
+  to be deprecated once consumers migrate
+  '''
   def exportPalfile(self, palname, palette):
 
     self.pp.pprint(palette)
@@ -175,7 +176,6 @@ class TmpFile(InputValidator):
       data = [line.rstrip() for line in f] # read and strip newlines
     data = [d.split() for d in data[1:]] # ignore header and split on space
     return data
-  '''
 
   def getOldColors(self, dig):
     ''' read old colours from palettes/DIGEST.txt
@@ -195,24 +195,24 @@ class TmpFile(InputValidator):
     '''
     md    = ModelData()
     rinkid, mid, ver = rinkdata[:3]
-    print(f'{rinkid=} {mid=} {ver=}')
+    if self.VERBOSE: print(f'{rinkid=} {mid=} {ver=}')
 
     model = md.model(mid=rinkdata[1])
-    if self.VERBOSE: print(f'got {model=}')
-    pos   = md.blocks(mid=rinkdata[1])
-    if self.VERBOSE: print(f'got {len(pos)=} blocks')
+    if self.VERBOSE: print(f'{model=}')
+    #pos   = md.blocks(mid=rinkdata[1])
+    #if self.VERBOSE: print(f'got {len(pos)=} blocks')
     pens     = md.pens(ver=rinkdata[2])
-    if self.VERBOSE: print(f'got {pens=}')
+    if self.VERBOSE: print(f'{pens=}')
 
     metadata = {
       'id': rinkdata[0],
       'model': model,
       'palette': pens
     }
-    fgpos = self.positionBlock(pos)
-    topos = self.positionBlock(pos, top=True)
-    metadata['positions'] = { 'foreground': fgpos }
-    if topos: metadata['positions']['top'] = topos
+    pos = md.positionString(mid) # convert to nested array
+    #topos = self.positionBlock(pos, top=True)
+    metadata['positions'] = pos
+    #if topos: metadata['positions']['top'] = topos
  
     return model, metadata
 '''
