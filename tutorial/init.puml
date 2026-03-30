@@ -1,0 +1,17 @@
+@startUML
+
+title: Init
+
+class init.setInput
+class init.compass
+
+class file
+class recurrink
+
+
+recurrink --> init.setInput
+init.setInput --> init.generate: pens models
+init.compass --> init.generate: config
+init.generate --> file: rink data
+
+@endUML

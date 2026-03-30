@@ -1,0 +1,13 @@
+@startUML
+
+title: Build
+
+class build.build
+class recurrink
+class svg
+
+recurrink --> file: explode True|False
+file --> build.build: rink conf
+build.build --> svg
+
+@endUML

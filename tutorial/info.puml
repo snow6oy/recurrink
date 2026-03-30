@@ -1,0 +1,25 @@
+@startUML
+
+title: Info
+
+class info.listPens
+class info.position
+class info.rinkMeta
+class info.stats
+
+class recurrink
+class screen
+class db
+
+recurrink --> db
+db --> info.listPens: pens
+db --> info.position: block pos
+db --> info.rinkMeta: rink data
+db --> info.stats: models
+
+info.listPens --> screen
+info.position --> screen
+info.rinkMeta --> screen
+info.stats --> screen
+
+@endUML

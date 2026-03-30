@@ -1,0 +1,31 @@
+@startUML
+
+title: Commit
+
+class commit.addColor
+class commit.addRink
+class commit.updateVer
+class commit.updatePubdate
+class commit.remove
+
+class db
+class file
+class recurrink
+
+file --> commit.addRink: rink data
+commit.addRink --> db
+
+file --> commit.updateVer: new pal
+commit.updateVer --> db
+
+file --> commit.addColor: gpl
+commit.addColor --> db
+
+recurrink --> commit.updatePubdate: rink id
+commit.updatePubdate --> db
+
+recurrink --> commit.remove: rink id
+commit.remove --> db
+recurrink --> file
+
+@endUML

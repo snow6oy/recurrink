@@ -1,0 +1,20 @@
+@startUML
+
+title: Clone
+
+class clone.palette
+class clone.rinks
+
+class db
+class file
+class recurrink
+
+db --> clone.palSwap: rink colors
+db --> clone.palette: pen colors
+db --> clone.rinks: rink data
+clone.palSwap --> file
+clone.palette --> file
+clone.rinks --> file
+recurrink --> db
+
+@endUML
