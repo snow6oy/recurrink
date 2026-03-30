@@ -66,11 +66,14 @@ VALUES (%s, %s, %s);""", [new_ver, fill, name]
 
   def rinks(self, rinkid, *rinkvals):
     rinkdata = self.rinksRead(rinkid)
-    if rinkdata and len(rinkvals):
+    if len(rinkvals): incoming = rinkvals[0]
+    else:             incoming = None 
+    # self.pp.pprint(incoming)
+    if rinkdata and incoming:
       mid, ver, size, factor, created, pubdate = rinkvals[0]
       #print(f'UPDATE {ver=} {pubdate=}')
       self.rinksUpdate(rinkid, ver, pubdate) # throw away mostly everything
-    elif len(rinkvals):
+    elif incoming:
       mid, ver, size, factor = rinkvals[0]
       #print(f'INSERT {mid=} {ver=} {size=} {factor=}')
       self.rinksWrite(rinkid, mid, ver, size, factor)
@@ -114,11 +117,25 @@ WHERE rinkid = %s;""", (ver, pubdate, rinkid)
     self.count = 1
 
   def rinksDelete(self, rinkid):
-    ''' TODO call CellData() remove layers.* dependencies
-        remove rinks records
-        increment count
+    ''' remove layers.* dependencies
+        and then remove rinks records
+        increment and return count
     '''
-    return 'not implemented'
+    self.count = 0
+    self.cursor.execute("""
+DELETE from layers 
+WHERE rinkid = %s
+RETURNING *;""", [rinkid]
+    )
+    self.count = len(self.cursor.fetchall())
+
+    self.cursor.execute("""
+DELETE from rinks
+WHERE rinkid = %s
+RETURNING *;""", [rinkid]
+    )
+    self.count += len(self.cursor.fetchall())
+    return f'num of records deleted: {self.count}'
 
 '''
 the

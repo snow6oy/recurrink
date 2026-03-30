@@ -110,7 +110,7 @@ class Transform(Db2):
     '''
     yaml = dict()
     for label, cell in cells.items():
-      #print(label)
+      if len(cell) == 1: print('trubble ahead')
       yaml[label] = self.txDbv3YamlOneCell(cell, penwidth_mm)
     #self.pp.pprint(yaml)
     return yaml 
@@ -120,7 +120,12 @@ class Transform(Db2):
     '''
     if len(cell[0]): bg = cell[0][3] 
     else           : bg = None
+    # TODO cells with null backgrounds are sent with fg only :/
     name, size, facing, fill, dasharray = cell[1]
+    '''
+    else:  
+      name, size, facing, fill, dasharray = 'square', 'medium', 'C', bg, 0
+    '''
     dasharray = dasharray if dasharray else 0 # Pydantic wants int
     top = True if len(cell) == 3 else False
 

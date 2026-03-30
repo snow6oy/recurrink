@@ -161,15 +161,23 @@ class TmpFile(InputValidator):
   as palettes are no longer editable these functions are
   to be deprecated once consumers migrate
   '''
-  def exportPalfile(self, palname, palette):
+  def exportPalfile(self, paldir, palname, palette):
 
-    self.pp.pprint(palette)
+    #self.pp.pprint(palette)
     if len(palette) == 0:
       raise ValueError(f"{palname} is empty")
-    with open(f"palettes/{palname}.txt", 'w') as f:
+    with open(f"{paldir}/{palname}.txt", 'w') as f:
       print("\t".join(['fill', 'penam']), file=f)
       for fill, penam in palette.items():
         print(f'{str(fill)}\t{str(penam)}', file=f)  # flush=True)
+
+  def dumpUniq(self, paldir, rinkid, colors): 
+    ''' similar to export but without penam and subset
+        
+        who reads this file. palswap ?
+    '''
+    with open(f"{paldir}/{rinkid}.txt", 'w') as f:
+      [print(f'{str(c)}', file=f) for c in colors]
 
   def importPalfile(self, palname):
     with open(f"palettes/{palname}.txt") as f:
