@@ -5,7 +5,6 @@ from cell import CellData
 from config import *
 #from block.clone import Clone as BlockClone
 
-
 class Clone:
   ''' pull from db to create tmp/MODEL.txt from rinkid
   '''
@@ -55,29 +54,14 @@ class Clone:
     return out + f'palette {penam}'
 
   def palette(self, rinkid=None, penam=None):
-    ''' write pen colors (may not be required if merged with HTML)
+    ''' write pen colors to HTML
     '''
     pens    = self.md.pens()
     palver  = pens.index(penam)
     palette = self.bd.colors(ver=palver)
-    tf.dumpUniq('palettes', penam, palette)
-    return f"palettes/{penam}.txt was written from db"
-
-  ''' HTML generator code from build
-  if args.palver:
-    run init -p PENAM first
-    fn      = md.pens(ver=args.palver)
-    palette = tf.importPalfile(fn)
-    svgpal.render(fn, palette)
-    print(f"palettes/{fn}.html was written")
-  elif args.digest:
-    run clone -d DIGEST first
-        but why build a color chart for a rink
-        color charts should be for pens
-    palette = tf.importPalfile(args.digest)
-    svgpal.render(args.digest, palette)
-    print(f"palettes/{args.digest}.html was written")
-  '''
+    #tf.dumpUniq('palettes', penam, palette)
+    self.svgpal.render(penam, palette)
+    return f"palettes/{penam}.html was written"
 
   def rink(self, rinkid):  # we want celldata as YAML
 
