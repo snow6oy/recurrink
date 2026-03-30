@@ -1,26 +1,25 @@
 #!/usr/bin/env python
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-import os
+# import os
+#import datetime 
+#import random
+#import pprint
+#pp      = pprint.PrettyPrinter(indent=2)
+# from model import ModelData, SvgModel
+#from block import PaletteMaker, TmpFile, BlockData, Make
+#from cell import CellData, InputValidator
+#from config import *
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 import sys
 import argparse
-import datetime 
 import time
-import random
-import pprint
-from model import ModelData, SvgModel
-from model.init import Init
-from model.clone import Clone
-from model.commit import Commit
-from block import PaletteMaker, TmpFile, BlockData, Make
-from cell import CellData, InputValidator
-from config import *
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-pp      = pprint.PrettyPrinter(indent=2)
+from model import Init, Clone, Info, Commit, Build
+from block import TmpFile
 start_t = time.time()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-''' get inputs from command line
-'''
 def main(args):
+  ''' get inputs from command line
+  '''
   parser = argparse.ArgumentParser(prog='recurrink')
   subparsers = parser.add_subparsers(dest='keyword', help='sub-command help')
   parser_i = subparsers.add_parser('init', help='generate config')
@@ -28,9 +27,9 @@ def main(args):
   parser_e = subparsers.add_parser('explode', help='stamp blocks on the grid')
   parser_c = subparsers.add_parser('commit', help='write immutable entry to db')
   parser_k = subparsers.add_parser('clone', help='get copy of config')
-  parser_n = subparsers.add_parser('info', help='read metadata from db')
+  parser_o = subparsers.add_parser('info', help='read metadata from db')
 
-  arg_d = { 'help': 'rink identifier with 32 random characters' }
+  arg_d = { 'help': 'rink identifier with 32 characters' }
   arg_f = {
     'help':'scale factor: 0.4-1.0', 
     'type':float, 'nargs':'?', 'const':1.0
@@ -39,51 +38,38 @@ def main(args):
     'help':'draw lines or omit to paint',
     'action':argparse.BooleanOptionalAction
   }
+  arg_ls = {
+    'help':'list models by default, else pens',
+    'nargs':'?', 'choices':['pens','models'], 'const':'models'
+  }
   arg_m = { 'help':'name of base model' }
   arg_o = {
     'help':'clone celldata by default, else palette data',
     'nargs':'?', 'choices':['cell','pal', 'db2'], 'const':'cell'
   }
   arg_p = { 'help':'pen name used in GPLFILE and pens table' }
-  arg_e = {
-    'help':'list of pen sets',
-    'action':argparse.BooleanOptionalAction
-  }
   arg_s = { 
     'help':'cell lengths: 18-90', 
     'nargs':'?', 'type':int, 'const':36
-  }
-  # 'required':True
-  arg_v = {
-    'help':'palette version',
-    'type':int, 'choices':range(0, 99), 'metavar':'[0-99]'
-  }
-  arg_x = {
-    'help':'exchange colours to -p as new svg',
-    'action':argparse.BooleanOptionalAction
   }
   arg_z = {
     'help':'numof layers *3 or 2', 
     'metavar':'2-3', 'nargs':'?', 'const':3, 'type':int
   }
 
-  parser_b.add_argument('-v', '--palver',   **arg_v)    # write as html
-  parser_b.add_argument('-d', '--digest',   **arg_d)
   parser_b.add_argument('-m', '--model',    **arg_m)
   parser_b.add_argument('-s', '--size',     **arg_s)
   parser_b.add_argument('-f', '--factor',   **arg_f)
   parser_b.add_argument('-z', '--layer',    **arg_z)
   parser_b.add_argument('-l', '--line',     **arg_l)
-  parser_b.add_argument('-x', '--exchange', **arg_x)
 
   #  required=True
   parser_c.add_argument('-m', '--model',    **arg_m) 
   parser_c.add_argument('-s', '--size',     **arg_s)
   parser_c.add_argument('-f', '--factor',   **arg_f)
-  #parser_c.add_argument('-x', '--exchange', **arg_x)
   parser_c.add_argument('-p', '--penam',    **arg_p)
   parser_c.add_argument('-r', '--remove',   **arg_d)
-  parser_c.add_argument('-d', '--pubdate',   **arg_d)
+  parser_c.add_argument('-d', '--pubdate',  **arg_d)
 
   # klone :-)
   parser_k.add_argument('-d', '--digest',   **arg_d)
@@ -94,106 +80,15 @@ def main(args):
   parser_e.add_argument('-l', '--line',     **arg_l)
   parser_e.add_argument('-m', '--model',    **arg_m)
   parser_e.add_argument('-z', '--layer',    **arg_z)
-  parser_e.add_argument('-x', '--exchange', **arg_x)
 
   parser_i.add_argument('-m', '--model',    **arg_m)
   parser_i.add_argument('-p', '--penam',    **arg_p)
 
-  parser_n.add_argument('-p', '--pens',     **arg_e)
-  parser_n.add_argument('-m', '--model',    **arg_m)
-  parser_n.add_argument('-d', '--digest',   **arg_d)
+  parser_o.add_argument('-m', '--model',    **arg_m)
+  parser_o.add_argument('-d', '--digest',   **arg_d)
+  parser_o.add_argument('-l', '--list',     **arg_ls)
 
   return parser.parse_args()
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-def info(args):
-  md   = ModelData()
-  bd   = BlockData()
-  fnam = md.pens()  # pal.friendlyPenNames()
-  ''' list models or display rink metadata
-
-  TODO cleanup print(pmk.cmpPalettes(fnam[args.palver], args.digest))
-  '''
-  if args.pens:  # TODO why give penam as arg and ignore it ? 
-    [print(f"{i}\t{name}") for i, name in enumerate(fnam)]
-  elif args.model:
-    mid       = md.model(name=args.model)
-    pp.pprint(md.positionString(mid)) 
-  elif(args.digest):  # reith is consumer
-    '''
-   mid 12, 
-palver 0, 
-  size [90, 90]
-factor Decimal('1.00'), 
-create datetime.datetime(2024, 3, 3, 23, 37, 23, 529264), 
-   pub datetime.datetime(2024, 3, 5, 0, 0))
-    '''
-    mid, ver, size, factor, create, pub = bd.rinks(args.digest)
-    # pre-format in cases where rinkdata as empty
-    if size: size     = f'{size[0]} x {size[1]}'
-    if factor: factor = f'{factor:0.2f}'
-    if pub: pub       = f'{pub:%Y-%m-%d}'
-    print(f"""
--------+----------
- model | {mid}
-palver | {ver}
-  size | {size}
-factor | {factor}
-create | {create:%Y-%m-%d}
-   pub | {pub}""")
-  else:
-    print('working on it') 
-    # print(md.stats())
-
-def clone(args):
-  ''' copy something from db to filesystem
-  '''
-  c = Clone()
-
-  if args.penam and args.digest: # export rink as palette
-    print(c.palSwap(args.penam, args.digest))
-  elif args.penam: # export colors from db TODO unpack tuple
-    print(c.palette(penam=args.penam))
-  elif args.digest:
-    print(c.rink(args.digest))
-  else:
-    print(f'''
-at least one of {args.source=} {args.digest=} {args.penam=} is required''')
-
-def explode(args):
-  ''' assumptions: gridsize is A3 (297 x 420 mm) 
-      image is square: with margins grid approximate 270 x 270
-      numbers of cells defined by cell length which prefers to be divisible by 3
-      to ensure whole numbers: clen should be: 9 18 27 36 45 54 90 ..
-  '''
-  tf      = TmpFile()
-  md      = ModelData()
-  bd      = BlockData()
-  fnam    = md.pens()  # pal.friendlyPenNames()
-  if args.factor: svglin = SvgModel(args.size, args.factor)
-  else:           svglin = SvgModel(args.size)
-  celldata   = tf.readConf(args.model)
-  ver        = fnam.index(tf.VERSION)
-  if args.model == 'minkscape': # default model
-    positions = config.positions
-    penam     = config.penam[2]  # pen names for htmstart pal
-    block     = Make(args.size, linear=bool(args.line), pen_names=penam)
-  else:                         # TODO source positions from model
-    mid       = md.model(name=args.model)
-    positions = md.blocks(mid)
-    colors    = bd.colors(ver)
-    ''' are these two lines business logic?
-    if yes then put in build.py
-    else put in data.py
-    '''
-    penam     = dict()
-    for k, v in colors: penam[k] = v
-    block     = Make(args.size, linear=bool(args.line), pen_names=penam)
-
-  block.walk(positions, celldata, z=args.layer)
-  block.hydrateGrid()
-  svglin.explode(block)
-  svglin.render(args.model, line=bool(args.line))
-  print(f'tmp/{args.model}.svg was exploded')
 
 def init(args):
   ''' pull a palette from db and write to tmpfile
@@ -210,78 +105,30 @@ def init(args):
 using {pen} from source: {src} 
 ''')
 
-def build(args):
-  ''' generate an SVG from tmpfile or an HTML palette
+def info(args):
+  info = Info()
+
+  if args.model:              print(info.position(args.model))
+  elif args.digest:           print(info.rinkMeta(args.digest))
+  elif args.list == 'pens':   print(info.listPens())
+  elif args.list == 'models': print(info.stats())
+  else:                       print(f'''
+expected one of {args.list=} {args.model=} {args.digest=}''')
+
+def clone(args):
+  ''' copy something from db to filesystem
   '''
-  tf      = TmpFile()
-  md      = ModelData()
-  bd      = BlockData()
-  fnam    = md.pens()  # pal.friendlyPenNames()
+  c = Clone()
 
-  if args.palver:
-    ''' run init -p PENAM first
-    '''
-    fn      = md.pens(ver=args.palver)
-    palette = tf.importPalfile(fn)
-    svgpal.render(fn, palette)
-    print(f"palettes/{fn}.html was written")
+  if args.penam and args.digest: # export rink as palette
+    print(c.palSwap(args.penam, args.digest))
+  elif args.penam: # export colors from db TODO unpack tuple
+    print(c.palette(penam=args.penam))
   elif args.digest:
-    ''' run clone -d DIGEST first
-        but why build a color chart for a rink
-        color charts should be for pens
-    '''
-    palette = tf.importPalfile(args.digest)
-    svgpal.render(args.digest, palette)
-    print(f"palettes/{args.digest}.html was written")
-  elif args.model and args.size and args.factor:
-    svglin    = SvgModel(args.size, args.factor)
-
-    if args.model == 'minkscape': # default model
-      positions = config.positions
-    else: # TODO get positions from tf.positions() after readConf
-      mid       = md.model(name=args.model)
-      positions = md.blocks(mid)
-
-    metadata  = tf.readConf(args.model, meta=True)    
-    celldata  = tf.readConf(args.model)
-    #pp.pprint(celldata.keys())
-    penam     = metadata['palette']  # fnam.index(tf.VERSION)
-    pens      = md.pens()
-    ver       = pens.index(penam)
-    colors    = bd.colors(ver)
-    print(f'{penam=} {ver=}')
-    ''' are these two lines business logic?
-    if yes then put in build.py
-    else put in data.py
-    '''
-    penam     = dict()
-    for k, v in colors: penam[k] = v
-
-    uniq      = list(penam.keys())
-    # TODO add color validation to Pydantic
-    #old_ver = ver + 7
-    #cd = CellData(ver=old_ver)
-    iv          = InputValidator(ver=ver)
-    iv.uniqfill = uniq
-    [iv.validate(label, cell) for label, cell in celldata.items()]
-
-    block     = Make(args.size, linear=bool(args.line), pen_names=penam)
-    block.walk(positions, celldata, z=args.layer)
-
-    svgfile   = args.model
-    svgfile  += '_line' if bool(args.line) else '_box'
-    block.hydrateGrid()
-    svglin.build(block)
-    svglin.render(svgfile, line=bool(args.line))
-    print(f'tmp/{svgfile}.svg was built with pal {fnam[ver]}')
+    print(c.rink(args.digest))
   else:
-    raise Warning(f'''missing argument
-{args.palver=} 
-{args.digest=}
-{args.model=} 
-{args.size=}
-{args.factor=}
-''')
+    print(f'''
+at least one of {args.source=} {args.digest=} {args.penam=} is required''')
 
 def commit(args):
   ''' read config, write to database and return digest
@@ -309,6 +156,28 @@ def commit(args):
 {args.penam=}
 {args.pubdate=}
 {args.remove=}''')
+
+def explode(args):
+  b = Build()
+
+  if args.model and args.size and args.factor:
+    print(b.build(
+      args.model, args.size, args.factor, 
+      explode=True, linear=bool(args.line), layer=args.layer
+    ))
+  else:
+    print(f'missing argument {args.model=} {args.size=} {args.factor=}')
+
+def build(args):
+  b = Build()
+
+  if args.model and args.size and args.factor:
+    print(b.build(
+      args.model, args.size, args.factor, 
+      linear=bool(args.line), layer=args.layer
+    ))
+  else:
+    print(f'missing argument {args.model=} {args.size=} {args.factor=}')
 
 if __name__ == "__main__":
   args = main(sys.argv[1:])

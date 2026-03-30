@@ -1,5 +1,5 @@
 import pprint
-from model import ModelData
+from model import ModelData, SvgPalette
 from block import PaletteMaker, TmpFile, BlockData
 from cell import CellData
 from config import *
@@ -16,6 +16,7 @@ class Clone:
   bd      = BlockData()
   tf      = TmpFile()
   pmk     = PaletteMaker()
+  svgpal  = SvgPalette()
 
   def palSwap(self, penam, rinkid):
     ''' transform a rink to use a new palette
@@ -61,6 +62,22 @@ class Clone:
     palette = self.bd.colors(ver=palver)
     tf.dumpUniq('palettes', penam, palette)
     return f"palettes/{penam}.txt was written from db"
+
+  ''' HTML generator code from build
+  if args.palver:
+    run init -p PENAM first
+    fn      = md.pens(ver=args.palver)
+    palette = tf.importPalfile(fn)
+    svgpal.render(fn, palette)
+    print(f"palettes/{fn}.html was written")
+  elif args.digest:
+    run clone -d DIGEST first
+        but why build a color chart for a rink
+        color charts should be for pens
+    palette = tf.importPalfile(args.digest)
+    svgpal.render(args.digest, palette)
+    print(f"palettes/{args.digest}.html was written")
+  '''
 
   def rink(self, rinkid):  # we want celldata as YAML
 

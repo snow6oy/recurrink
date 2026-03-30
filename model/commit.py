@@ -33,7 +33,7 @@ class Commit:
   PALDIR  = config.directory['palettes']
   fnam    = md.pens()  # pal.friendlyPenNames()
 
-  def palswap(self, palver, rinkid): 
+  def _palswap(self, palver, rinkid): 
     ''' another way would be for clone to transform the rink to new pal
       then commit would read rinkid from YAML and update
     '''

@@ -161,39 +161,37 @@ WHERE mid = %s;""", [mid])
       outer.append(inner)
     return outer
 
-  # list_model_with_stats
   def stats(self):
-    ''' display uniq cells, blocksize and model names
+    ''' display model names and more
     '''
     stats = dict()
     self.cursor.execute("""
-SELECT model, uniqcells, blocksizexy
+SELECT mid, model
 FROM models;""",)
     for row in self.cursor.fetchall():
-      model, uniq, size = row
-      stats[model] = list()
-      stats[model].append(uniq)
-      stats[model].append(size)
+      mid, model   = row
+      stats[mid] = [model]
     self.cursor.execute("""
-SELECT model, count(top) 
+SELECT mid, count(top) 
 FROM blocks
-GROUP BY model;""",)
+GROUP BY mid;""",)
     top = self.cursor.fetchall()
-    model = 'soleares'
     self.cursor.execute("""
-SELECT model, count(cell) 
+SELECT mid, count(cell) 
 FROM compass
-GROUP BY model;""",)
+GROUP BY mid;""",)
     compass = self.cursor.fetchall()
-    for m in stats:
-      n = [t for t in top if t[0] == m]
-      stats[m].append(n[0][1]) # assume blocks always have model
-      i = [c for c in compass if c[0] == m] # but compass does not, so set a default
-      counter = i[0][1] if len(i) else 0
-      stats[m].append(counter)
-    output = f"uniq\t   x\t   y\t top\tcompass\t model\n" + ('-' * 80) + "\n"
-    for m in stats:
-      output += f"{stats[m][0]:>4}\t{stats[m][1][0]:>4}\t{stats[m][1][1]:>4}\t{stats[m][2]:>4}\t{stats[m][3]:>4}\t{m}\n"
+    for mid in stats:
+      n = [t for t in top if t[0] == mid]
+      stats[mid].append(n[0][1])              # assume blocks always have model
+      i = [c for c in compass if c[0] == mid] # but compass does not
+      counter = i[0][1] if len(i) else 0      # so set a default
+      stats[mid].append(counter)
+    #self.pp.pprint(stats)
+    output = f"mid\tmodel             \ttop    \tcompass\n" + ('-' * 80) + "\n"
+    for mid in stats:
+      model, top, compass = stats[mid]
+      output += f"{mid}\t{model:<18}\t{top:>4}\t{compass:>4}\n"
     return output
 
 '''
