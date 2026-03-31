@@ -1,10 +1,12 @@
 import pprint
 from cell.init import Init as CellInit
-from block.data import BlockData
+from .data import BlockData
 
 class Init:
-
+  ''' inherit BlockData gives self.cursor error ???
+  '''
   pp = pprint.PrettyPrinter(indent=2)
+  bd = BlockData()
 
   def __init__(self, ver, cells=None, top=None):
     self.ver   = ver
@@ -12,8 +14,7 @@ class Init:
     self.top   = top
 
   def generate(self, compass):
-    bd        = BlockData()
-    colors    = bd.colors(self.ver)
+    colors    = self.bd.colors(self.ver)
     data      = None
     celldata  = dict()
     both      = self.cells + self.top

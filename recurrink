@@ -98,8 +98,9 @@ def init(args):
   init       = Init()
   model, pen = init.setInput(args.model, args.penam)
   src, data  = init.generate(model, pen)
-  newver     = init.ver + 7
-  tf.setVersion(newver)
+  #newver     = init.ver + 7
+  #tf.setVersion(newver)
+  tf.setVersion(init.ver)
   tf.writePretty(model, data)
   print(f'''generated {model} with {len(data.keys())} cells
 using {pen} from source: {src} 
