@@ -68,7 +68,8 @@ class PaletteMaker:
     rgb_float = hsv_to_rgb((hsv[0] + 0.5) % 1, hsv[1], hsv[2])
     return [int(f) for f in rgb_float]
 
-  def cmpPalettes(self, digest, fn):
+  # TODO deprecate after a safe period starting now: 31/3/26
+  def _cmpPalettes(self, digest, fn):
     ''' count matching entries of two palettes
     '''
     tf = TmpFile()

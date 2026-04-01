@@ -111,8 +111,8 @@ def info(args):
 
   if args.model:              print(info.position(args.model))
   elif args.digest:           print(info.rinkMeta(args.digest))
-  elif args.list == 'pens':   print(info.listPens())
-  elif args.list == 'models': print(info.stats())
+  elif args.list == 'pens':   print(info.penList())
+  elif args.list == 'models': print(info.modeList())
   else:                       print(f'''
 expected one of {args.list=} {args.model=} {args.digest=}''')
 

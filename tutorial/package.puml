@@ -1,0 +1,38 @@
+@startUML
+
+title: Packaging
+
+class model.data
+class block.data
+
+class model.build 
+class model.clone
+class model.commit
+class model.info
+class model.init
+
+class block.build
+class block.clone
+class block.commit
+class block.info
+class block.init
+
+model.build <|-- model.data
+model.clone <|-- model.data
+model.commit <|-- model.data
+model.info <|-- model.data
+model.init <|-- model.data
+
+'model.build ..|> block.build
+'model.clone ..|> block.clone
+'model.commit ..|> block.commit
+'model.info ..|> block.info
+model.init ..|> block.init
+
+block.build <|-- block.data
+block.clone <|-- block.data
+block.commit <|-- block.data
+block.info <|-- block.data
+block.init <|-- block.data
+
+@endUML
