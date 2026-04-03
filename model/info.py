@@ -1,7 +1,7 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 import pprint
-from model import ModelData
-from block.info import Info as BlockInfo
+from block import Info as BlockInfo
+from .data import ModelData
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Info(ModelData):
   ''' list models or display rink metadata

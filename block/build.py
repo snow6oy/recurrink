@@ -1,8 +1,49 @@
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 import pprint
 from shapely.geometry import Polygon, LineString, MultiPolygon
-from cell import Layer
-from .styles import Styles
+from cell import Layer, InputValidator
+from .tmpfile import TmpFile
+from .data import BlockData
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Build(BlockData):
+  ''' build or explode
 
+      assumptions: gridsize is A3 (297 x 420 mm) 
+      image is square: with margins grid approximate 270 x 270
+      numbers of cells defined by cell length which prefers to be divisible by 3
+      to ensure whole numbers: clen should be: 9 18 27 36 45 54 90 ..
+  '''
+  pp      = pprint.PrettyPrinter(indent=2)
+  tf      = TmpFile()
+
+  def build(self, model, size, factor, **kwargs):
+
+    explode   = kwargs.get('explode')
+    linear    = kwargs.get('linear')
+    layer     = kwargs.get('layer')
+    mid       = kwargs.get('mid')
+    positions = kwargs.get('positions')
+    pens      = kwargs.get('pens')
+
+    metadata  = self.tf.readConf(model, meta=True)    
+    celldata  = self.tf.readConf(model)
+    ver       = pens.index(metadata['palette'])
+    colors    = self.colors(ver)
+    celldata  = self.tf.readConf(model)
+    penam     = dict()              # convert to dict for svg render
+    for k, v in colors: penam[k] = v
+    block     = Make(size, linear, pen_names=penam)
+    block.walk(positions, celldata, z=layer)
+    block.hydrateGrid()
+
+    if not explode: 
+      uniq        = list(penam.keys())
+      iv          = InputValidator(ver=ver)
+      iv.uniqfill = uniq
+      [iv.validate(label, cell) for label, cell in celldata.items()]
+
+    return block, metadata["palette"]
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Make:
 
   VERBOSE = False
@@ -156,6 +197,89 @@ class Make:
         
     #self.pp.pprint(self.grid)
     return None
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+class Styles:
+
+  def __init__(self, penam=dict()):
+    self.fill             = dict()
+    self.fill_opacity     = dict()
+    self.stroke           = dict()
+    self.stroke_dasharray = dict()
+    self.stroke_opacity   = dict()
+    self.stroke_width     = dict()
+
+    self.fill_penam       = dict()
+    self.stroke_penam     = dict()
+    self.penam            = penam 
+
+  def add(self, pos, color, stroke=None):
+    ''' style.fill[(1,0)] = [
+      'brown',  # bg
+      'blue',   # fg
+      'green'   # top
+    ]
+        assign values
+    '''
+    self.hydratePos(pos)
+    fill  = color['fill']
+    self.fill[pos].append(fill)
+    self.fill_opacity[pos].append(color['opacity'])
+
+    # fallback to hex unless pen name was defined during init
+    if fill in self.penam: self.fill_penam[pos].append(self.penam[fill])
+    else: self.fill_penam[pos].append(fill)
+
+    # strokes do not align with YAML where they are a separate object, hmm
+    if stroke:
+      sfill = stroke['fill']
+
+      if sfill not in self.penam:  # fallback 
+        self.penam[sfill] = sfill
+
+      self.stroke[pos].append(sfill)
+      self.stroke_penam[pos].append(self.penam[sfill])
+      self.stroke_dasharray[pos].append(stroke['dasharray'])
+      self.stroke_opacity[pos].append(stroke['opacity'])
+      self.stroke_width[pos].append(stroke['width'])
+    else:
+      self.stroke[pos].append(None)
+      self.stroke_dasharray[pos].append(0)
+      self.stroke_opacity[pos].append(1)
+      self.stroke_width[pos].append(0)
+      self.stroke_penam[pos].append(None)
+
+  def addBackground(self, pos, color):
+    '''
+    if pos not in self.background: self.background[pos] = []
+    self.background[pos] = '#' + color['background']
+        initialise the attributes we need
+    '''
+    self.hydratePos(pos)
+    bgcol = color['background']
+
+    self.fill[pos].append(bgcol)
+    self.fill_opacity[pos].append(1)
+    self.stroke[pos].append(None)
+    self.stroke_dasharray[pos].append(0)
+    self.stroke_opacity[pos].append(1)
+    self.stroke_width[pos].append(0)
+
+    if bgcol in self.penam: self.fill_penam[pos].append(self.penam[bgcol])
+    else: self.fill_penam[pos].append(bgcol)
+    self.stroke_penam[pos].append(None)
+
+  def hydratePos(self, pos):
+    ''' styles are indexed by their position in the blok
+    '''
+    if pos not in self.fill:             self.fill[pos]             = []
+    if pos not in self.fill_opacity:     self.fill_opacity[pos]     = []
+    if pos not in self.stroke:           self.stroke[pos]           = []
+    if pos not in self.stroke_dasharray: self.stroke_dasharray[pos] = []
+    if pos not in self.stroke_opacity:   self.stroke_opacity[pos]   = []
+    if pos not in self.stroke_width:     self.stroke_width[pos]     = []
+    if pos not in self.fill_penam:       self.fill_penam[pos]       = []
+    if pos not in self.stroke_penam:     self.stroke_penam[pos]     = []
+
 '''
 the
 end

@@ -1,20 +1,10 @@
 #!/usr/bin/env python
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-# import os
-#import datetime 
-#import random
-#import pprint
-#pp      = pprint.PrettyPrinter(indent=2)
-# from model import ModelData, SvgModel
-#from block import PaletteMaker, TmpFile, BlockData, Make
-#from cell import CellData, InputValidator
-#from config import *
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 import sys
 import argparse
 import time
 from model import Init, Clone, Info, Commit, Build
-from block import TmpFile
+# from block import TmpFile # needed by commit()
 start_t = time.time()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def main(args):
@@ -94,15 +84,10 @@ def init(args):
   ''' pull a palette from db and write to tmpfile
       generate an editable config file 
   '''
-  tf         = TmpFile()
   init       = Init()
   model, pen = init.setInput(args.model, args.penam)
-  src, data  = init.generate(model, pen)
-  #newver     = init.ver + 7
-  #tf.setVersion(newver)
-  tf.setVersion(init.ver)
-  tf.writePretty(model, data)
-  print(f'''generated {model} with {len(data.keys())} cells
+  src, num   = init.generate(model, pen)
+  print(f'''generated {model} with {num} cells
 using {pen} from source: {src} 
 ''')
 
@@ -135,14 +120,16 @@ def commit(args):
   ''' read config, write to database and return digest
   '''
   c  = Commit()
-  tf = TmpFile()
+  #tf = TmpFile()
   #if args.penam and args.exchange: print(c.palswap(args.palver, args.digest))
   if args.model and args.size and args.factor:
-    metadata = tf.readConf(args.model, meta=True)
-    if metadata['id'] is None:
-      print(c.addRink(args.model, args.size, args.factor))
-    else:
-      print(c.updateVer(metadata['palette'], metadata['id']))
+    print(c.addRink(args.model, args.size, args.factor))
+    #metadata = tf.readConf(args.model, meta=True)
+    #if metadata['id'] is None:
+    #else:
+  elif args.model: # attempt to update palette. depends if conf has id
+    print(c.updateVer(args.model))
+    #print(c.updateVer(metadata['palette'], metadata['id']))
   elif args.penam:
     print(c.addColor(args.penam))
   elif args.pubdate: 
@@ -180,6 +167,7 @@ def build(args):
   else:
     print(f'missing argument {args.model=} {args.size=} {args.factor=}')
 
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 if __name__ == "__main__":
   args = main(sys.argv[1:])
   if   args.keyword == 'init':    init(args)

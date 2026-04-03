@@ -65,10 +65,13 @@ VALUES (%s, %s, %s);""", [new_ver, fill, name]
     return ver - 7
 
   def rinks(self, rinkid, *rinkvals):
+    ''' when rinkid exists in database and rinkvals == 4
+        there will be not enough vals to unpack error
+        del rinkid and try again
+    '''
     rinkdata = self.rinksRead(rinkid)
     if len(rinkvals): incoming = rinkvals[0]
     else:             incoming = None 
-    # self.pp.pprint(incoming)
     if rinkdata and incoming:
       mid, ver, size, factor, created, pubdate = rinkvals[0]
       #print(f'UPDATE {ver=} {pubdate=}')

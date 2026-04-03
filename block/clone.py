@@ -1,6 +1,8 @@
 import pprint
-from block import PaletteMaker, TmpFile, BlockData
 from cell import CellData
+from .palette import PaletteMaker
+from .tmpfile import TmpFile
+from .data import BlockData
 
 class Clone(BlockData):
   ''' pull from db to create tmp/MODEL.txt from rinkid
@@ -55,9 +57,8 @@ class Clone(BlockData):
     celldata = self.cd.txDbv3Yaml(celldata)
     return mid, ver, celldata
 
-  def writeConf(self, model, ver, rinkid, celldata):
-    self.tf.setVersion(ver)
-    self.tf.writePretty(model, celldata, rinkid=rinkid)
+  def writeConf(self, model, celldata, penam, pos, rinkid):
+    self.tf.writePretty(model, celldata, penam, pos, rinkid)
     return f"""
 cloning {model}
 with {len(celldata)} cells

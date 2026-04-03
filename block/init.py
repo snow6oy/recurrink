@@ -1,23 +1,19 @@
 import pprint
 from cell.init import Init as CellInit
 from .data import BlockData
+from .tmpfile import TmpFile
 
-class Init:
-  ''' inherit BlockData gives self.cursor error ???
+class Init(BlockData):
+  ''' do BlockData stuff
   '''
   pp = pprint.PrettyPrinter(indent=2)
-  bd = BlockData()
+  tf = TmpFile()
 
-  def __init__(self, ver, cells=None, top=None):
-    self.ver   = ver
-    self.cells = cells
-    self.top   = top
-
-  def generate(self, compass):
-    colors    = self.bd.colors(self.ver)
+  def generate(self, compass, ver=0, cells=list(), top=list()):
+    colors    = self.colors(ver)
     data      = None
     celldata  = dict()
-    both      = self.cells + self.top
+    both      = cells + top
     uniqcells = set(both)
     source    = 'database'
     #print(uniqcells, compass.conf)
@@ -25,7 +21,7 @@ class Init:
 
     #for cell in ['c']:  # a b c d
     for cell in uniqcells:
-      top_yn = True if cell in self.top else False
+      top_yn = True if cell in top else False
       init   = CellInit(colors)
       if compass.conf:
         source = 'compass'
@@ -50,6 +46,12 @@ class Init:
         data = init.generate(top_yn)
       celldata[cell] = data
     return source, celldata
+
+  def writePretty(self, model, data, penam, pos):
+    ''' hit the YAML here
+    '''
+    #self.tf.setVersion(ver)
+    self.tf.writePretty(model, data, penam, pos)
 
 '''
 the

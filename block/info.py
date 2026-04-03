@@ -1,6 +1,6 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 import pprint
-from block import BlockData
+from .data import BlockData
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Info(BlockData):
   ''' obtain and clean rink metadata

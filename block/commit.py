@@ -1,9 +1,11 @@
 import os
 import datetime 
 import pprint
-from block import PaletteMaker, TmpFile, BlockData
 from cell import CellData
 from config import *
+from .palette import PaletteMaker
+from .tmpfile import TmpFile
+from .data import BlockData
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Commit(BlockData):
   ''' read config, write to database and return digest
@@ -26,15 +28,21 @@ class Commit(BlockData):
   def addRink(self, mid, model, size, factor, pens):
     ''' do the real work here
     '''
-    celldata = self.tf.readConf(model)
     metadata = self.tf.readConf(model, meta=True)
+    if metadata['id']:
+      raise TypeError(f"""found {metadata['id']} in conf
+not adding to database in case it causes duplication
+setting >id: null< in {model}.yaml avoids this message""")
+
     if metadata['palette'] in pens:
       ver   = pens.index(metadata['palette'])
       penam = metadata['palette']
     else:
       ver   = 0
       penam = None
+    celldata = self.tf.readConf(model)
     rinkid = self.tf.setDigest(celldata=celldata)
+    print(rinkid, mid, ver, size, factor)
     if os.path.isdir(f"{self.WORKDIR}/{model}"):
       self.rinks(rinkid, [mid, ver, size, factor]) # write new to DB
       if self.count:
@@ -47,9 +55,18 @@ class Commit(BlockData):
       raise FileNotFoundError(f"{model} not found in {self.WORKDIR}")
     return rinkid, ver, penam
 
-  def updateVer(self, ver, rinkid):
+  def updateVer(self, model, pens):
+  #def updateVer(self, ver, rinkid):
     ''' read and write back same, except ver
     '''
+    metadata = self.tf.readConf(model, meta=True)
+    print(metadata)
+    if metadata['id']:
+      rinkid = metadata['id']
+      penam  = metadata['palette']
+      ver    = pens.index(penam)
+    else:
+      raise ValueError(f'{model}.yaml has no conf.id. stopping palswap')
     mid, _, size, factor, created, pubdate = self.rinks(rinkid)
     self.rinks(rinkid, [mid, ver, size, factor, created, pubdate])
     return self.count
@@ -77,7 +94,7 @@ rows impacted: {self.count}'''
     rinkdata = self.rinks(rinkid) 
     if rinkdata:
       out = self.rinksDelete(rinkid)
-      mid = rinkdata[1]
+      mid = rinkdata[0]
     else: 
       raise ValueError(f'nothing named {rinkid} in database')
     return mid, out

@@ -4,9 +4,10 @@ import yaml
 import random
 import hmac
 import pprint
-from model import ModelData
-from block import BlockData, InputValidator
 from cell import CellData
+from .data import BlockData
+from .validator import InputValidator
+#from model import ModelData
 # from config import *
 # db2 will change once data2 merges
 # from cell.data import CellData
@@ -19,28 +20,7 @@ class TmpFile(InputValidator):
   pp        = pprint.PrettyPrinter(indent=2)
   meta_tags = ['id', 'model', 'palette', 'positions'] # defaults will be popped
 
-  def setVersion(self, ver=None):
-    ''' Version is badly named reference to palette index
-        0: universal is a mess and should not be used
-        using len(fnam) is risky because not enough entries
-    '''
-    USE_PEN_PALS = 7  # palettes with pens, not friends from abroad :-D
-    md           = ModelData()
-    fnam         = md.pens()
-    '''
-    pal          = Palette()
-    fnam         = pal.friendlyPenNames()
-    md2  = ModelData2()
-    fnam = md2.pens()
-    ver  = int(ver)
-    '''
-
-    if ver is None: ver = random.choice(range(USE_PEN_PALS, len(fnam)))
-    self.VERSION = ver
-    self.PALETTE = fnam[ver]
-    return ver
-
-  def writePretty(self, model, celldata, rinkid=None):
+  def writePretty(self, model, celldata, penam, pos, rinkid=None):
     ''' make the fills pretty be removing # 
     '''
     for label in celldata: # remove the hash in #rrggbb
@@ -54,7 +34,7 @@ class TmpFile(InputValidator):
               )
               #print(f'{label=} {cs=} {fb=}')
     print()
-    metadata = self.metadata(model, rinkid)
+    metadata = self.metadata(model, penam, pos, rinkid=rinkid)
     self.writeConf(model, metadata, celldata)
     
   def writeConf(self, model, metadata, celldata):
@@ -66,16 +46,13 @@ class TmpFile(InputValidator):
     with open(f'conf/{model}.yaml', 'w') as outfile:
       print(out, file=outfile)
 
-  def metadata(self, model, rinkid=None):
+  def metadata(self, model, penam, pos, rinkid=None):
     ''' compile metadata for conf
     '''
-    md       = ModelData()
-    mid      = md.model(name=model)
-    pos      = md.positionString(mid)
     metadata = {
       'id': rinkid,
       'model': model,
-      'palette': self.PALETTE,
+      'palette': penam, # self.PALETTE,
       'positions': pos
     }
     return metadata
@@ -87,7 +64,7 @@ class TmpFile(InputValidator):
     with open(f'conf/{model}.yaml', 'r') as yf:
       conf = yaml.safe_load(yf)
 
-    self.VERSION = conf['palette']
+    #self.VERSION = conf['palette']
     if meta: conf = self.readMeta(conf)
     else:    conf = self.readCells(conf)
     return conf
@@ -171,14 +148,6 @@ class TmpFile(InputValidator):
       for fill, penam in palette.items():
         print(f'{str(fill)}\t{str(penam)}', file=f)  # flush=True)
 
-  def dumpUniq(self, paldir, rinkid, colors): 
-    ''' similar to export but without penam and subset
-        
-        who reads this file. palswap ?
-    '''
-    with open(f"{paldir}/{rinkid}.txt", 'w') as f:
-      [print(f'{str(c)}', file=f) for c in colors]
-
   def importPalfile(self, palname):
     with open(f"palettes/{palname}.txt") as f:
       data = [line.rstrip() for line in f] # read and strip newlines
@@ -197,8 +166,7 @@ class TmpFile(InputValidator):
     [oc.add(c[2]) for c in old_pal]
     return oc
 
-  ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-  def rinkMeta(self, rinkdata):
+  def _rinkMeta(self, rinkdata):
     ''' gather metadata from db to write conf/MODEL.yaml
     '''
     md    = ModelData()
@@ -223,6 +191,36 @@ class TmpFile(InputValidator):
     #if topos: metadata['positions']['top'] = topos
  
     return model, metadata
+
+  def _setVersion(self, ver=None):
+    ''' Version is badly named reference to palette index
+        0: universal is a mess and should not be used
+        using len(fnam) is risky because not enough entries
+    '''
+    USE_PEN_PALS = 7  # palettes with pens, not friends from abroad :-D
+    md           = ModelData()
+    fnam         = md.pens()
+    '''
+    pal          = Palette()
+    fnam         = pal.friendlyPenNames()
+    md2  = ModelData2()
+    fnam = md2.pens()
+    ver  = int(ver)
+    '''
+
+    if ver is None: ver = random.choice(range(USE_PEN_PALS, len(fnam)))
+    self.VERSION = ver
+    self.PALETTE = fnam[ver]
+    return ver
+
+  def _dumpUniq(self, paldir, rinkid, colors): 
+    ''' similar to export but without penam and subset
+        
+        who reads this file. palswap ?
+    '''
+    with open(f"{paldir}/{rinkid}.txt", 'w') as f:
+      [print(f'{str(c)}', file=f) for c in colors]
+
 '''
 the
 end

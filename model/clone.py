@@ -1,9 +1,7 @@
 import pprint
-from model import ModelData, SvgPalette
-from block.clone import Clone as BlockClone
-#from block import PaletteMaker, TmpFile, BlockData
-#from cell import CellData
-#from config import *
+from block import Clone as BlockClone
+from .data import ModelData
+from .palette import SvgPalette
 
 class Clone(ModelData):
   ''' pull from db to create tmp/MODEL.txt from rinkid
@@ -20,8 +18,9 @@ class Clone(ModelData):
     ver      = pens.index(penam)
 
     mid, celldata, out = self.bc.palSwap(rinkid, ver)
+    pos   = self.positionString(mid=mid)
     model = self.model(mid=mid)
-    out  += self.bc.writeConf(model, ver, rinkid, celldata)
+    out  += self.bc.writeConf(model, celldata, penam, pos, rinkid)
     return out + f'palette {penam}'
 
   def palette(self, penam):
@@ -37,9 +36,10 @@ class Clone(ModelData):
 
     mid, ver, celldata = self.bc.rink(rinkid)
     model              = self.model(mid=mid)
+    pos                = self.positionString(mid=mid)
     pens               = self.pens()
     penam   = pens[ver] if 1 <= ver < len(pens) else None
-    written = self.bc.writeConf(model, ver, rinkid, celldata)
+    written = self.bc.writeConf(model, celldata, penam, pos, rinkid)
     return written + f'palette {penam}'
 '''
 the

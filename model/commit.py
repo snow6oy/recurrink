@@ -2,9 +2,9 @@
 import os
 import datetime 
 import pprint
-from model import ModelData
-from block.commit import Commit as BlockCommit
+from block import Commit as BlockCommit
 from config import *
+from .data import ModelData
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Commit(ModelData):
   ''' read config, write to database and return digest
@@ -34,6 +34,7 @@ class Commit(ModelData):
     pens     = self.pens()
 
     rinkid, ver, penam = self.bc.addRink(mid, model, size, factor, pens)
+    # only reach this point if conf.id was null
     if os.path.isfile(f'conf/{model}.yaml'): # commit is idempotent
       os.unlink(f'conf/{model}.yaml')
     # TODO self.moveTmpfile(model, rinkid)
@@ -48,12 +49,11 @@ was NOT copied to {self.WORKDIR}
 
 removed {model}.yaml from conf'''
 
-  def updateVer(self, penam, rinkid):
+  def updateVer(self, model):
     ''' taking new ver from conf transformed by clone
     '''
     pens = self.pens()
-    ver  = pens.index(penam)
-    num  = self.bc.updateVer(ver, rinkid)
+    num  = self.bc.updateVer(model, pens)
     return f'''
 new palette: {penam}
 rows impacted: {num}'''

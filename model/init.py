@@ -1,16 +1,16 @@
 import pprint
 import random
-from model import ModelData
-from block.init  import Init as BlockInit
+from block import Init as BlockInit
+from .data import ModelData
 
 class Init(ModelData):
   ''' generate a YAML from random selection
       apply some controls e.g. pairing based on symmetry
-  '''
   def __init__(self, model=None, pen=None):
     self.mnam  = model
     self.pen   = pen
     super().__init__()
+  '''
 
   def setInput(self, mnam=None, pen=None):
     pens   = self.pens()
@@ -29,13 +29,15 @@ class Init(ModelData):
     # print(f'{self.mid=} {model=} {self.ver=} {pen=}')
 
     blocks    = self.blocks(self.mid)
+    pos       = self.positionString(self.mid) # txt visualisation of blocks
     cells     = [cell[0] for pos, cell in blocks.items()]
     top       = [cell[1] for pos, cell in blocks.items() if cell[1]]
-    init      = BlockInit(self.ver, cells, top)
+    bi        = BlockInit()
     csconf    = self.compass(self.mid)
     compass   = Compass(csconf)
-    src, data = init.generate(compass)
-    return src, data
+    src, data = bi.generate(compass, ver=self.ver, cells=cells, top=top)
+    bi.writePretty(model, data, pen, pos)
+    return src, len(data.keys())
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 class Compass:
