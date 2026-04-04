@@ -4,9 +4,9 @@ import yaml
 import random
 import hmac
 import pprint
-from cell import CellData
 from .data import BlockData
 from .validator import InputValidator
+#from cell import CellData
 #from model import ModelData
 # from config import *
 # db2 will change once data2 merges

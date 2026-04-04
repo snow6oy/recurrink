@@ -37,6 +37,8 @@ class Build(BlockData):
     block.hydrateGrid()
 
     if not explode: 
+      # validation happens when YAML is written by Pydantic
+      # and again when building by cell.shape.validate
       uniq        = list(penam.keys())
       iv          = InputValidator(ver=ver)
       iv.uniqfill = uniq
