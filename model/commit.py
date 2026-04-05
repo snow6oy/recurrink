@@ -52,8 +52,8 @@ removed {model}.yaml from conf'''
   def updateVer(self, model):
     ''' taking new ver from conf transformed by clone
     '''
-    pens = self.pens()
-    num  = self.bc.updateVer(model, pens)
+    pens       = self.pens()
+    num, penam = self.bc.updateVer(model, pens)
     return f'''
 new palette: {penam}
 rows impacted: {num}'''

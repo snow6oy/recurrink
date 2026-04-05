@@ -42,7 +42,7 @@ setting >id: null< in {model}.yaml avoids this message""")
       penam = None
     celldata = self.tf.readConf(model)
     rinkid = self.tf.setDigest(celldata=celldata)
-    print(rinkid, mid, ver, size, factor)
+    #print(rinkid, mid, ver, size, factor)
     if os.path.isdir(f"{self.WORKDIR}/{model}"):
       self.rinks(rinkid, [mid, ver, size, factor]) # write new to DB
       if self.count:
@@ -56,11 +56,9 @@ setting >id: null< in {model}.yaml avoids this message""")
     return rinkid, ver, penam
 
   def updateVer(self, model, pens):
-  #def updateVer(self, ver, rinkid):
     ''' read and write back same, except ver
     '''
     metadata = self.tf.readConf(model, meta=True)
-    print(metadata)
     if metadata['id']:
       rinkid = metadata['id']
       penam  = metadata['palette']
@@ -69,7 +67,7 @@ setting >id: null< in {model}.yaml avoids this message""")
       raise ValueError(f'{model}.yaml has no conf.id. stopping palswap')
     mid, _, size, factor, created, pubdate = self.rinks(rinkid)
     self.rinks(rinkid, [mid, ver, size, factor, created, pubdate])
-    return self.count
+    return self.count, penam
 
   def updatePubdate(self, rinkid): 
     # TODO rinksUpdate has to accept pubdate as well as ver
