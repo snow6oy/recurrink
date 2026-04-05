@@ -1,8 +1,5 @@
 import pprint
 import random
-#import psycopg2
-#from config import *
-#from .shape import *
 
 class Init:
 
@@ -143,7 +140,7 @@ class Strokes:
     color  = random.choice(colors)
     stroke = color[0]
     width  = random.choice(self.zeroten)
-    dash   = 1 if YN else 0
+    dash   = 0 # need to implement dasharray in cell.meander
     op     = random.choice(self.zeroten) / 10
     '''
     empty  = { 

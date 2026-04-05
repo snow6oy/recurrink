@@ -1,6 +1,5 @@
 import random
 import pprint
-#import psycopg2
 from config import Db2
 
 class ModelData(Db2):

@@ -1,5 +1,5 @@
 import pprint
-from cell.transform import Transform
+from cell import Transform
 from .palette import PaletteMaker
 from .tmpfile import TmpFile
 from .data import BlockData

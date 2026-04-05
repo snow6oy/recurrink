@@ -1,5 +1,5 @@
 import pprint
-from cell.init import Init as CellInit
+from cell import Init as CellInit
 from .data import BlockData
 from .tmpfile import TmpFile
 

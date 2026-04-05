@@ -1,7 +1,7 @@
 import os
 import datetime 
 import pprint
-from cell import CellData
+from cell import Transform
 from config import *
 from .palette import PaletteMaker
 from .tmpfile import TmpFile
@@ -13,7 +13,7 @@ class Commit(BlockData):
   pp      = pprint.PrettyPrinter(indent=2)
   pmk     = PaletteMaker()
   tf      = TmpFile()
-  cd      = CellData()
+  tx      = Transform()
   WORKDIR = config.directory['rinks']
   PUBDIR  = config.directory['pubq']
   PALDIR  = config.directory['palettes']
@@ -46,8 +46,8 @@ setting >id: null< in {model}.yaml avoids this message""")
     if os.path.isdir(f"{self.WORKDIR}/{model}"):
       self.rinks(rinkid, [mid, ver, size, factor]) # write new to DB
       if self.count:
-        celldata = self.cd.dataV2(celldata)  # TODO should use dataV3 ?
-        self.cd.layers(rinkid, celldata=celldata)
+        celldata = self.tx.dataV2(celldata)  # TODO should use dataV3 ?
+        self.layers(rinkid, celldata=celldata)
         # TODO self.moveTmpfile(model, rinkid)
       else:
         raise ValueError('db error adding rink')
