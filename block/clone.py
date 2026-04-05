@@ -1,5 +1,5 @@
 import pprint
-from cell import CellData
+from cell.transform import Transform
 from .palette import PaletteMaker
 from .tmpfile import TmpFile
 from .data import BlockData
@@ -9,18 +9,19 @@ class Clone(BlockData):
   '''
   VERBOSE = False
   pp      = pprint.PrettyPrinter(indent=2)
-  cd      = CellData()
+  #cd      = CellData()
   tf      = TmpFile()
+  tx      = Transform()
   pmk     = PaletteMaker()
+  widthmm = 1 # TODO source this from db   
 
   def palSwap(self, rinkid, ver):
     ''' transform a rink to use a new palette
         e.g sharpie 180f1989f54ff03291ec31e164f2a79f
-
     '''
     mid, *extra = self.rinks(rinkid)     # lookup model name
     rinkset  = set()                     
-    celldata = self.cd.layers(rinkid)    # get colors used by rink
+    celldata = self.layers(rinkid)    # get colors used by rink
     for label, cell in celldata.items():
       for z, row in enumerate(cell):
         if not len(row): continue
@@ -30,7 +31,9 @@ class Clone(BlockData):
     colors   = set([c[0] for c in colors])  # strip out penam
     colors   = self.pmk.setLookUp(colors)   # RGB to search the new colour
     swp, out = self.pmk.swapColors(rinkset, colors)
-   
+
+    yamldata    = dict()
+
     for label, cell in celldata.items():
       layers = list()
       for z in cell:
@@ -39,10 +42,9 @@ class Clone(BlockData):
         new_layer    = list(z)
         new_layer[3] = swp[old_stroke]
         layers.append(tuple(new_layer))
-      celldata[label] = layers  # update db colors 
-    celldata = self.cd.txDbv3Yaml(celldata)
-    #self.pp.pprint(celldata)
-    return mid, celldata, out
+      #self.pp.pprint(layers)
+      yamldata[label] = self.tx.databaseToYaml(layers, self.widthmm)
+    return mid, yamldata, out
 
   def palette(self, ver):
     ''' get pen colors
@@ -53,9 +55,11 @@ class Clone(BlockData):
     ''' rink and celldata
     '''
     mid, ver, clen, factor, *dates = self.rinks(rinkid)
-    celldata = self.cd.layers(rinkid)
-    celldata = self.cd.txDbv3Yaml(celldata)
-    return mid, ver, celldata
+    celldata = self.layers(rinkid)
+    yamldata = dict()
+    for label, cell in celldata.items():
+      yamldata[label] = self.tx.databaseToYaml(cell, self.widthmm)
+    return mid, ver, yamldata
 
   def writeConf(self, model, celldata, penam, pos, rinkid):
     self.tf.writePretty(model, celldata, penam, pos, rinkid)

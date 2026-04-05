@@ -115,9 +115,11 @@ class Transform(Db2):
     #self.pp.pprint(yaml)
     return yaml 
 
-  def txDbv3YamlOneCell(self, cell, penwidth_mm=Decimal(1)):
+  #def txDbv3YamlOneCell(self, cell, penwidth_mm=Decimal(1)):
+  def databaseToYaml(self, cell, penwidth_mm=Decimal(1)):
     ''' transform V3 to YAML
     '''
+    if len(cell) == 1: print('trubble ahead')
     if len(cell[0]): bg = cell[0][3] 
     else           : bg = None
     # TODO cells with null backgrounds are sent with fg only :/
