@@ -1,7 +1,8 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 import pprint
 from shapely.geometry import Polygon, LineString, MultiPolygon
-from cell import Layer, InputValidator
+#from cell import Layer, InputValidator
+from cell import InputValidator, Build as BuildCell
 from .tmpfile import TmpFile
 from .data import BlockData
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -72,9 +73,12 @@ class Make:
   def walkThree(self, positions, cells, z=3):
     for pos in positions:
       label   = positions[pos][0]  
-      cell    = Layer(clen=self.CLEN, pos=pos, linear=self.linear)
+      #cell    = Layer(clen=self.CLEN, pos=pos, linear=self.linear)
+      cell = BuildCell(clen=self.CLEN, pos=pos, linear=self.linear)
       if label not in cells:
-        raise KeyError(f'block.make.walkThree {label} not in {list(cells.keys())}')
+        raise KeyError(
+          f'block.make.walkThree {label} not in {list(cells.keys())}'
+        )
       cell.background(cells[label])
       ''' ['geom']) if cells[label]['color']['background']: 
       print(f"{label} {cells[label]['color']['background']}")
@@ -103,7 +107,8 @@ class Make:
       if self.VERBOSE: 
         print(f'{label_0} {label_1} {pos} ', end='', flush=True)
 
-      cell = Layer(clen=self.CLEN, pos=pos, linear=self.linear)
+      #cell = Layer(clen=self.CLEN, pos=pos, linear=self.linear)
+      cell = BuildCell(clen=self.CLEN, pos=pos, linear=self.linear)
       # First Layer
       if label_1 is None: # layer 3 was not defined
         cell.background(cells[label_0])
@@ -124,9 +129,6 @@ class Make:
     strokedata = None
     if 'stroke' in cell: strokedata = cell['stroke']
     return strokedata
-
-
-
 
   def setBlocksize(self, positions):
     ''' extract blocksize and set for downstream functions
