@@ -16,3 +16,4 @@ t/__init__.py
 __pycache__/*
 */__pycache__/*
 cell/shape/__pycache__/*
+rc.sh
