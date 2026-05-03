@@ -1,5 +1,6 @@
 import pprint
-from cell import Transform
+#from cell import Transform
+from cell import Clone as CloneCell
 from .palette import PaletteMaker
 from .tmpfile import TmpFile
 from .data import BlockData
@@ -11,7 +12,8 @@ class Clone(BlockData):
   pp      = pprint.PrettyPrinter(indent=2)
   #cd      = CellData()
   tf      = TmpFile()
-  tx      = Transform()
+  #tx      = Transform()
+  cc      = CloneCell()
   pmk     = PaletteMaker()
   widthmm = 1 # TODO source this from db   
 
@@ -43,7 +45,7 @@ class Clone(BlockData):
         new_layer[3] = swp[old_stroke]
         layers.append(tuple(new_layer))
       #self.pp.pprint(layers)
-      yamldata[label] = self.tx.databaseToYaml(layers, self.widthmm)
+      yamldata[label] = self.cc.databaseToYaml(layers, self.widthmm)
     return mid, yamldata, out
 
   def palette(self, ver):
@@ -58,7 +60,7 @@ class Clone(BlockData):
     celldata = self.layers(rinkid)
     yamldata = dict()
     for label, cell in celldata.items():
-      yamldata[label] = self.tx.databaseToYaml(cell, self.widthmm)
+      yamldata[label] = self.cc.databaseToYaml(cell, self.widthmm)
     return mid, ver, yamldata
 
   def writeConf(self, model, celldata, penam, pos, rinkid):
