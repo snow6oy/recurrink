@@ -17,6 +17,10 @@ class block.commit
 class block.info
 class block.init
 
+class cell.build
+class cell.clone
+class cell.commit
+
 model.build <|-- model.data
 model.clone <|-- model.data
 model.commit <|-- model.data
@@ -27,12 +31,28 @@ model.init <|-- model.data
 'model.clone ..|> block.clone
 'model.commit ..|> block.commit
 'model.info ..|> block.info
-model.init ..|> block.init
+model ..|> block
 
 block.build <|-- block.data
 block.clone <|-- block.data
 block.commit <|-- block.data
 block.info <|-- block.data
 block.init <|-- block.data
+
+cell.build <|-- cell.data
+cell.clone <|-- cell.data
+cell.commit <|-- cell.data
+block ..|> cell
+
+skinparam class {
+  BackgroundColor<<Legend>> #PaleGreen 
+}
+class Legend.inherit <<Legend>>
+class Legend.implement <<Legend>>
+
+Legend.inherit   <|-- Legend.inherit
+Legend.implement ..|> Legend.implement
+
+
 
 @endUML

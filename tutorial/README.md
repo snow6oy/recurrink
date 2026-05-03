@@ -8,17 +8,23 @@ Recurrink is designed on the MVC Pattern.
 |C | Control | Business Process: CLI commands |
 
 ![](./package.svg)
-```
-<|-- inherit
-..|> implement
-```
-_all model classes implement a block class but only init is shown for brevity_
 
-* The business logic is held in Build, Clone, Commit, Init and Info classes.
-* These classes are spread across Model, Build and Clone packages.
-* Each business logic class inherits data from the current package.
+## Patterns
+### Five Commands Pattern
+
+* The business logic is held in five command classes: 
+  * Build
+  * Clone
+  * Commit
+  * Init
+  * Info
+* These classes exist in three packages: Model, Block and Cell
+* Each class inherits data from the relevant package.
+* By convention, command classes keep the same name across packages.
 * Access to data from another package is done through implemention.
-* By convention, business logic classes keep the same name across packages.
+
+### Cells are Singular Pattern
+Block aggregates and ensures that functions in the cell packages are called in the singular. Previously block sent all the cells in a block.  
 
 ## Class diagrams
 There are five classes dedicated to business functions.
@@ -45,4 +51,3 @@ Read metadata from database and print to screen.
 
 ## Database schema
 ![](./dbentity.svg)
-
