@@ -59,7 +59,7 @@ declare -a arr=(
 for i in "${arr[@]}"
 do
    echo "$i"
-   ./recurrink clone -v"$i"
+   ./recurrink clone -d "$i"
 done
 ```
 ## Order of Execution
