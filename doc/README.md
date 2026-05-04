@@ -51,3 +51,6 @@ Read metadata from database and print to screen.
 
 ## Database schema
 ![](./dbentity.svg)
+
+# Testing
+[Unit tests](../t/README.md) are a good way to start exploring the code

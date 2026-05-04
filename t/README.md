@@ -1,55 +1,24 @@
+# Testing
+Run one unit test
 ``` 
 cd ~/code/recurrink
 source v/bin/activate
 screen -S rink
-python -m unittest t.Test.test_n
+python -m unittest t.PACKAGE_CLASS.Test.test_n
 ```
 
-# Order of Execution
-Not numeric after all *face palm*
+* Some tests produce visual output using Matplotlib.
+* Others have database dependencies, e.g `t/block_data.py`
+
+to prepare the database for this test
 ```
-t.layout.Test.test_1
-t.layout.Test.test_10
-t.layout.Test.test_11
-t.layout.Test.test_12
-t.layout.Test.test_13
-t.layout.Test.test_14
-t.layout.Test.test_15
-t.layout.Test.test_16
-t.layout.Test.test_2
-t.layout.Test.test_3
+bash sql/t.sh
+
+# expected output
+DELETE 1
+DELETE 12
+DELETE 1
 ```
-
-# Test Coverage
-
-```
-cell/
-y	cell/data.py
-y	cell/layer.py
-y 	cell/geometry.py
-
-cell/shape/
-y	cell/shape/rectangle.py
-y	cell/shape/parabola.py
-y	cell/shape/gnomon.py
-
-block/
-y	block/data.py
-y	block/make.py
-n	block/styles.py
-y	block/spiral.py
-y	block/meander.py
-y	block/tmpfile.py
-y	block/palette.py
-
-	model/
-n	model/db.py
-y	model/svg.py
-y	model/data.py
-y	model/linear.py
--	model/palette.py
-```
-
 
 ## Regression
 
@@ -76,11 +45,26 @@ declare -a arr=(
   "02b7defd538d1602fbf35d27612f9021"
   "08d971a3c0f2919aa1b29897a9611647")
 
-# clone and make svg for A4 or not
+# clone all and then build each model in conf
 for i in "${arr[@]}"
 do
    echo "$i"
    ./recurrink clone -v"$i"
-   ./recurrink update --a4
 done
+```
+## Order of Execution
+To run all units in a test
+`python -m unittest t.Test`
+Not numeric after all *face palm*
+```
+t.layout.Test.test_1
+t.layout.Test.test_10
+t.layout.Test.test_11
+t.layout.Test.test_12
+t.layout.Test.test_13
+t.layout.Test.test_14
+t.layout.Test.test_15
+t.layout.Test.test_16
+t.layout.Test.test_2
+t.layout.Test.test_3
 ```
