@@ -1,7 +1,7 @@
 import unittest
 import pprint
 from block.data import BlockData
-from cell.transform import Transform
+from cell import Commit, Clone
 from cell.minkscape_2 import minkscape_2
 
 class Test(unittest.TestCase):
@@ -21,7 +21,8 @@ remove from layers after test
 
   def setUp(self):
     self.bd     = BlockData()
-    self.tx     = Transform()
+    self.commit = Commit()
+    self.clone  = Clone()
     self.ver    = 4 # stabilo68 new ver
     self.rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' # fake rink
     self.cellV2 = {
@@ -129,7 +130,7 @@ DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
     if top and not fg: cell['geom']['top'] = False # demote to layer 1
 
     celldata  = { label: cell }
-    celldata  = self.tx.dataV2(celldata)
+    celldata  = self.commit.dataV2(celldata)
     self.bd.layersWrite(self.rinkid, celldata)
     self.assertEqual(expected, self.bd.count) # check rows were inserted
 
@@ -156,14 +157,14 @@ DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
     '''
     cell = self.cellV2
     #self.pp.pprint(cell)
-    cell = self.tx.dataV2({'a': cell})
+    cell = self.commit.dataV2({'a': cell})
     self.assertFalse(len(cell['a'][0]))
     self.assertTrue(len(cell['a'][1]))
 
   def test_p(self):
     ''' transform Y3ML to DBV3
     '''
-    v3 = self.tx.dataV3(minkscape_2.cells)
+    v3 = self.commit.dataV3(minkscape_2.cells)
     #self.pp.pprint(v3)
     self.assertTrue(len(v3['a']))
 
@@ -171,7 +172,7 @@ DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
     ''' convert Y3ML to DBV2
     '''
     #self.pp.pprint(minkscape_2.cells)
-    v3 = self.tx.dataV3(minkscape_2.cells)
+    v3 = self.commit.dataV3(minkscape_2.cells)
     self.assertEqual(2, len(v3['a']))
 
   def test_r(self):
@@ -181,10 +182,9 @@ DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
         self.test_a creates layers
     '''
     cells = self.bd.layersRead(self.rinkid)
-    yaml  = self.tx.txDbv3Yaml(cells)
-    a     = list(yaml['a'].keys()) 
-    ''' self.pp.pprint(a)
-    '''
+    yaml  = self.clone.databaseToYaml(cells['a'])
+    # self.pp.pprint(yaml)
+    a     = list(yaml.keys()) 
     [self.assertTrue(k in a) for k in ['geom', 'color', 'stroke']]
 
   def test_s(self):

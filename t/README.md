@@ -19,6 +19,16 @@ DELETE 1
 DELETE 12
 DELETE 1
 ```
+then you should see
+```
+python -m unittest t.block_data
+...................
+----------------------------------------------------------------------
+Ran 19 tests in 0.281s
+
+OK
+```
+:smile:
 
 ## Regression
 
@@ -55,7 +65,6 @@ done
 ## Order of Execution
 To run all units in a test
 `python -m unittest t.Test`
-Not numeric after all *face palm*
 ```
 t.layout.Test.test_1
 t.layout.Test.test_10
@@ -68,3 +77,4 @@ t.layout.Test.test_16
 t.layout.Test.test_2
 t.layout.Test.test_3
 ```
+Not numeric order but alphabetic :facepalm:
