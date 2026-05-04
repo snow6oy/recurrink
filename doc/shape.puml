@@ -1,0 +1,176 @@
+@startuml
+
+class cell.Line.guidelines {
+   facing
+   clen
+   bounds
+}
+class cell.Line.collectPoints {
+   guidelines
+   facing: NONE
+}
+class cell.Line.orderGrid {
+   guideline
+   facing: NONE
+}
+class cell.Line.makeStripes {
+   points
+}
+class cell.Line.sliceByThird {
+   facing
+   points
+}
+class cell.shape.Circle.validate {
+   geom
+}
+class cell.shape.Circle.draw {
+   points
+   geom
+}
+class cell.shape.Circle.paint {
+   points
+   geom
+}
+class cell.shape.Circle.getRadius {
+   size
+   clen
+   swidth
+}
+class cell.shape.Circle.adjustSize {
+   size
+   points
+}
+class cell.shape.Circle.drawConcentric {
+   points
+   geom
+}
+class cell.shape.Diamond.validate {
+   geom
+}
+class cell.shape.Diamond.draw {
+   points
+   geom
+}
+class cell.shape.Diamond.paint {
+   points
+   geom
+}
+class cell.shape.Diamond.coords {
+   points
+   facing
+}
+class cell.shape.Diamond.guidelines {
+   points
+   geom
+}
+class cell.shape.Diamond.__guide {
+   facing
+}
+class cell.shape.Gnomon.validate {
+   geom
+}
+class cell.shape.Gnomon.draw {
+   clen
+   dim
+   geom
+}
+class cell.shape.Gnomon.paint {
+   dim
+   kwargs
+}
+class cell.shape.Gnomon.coords {
+   dim
+   facing
+   size
+}
+class cell.shape.Gnomon.__guide {
+   facing
+}
+class cell.shape.Parabola.validate {
+   geom
+}
+class cell.shape.Parabola.paint {
+   dim
+   geom
+}
+class cell.shape.Parabola.coords {
+   dim
+   facing
+}
+class cell.shape.Parabola.draw {
+   clen
+   dim
+   geom
+   padding: FALSE
+}
+class cell.shape.Parabola.reString {
+   linstr
+   point
+   reverse: FALSE
+   append: FALSE
+   case: 0
+}
+class cell.shape.Parabola.joinStrings {
+   gnomon
+   edge
+}
+class cell.shape.Rectangle.validate {
+   geom
+}
+class cell.shape.Rectangle.draw {
+   clen
+   dim
+   geom
+}
+class cell.shape.Rectangle.paint {
+   dim
+   kwargs
+}
+class cell.shape.Rectangle.coords {
+   dim
+   size
+   facing
+}
+class cell.shape.Triangle.paint {
+   points
+   geom
+}
+class cell.shape.Triangle.coords {
+   points
+   facing
+}
+class cell.shape.Triangle.draw {
+   points
+   geom
+}
+class cell.shape.Triangle.orderGrid {
+   guideline
+   facing: NONE
+}
+class cell.shape.Triangle._orderGrid {
+   guideln
+}
+class cell.shape.Triangle.validate {
+   geom
+}
+class cell.shape.Triangle.guidelines {
+   points
+   geom
+}
+cell.Line <|-- cell.shape.Triangle
+cell.Line <|-- cell.shape.Diamond
+cell.Line <|-- cell.shape.Gnomon
+cell.Line <|-- cell.shape.Parabola
+cell.Line <|-- cell.shape.Rectangle
+
+cell.Layer.background -- cell.shape.Rectangle.draw
+' foreground calls both draw and paint methods
+cell.Layer.foreground -- cell.shape.Triangle
+cell.Layer.foreground -- cell.shape.Diamond
+cell.Layer.foreground -- cell.shape.Gnomon
+cell.Layer.foreground -- cell.shape.Parabola
+cell.Layer.foreground -- cell.shape.Rectangle
+cell.Layer.foreground -- cell.shape.Circle
+
+
+@enduml
