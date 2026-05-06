@@ -1,2 +1,4 @@
-
-select count(*) as freq, model from views group by model order by freq;
+SELECT count(*) as freq, model
+FROM rinks, models
+WHERE rinks.mid = models.mid
+GROUP BY model ORDER BY freq;

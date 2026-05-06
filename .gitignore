@@ -2,7 +2,7 @@
 *.swp
 .DS_Store
 TODO
-doc/solutions
+doc/solutions/*
 tmp
 palettes
 Archive
@@ -10,7 +10,7 @@ conf/*
 pubq/*
 scripts/*
 sql/models/*
-sql/palette/*
+sql/utils/*
 v/*
 t/__init__.py
 __pycache__/*
