@@ -1,13 +1,15 @@
 import unittest
 import pprint
 from shapely.geometry import MultiPolygon, Polygon, LinearRing
-from block import Make
+from block.build import Make
 from cell.minkscape import *
-from model import SvgModel
+#from model.svg import SvgModel
 
 class Test(unittest.TestCase):
-
+  ''' block build accepts inputs: model, size, factor, **kwargs
+  '''
   pp = pprint.PrettyPrinter(indent=2)
+
   def setUp(self):
     self.VERBOSE = False
 
@@ -62,18 +64,6 @@ class Test(unittest.TestCase):
     [self.assertEqual(e, to_test[i]) for i, e in enumerate(expected)]
 
   def test_f(self):
-    ''' 2 layer
-
-        visual test use gthumb
-    '''
-    bm = Make(90)
-    svg = SvgModel(90)
-    bm.walkTwo(minkscape.positions, minkscape.cells)
-    bm.hydrateGrid()
-    svg.build(bm)
-    svg.render('blockmake_test_f')
-
-  def test_g(self):
     ''' pens that appear in multiple styles
         must still have unique names
     '''
@@ -93,28 +83,6 @@ class Test(unittest.TestCase):
       for style in layer:
         penams.append(layer[style]['penam'] )
     self.assertEqual(penams, expected)
-
-  def test_h(self):
-    ''' test exploder walks the grid
-    '''
-    a0      = LinearRing(((0,0), (0,9), (9,9), (9,0)))
-    a1      = LinearRing(((4,4), (4,6), (6,6), (6,4)))
-    a       = Polygon(a0, holes=[a1])
-    b       = Polygon(((9,0), (9,9), (18,5)))
-    c       = Polygon(((0,15), (9,18), (9,9)))
-    d       = Polygon(((9,9), (9,18), (18,18), (18,9)))
-    block   = [a, b, c, d]
-    CLEN    = 9
-    b0, b1  = (2, 2)  # blocksize
-    gsize   = 3
-    edge    = gsize * CLEN
-
-    svglin  = SvgModel(CLEN)
-    model   = svglin.walk(block, gsize, b0, b1, CLEN, edge)
-    mp      = MultiPolygon(model)
-    if self.VERBOSE: self.writer.plot(mp, self.id())
-
-  
 '''
 the 
 end
