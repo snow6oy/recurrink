@@ -11,6 +11,7 @@ pubq/*
 scripts/*
 sql/models/*
 sql/utils/*
+sql/palette/*
 v/*
 t/__init__.py
 __pycache__/*
