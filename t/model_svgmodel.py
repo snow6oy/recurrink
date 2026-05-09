@@ -1,37 +1,20 @@
 import unittest
 import pprint
+from shapely.geometry import LinearRing, Polygon, MultiPolygon
 from cell.minkscape import *
-from model import Build
+from block.build import Make
+from model.svg import SvgModel # for visual tests
+from model.tester import SvgWriter    # access to matplotlib
 
-# TODO
-'''
-  sending unknown model names causes new ones to be created :/
-  need filenames for visual test
-'''
 class Test(unittest.TestCase):
 
   pp = pprint.PrettyPrinter(indent=2)
+ 
+  def setUp(self):
+    self.VERBOSE = True
+    self.writer  = SvgWriter()
 
-  def test_a(self, LINE=True, BUILD=True, MODEL=None):
-    ''' build SVG
-    '''
-    clen   = 20
-    scale  = 1.0
-    #block  = Make(clen=clen, linear=LINE)
-    #svglin = SvgModel(clen=clen, scale=scale)
-    MODEL  = MODEL if MODEL else 'svgmodel_test_a'
-    b      = Build()
-
-    #block.walk(minkscape.positions, minkscape.cells)
-    #block.hydrateGrid()
-    if BUILD: b.build(MODEL, clen, scale, linear=LINE)
-    else:     b.build(MODEL, clen, scale, linear=LINE, explode=True)
-
-  def test_b(self): self.test_a(LINE=False,BUILD=False, MODEL='svgmodel_test_b')
-  def test_c(self): self.test_a(LINE=False,BUILD=True,  MODEL='svgmodel_test_c')
-  def test_d(self): self.test_a(LINE=True, BUILD=False, MODEL='svgmodel_test_d')
-
-  def test_e(self):
+  def test_a(self):
     ''' generate clen and scale combinations
     '''
     expected = {
@@ -73,21 +56,17 @@ class Test(unittest.TestCase):
         self.assertEqual(viewbx, svg.viewbx[0])
 
 
-  def test_f(self):
-    ''' 2 layer
-
-        visual test use gthumb
-    TODO avoid dep by moving these test to model_svgmodel
-    OR matplotlib
+  def test_b(self):
+    ''' 2 layer visual test use gthumb
     '''
-    bm = Make(90)
+    bm  = Make(90)
     svg = SvgModel(90)
     bm.walkTwo(minkscape.positions, minkscape.cells)
     bm.hydrateGrid()
     svg.build(bm)
-    svg.render('blockmake_test_f')
+    svg.render('block_make_test_b')
 
-  def test_h(self):
+  def test_c(self):
     ''' test exploder walks the grid
     '''
     a0      = LinearRing(((0,0), (0,9), (9,9), (9,0)))

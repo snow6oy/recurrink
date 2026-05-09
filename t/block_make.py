@@ -3,7 +3,6 @@ import pprint
 from shapely.geometry import MultiPolygon, Polygon, LinearRing
 from block.build import Make
 from cell.minkscape import *
-#from model.svg import SvgModel
 
 class Test(unittest.TestCase):
   ''' block build accepts inputs: model, size, factor, **kwargs

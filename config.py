@@ -22,7 +22,7 @@ class Db2:
 
 class config:
   directory = {
-       'rinks': '/home/gavin/Dropbox/familia/rinks',
+       'rinks': '/home/gavin/pCloud/Art/rinks', # see rc.sh # see rc.sh # see rc.sh 
         'pubq': '/home/gavin/Pictures/pubq',
     'palettes': '/home/gavin/.config/inkscape/palettes'
   }
