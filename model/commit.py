@@ -12,7 +12,7 @@ class Commit(ModelData):
   pp      = pprint.PrettyPrinter(indent=2)
   bc      = BlockCommit()
   WORKDIR = config.directory['rinks']
-  PUBDIR  = config.directory['pubq']
+  PLOTDIR  = config.directory['plotq']
   PALDIR  = config.directory['palettes']
 
   def addColor(self, penam):
@@ -81,7 +81,7 @@ rows impacted: {num}'''
     if os.path.isfile(f"tmp/{model}.svg"):
       svgname = f"{WORKDIR}/{model}/{rinkid}.svg"
       os.rename(f"tmp/{model}.svg", svgname)
-      os.symlink(f"{svgname}", f"{PUBDIR}/{rinkid}.svg")
+      os.symlink(f"{svgname}", f"{PLOTDIR}/{rinkid}.svg")
       return svgname
     else:
       raise FileNotFoundError(f"{model}.svg not found in tmp")
@@ -89,8 +89,8 @@ rows impacted: {num}'''
   def removeSvg(model, rinkid):
     ''' also unused 
     '''
-    if os.path.isfile(f'{PUBDIR}/{rinkid}.svg'):
-      os.unlink(f'{PUBDIR}/{rinkid}.svg')
+    if os.path.isfile(f'{PLOTDIR}/{rinkid}.svg'):
+      os.unlink(f'{PLOTDIR}/{rinkid}.svg')
     if os.path.isfile(f'{WORKDIR}/{model}/{rinkid}.svg'):
       os.unlink(f'{WORKDIR}/{model}/{rinkid}.svg')
       return f'{rinkid} deleted ok' # success

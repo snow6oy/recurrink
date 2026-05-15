@@ -89,7 +89,7 @@ DELETE FROM colors WHERE ver = 4 AND penam = 'zz';
     ''' create fake rink
         meta is based on data retrieved from db1
 
-DELETE FROM rinks WHERE rinkid = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
+        use sql/t,sh to clean 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
     '''
     mid      = 1
     created  = None

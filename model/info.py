@@ -34,13 +34,14 @@ class Info(ModelData):
     pens    = self.pens() 
     penam   = pens[ver] if ver else None
     model   = self.model(mid=mid)
+    if create: create = f'{create:%Y-%m-%d}'
     return f"""
 -------+----------
  model | {model} ({mid=})
  penam | {penam} ({ver=})
   size | {size}
 factor | {factor}
-create | {create:%Y-%m-%d}
+create | {create}
    pub | {pub}"""
 
 '''

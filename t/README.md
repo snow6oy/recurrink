@@ -1,6 +1,8 @@
 # Testing
 Run one unit test
 ``` 
+mkdir /tmp/recurrink
+mkdir /tmp/palettes
 cd ~/code/recurrink
 source v/bin/activate
 screen -S rink

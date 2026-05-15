@@ -22,8 +22,13 @@ class Db2:
 
 class config:
   directory = {
-       'rinks': '/home/gavin/pCloud/Art/rinks', # see rc.sh # see rc.sh # see rc.sh 
-        'pubq': '/home/gavin/Pictures/pubq',
+       'rinks': '/Users/gavin/pCloud Drive/Art/rinks',
+       'plotq': '/Users/gavin/Pictures/plotq',
+    'palettes': '/Users/gavin/Library/Application Support/org.inkscape.Inkscape/config/inkscape/palettes'
+  }
+  _directory = {  # ubuntu paths
+       'rinks': '/home/gavin/pCloud/Art/rinks',
+       'plotq': '/home/gavin/Pictures/plotq',
     'palettes': '/home/gavin/.config/inkscape/palettes'
   }
 '''
