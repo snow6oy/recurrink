@@ -5,14 +5,31 @@ from shapely.geometry import Polygon
 
 class SvgModel:
  
-  MAX_LEN = 270   # 1080 if px but not done that yet
+  ''' A3 297 x 420
+      A2 420 x 594
+      reduced by 40mm for border when CLEN = 20 and scale 1
+  '''
+  PAPERSIZE = {
+    'A3P': (297, 420),
+    'A3L': (420, 297),
+    'A3S': (297, 297),
+    'A2P': (420, 594),
+    'A2L': (594, 420),
+    'A2S': (420, 420),
+  }
   VERBOSE = False
   pp      = pprint.PrettyPrinter(indent = 2)
 
-  def __init__(self, clen, scale=1.0):
-    scaled =  clen * scale
+  def __init__(self, clen, scale=1.0, ps='A2L'):
+    print(f'{clen=} {scale=} {ps=}')
+    scaled      = clen * scale
+    margin      = scaled * 2  # margin = length of one cell after scaling
+    max_len     = (
+      self.PAPERSIZE[ps][0] - margin, self.PAPERSIZE[ps][1] - margin
+    )
+    print(f'{clen=} {scaled=} {max_len=}')
     if scaled % 2:
-      print(f'WARNING {clen} does not meander')
+      print(f'WARNING {clen} not divisible by 2: may not pass meander')
     elif scaled < 3 or scaled > 90:
       raise ValueError(f'{clen=} * {scale=} exceeded safe limit')
     self.border = 0
@@ -20,19 +37,20 @@ class SvgModel:
     self.unit   = 'mm'
     self.scaled = scaled
     self.clen   = clen
-    cellnum     = round(self.MAX_LEN / scaled)
-    gridsz      = int(cellnum * scaled)
-    viewbx      = int(cellnum * clen)
 
-    self.gridsz = (gridsz, gridsz)
-    self.viewbx = (viewbx, viewbx)
+    cellnum     = (round(max_len[0] / scaled), round(max_len[1] / scaled))
+    gridsz      = (int(cellnum[0] * scaled), int(cellnum[1] * scaled))
+    viewbx      = (int(cellnum[0] * clen), int(cellnum[1] * clen))
+
+    self.gridsz = (gridsz[0], gridsz[1])
+    self.viewbx = (viewbx[0], viewbx[1])
 
   def explode(self, block):
     ''' prepare model by copying block.grid to exploded self
     '''
     b0, b1  = block.BLOCKSZ
-    edge    = self.viewbx[0]
-    cellnum = int(edge / self.clen)
+    edge    = (self.viewbx[0], self.viewbx[1])
+    cellnum = (int(edge[0] / self.clen), int(edge[1] / self.clen))
 
     for z, layer in enumerate(block.grid):
       self.grid.append({})
@@ -43,18 +61,17 @@ class SvgModel:
         )
         self.grid[z][style]['geom']  = exploded
         self.grid[z][style]['penam'] = layer[style]['penam']
-    #pp.pprint(self.grid)
 
   def walk(self, block, cellnum, b0, b1, CLEN, edge):
     cells = list()
-    for y in range(0, cellnum, b1):
-      for x in range(0, cellnum, b0):
-        for p in block:
+    for y in range(0, cellnum[1], b1):
+      for x in range(0, cellnum[0], b0):
+        for p in block:  # loop the polygons
           ''' all cells in block use same x,y coord for transform
           '''
           clone    = transform(p, lambda xy: xy + [x * CLEN, y * CLEN])
           X, Y, *Z = clone.bounds     # check if we went over the edge
-          if X < edge and Y < edge:
+          if X >= CLEN and X <= edge[0] and Y >= CLEN and Y <= edge[1]:
             cells.append(clone)
             if self.VERBOSE: print(f"{X:2.0f} {Y:2.0f}, ", end='', flush=True)
       if self.VERBOSE: print()
