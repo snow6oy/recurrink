@@ -22,6 +22,21 @@ class SvgWriter:
     shapely.plotting.plot_line(line, ax=ax, linewidth=width, add_points=False)
     plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
 
+  def plotPoint(self, point, fn, visible=True, title=True, color=None):
+    ''' resurrected for sesenta
+    '''
+    if point.geom_type not in ['Point', 'MultiPoint']:
+      raise ValueError(f'wrong geometry {point.geom_type}')
+    fig, ax = plt.subplots()
+    #ax.invert_yaxis()
+    ax.axes.get_xaxis().set_visible(visible)
+    ax.axes.get_yaxis().set_visible(visible)
+    t_class, t_name = self.fileName(fn)
+    if title: plt.title(f"{t_class} {t_name}")
+    if color: shapely.plotting.plot_points(point, ax=ax, color=color)
+    else:     shapely.plotting.plot_points(point, ax=ax) # matplotlib default
+    plt.savefig(f"tmp/{t_class}_{t_name}.svg", format="svg")
+
   def plot(self, box, fn, title=True):
     fig, ax = plt.subplots()
     #ax.invert_yaxis()
