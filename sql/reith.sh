@@ -2,6 +2,7 @@
 
 RINKDIR='/Users/gavin/pCloud Drive/Art/rinks'
 PLOTQ=/Users/gavin/Pictures/plotq
+TMPDIR=/tmp/recurrink
 
 model_name() {
   local id=$1
@@ -44,10 +45,10 @@ move_to_cloud() {
     echo "${PLOTQ}/${id} not found"
     exit
   fi
-  echo "${RINKDIR}/$id/$name"
-  touch "${RINKDIR}/$id/$name"
   mv -i ${PLOTQ}/${id} "${RINKDIR}"
+  touch "${RINKDIR}/$id/$name"
   commit=$(./recurrink commit -d ${id})
+  echo "${RINKDIR}/$id/$name"
   echo "$commit"
 }
 
