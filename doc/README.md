@@ -52,5 +52,18 @@ Read metadata from database and print to screen.
 ## Database schema
 ![](./dbentity.svg)
 
+## Combinations
+### Palswap
+Many rinks have no palette since universal palette was deprecated (ver=0).
+To swap to a new palette
+```
+./recurrink info -lpens                  # list available palettes
+./recurrink clone -d ae0...1c4a -pcopic  # export to conf and transform 
+./recurrink build -mwaltz -s -f          # visual check
+./recurrink commit -mwaltz               # write new palette to database
+
+```
+
+
 # Testing
 [Unit tests](../t/README.md) are a good way to start exploring the code
