@@ -20,7 +20,8 @@ class SvgModel:
   VERBOSE = False
   pp      = pprint.PrettyPrinter(indent = 2)
 
-  def __init__(self, clen, scale=1.0, ps='A2L'):
+  def __init__(self, clen, scale=1.0, ps=None):
+    if not ps: ps = 'A3L'
     print(f'{clen=} {scale=} {ps=}')
     scaled      = clen * scale
     margin      = scaled * 2  # margin = length of one cell after scaling

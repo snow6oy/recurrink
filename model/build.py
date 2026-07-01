@@ -15,8 +15,9 @@ class Build(ModelData):
   pp      = pprint.PrettyPrinter(indent=2)
   bb      = BlockBuild()
 
-  def build(self, model, size, factor, explode=False, linear=False, layer=3):
-    svglin    = SvgModel(size, factor)
+  def build(
+    self, model, size, factor, explode=False, linear=False, layer=3, pgsize='A3L'
+  ):
     pens      = self.pens()
     mid       = self.model(name=model)
     positions = self.blocks(mid)
@@ -32,9 +33,11 @@ class Build(ModelData):
     )
 
     if explode:
+      svglin  = SvgModel(size, factor, ps=pgsize)
       svglin.explode(block)
       svgfile = model
     else:
+      svglin   = SvgModel(size, factor)
       svglin.build(block)
       svgfile  = model
       svgfile += '_draw' if linear else '_paint'

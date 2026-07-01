@@ -4,7 +4,6 @@ import sys
 import argparse
 import time
 from model import Init, Clone, Info, Commit, Build
-# from block import TmpFile # needed by commit()
 start_t = time.time()
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def main(args):
@@ -46,6 +45,11 @@ def main(args):
     'help':'numof layers *3 or 2', 
     'metavar':'2-3', 'nargs':'?', 'const':3, 'type':int
   }
+  arg_a = {
+    'help':'page size, defaults to A3L landscape',
+    'nargs':'?', 'metavar':'A[2-3][L,P,S]', 
+    'choices':['A3L','A3P', 'A3S', 'A2L','A2P', 'A2S'], 'const':'A3L'
+  }
 
   parser_b.add_argument('-m', '--model',    **arg_m)
   parser_b.add_argument('-s', '--size',     **arg_s)
@@ -70,6 +74,7 @@ def main(args):
   parser_e.add_argument('-l', '--line',     **arg_l)
   parser_e.add_argument('-m', '--model',    **arg_m)
   parser_e.add_argument('-z', '--layer',    **arg_z)
+  parser_e.add_argument('-a', '--pgsize',   **arg_a)
 
   parser_i.add_argument('-m', '--model',    **arg_m)
   parser_i.add_argument('-p', '--penam',    **arg_p)
@@ -150,8 +155,8 @@ def explode(args):
 
   if args.model and args.size and args.factor:
     print(b.build(
-      args.model, args.size, args.factor, 
-      explode=True, linear=bool(args.line), layer=args.layer
+      args.model, args.size, args.factor, explode=True, 
+      linear=bool(args.line), layer=args.layer, pgsize=args.pgsize
     ))
   else:
     print(f'missing argument {args.model=} {args.size=} {args.factor=}')
