@@ -1,9 +1,16 @@
 import unittest
 import pprint
-from cell.shape import *
+from cell.shape import Circle
 from cell.minkscape import *
-from cell import Layer
-from model import SvgWriter
+from cell import Build # Layer
+from model.tester import SvgWriter
+
+'''
+  circles do not transpose when drawn. is it block.walk ?
+  2558c8da8ed39d47f50c36b9a7ae1531 large fails while drawing first circle
+  023a35ab5e6e3959253aba8294bc6b0a small draws single line in wrong cell
+  dba0332ab181c8c6b93f5bad8ed5ad3a medium is ok
+'''
 
 class Test(unittest.TestCase):
   VERBOSE = True
@@ -15,7 +22,8 @@ class Test(unittest.TestCase):
     self.cell   = minkscape.cells
     self.clen   = 18 # cell length
     self.circle = Circle() # 'c', cell_c)
-    self.layer  = Layer()
+    #self.layer  = Layer()
+    self.build  = Build()
     self.writer = SvgWriter()
 
   def test_a(self):
@@ -24,13 +32,13 @@ class Test(unittest.TestCase):
     self.assertEqual(self.circle.name, 'circle')
 
   def test_b(self):
-    ''' polygon
+    ''' large circle written as polygon
     '''
     geom         = self.cell['c']['geom']
     geom['name'] = 'circle'
     geom['size'] = 'large'
     x, y, stroke_width, clen = 3, 3, 0, self.clen
-    points = self.layer.points(x, y, stroke_width, self.clen)
+    points = self.build.points(x, y, stroke_width, self.clen)
     polygn = self.circle.paint(points, geom)
     self.assertEqual('Polygon', polygn.geom_type)
     if self.VERBOSE: self.writer.plot(polygn, self.id())
@@ -38,11 +46,10 @@ class Test(unittest.TestCase):
   def test_c(self, size='medium'):
     ''' linear circles
     '''
-    points  = self.layer.points(0, 0, 0, self.clen)
+    points  = self.build.points(0, 0, 0, self.clen)
     geom    = self.cell['c']['geom']
     if size: geom['size'] = size
     #self.pp.pprint(geom)
-
     polyln  = self.circle.draw(points, geom)
     if self.VERBOSE: self.writer.plotLine(polyln, self.id())
 
@@ -52,7 +59,7 @@ class Test(unittest.TestCase):
   def test_f(self):
     ''' concentric (unused but nice)
     '''
-    points  = self.layer.points(0, 0, 0, self.clen)
+    points  = self.build.points(0, 0, 0, self.clen)
     geom    = self.cell['c']['geom']
     polyln  = self.circle.drawConcentric(points, geom)
     '''
