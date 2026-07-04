@@ -144,6 +144,7 @@ class SvgModel:
             coords = list(shape.boundary.coords)
           else: # should be LineString
             coords = list(shape.coords)
+          #if uniqid == 52: print(style) # t.block_build.Test.bb_test_e
           for c in coords:
             coord = ','.join(map(str, c))
             points += f"{coord} "

@@ -28,9 +28,9 @@ class Build(BlockData):
 
     metadata  = self.tf.readConf(model, meta=True)    
     celldata  = self.tf.readConf(model)
+    #self.pp.pprint(celldata)
     ver       = pens.index(metadata['palette'])
     colors    = self.colors(ver)
-    celldata  = self.tf.readConf(model)
     penam     = dict()              # convert to dict for svg render
     for k, v in colors: penam[k] = v
     block     = Make(size, linear, pen_names=penam)
@@ -85,6 +85,7 @@ class Make:
       '''
       self.style.addBackground(pos, color=cells[label]['color'])
       for label in positions[pos]:
+        #print(f"{label} {pos}")
         if not label: continue
         if label not in cells: continue
         strokedata = self.setStroke(cells[label])
